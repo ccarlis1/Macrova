@@ -1,0 +1,74 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Environment variables
+.env
+.env.local
+
+# Config files (keep examples, ignore actual config)
+config/user_profile.yaml
+config/nutrition_goals.yaml
+config/model_config.yaml
+
+# Data files (keep examples, ignore actual data)
+# Ingredients
+data/ingredients/usda_ingredients.json
+data/ingredients/custom_ingredients.json
+
+# Recipes
+data/recipes/recipes.json
+data/recipes/recipe_embeddings.pkl
+
+# Nutrition
+data/nutrition/nutrition_db.json
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+

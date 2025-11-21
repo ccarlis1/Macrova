@@ -1,0 +1,167 @@
+{
+  "ingredients": [
+    {
+      "name": "cream of rice",
+      "per_100g": {
+        "calories": 370,
+        "protein_g": 7.5,
+        "fat_g": 0.5,
+        "carbs_g": 82.0
+      },
+      "aliases": ["cream of rice", "rice cereal"]
+    },
+    {
+      "name": "whey protein powder",
+      "per_scoop": {
+        "calories": 120,
+        "protein_g": 24.0,
+        "fat_g": 1.0,
+        "carbs_g": 3.0
+      },
+      "scoop_size_g": 30,
+      "aliases": ["protein powder", "whey", "protein", "whey protein"]
+    },
+    {
+      "name": "almond butter",
+      "per_100g": {
+        "calories": 614,
+        "protein_g": 21.0,
+        "fat_g": 55.0,
+        "carbs_g": 19.0
+      },
+      "aliases": ["almond butter", "almond spread"]
+    },
+    {
+      "name": "blueberries",
+      "per_100g": {
+        "calories": 57,
+        "protein_g": 0.7,
+        "fat_g": 0.3,
+        "carbs_g": 14.5
+      },
+      "aliases": ["blueberries", "blueberry"]
+    },
+    {
+      "name": "eggs",
+      "per_large": {
+        "calories": 72,
+        "protein_g": 6.3,
+        "fat_g": 4.8,
+        "carbs_g": 0.4
+      },
+      "large_size_g": 50,
+      "aliases": ["egg", "eggs", "large egg", "large eggs"]
+    },
+    {
+      "name": "potatoes",
+      "per_100g": {
+        "calories": 77,
+        "protein_g": 2.0,
+        "fat_g": 0.1,
+        "carbs_g": 17.0
+      },
+      "aliases": ["potato", "potatoes", "russet potato"]
+    },
+    {
+      "name": "red peppers",
+      "per_100g": {
+        "calories": 31,
+        "protein_g": 1.0,
+        "fat_g": 0.3,
+        "carbs_g": 7.0
+      },
+      "aliases": ["red pepper", "red peppers", "bell pepper", "bell peppers"]
+    },
+    {
+      "name": "raw spinach",
+      "per_100g": {
+        "calories": 23,
+        "protein_g": 2.9,
+        "fat_g": 0.4,
+        "carbs_g": 3.6
+      },
+      "aliases": ["spinach", "raw spinach", "fresh spinach"]
+    },
+    {
+      "name": "sharp cheddar cheese",
+      "per_100g": {
+        "calories": 402,
+        "protein_g": 25.0,
+        "fat_g": 33.0,
+        "carbs_g": 1.3
+      },
+      "aliases": ["cheddar", "sharp cheddar", "cheddar cheese"]
+    },
+    {
+      "name": "lean turkey sausage",
+      "per_100g": {
+        "calories": 196,
+        "protein_g": 19.0,
+        "fat_g": 11.0,
+        "carbs_g": 2.0
+      },
+      "aliases": ["turkey sausage", "lean turkey sausage", "turkey"]
+    },
+    {
+      "name": "pinto beans",
+      "per_100g": {
+        "calories": 143,
+        "protein_g": 9.0,
+        "fat_g": 0.9,
+        "carbs_g": 26.0
+      },
+      "aliases": ["pinto beans", "pinto", "beans"]
+    },
+    {
+      "name": "olive oil",
+      "per_100g": {
+        "calories": 884,
+        "protein_g": 0.0,
+        "fat_g": 100.0,
+        "carbs_g": 0.0
+      },
+      "aliases": ["olive oil", "extra virgin olive oil", "evoo"]
+    },
+    {
+      "name": "salmon",
+      "per_100g": {
+        "calories": 208,
+        "protein_g": 20.0,
+        "fat_g": 12.0,
+        "carbs_g": 0.0
+      },
+      "aliases": ["salmon", "atlantic salmon"]
+    },
+    {
+      "name": "jasmine rice",
+      "per_100g": {
+        "calories": 130,
+        "protein_g": 2.7,
+        "fat_g": 0.3,
+        "carbs_g": 28.0
+      },
+      "aliases": ["jasmine rice", "rice", "white rice"]
+    },
+    {
+      "name": "honey",
+      "per_100g": {
+        "calories": 304,
+        "protein_g": 0.3,
+        "fat_g": 0.0,
+        "carbs_g": 82.0
+      },
+      "aliases": ["honey", "raw honey"]
+    },
+    {
+      "name": "chili crisp",
+      "per_100g": {
+        "calories": 500,
+        "protein_g": 2.0,
+        "fat_g": 50.0,
+        "carbs_g": 10.0
+      },
+      "aliases": ["chili crisp", "chili oil", "chili sauce"]
+    }
+  ]
+}
+

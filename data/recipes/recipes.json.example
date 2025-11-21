@@ -1,0 +1,65 @@
+{
+  "recipes": [
+    {
+      "id": "recipe_001",
+      "name": "Preworkout Meal",
+      "ingredients": [
+        {"quantity": 200, "unit": "g", "name": "cream of rice"},
+        {"quantity": 1, "unit": "scoop", "name": "whey protein powder"},
+        {"quantity": 1, "unit": "tsp", "name": "almond butter"},
+        {"quantity": 50, "unit": "g", "name": "blueberries"}
+      ],
+      "cooking_time_minutes": 5,
+      "instructions": [
+        "Cook cream of rice according to package directions",
+        "Mix in protein powder while still warm",
+        "Top with almond butter and blueberries"
+      ]
+    },
+    {
+      "id": "recipe_002",
+      "name": "Mexican-Style Breakfast Scramble",
+      "ingredients": [
+        {"quantity": 5, "unit": "large", "name": "eggs"},
+        {"quantity": 175, "unit": "g", "name": "potatoes"},
+        {"quantity": 50, "unit": "g", "name": "red peppers"},
+        {"quantity": 40, "unit": "g", "name": "raw spinach"},
+        {"quantity": 1, "unit": "oz", "name": "sharp cheddar cheese"},
+        {"quantity": 3, "unit": "oz", "name": "lean turkey sausage"},
+        {"quantity": 50, "unit": "g", "name": "pinto beans"},
+        {"quantity": 2, "unit": "tsp", "name": "olive oil"},
+        {"quantity": 1, "unit": "to taste", "name": "salsa"},
+        {"quantity": 1, "unit": "to taste", "name": "green onion"}
+      ],
+      "cooking_time_minutes": 25,
+      "instructions": [
+        "Dice potatoes and cook in olive oil until golden brown",
+        "Add diced red peppers and cook for 2 minutes",
+        "Add turkey sausage and cook until browned",
+        "Add spinach and cook until wilted",
+        "Scramble eggs in a separate pan",
+        "Combine all ingredients, add cheese",
+        "Top with salsa and green onion"
+      ]
+    },
+    {
+      "id": "recipe_003",
+      "name": "Hot Honey Salmon with Rice",
+      "ingredients": [
+        {"quantity": 4, "unit": "oz", "name": "salmon"},
+        {"quantity": 1, "unit": "cup", "name": "jasmine rice"},
+        {"quantity": 1, "unit": "tbsp", "name": "honey"},
+        {"quantity": 1, "unit": "tsp", "name": "chili crisp"}
+      ],
+      "cooking_time_minutes": 20,
+      "instructions": [
+        "Cook jasmine rice according to package directions",
+        "Season salmon with salt and pepper",
+        "Cook salmon skin-side down for 4-5 minutes, flip and cook 2-3 minutes",
+        "Mix honey and chili crisp, brush on salmon",
+        "Serve salmon over rice"
+      ]
+    }
+  ]
+}
+

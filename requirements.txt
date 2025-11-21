@@ -1,0 +1,18 @@
+# Core Dependencies (MVP)
+python>=3.9
+pyyaml>=6.0          # Config file parsing
+pydantic>=2.0        # Data validation and models
+
+# Development Dependencies
+pytest>=7.0          # Testing framework
+pytest-cov>=4.0      # Test coverage
+black>=23.0          # Code formatting
+mypy>=1.0            # Type checking
+
+# Future Dependencies (commented out for MVP)
+# openai>=1.0        # LLM API (when adding LLM reasoning)
+# anthropic>=0.3     # Alternative LLM API
+# sentence-transformers>=2.0  # Embeddings (when adding semantic search)
+# numpy>=1.24        # Numerical operations (if needed)
+# pandas>=2.0        # Data manipulation (if needed)
+

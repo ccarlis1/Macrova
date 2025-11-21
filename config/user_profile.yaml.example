@@ -1,0 +1,69 @@
+# User Profile Configuration
+# Copy this file to user_profile.yaml and customize for your needs
+
+nutrition_goals:
+  # Daily calorie target
+  daily_calories: 2400
+  
+  # Protein target (grams per day)
+  # Based on 0.7-0.8g per pound bodyweight (from knowledge.md)
+  daily_protein_g: 150
+  
+  # Fat target range (grams per day)
+  # From knowledge.md: 50-100g range, median ~75g
+  daily_fat_g:
+    min: 50
+    max: 100
+  
+  # Carbs are calculated automatically:
+  # carbs = (calories - protein*4 - fat*9) / 4
+  # Using median fat (75g) for calculation:
+  # carbs = (2400 - 150*4 - 75*9) / 4 = (2400 - 600 - 675) / 4 = 281g
+
+schedule:
+  # Format: "HH:MM": busyness_level
+  # Busyness levels:
+  #   1 = snack (< 5 minutes)
+  #   2 = quick meal (≤ 15 minutes)
+  #   3 = weeknight meal (≤ 30 minutes)
+  #   4 = weekend/meal prep (30+ minutes)
+  
+  # Example schedule - adjust to your routine
+  "07:00": 2  # Morning: quick meal before workout
+  "12:00": 3  # Lunch: weeknight meal
+  "18:00": 3  # Dinner: weeknight meal
+
+preferences:
+  # Foods you like (will be prioritized in recommendations)
+  liked_foods:
+    - "salmon"
+    - "eggs"
+    - "rice"
+    - "potatoes"
+    - "chicken"
+    - "turkey"
+    - "spinach"
+    - "peppers"
+  
+  # Foods you dislike (will be avoided)
+  disliked_foods:
+    - "brussels sprouts"
+    - "liver"
+    - "anchovies"
+  
+  # Allergens (will be strictly avoided)
+  allergies:
+    - "shellfish"
+    - "peanuts"
+
+# Future fields (post-MVP):
+# meal_prep:
+#   - name: "Chili"
+#     servings: 5
+#     nutrition: {...}
+# 
+# weekly_targets:
+#   vitamin_e_mg: 100
+#   fiber_g: 140
+#   # ... other micronutrients
+

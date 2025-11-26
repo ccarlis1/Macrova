@@ -107,28 +107,48 @@
 - [ ] Document configuration files
 - [ ] Create sample outputs
 
-## Phase 5: Enhancements (Post-MVP)
+## Phase 5: LLM Integration & Creativity (End Game Vision)
 
-### Phase 5.1: LLM Integration
+### Phase 5.1: LLM-Enhanced Reasoning
 - [ ] Integrate LLM API (OpenAI, Anthropic, or local)
-- [ ] Implement LLM-based recipe scoring
-- [ ] Add reasoning explanations
+- [ ] Replace rule-based scoring with LLM reasoning
+- [ ] Add contextual meal explanations and reasoning
+- [ ] Implement natural language query parsing (basic)
 
-### Phase 5.2: Embedding-Based Retrieval
-- [ ] Generate recipe embeddings
-- [ ] Implement semantic search
-- [ ] Improve recipe matching
+### Phase 5.2: Cultural Recipe Database
+- [ ] Expand recipe database with multi-cultural recipes
+- [ ] Implement recipe categorization by cuisine type
+- [ ] Add cultural authenticity scoring
+- [ ] Generate recipe embeddings for semantic search
+- [ ] Improve recipe matching with cultural preferences
 
-### Phase 5.3: Micronutrients
-- [ ] Add micronutrient database
-- [ ] Implement micronutrient calculations
-- [ ] Add weekly tracking
+### Phase 5.3: Advanced Nutrition & Weekly Tracking
+- [ ] Add comprehensive micronutrient database
+- [ ] Implement micronutrient calculations and tracking
+- [ ] Add weekly running totals (Option C from design)
+- [ ] Implement nutrient carryover logic
+- [ ] Add RDI validation and weekly balancing
 
-### Phase 5.4: Advanced Features
-- [ ] Weekly meal planning
-- [ ] Meal prep integration
-- [ ] Satiety calculations
-- [ ] Complex taste preference matching
+### Phase 5.4: Natural Language Interface
+- [ ] Implement complex natural language query processing
+- [ ] Add meal prep integration and coordination
+- [ ] Support flexible scheduling constraints
+- [ ] Handle multi-constraint queries (e.g., "salmon 2 days + chili meal prep + flexible Sunday")
+- [ ] Add conversational meal planning interface
+
+### Phase 5.5: Advanced Customization
+- [ ] Implement ingredient-driven meal planning
+- [ ] Add cultural fusion recipe generation
+- [ ] Support regional ingredient constraints
+- [ ] Add advanced satiety calculations
+- [ ] Implement specialized dietary pattern support (Mediterranean, Asian, etc.)
+
+### Phase 6: Interface Evolution
+- [ ] Develop GUI prototype (drag-and-drop meal planning)
+- [ ] Implement hybrid interface (structured + natural language)
+- [ ] Add visual nutrition tracking
+- [ ] Create meal prep planning interface
+- [ ] Support multiple interaction paradigms
 
 ## Dependencies
 
@@ -176,4 +196,28 @@ mypy>=1.0            # Type checking
 - ✅ Output is structured and readable
 - ✅ All core components have unit tests
 - ✅ Can run locally without external API calls
+- ✅ **Foundation Priority**: Accurate nutrition calculations above all else
+- ✅ Modular architecture supports future LLM integration
+
+## Success Criteria for End Game
+
+### Technical Capabilities
+- Natural language query understanding (>90% accuracy)
+- Support for complex multi-constraint meal planning
+- Cultural recipe diversity (recipes from 10+ cultures)
+- Seamless meal prep integration and coordination
+- Weekly nutrition balancing with daily flexibility
+
+### User Experience
+- Intuitive natural language interface
+- Cultural authenticity in recipe recommendations
+- Flexible interaction paradigms (structured + conversational)
+- Advanced customization without complexity
+- Taste + nutrition optimization (never compromise either)
+
+### System Performance
+- LLM-enhanced reasoning with technical precision
+- Real-time meal plan generation for complex queries
+- Scalable recipe database with cultural categorization
+- Robust nutrition calculations with micronutrient tracking
 

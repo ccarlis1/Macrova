@@ -2,7 +2,11 @@
 
 ## System Overview
 
-The Nutrition Agent is a modular system that generates personalized meal recommendations based on nutrition goals, schedule constraints, and user preferences. It combines LLM reasoning with structured nutrition calculations to produce balanced daily and weekly meal plans.
+The Nutrition Agent is a modular system that generates personalized meal recommendations based on nutrition goals, schedule constraints, and user preferences. 
+
+**Current MVP**: Focuses on structured nutrition calculations with rule-based meal selection to establish a solid foundation.
+
+**End Game Vision**: An all-purpose nutritious meals generator that combines LLM creativity with technical precision, supporting natural language queries, cultural recipe diversity, and advanced meal planning features like meal prep integration and flexible scheduling.
 
 ## Core Architecture
 
@@ -74,20 +78,33 @@ Output Formatter (generate JSON + Markdown output)
 
 **Post-MVP Flow** (adds):
 - Weekly Tracker (running totals)
-- LLM Reasoner (enhanced scoring)
+- LLM Reasoner (enhanced scoring and natural language understanding)
 - Embedding-based retrieval (semantic search)
 - Micronutrient calculations
+- Cultural Recipe Integration (diverse recipe database)
+- Natural Language Query Processing
+- Advanced Meal Prep Coordination
 
 ## Key Design Decisions (Based on User Requirements)
 
+### MVP Foundation Principles
 1. **Modular Components**: Each layer is independent and testable
-2. **Rule-Based MVP**: Use rule-based scoring for MVP, add LLM reasoning in Phase 5.1
-3. **Local Data Sources**: Manual JSON databases for MVP (recipes, ingredients, nutrition)
-4. **Simple Parsing**: Basic ingredient parsing (quantity, unit, name) - expand complexity later
-5. **Minimal Recipe Format**: Name, ingredients, cooking_time, instructions - extend as needed
-6. **YAML User Profile**: Easy-to-edit YAML config for preferences and goals
-7. **Dual Output**: Both JSON (programmatic) and Markdown (human-readable)
-8. **Weekly Tracking (Post-MVP)**: Track running totals as days are planned (Option C)
-9. **Local-First**: No external API dependencies for MVP
-10. **Unit Tests First**: Comprehensive unit tests for MVP, integration tests later
+2. **Nutrition Accuracy First**: Prioritize accurate nutrition calculations over creative features
+3. **Rule-Based MVP**: Use rule-based scoring for MVP, add LLM reasoning in Phase 5.1
+4. **Local Data Sources**: Manual JSON databases for MVP (recipes, ingredients, nutrition)
+5. **Simple Parsing**: Basic ingredient parsing (quantity, unit, name) - expand complexity later
+6. **Minimal Recipe Format**: Name, ingredients, cooking_time, instructions - extend as needed
+7. **YAML User Profile**: Easy-to-edit YAML config for preferences and goals
+8. **Dual Output**: Both JSON (programmatic) and Markdown (human-readable)
+9. **Weekly Tracking (Post-MVP)**: Track running totals as days are planned (Option C)
+10. **Local-First**: No external API dependencies for MVP
+11. **Unit Tests First**: Comprehensive unit tests for MVP, integration tests later
+
+### End Game Architecture Principles
+12. **LLM Integration**: Combine AI creativity with technical nutrition precision
+13. **Cultural Recipe Diversity**: Support recipes from multiple cultures while maintaining nutrition goals
+14. **Natural Language Processing**: Accept complex meal planning queries in natural language
+15. **Advanced Customization**: Support meal prep integration, flexible scheduling, and complex constraints
+16. **Specialized Training**: Train agent on comprehensive recipe databases and nutrition science
+17. **Interface Flexibility**: Support both structured inputs (GUI) and natural language prompts
 

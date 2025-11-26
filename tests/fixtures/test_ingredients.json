@@ -1,0 +1,35 @@
+{
+  "ingredients": [
+    {
+      "name": "egg",
+      "per_large": {
+        "calories": 72,
+        "protein_g": 6.3,
+        "fat_g": 4.8,
+        "carbs_g": 0.4
+      },
+      "unit_size_g": 50,
+      "aliases": ["eggs", "large egg"]
+    },
+    {
+      "name": "salt",
+      "per_100g": {
+        "calories": 0,
+        "protein_g": 0.0,
+        "fat_g": 0.0,
+        "carbs_g": 0.0
+      },
+      "aliases": ["table salt", "sea salt"]
+    },
+    {
+      "name": "salmon",
+      "per_100g": {
+        "calories": 208,
+        "protein_g": 25.4,
+        "fat_g": 12.4,
+        "carbs_g": 0.0
+      },
+      "aliases": ["salmon fillet", "atlantic salmon"]
+    }
+  ]
+}

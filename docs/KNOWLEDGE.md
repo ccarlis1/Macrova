@@ -118,3 +118,14 @@ Now that nutrition is covered, lets go over factors in the users schedule that m
 ---
 
 **Note:** This is not how the bot should reason or format the output exactly. The output format has not yet been decided, and it does not matter much for the MVP. This is just an example of how I personally would construct a full day of eating under these circumstances, which can hopefully help to translate algorithmically.
+
+
+
+## End Game Functionality
+- Here I am going to define what I envision as the final product of this project. The product is meant to be an all purpose nutritios meals generator which gives both nutritious recipes and recipes that taste good and incorporate foods from all kinds of different cultures. I want to combine the creativity of LLMs and the technical breakdown of recipes to give users the ultimate all in one package for planning meals in advance. To do this, I want to provide a specially trained agent on both recipe databases and up to date nutrition principles, as well as the user's preferences, whether it be specific dietary goals, types of meals and other things. This is what makes LLMs so useful, they can read this user input accurately and apply it to the data it has to yield the best result possible. In the MVP, we will foundationalize the nutrition logic and add some example recipes. Then, in later stages, I want to leverage an LLM to combine this nutrition logic with the creativity of selection of both humans and the agent itself. Here is an example of what I want to accomplish:
+
+User Query: I want a set of meals generated for the week. I want salmon 2 of these days, and I want to make 4 servings my weekly meal prep chili recipe. I also want sunday to be a more flexible day so don't plan out lunch and dinner, just plan out one meal for sunday.
+
+**Comments on the Query:** This is just an exmaple. I don't know if, in my final product, I want something as ambiguous as a free flowing lamguage prompt. Whether I want to make a GUI that lets the user enter what meal they want included in the generation and how many times, or be able to deselect certain meals at certain times etc. This is just a pure example of the level of power and customizability I want in this app. 
+
+- For now though, lets really try to nail the foundation of this app to be able to eventually and soundly expand into something this detailed. Make sure the priorities are straight. Lets not worry about the level of creativity of meals, lets worry about above all else, producing an accurate array of nutrition for each meal, and ensure a combination of meals adds those nutrients. 

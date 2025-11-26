@@ -5,15 +5,37 @@ An agent designed to generate healthy meals based on a users schedule and nutrit
 ### Experience
 - Gain experience with working with LLMs and agents. This project will be open-source and is a good resume project
 
-### Usage
-The purpose of the agent is to recommend recipes based on a users schedule and nutrition goals, using up to date knowledge and principles of nutrition and health. The agent will be initially designed for personal use, but may later expand to fit other users. This solves the problem of constantly thinking about what meals to make, where I can drastically decrease the time needed to make and keep track of meals, as well as making sure I am eating as healthy as possible, and hopefully will gain some cooking experience overall.
+### Current Usage (MVP)
+The agent currently recommends recipes based on a user's schedule and nutrition goals, using structured nutrition calculations and rule-based meal selection. It solves the problem of constantly thinking about what meals to make, drastically decreasing the time needed to plan meals while ensuring optimal nutrition.
+
+### End Game Vision
+The ultimate goal is to create an **all-purpose nutritious meals generator** that combines:
+- **LLM Creativity**: Leveraging AI to understand natural language queries and user preferences
+- **Technical Precision**: Accurate nutrition calculations and meal balancing
+- **Cultural Diversity**: Recipes from different cultures that taste good and meet nutrition goals
+- **Advanced Customization**: Complex meal planning with constraints like meal prep, specific ingredients, and flexible scheduling
+
+**Example End Game Query:**
+> "I want a set of meals generated for the week. I want salmon 2 of these days, and I want to make 4 servings my weekly meal prep chili recipe. I also want sunday to be a more flexible day so don't plan out lunch and dinner, just plan out one meal for sunday."
+
+The system will intelligently parse this request, account for the chili's nutrition across the week, ensure salmon appears twice, and provide flexible Sunday planning - all while maintaining optimal nutrition balance.
 
 ## Goals
 
-- Recommend recipes based on a user preferences and goals
-- Calculate and display nutrition for selected recipes
-- If multiple meals are recommended, ensure they fit the principles of a balanced diet
+### Current MVP Goals
+- Recommend recipes based on user preferences and goals
+- Calculate and display accurate nutrition for selected recipes
+- Ensure multiple meals fit principles of a balanced diet
 - Be deployable locally for personal use
+- **Foundation Priority**: Accurate nutrition calculations and meal balancing above all else
+
+### End Game Goals
+- **LLM-Powered Creativity**: Combine technical nutrition precision with AI creativity for meal selection
+- **Multi-Cultural Recipe Database**: Incorporate recipes from different cultures while maintaining nutrition goals
+- **Natural Language Interface**: Accept complex, natural language meal planning requests
+- **Advanced Meal Prep Integration**: Plan meals around pre-made components and batch cooking
+- **Flexible Scheduling**: Handle complex scheduling constraints and preferences
+- **Specialized Agent Training**: Train on recipe databases and up-to-date nutrition principles
 
 ## Example: Full Day of Meals
 
@@ -72,7 +94,31 @@ The purpose of the agent is to recommend recipes based on a users schedule and n
 - Minimal dependencies
 
 
-## Future Extensions
-- Expand to multiple users
-    - Starting point maintenance calories calculator
-    - Calculator for micronutrient RDIs
+## Development Roadmap
+
+### Phase 1-4: MVP Foundation (Current)
+- ✅ Accurate nutrition calculations and meal balancing
+- ✅ Rule-based recipe scoring and selection
+- ✅ Local recipe and nutrition databases
+- ✅ Basic user preferences and scheduling
+
+### Phase 5+: LLM Integration & Creativity
+- **LLM-Enhanced Reasoning**: Replace rule-based scoring with intelligent AI reasoning
+- **Natural Language Queries**: Accept complex meal planning requests in natural language
+- **Recipe Creativity**: AI-generated recipe variations and cultural fusion
+- **Specialized Training**: Train agent on comprehensive recipe databases and nutrition science
+
+### Future Extensions
+- **Multi-User Support**: Expand beyond personal use
+- **Advanced Interfaces**: GUI for meal selection, scheduling, and preferences
+- **Recipe Database Expansion**: Incorporate diverse cultural recipes
+- **Maintenance Calorie Calculator**: Automated TDEE calculation
+- **Dynamic RDI Calculation**: Personalized micronutrient targets based on individual needs
+
+### Interface Evolution Options
+The final product may feature:
+- Natural language prompts for complex meal planning
+- GUI with drag-and-drop meal scheduling
+- Hybrid approach combining structured inputs with AI flexibility
+
+**Current Priority**: Nail the foundational nutrition logic and meal balancing before adding creative AI features.

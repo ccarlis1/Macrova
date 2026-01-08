@@ -69,7 +69,7 @@ The meal planner will:
    - Your schedule (cooking time constraints)
    - Your preferences (liked/disliked foods, allergies)
    - Workout timing (if specified)
-4. Output a formatted meal plan with:
+4. Output a meal plan with:
    - Meal names and types
    - Ingredients lists
    - Cooking times

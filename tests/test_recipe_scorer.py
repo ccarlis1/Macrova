@@ -1836,6 +1836,7 @@ class TestCompleteRecipeScoring:
         )
         
         # Should score high (all criteria met)
+        print(f"Perfect recipe score: {score}")
         assert score >= 70.0
     
     def test_score_recipe_poor_match(self, scorer, sample_user_profile):

@@ -8,18 +8,19 @@ from src.data_layer.models import Recipe, NutritionProfile, UserProfile
 @dataclass
 class ScoringWeights:
     """Configurable weights for different scoring criteria."""
-    nutrition_weight: float = 0.4    # 40% - calories/macros match
-    schedule_weight: float = 0.2     # 20% - cooking time constraint
-    preference_weight: float = 0.2   # 20% - taste preferences
-    satiety_weight: float = 0.1      # 10% - satiety requirements
-    micronutrient_weight: float = 0.1 # 10% - basic micronutrient bonus (MVP: simple)
+    nutrition_weight: float = 0.35    # 35% - calories/macros match
+    schedule_weight: float = 0.20     # 20% - cooking time constraint
+    preference_weight: float = 0.15   # 15% - taste preferences
+    satiety_weight: float = 0.10      # 10% - satiety requirements
+    micronutrient_weight: float = 0.10 # 10% - basic micronutrient bonus (MVP: simple)
+    balance_weight: float = 0.10      # 10% - complements daily nutrition
 
     def __post_init__(self):
         """Validate weights sum to 1.0 and are non-negative."""
         # Check for negative weights
         weights = [self.nutrition_weight, self.schedule_weight, 
                    self.preference_weight, self.satiety_weight, 
-                   self.micronutrient_weight]
+                   self.micronutrient_weight, self.balance_weight]
         if any(w < 0 for w in weights):
             raise ValueError("All scoring weights must be non-negative")
         
@@ -96,6 +97,7 @@ class RecipeScorer:
         preference_score = self._score_preference_match(recipe, user_profile)
         satiety_score = self._score_satiety_match(recipe_nutrition, context)
         micronutrient_score = self._score_micronutrient_bonus(recipe_nutrition, context)
+        balance_score = self._score_balance_match(recipe_nutrition, user_profile, current_daily_nutrition)
         
         # Weighted combination
         total_score = (
@@ -103,7 +105,8 @@ class RecipeScorer:
             schedule_score * self.weights.schedule_weight +
             preference_score * self.weights.preference_weight +
             satiety_score * self.weights.satiety_weight +
-            micronutrient_score * self.weights.micronutrient_weight
+            micronutrient_score * self.weights.micronutrient_weight +
+            balance_score * self.weights.balance_weight
         )
         
         return total_score
@@ -692,6 +695,40 @@ class RecipeScorer:
         # For MVP, we use simple macro diversity as proxy
         
         return macro_diversity_score
+
+    def _score_balance_match(self,
+                           recipe_nutrition: NutritionProfile,
+                           user_profile: UserProfile,
+                           current_daily_nutrition: NutritionProfile) -> float:
+        """Score how well recipe fits into remaining daily budget (0-100).
+           Prioritize not exceeding daily limits.
+        """
+        score = 100.0
+        
+        # Check Calories
+        proj_cals = current_daily_nutrition.calories + recipe_nutrition.calories
+        daily_cals = user_profile.daily_calories
+        if daily_cals > 0 and proj_cals > daily_cals * 1.1: # 10% tolerance
+             # Penalize
+             overage = (proj_cals - daily_cals) / daily_cals
+             # Linear penalty
+             score -= overage * 100.0
+             
+        # Check Fat
+        proj_fat = current_daily_nutrition.fat_g + recipe_nutrition.fat_g
+        daily_fat_max = user_profile.daily_fat_g[1]
+        if daily_fat_max > 0 and proj_fat > daily_fat_max:
+             overage = (proj_fat - daily_fat_max) / daily_fat_max
+             score -= overage * 100.0
+             
+        # Check Carbs
+        proj_carbs = current_daily_nutrition.carbs_g + recipe_nutrition.carbs_g
+        daily_carbs = user_profile.daily_carbs_g
+        if daily_carbs > 0 and proj_carbs > daily_carbs * 1.1:
+             overage = (proj_carbs - daily_carbs) / daily_carbs
+             score -= overage * 100.0
+             
+        return max(0.0, score)
     
     def _contains_allergens(self, recipe: Recipe, allergies: List[str]) -> bool:
         """Check if recipe contains any allergens (KNOWLEDGE.md line 17: "blacklist").

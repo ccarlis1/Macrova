@@ -92,6 +92,7 @@ class MealPlanner:
         # Plan each meal
         planned_meals = []
         meal_order = ["breakfast", "lunch", "dinner"]
+        used_recipe_ids = set()  # Track recipes already selected to prevent reuse
         
         for meal_type in meal_order:
             context = meal_contexts[meal_type]
@@ -102,6 +103,9 @@ class MealPlanner:
                 context,
                 user_profile
             )
+            
+            # Exclude recipes already selected for previous meals (Issue #7)
+            candidates = [r for r in candidates if r.id not in used_recipe_ids]
             
             if not candidates:
                 # No candidates available - create warning
@@ -122,6 +126,9 @@ class MealPlanner:
                 user_profile,
                 current_nutrition
             )
+            
+            # Mark recipe as used to prevent reuse in subsequent meals (Issue #7)
+            used_recipe_ids.add(best_recipe.id)
             
             # Calculate recipe nutrition
             recipe_nutrition = self.recipe_scorer.nutrition_calculator.calculate_recipe_nutrition(best_recipe)

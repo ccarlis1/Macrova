@@ -847,6 +847,93 @@ class TestPlanDailyMeals:
             for meal in result.daily_plan.meals:
                 ingredient_names = [ing.name.lower() for ing in meal.recipe.ingredients]
                 assert "egg" not in ingredient_names
+    
+    def test_no_recipe_reuse_in_daily_plan(self, planner):
+        """Test that no recipe is selected more than once in a daily plan.
+        
+        Issue #7: The algorithm can select the same recipe for multiple meal slots
+        because previously selected recipes are not excluded from subsequent passes.
+        
+        This test creates identical recipes that would all score equally high,
+        forcing the algorithm to demonstrate whether it prevents reuse.
+        """
+        from src.data_layer.models import Recipe, Ingredient
+        
+        # Create 3 nearly identical recipes that would all score similarly
+        # for any meal slot (same cooking time, same nutrition profile)
+        identical_recipes = [
+            Recipe(
+                id="identical_1",
+                name="Egg Meal A",
+                ingredients=[
+                    Ingredient(name="egg", quantity=3.0, unit="large", is_to_taste=False)
+                ],
+                cooking_time_minutes=10,
+                instructions=["Cook eggs"]
+            ),
+            Recipe(
+                id="identical_2",
+                name="Egg Meal B",
+                ingredients=[
+                    Ingredient(name="egg", quantity=3.0, unit="large", is_to_taste=False)
+                ],
+                cooking_time_minutes=10,
+                instructions=["Cook eggs"]
+            ),
+            Recipe(
+                id="identical_3",
+                name="Egg Meal C",
+                ingredients=[
+                    Ingredient(name="egg", quantity=3.0, unit="large", is_to_taste=False)
+                ],
+                cooking_time_minutes=10,
+                instructions=["Cook eggs"]
+            )
+        ]
+        
+        # User profile that doesn't bias toward any specific recipe
+        neutral_user = UserProfile(
+            daily_calories=2400,
+            daily_protein_g=150.0,
+            daily_fat_g=(50.0, 100.0),
+            daily_carbs_g=300.0,
+            schedule={},
+            liked_foods=["egg"],  # All recipes have egg, so no differentiation
+            disliked_foods=[],
+            allergies=[]
+        )
+        
+        # Schedule with generous cooking times (all recipes fit all slots)
+        generous_schedule = DailySchedule(
+            breakfast_time="07:00",
+            breakfast_busyness=2,  # 15 min max
+            lunch_time="12:00",
+            lunch_busyness=2,  # 15 min max
+            dinner_time="18:00",
+            dinner_busyness=2,  # 15 min max
+            workout_time=None
+        )
+        
+        result = planner.plan_daily_meals(
+            neutral_user,
+            generous_schedule,
+            available_recipes=identical_recipes
+        )
+        
+        # Planning should succeed
+        assert result.daily_plan is not None, (
+            f"Planning failed: {result.warnings}"
+        )
+        assert len(result.daily_plan.meals) == 3
+        
+        # Extract recipe IDs from selected meals
+        selected_recipe_ids = [meal.recipe.id for meal in result.daily_plan.meals]
+        
+        # CRITICAL ASSERTION: All recipe IDs must be unique (no reuse)
+        assert len(set(selected_recipe_ids)) == 3, (
+            f"Recipe reuse detected! Selected recipes: {selected_recipe_ids}. "
+            "Each meal slot must have a distinct recipe."
+        )
 
 
 class TestValidateDailyPlan:
@@ -1173,3 +1260,379 @@ class TestValidateDailyPlan:
         assert abs(adherence["carbs"] - 100.0) < 0.1
         # Fat: 75g is within 50-100g range, so should be ~100% relative to midpoint (75g)
         assert abs(adherence["fat"] - 100.0) < 0.1
+
+
+class TestCanonicalProgressiveDayMealPlan:
+    """Test canonical day-of-meals scenario for diagnostic validation.
+    
+    Expected meal order:
+    1. Blueberry Protein Cream of Rice Bowl (5-min, carb-heavy, low fat) ~740 kcal
+    2. Loaded Egg & Potato Skillet (15-min, balanced, moderate fat) ~730 kcal
+    3. Teriyaki Salmon Rice Bowl (30-min, largest, recovery-focused) ~920 kcal
+    
+    Daily targets:
+    - ~2400 kcal
+    - ~150g protein
+    - ~300g carbs
+    - ~75g fat (range: 50-100g)
+    
+    Schedule configuration:
+    - workout_time=08:00 makes breakfast pre-workout
+    - Dinner has high satiety (overnight fast)
+    
+    NOTE: Single workout_time cannot make both breakfast pre-workout AND 
+    dinner post-workout. This test prioritizes breakfast as pre-workout.
+    """
+    
+    @pytest.fixture
+    def planner(self):
+        """Create a MealPlanner instance with test fixtures."""
+        nutrition_db = NutritionDB("tests/fixtures/test_ingredients.json")
+        nutrition_calculator = NutritionCalculator(nutrition_db)
+        nutrition_aggregator = NutritionAggregator()
+        recipe_scorer = RecipeScorer(nutrition_calculator)
+        recipe_db = RecipeDB("tests/fixtures/test_recipes.json")
+        recipe_retriever = RecipeRetriever(recipe_db)
+        
+        return MealPlanner(recipe_scorer, recipe_retriever, nutrition_aggregator)
+    
+    @pytest.fixture
+    def canonical_user_profile(self):
+        """Create user profile optimized for canonical meal selection.
+        
+        Preferences include ingredients from all three canonical recipes:
+        - Cream of rice, whey protein, blueberries (breakfast)
+        - Egg, potato, olive oil (lunch)
+        - Salmon, rice, broccoli, teriyaki (dinner)
+        """
+        return UserProfile(
+            daily_calories=2400,
+            daily_protein_g=150.0,
+            daily_fat_g=(50.0, 100.0),
+            daily_carbs_g=300.0,
+            schedule={},
+            liked_foods=[
+                "egg", "salmon", "cream of rice", "blueberries",
+                "potato", "white rice", "broccoli", "whey protein powder"
+            ],
+            disliked_foods=[],
+            allergies=[]
+        )
+    
+    @pytest.fixture
+    def canonical_schedule(self):
+        """Create schedule with workout timing for pre-workout breakfast.
+        
+        - Breakfast at 07:00, workout at 08:00 → breakfast is pre-workout
+        - Lunch at 12:00 → standard
+        - Dinner at 18:00 → high satiety (overnight fast)
+        
+        Busyness levels map to cooking time constraints:
+        - Level 1: 5 min (breakfast - quick pre-workout)
+        - Level 2: 15 min (lunch - moderate)
+        - Level 3: 30 min (dinner - recovery meal)
+        """
+        return DailySchedule(
+            breakfast_time="07:00",
+            breakfast_busyness=1,  # 5 min max
+            lunch_time="12:00",
+            lunch_busyness=2,  # 15 min max
+            dinner_time="18:00",
+            dinner_busyness=3,  # 30 min max
+            workout_time="08:00"  # Makes breakfast pre-workout
+        )
+    
+    @pytest.fixture
+    def canonical_recipes(self):
+        """Load the three canonical recipes from test fixtures."""
+        from src.data_layer.models import Recipe, Ingredient
+        
+        # Blueberry Protein Cream of Rice Bowl
+        # Expected nutrition: ~740 kcal, ~57g protein, ~3g fat, ~119g carbs
+        breakfast = Recipe(
+            id="canonical_breakfast",
+            name="Blueberry Protein Cream of Rice Bowl",
+            ingredients=[
+                Ingredient(name="cream of rice", quantity=120.0, unit="g", is_to_taste=False),
+                Ingredient(name="whey protein powder", quantity=2.0, unit="scoop", is_to_taste=False),
+                Ingredient(name="blueberries", quantity=100.0, unit="g", is_to_taste=False),
+                Ingredient(name="water", quantity=300.0, unit="g", is_to_taste=False)
+            ],
+            cooking_time_minutes=5,
+            instructions=["Bring water to boil", "Stir in cream of rice", "Mix in whey", "Top with blueberries"]
+        )
+        
+        # Loaded Egg & Potato Skillet
+        # Expected nutrition: ~730 kcal, ~33g protein, ~35g fat, ~70g carbs
+        lunch = Recipe(
+            id="canonical_lunch",
+            name="Loaded Egg & Potato Skillet",
+            ingredients=[
+                Ingredient(name="egg", quantity=4.0, unit="large", is_to_taste=False),
+                Ingredient(name="potato", quantity=400.0, unit="g", is_to_taste=False),
+                Ingredient(name="olive oil", quantity=15.0, unit="g", is_to_taste=False),
+                Ingredient(name="salt", quantity=0.0, unit="to taste", is_to_taste=True)
+            ],
+            cooking_time_minutes=15,
+            instructions=["Dice potatoes", "Cook in olive oil", "Scramble eggs", "Combine"]
+        )
+        
+        # Teriyaki Salmon Rice Bowl
+        # Expected nutrition: ~920 kcal, ~70g protein, ~29g fat, ~96g carbs
+        dinner = Recipe(
+            id="canonical_dinner",
+            name="Teriyaki Salmon Rice Bowl",
+            ingredients=[
+                Ingredient(name="salmon", quantity=225.0, unit="g", is_to_taste=False),
+                Ingredient(name="white rice", quantity=300.0, unit="g", is_to_taste=False),
+                Ingredient(name="broccoli", quantity=100.0, unit="g", is_to_taste=False),
+                Ingredient(name="teriyaki sauce", quantity=30.0, unit="g", is_to_taste=False),
+                Ingredient(name="salt", quantity=0.0, unit="to taste", is_to_taste=True)
+            ],
+            cooking_time_minutes=30,
+            instructions=["Cook rice", "Steam broccoli", "Pan-sear salmon with teriyaki", "Assemble bowl"]
+        )
+        
+        return [breakfast, lunch, dinner]
+    
+    def test_canonical_progressive_day_meal_plan(self, planner, canonical_user_profile, 
+                                                  canonical_schedule, canonical_recipes):
+        """Test that canonical meals are selected and meet daily targets.
+        
+        This test validates:
+        1. All three canonical recipes are selected
+        2. Cooking-time constraints are respected
+        3. Daily totals fall within ±10% tolerance
+        
+        NOTE: This test uses ONLY the three canonical recipes. If test fails,
+        the cause is production scoring/planning logic, not test configuration.
+        """
+        # Plan meals using only canonical recipes
+        result = planner.plan_daily_meals(
+            canonical_user_profile,
+            canonical_schedule,
+            available_recipes=canonical_recipes
+        )
+        
+        # === ASSERTION 1: Planning should succeed ===
+        assert result.daily_plan is not None, (
+            f"Planning failed with warnings: {result.warnings}"
+        )
+        assert len(result.daily_plan.meals) == 3, (
+            f"Expected 3 meals, got {len(result.daily_plan.meals)}"
+        )
+        
+        # === ASSERTION 2: Correct meal types in order ===
+        meal_types = [meal.meal_type for meal in result.daily_plan.meals]
+        assert meal_types == ["breakfast", "lunch", "dinner"], (
+            f"Expected meal order [breakfast, lunch, dinner], got {meal_types}"
+        )
+        
+        # === ASSERTION 3: Cooking-time constraints respected ===
+        breakfast = result.daily_plan.meals[0]
+        lunch = result.daily_plan.meals[1]
+        dinner = result.daily_plan.meals[2]
+        
+        # Breakfast: busyness 1 → 5 min max
+        assert breakfast.recipe.cooking_time_minutes <= 5, (
+            f"Breakfast cooking time {breakfast.recipe.cooking_time_minutes} min > 5 min constraint"
+        )
+        
+        # Lunch: busyness 2 → 15 min max
+        assert lunch.recipe.cooking_time_minutes <= 15, (
+            f"Lunch cooking time {lunch.recipe.cooking_time_minutes} min > 15 min constraint"
+        )
+        
+        # Dinner: busyness 3 → 30 min max
+        assert dinner.recipe.cooking_time_minutes <= 30, (
+            f"Dinner cooking time {dinner.recipe.cooking_time_minutes} min > 30 min constraint"
+        )
+        
+        # === ASSERTION 4: All canonical recipes selected ===
+        selected_ids = {meal.recipe.id for meal in result.daily_plan.meals}
+        expected_ids = {"canonical_breakfast", "canonical_lunch", "canonical_dinner"}
+        assert selected_ids == expected_ids, (
+            f"Expected canonical recipes {expected_ids}, got {selected_ids}"
+        )
+        
+        # === ASSERTION 5: Recipes selected for correct meal slots ===
+        assert breakfast.recipe.id == "canonical_breakfast", (
+            f"Expected canonical_breakfast for breakfast, got {breakfast.recipe.id}"
+        )
+        assert lunch.recipe.id == "canonical_lunch", (
+            f"Expected canonical_lunch for lunch, got {lunch.recipe.id}"
+        )
+        assert dinner.recipe.id == "canonical_dinner", (
+            f"Expected canonical_dinner for dinner, got {dinner.recipe.id}"
+        )
+        
+        # === ASSERTION 6: Daily totals within ±10% tolerance ===
+        total = result.total_nutrition
+        
+        # Target: 2400 kcal, tolerance: 2160-2640
+        assert 2160 <= total.calories <= 2640, (
+            f"Calories {total.calories:.0f} outside ±10% of 2400 (2160-2640)"
+        )
+        
+        # Target: 150g protein, tolerance: 135-165g
+        assert 135 <= total.protein_g <= 165, (
+            f"Protein {total.protein_g:.1f}g outside ±10% of 150g (135-165g)"
+        )
+        
+        # Target: 300g carbs, tolerance: 270-330g
+        assert 270 <= total.carbs_g <= 330, (
+            f"Carbs {total.carbs_g:.1f}g outside ±10% of 300g (270-330g)"
+        )
+        
+        # Fat must be within 50-100g range
+        assert 50 <= total.fat_g <= 100, (
+            f"Fat {total.fat_g:.1f}g outside 50-100g range"
+        )
+        
+        # === ASSERTION 7: Plan validation success ===
+        assert result.success is True, (
+            f"Validation failed with warnings: {result.warnings}"
+        )
+    
+    def test_canonical_recipes_score_competitively(self, planner, canonical_user_profile,
+                                                    canonical_schedule, canonical_recipes):
+        """Test that canonical recipes score reasonably for their slots.
+        
+        Each canonical recipe should score >= 40 for its intended slot.
+        This verifies test configuration doesn't create artificially low scores.
+        """
+        from src.scoring.recipe_scorer import MealContext
+        
+        # Get meal contexts for each slot
+        goals = NutritionGoals(
+            calories=canonical_user_profile.daily_calories,
+            protein_g=canonical_user_profile.daily_protein_g,
+            fat_g_min=canonical_user_profile.daily_fat_g[0],
+            fat_g_max=canonical_user_profile.daily_fat_g[1],
+            carbs_g=canonical_user_profile.daily_carbs_g
+        )
+        
+        meal_contexts = planner._distribute_daily_targets(goals, canonical_schedule)
+        
+        # Score breakfast recipe for breakfast slot
+        breakfast_recipe = canonical_recipes[0]
+        breakfast_context = meal_contexts["breakfast"]
+        current_nutrition = NutritionProfile(calories=0, protein_g=0, fat_g=0, carbs_g=0)
+        
+        breakfast_score = planner.recipe_scorer.score_recipe(
+            breakfast_recipe,
+            breakfast_context,
+            canonical_user_profile,
+            current_nutrition
+        )
+        
+        assert breakfast_score >= 40.0, (
+            f"Breakfast recipe scored {breakfast_score:.1f}, expected >= 40.0. "
+            "This may indicate a test configuration issue."
+        )
+        
+        # Score lunch recipe for lunch slot (after breakfast nutrition)
+        lunch_recipe = canonical_recipes[1]
+        lunch_context = meal_contexts["lunch"]
+        breakfast_nutrition = planner.recipe_scorer.nutrition_calculator.calculate_recipe_nutrition(breakfast_recipe)
+        current_nutrition = NutritionProfile(
+            calories=breakfast_nutrition.calories,
+            protein_g=breakfast_nutrition.protein_g,
+            fat_g=breakfast_nutrition.fat_g,
+            carbs_g=breakfast_nutrition.carbs_g
+        )
+        
+        lunch_score = planner.recipe_scorer.score_recipe(
+            lunch_recipe,
+            lunch_context,
+            canonical_user_profile,
+            current_nutrition
+        )
+        
+        assert lunch_score >= 40.0, (
+            f"Lunch recipe scored {lunch_score:.1f}, expected >= 40.0. "
+            "This may indicate a test configuration issue."
+        )
+        
+        # Score dinner recipe for dinner slot (after breakfast + lunch nutrition)
+        dinner_recipe = canonical_recipes[2]
+        dinner_context = meal_contexts["dinner"]
+        lunch_nutrition = planner.recipe_scorer.nutrition_calculator.calculate_recipe_nutrition(lunch_recipe)
+        current_nutrition = NutritionProfile(
+            calories=breakfast_nutrition.calories + lunch_nutrition.calories,
+            protein_g=breakfast_nutrition.protein_g + lunch_nutrition.protein_g,
+            fat_g=breakfast_nutrition.fat_g + lunch_nutrition.fat_g,
+            carbs_g=breakfast_nutrition.carbs_g + lunch_nutrition.carbs_g
+        )
+        
+        dinner_score = planner.recipe_scorer.score_recipe(
+            dinner_recipe,
+            dinner_context,
+            canonical_user_profile,
+            current_nutrition
+        )
+        
+        assert dinner_score >= 40.0, (
+            f"Dinner recipe scored {dinner_score:.1f}, expected >= 40.0. "
+            "This may indicate a test configuration issue."
+        )
+    
+    def test_canonical_meal_nutrition_calculation(self, planner, canonical_recipes):
+        """Test that canonical recipe nutrition is calculated correctly.
+        
+        This validates the test fixture ingredients provide expected nutrition.
+        """
+        breakfast = canonical_recipes[0]
+        lunch = canonical_recipes[1]
+        dinner = canonical_recipes[2]
+        
+        # Calculate nutrition for each meal
+        breakfast_nutrition = planner.recipe_scorer.nutrition_calculator.calculate_recipe_nutrition(breakfast)
+        lunch_nutrition = planner.recipe_scorer.nutrition_calculator.calculate_recipe_nutrition(lunch)
+        dinner_nutrition = planner.recipe_scorer.nutrition_calculator.calculate_recipe_nutrition(dinner)
+        
+        # Breakfast: ~740 kcal, ~57g protein, ~3g fat, ~119g carbs
+        assert 600 <= breakfast_nutrition.calories <= 900, (
+            f"Breakfast calories {breakfast_nutrition.calories:.0f} outside expected range 600-900"
+        )
+        assert breakfast_nutrition.protein_g >= 40, (
+            f"Breakfast protein {breakfast_nutrition.protein_g:.1f}g below expected 40g+"
+        )
+        
+        # Lunch: ~730 kcal, ~33g protein, ~35g fat, ~70g carbs
+        assert 600 <= lunch_nutrition.calories <= 900, (
+            f"Lunch calories {lunch_nutrition.calories:.0f} outside expected range 600-900"
+        )
+        assert lunch_nutrition.fat_g >= 20, (
+            f"Lunch fat {lunch_nutrition.fat_g:.1f}g below expected 20g+ (moderate fat meal)"
+        )
+        
+        # Dinner: ~920 kcal, ~70g protein, ~29g fat, ~96g carbs
+        assert 750 <= dinner_nutrition.calories <= 1100, (
+            f"Dinner calories {dinner_nutrition.calories:.0f} outside expected range 750-1100"
+        )
+        assert dinner_nutrition.protein_g >= 50, (
+            f"Dinner protein {dinner_nutrition.protein_g:.1f}g below expected 50g+ (recovery meal)"
+        )
+        
+        # Daily totals
+        total_calories = (breakfast_nutrition.calories + lunch_nutrition.calories + 
+                         dinner_nutrition.calories)
+        total_protein = (breakfast_nutrition.protein_g + lunch_nutrition.protein_g + 
+                        dinner_nutrition.protein_g)
+        total_fat = breakfast_nutrition.fat_g + lunch_nutrition.fat_g + dinner_nutrition.fat_g
+        total_carbs = breakfast_nutrition.carbs_g + lunch_nutrition.carbs_g + dinner_nutrition.carbs_g
+        
+        # Verify daily totals are reasonable for 2400 kcal target
+        assert 2100 <= total_calories <= 2700, (
+            f"Daily calories {total_calories:.0f} outside reasonable range 2100-2700"
+        )
+        assert 130 <= total_protein <= 180, (
+            f"Daily protein {total_protein:.1f}g outside reasonable range 130-180g"
+        )
+        assert 45 <= total_fat <= 110, (
+            f"Daily fat {total_fat:.1f}g outside reasonable range 45-110g"
+        )
+        assert 250 <= total_carbs <= 350, (
+            f"Daily carbs {total_carbs:.1f}g outside reasonable range 250-350g"
+        )

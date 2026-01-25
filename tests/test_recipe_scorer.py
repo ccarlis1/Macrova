@@ -16,18 +16,19 @@ class TestScoringWeights:
         weights = ScoringWeights()
         total = (weights.nutrition_weight + weights.schedule_weight + 
                 weights.preference_weight + weights.satiety_weight + 
-                weights.micronutrient_weight)
+                weights.micronutrient_weight + weights.balance_weight)
         assert abs(total - 1.0) < 0.001
     
     def test_custom_weights_validation(self):
         """Test custom weights are validated."""
-        # Valid weights
+        # Valid weights (must sum to 1.0 including balance_weight)
         weights = ScoringWeights(
             nutrition_weight=0.5,
-            schedule_weight=0.2,
-            preference_weight=0.2,
+            schedule_weight=0.15,
+            preference_weight=0.15,
             satiety_weight=0.05,
-            micronutrient_weight=0.05
+            micronutrient_weight=0.05,
+            balance_weight=0.10
         )
         assert weights.nutrition_weight == 0.5
         
@@ -38,7 +39,8 @@ class TestScoringWeights:
                 schedule_weight=0.5,
                 preference_weight=0.5,
                 satiety_weight=0.5,
-                micronutrient_weight=0.5
+                micronutrient_weight=0.5,
+                balance_weight=0.5
             )
     
     def test_negative_weights_validation(self):
@@ -210,10 +212,11 @@ class TestRecipeScorer:
         """Test RecipeScorer with custom weights."""
         custom_weights = ScoringWeights(
             nutrition_weight=0.5,
-            schedule_weight=0.2,
-            preference_weight=0.2,
+            schedule_weight=0.15,
+            preference_weight=0.15,
             satiety_weight=0.05,
-            micronutrient_weight=0.05
+            micronutrient_weight=0.05,
+            balance_weight=0.10
         )
         scorer = RecipeScorer(nutrition_calculator, custom_weights)
         assert scorer.weights == custom_weights
@@ -249,6 +252,7 @@ class TestRecipeScorer:
         assert hasattr(scorer, '_score_preference_match')
         assert hasattr(scorer, '_score_satiety_match')
         assert hasattr(scorer, '_score_micronutrient_bonus')
+        assert hasattr(scorer, '_score_balance_match')
         
         # Methods should be callable (even if not implemented yet)
         assert callable(scorer._score_nutrition_match)
@@ -256,6 +260,7 @@ class TestRecipeScorer:
         assert callable(scorer._score_preference_match)
         assert callable(scorer._score_satiety_match)
         assert callable(scorer._score_micronutrient_bonus)
+        assert callable(scorer._score_balance_match)
         assert callable(scorer._contains_allergens)
     
     def test_allergen_exclusion(self, scorer):
@@ -1708,14 +1713,16 @@ class TestCompleteRecipeScoring:
         preference_score = scorer._score_preference_match(sample_recipe, sample_user_profile)
         satiety_score = scorer._score_satiety_match(recipe_nutrition, sample_context)
         micronutrient_score = scorer._score_micronutrient_bonus(recipe_nutrition, sample_context)
+        balance_score = scorer._score_balance_match(recipe_nutrition, sample_user_profile, current_nutrition)
         
-        # Calculate expected weighted score
+        # Calculate expected weighted score (including balance_weight)
         expected_score = (
             nutrition_score * scorer.weights.nutrition_weight +
             schedule_score * scorer.weights.schedule_weight +
             preference_score * scorer.weights.preference_weight +
             satiety_score * scorer.weights.satiety_weight +
-            micronutrient_score * scorer.weights.micronutrient_weight
+            micronutrient_score * scorer.weights.micronutrient_weight +
+            balance_score * scorer.weights.balance_weight
         )
         
         # Get actual score
@@ -1731,13 +1738,14 @@ class TestCompleteRecipeScoring:
     
     def test_score_recipe_custom_weights(self, scorer, sample_recipe, sample_context, sample_user_profile):
         """Test recipe scoring with custom weights."""
-        # Custom weights emphasizing nutrition
+        # Custom weights emphasizing nutrition (must sum to 1.0 including balance_weight)
         custom_weights = ScoringWeights(
-            nutrition_weight=0.6,      # 60% nutrition
+            nutrition_weight=0.5,       # 50% nutrition
             schedule_weight=0.1,        # 10% schedule
-            preference_weight=0.1,     # 10% preference
+            preference_weight=0.1,      # 10% preference
             satiety_weight=0.1,         # 10% satiety
-            micronutrient_weight=0.1    # 10% micronutrient
+            micronutrient_weight=0.1,   # 10% micronutrient
+            balance_weight=0.1          # 10% balance
         )
         
         custom_scorer = RecipeScorer(scorer.nutrition_calculator, custom_weights)

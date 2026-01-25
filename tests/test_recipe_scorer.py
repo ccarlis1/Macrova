@@ -21,7 +21,7 @@ class TestScoringWeights:
     
     def test_custom_weights_validation(self):
         """Test custom weights are validated."""
-        # Valid weights
+        # Valid weights (must sum to 1.0 including balance_weight)
         weights = ScoringWeights(
             nutrition_weight=0.4,
             schedule_weight=0.2,
@@ -1715,7 +1715,7 @@ class TestCompleteRecipeScoring:
         micronutrient_score = scorer._score_micronutrient_bonus(recipe_nutrition, sample_context)
         balance_score = scorer._score_balance_match(recipe_nutrition, sample_user_profile, current_nutrition)
         
-        # Calculate expected weighted score
+        # Calculate expected weighted score (including balance_weight)
         expected_score = (
             nutrition_score * scorer.weights.nutrition_weight +
             schedule_score * scorer.weights.schedule_weight +
@@ -1738,13 +1738,13 @@ class TestCompleteRecipeScoring:
     
     def test_score_recipe_custom_weights(self, scorer, sample_recipe, sample_context, sample_user_profile):
         """Test recipe scoring with custom weights."""
-        # Custom weights emphasizing nutrition
+        # Custom weights emphasizing nutrition (must sum to 1.0 including balance_weight)
         custom_weights = ScoringWeights(
             nutrition_weight=0.5,      # 50% nutrition
             schedule_weight=0.1,        # 10% schedule
-            preference_weight=0.1,     # 10% preference
+            preference_weight=0.1,      # 10% preference
             satiety_weight=0.1,         # 10% satiety
-            micronutrient_weight=0.1,    # 10% micronutrient
+            micronutrient_weight=0.1,   # 10% micronutrient
             balance_weight=0.1          # 10% balance
         )
         

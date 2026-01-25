@@ -28,6 +28,60 @@
       "instructions": ["Cook eggs slowly"]
     },
     {
+      "id": "canonical_breakfast",
+      "name": "Blueberry Protein Cream of Rice Bowl",
+      "ingredients": [
+        {"quantity": 120, "unit": "g", "name": "cream of rice"},
+        {"quantity": 2, "unit": "scoop", "name": "whey protein powder"},
+        {"quantity": 100, "unit": "g", "name": "blueberries"},
+        {"quantity": 300, "unit": "g", "name": "water"}
+      ],
+      "cooking_time_minutes": 5,
+      "instructions": [
+        "Bring water to boil",
+        "Stir in cream of rice and cook for 2-3 minutes",
+        "Remove from heat and mix in whey protein powder",
+        "Top with fresh blueberries"
+      ]
+    },
+    {
+      "id": "canonical_lunch",
+      "name": "Loaded Egg & Potato Skillet",
+      "ingredients": [
+        {"quantity": 4, "unit": "large", "name": "egg"},
+        {"quantity": 400, "unit": "g", "name": "potato"},
+        {"quantity": 15, "unit": "g", "name": "olive oil"},
+        {"quantity": 0, "unit": "to taste", "name": "salt", "is_to_taste": true}
+      ],
+      "cooking_time_minutes": 15,
+      "instructions": [
+        "Dice potatoes into small cubes",
+        "Heat olive oil in skillet over medium heat",
+        "Cook potatoes until golden and crispy (10-12 min)",
+        "Push potatoes to side, scramble eggs in same pan",
+        "Season with salt to taste and combine"
+      ]
+    },
+    {
+      "id": "canonical_dinner",
+      "name": "Teriyaki Salmon Rice Bowl",
+      "ingredients": [
+        {"quantity": 225, "unit": "g", "name": "salmon"},
+        {"quantity": 300, "unit": "g", "name": "white rice"},
+        {"quantity": 100, "unit": "g", "name": "broccoli"},
+        {"quantity": 30, "unit": "g", "name": "teriyaki sauce"},
+        {"quantity": 0, "unit": "to taste", "name": "salt", "is_to_taste": true}
+      ],
+      "cooking_time_minutes": 30,
+      "instructions": [
+        "Cook rice according to package directions",
+        "Steam broccoli until tender-crisp",
+        "Pan-sear salmon with teriyaki sauce until cooked through",
+        "Assemble bowl with rice base, salmon on top, broccoli on side",
+        "Drizzle remaining teriyaki sauce"
+      ]
+    },
+    {
       "id": "test_recipe_4",
       "name": "Simple Banana",
       "ingredients": [

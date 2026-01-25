@@ -32,6 +32,16 @@
       "aliases": ["salmon fillet", "atlantic salmon"]
     },
     {
+      "name": "cream of rice",
+      "per_100g": {
+        "calories": 370,
+        "protein_g": 7.0,
+        "fat_g": 0.5,
+        "carbs_g": 82.0
+      },
+      "aliases": ["cream of rice cereal", "rice cereal"]
+    },
+    {
       "name": "chicken breast",
       "per_100g": {
         "calories": 165,
@@ -49,7 +59,7 @@
         "fat_g": 0.3,
         "carbs_g": 28.0
       },
-      "aliases": ["rice", "jasmine rice", "cooked rice"]
+      "aliases": ["rice", "jasmine rice", "cooked rice", "cooked white rice"]
     },
     {
       "name": "olive oil",
@@ -69,7 +79,7 @@
         "fat_g": 0.4,
         "carbs_g": 7.0
       },
-      "aliases": ["broccoli florets"]
+      "aliases": ["broccoli florets", "steamed broccoli"]
     },
     {
       "name": "almonds",
@@ -110,7 +120,7 @@
         "carbs_g": 3.0
       },
       "scoop_size_g": 30,
-      "aliases": ["protein powder", "whey", "protein"]
+      "aliases": ["protein powder", "whey", "whey protein", "protein"]
     },
     {
       "name": "peanut butter",
@@ -150,7 +160,7 @@
         "fat_g": 0.1,
         "carbs_g": 17.0
       },
-      "aliases": ["potatoes", "russet potato"]
+      "aliases": ["potatoes", "russet potato", "white potato"]
     },
     {
       "name": "cheese",
@@ -200,7 +210,7 @@
         "fat_g": 0.3,
         "carbs_g": 14.5
       },
-      "aliases": ["blueberry"]
+      "aliases": ["blueberry", "fresh blueberries"]
     },
     {
       "name": "quinoa",
@@ -303,6 +313,36 @@
       "aliases": ["strawberry", "fresh strawberries"]
     },
     {
+      "name": "teriyaki sauce",
+      "per_100g": {
+        "calories": 89,
+        "protein_g": 5.9,
+        "fat_g": 0.0,
+        "carbs_g": 16.0
+      },
+      "aliases": ["teriyaki", "teriyaki glaze"]
+    },
+    {
+      "name": "water",
+      "per_100g": {
+        "calories": 0,
+        "protein_g": 0.0,
+        "fat_g": 0.0,
+        "carbs_g": 0.0
+      },
+      "aliases": ["tap water", "filtered water"]
+    },
+    {
+      "name": "mushroom",
+      "per_100g": {
+        "calories": 22,
+        "protein_g": 3.1,
+        "fat_g": 0.3,
+        "carbs_g": 3.3
+      },
+      "aliases": ["mushrooms", "white mushroom", "button mushroom"]
+    },
+    {
       "name": "bread",
       "per_100g": {
         "calories": 247,
@@ -310,7 +350,7 @@
         "fat_g": 4.2,
         "carbs_g": 41.0
       },
-      "aliases": ["whole wheat bread", "whole grain bread"]
+      "aliases": ["whole wheat bread", "whole grain bread", "toast"]
     }
   ]
 }

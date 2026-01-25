@@ -23,14 +23,14 @@ class TestScoringWeights:
         """Test custom weights are validated."""
         # Valid weights (must sum to 1.0 including balance_weight)
         weights = ScoringWeights(
-            nutrition_weight=0.5,
-            schedule_weight=0.15,
-            preference_weight=0.15,
+            nutrition_weight=0.4,
+            schedule_weight=0.2,
+            preference_weight=0.2,
             satiety_weight=0.05,
             micronutrient_weight=0.05,
-            balance_weight=0.10
+            balance_weight=0.1
         )
-        assert weights.nutrition_weight == 0.5
+        assert weights.nutrition_weight == 0.4
         
         # Invalid weights (don't sum to 1.0)
         with pytest.raises(ValueError, match="must sum to 1.0"):
@@ -51,7 +51,8 @@ class TestScoringWeights:
                 schedule_weight=0.5,
                 preference_weight=0.3,
                 satiety_weight=0.2,
-                micronutrient_weight=0.1
+                micronutrient_weight=0.1,
+                balance_weight=0.0
             )
 
 
@@ -211,12 +212,12 @@ class TestRecipeScorer:
     def test_scorer_with_custom_weights(self, nutrition_calculator):
         """Test RecipeScorer with custom weights."""
         custom_weights = ScoringWeights(
-            nutrition_weight=0.5,
-            schedule_weight=0.15,
-            preference_weight=0.15,
+            nutrition_weight=0.4,
+            schedule_weight=0.2,
+            preference_weight=0.2,
             satiety_weight=0.05,
             micronutrient_weight=0.05,
-            balance_weight=0.10
+            balance_weight=0.1
         )
         scorer = RecipeScorer(nutrition_calculator, custom_weights)
         assert scorer.weights == custom_weights
@@ -229,7 +230,6 @@ class TestRecipeScorer:
         )
         
         # Method should exist and be callable
-        # Note: Will fail until implementation is complete due to None * float
         try:
             result = scorer.score_recipe(
                 sample_recipe, 
@@ -1651,7 +1651,7 @@ class TestCompleteRecipeScoring:
             daily_fat_g=(50.0, 100.0),
             daily_carbs_g=300.0,
             schedule={},
-            liked_foods=["egg"],
+            liked_foods=["egg", "salmon"],
             disliked_foods=["mushroom"],
             allergies=["peanut"]
         )
@@ -1740,7 +1740,7 @@ class TestCompleteRecipeScoring:
         """Test recipe scoring with custom weights."""
         # Custom weights emphasizing nutrition (must sum to 1.0 including balance_weight)
         custom_weights = ScoringWeights(
-            nutrition_weight=0.5,       # 50% nutrition
+            nutrition_weight=0.5,      # 50% nutrition
             schedule_weight=0.1,        # 10% schedule
             preference_weight=0.1,      # 10% preference
             satiety_weight=0.1,         # 10% satiety
@@ -1836,6 +1836,7 @@ class TestCompleteRecipeScoring:
         )
         
         # Should score high (all criteria met)
+        print(f"Perfect recipe score: {score}")
         assert score >= 70.0
     
     def test_score_recipe_poor_match(self, scorer, sample_user_profile):

@@ -31,9 +31,17 @@ def create_daily_schedule(user_profile) -> DailySchedule:
     """
     schedule = user_profile.schedule
     
-    # Find meal times (expecting breakfast, lunch, dinner)
-    # Schedule format: {"07:00": 2, "12:00": 3, "18:00": 3}
-    meal_times = sorted(schedule.keys())
+    # Separate workout time (busyness level 0) from meal times
+    workout_time = None
+    meal_times = []
+    for time_str, busyness in schedule.items():
+        if busyness == 0:
+            workout_time = time_str
+        else:
+            meal_times.append(time_str)
+    
+    # Sort meal times chronologically
+    meal_times = sorted(meal_times)
     
     if len(meal_times) < 3:
         raise ValueError(f"Schedule must have at least 3 meal times, found {len(meal_times)}")
@@ -42,13 +50,6 @@ def create_daily_schedule(user_profile) -> DailySchedule:
     breakfast_time = meal_times[0]
     lunch_time = meal_times[1]
     dinner_time = meal_times[2]
-    
-    # Check for workout time (any time after lunch, before dinner, or after dinner)
-    workout_time = None
-    for time_str in meal_times[3:] if len(meal_times) > 3 else []:
-        # If there's a 4th time, assume it's workout time
-        workout_time = time_str
-        break
     
     return DailySchedule(
         breakfast_time=breakfast_time,

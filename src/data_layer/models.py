@@ -96,6 +96,9 @@ class UserProfile:
     disliked_foods: List[str]  # Foods to avoid
     allergies: List[str]  # Allergens to avoid
 
+    # Calorie Deficit Mode (optional hard constraint)
+    max_daily_calories: Optional[int] = None  # Hard cap on daily calories
+
     # Future (post-MVP)
     # meal_prep_meals: List[Meal]
     # weekly_targets: Dict[str, float]

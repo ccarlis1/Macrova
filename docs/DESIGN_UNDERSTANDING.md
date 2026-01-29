@@ -5,10 +5,13 @@
 
 ## Key Design Principles from KNOWLEDGE.md
 
-### 1. Calories (Line 6)
+### 1. Calories (Line 6-7)
 - Maintenance calories: ~2800 (user-specific)
 - Target for deficit: 2400 calories/day for 6 out of 7 days
 - Weekly cheat meal accommodation: eat less on non-cheat days
+- **Calorie Deficit Mode** (Line 7): Optional hard cap via `max_daily_calories`
+  - When set, meal plans exceeding this limit are rejected (score = 0.0)
+  - This is a HARD constraint, not a soft preference
 
 ### 2. Macronutrients (Lines 8-10)
 - **Protein**: 0.6-0.9g per pound bodyweight daily, weekly average 0.7-0.8g/lb
@@ -113,6 +116,7 @@ The following documents have been updated to reflect the "to taste" handling:
 ## Design Consistency
 
 All design decisions align with KNOWLEDGE.md:
+- ✅ Calorie Deficit Mode (hard cap) - Line 7 ⭐ **NEW**
 - ✅ Weekly nutrient tracking (running totals) - Line 12
 - ✅ Daily flexibility with weekly requirements - Line 12
 - ✅ Busyness scale (1-4) - Line 15

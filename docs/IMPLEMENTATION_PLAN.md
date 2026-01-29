@@ -76,6 +76,7 @@
   - Macros match target ranges
   - Cooking time matches schedule constraint
   - Basic preference matching
+  - **Calorie Deficit Mode**: Hard constraint on max_daily_calories (score = 0.0 if exceeded)
 - [x] Write unit tests
 
 ### Step 3.2: Meal Planning
@@ -98,9 +99,10 @@
 - [ ] Test full workflow with sample data
 
 ### Step 4.2: User Profile
-- [ ] Implement user profile loader from YAML
-- [ ] Support basic preferences (likes/dislikes)
-- [ ] Support schedule constraints (busyness scale)
+- [x] Implement user profile loader from YAML
+- [x] Support basic preferences (likes/dislikes)
+- [x] Support schedule constraints (busyness scale)
+- [x] Support optional `max_daily_calories` (Calorie Deficit Mode)
 
 ### Step 4.3: Documentation & Examples
 - [ ] Write usage examples
@@ -198,6 +200,7 @@ mypy>=1.0            # Type checking
 - ✅ Can run locally without external API calls
 - ✅ **Foundation Priority**: Accurate nutrition calculations above all else
 - ✅ Modular architecture supports future LLM integration
+- ✅ **Calorie Deficit Mode**: Optional hard cap on daily calories (hard constraint)
 
 ## Success Criteria for End Game
 

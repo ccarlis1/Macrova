@@ -17,6 +17,7 @@ The Nutrition Agent is a modular system that generates personalized meal recomme
 - **Recipe Database**: Recipe collection with ingredients, instructions, cooking times
 - **Nutrition Database**: Comprehensive nutrition values (macros + micros) per ingredient/recipe
 - **User Profile**: Personal preferences, goals, constraints, meal prep plans
+  - Includes optional `max_daily_calories` for Calorie Deficit Mode (hard constraint)
 
 ### 2. Ingestion Layer
 **Purpose**: Parse and retrieve data from various sources
@@ -37,8 +38,9 @@ The Nutrition Agent is a modular system that generates personalized meal recomme
 **Purpose**: Evaluate and rank recipes using rule-based scoring (MVP: no LLM)
 
 - **Recipe Scorer**: Score recipes based on nutrition goals, schedule, preferences (rule-based for MVP)
+  - Enforces hard constraints (allergens, max_daily_calories) with 0.0 score exclusion
 - **LLM Reasoner**: Use LLM to understand context and make nuanced decisions (Phase 5.1: post-MVP)
-- **Constraint Checker**: Validate recipes against cooking time, satiety, taste preferences
+- **Constraint Checker**: Validate recipes against cooking time, satiety, taste preferences, calorie limits
 
 ### 5. Planning Layer
 **Purpose**: Generate meal plans considering all constraints

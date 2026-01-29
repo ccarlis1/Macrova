@@ -399,7 +399,8 @@ class MealPlanner:
         
     def _validate_daily_plan(self, 
                             meals: List[Meal],
-                            goals: NutritionGoals) -> Tuple[bool, Dict[str, float], List[str]]:
+                            goals: NutritionGoals,
+                            user_profile: Optional[UserProfile] = None) -> Tuple[bool, Dict[str, float], List[str]]:
         """Validate if daily plan meets nutrition targets within tolerance.
         
         Based on IMPLEMENTATION_PLAN.md: ±10% tolerance for MVP.
@@ -409,9 +410,13 @@ class MealPlanner:
         - Fat: 50-100g daily range (weekly median ~75g)
         - Carbs: Remainder after protein/fat
         
+        HARD CONSTRAINT: If max_daily_calories is set in user_profile and exceeded,
+        validation fails with a specific warning.
+        
         Args:
             meals: List of planned meals
             goals: Daily nutrition goals
+            user_profile: Optional user profile for hard constraints (e.g., max_daily_calories)
             
         Returns:
             Tuple of (success: bool, adherence: Dict[str, float], warnings: List[str])
@@ -428,6 +433,16 @@ class MealPlanner:
         # Calculate adherence percentages
         adherence = {}
         warnings = []
+        hard_limit_exceeded = False
+        
+        # HARD CONSTRAINT: Check max_daily_calories (Calorie Deficit Mode)
+        if user_profile is not None and user_profile.max_daily_calories is not None:
+            if total_nutrition.calories > user_profile.max_daily_calories:
+                hard_limit_exceeded = True
+                warnings.append(
+                    f"HARD LIMIT EXCEEDED: {total_nutrition.calories:.0f} kcal > "
+                    f"{user_profile.max_daily_calories} kcal max"
+                )
         
         # Calories adherence (10% tolerance per IMPLEMENTATION_PLAN.md)
         calories_adherence = (total_nutrition.calories / goals.calories * 100.0) if goals.calories > 0 else 0.0
@@ -472,7 +487,9 @@ class MealPlanner:
         
         # Determine success (within 10% tolerance for calories/protein/carbs, within range for fat)
         # IMPLEMENTATION_PLAN.md: "Meals meet calorie and macro targets (within 10% tolerance)"
+        # Also fail if hard limit exceeded
         success = (
+            not hard_limit_exceeded and
             90.0 <= calories_adherence <= 110.0 and
             90.0 <= protein_adherence <= 110.0 and
             goals.fat_g_min <= total_nutrition.fat_g <= goals.fat_g_max and

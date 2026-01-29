@@ -300,3 +300,57 @@ class TestUserProfileLoader:
         finally:
             Path(temp_path).unlink()
 
+    def test_load_profile_with_max_daily_calories(self):
+        """Test loading user profile with max_daily_calories (Calorie Deficit Mode)."""
+        profile_data = {
+            "nutrition_goals": {
+                "daily_calories": 2400,
+                "daily_protein_g": 150,
+                "daily_fat_g": {"min": 50, "max": 100},
+                "max_daily_calories": 2200,  # Hard cap for deficit mode
+            },
+            "schedule": {"07:00": 2, "12:00": 3, "18:00": 3},
+            "preferences": {
+                "liked_foods": [],
+                "disliked_foods": [],
+                "allergies": [],
+            },
+        }
+        with NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+            yaml.dump(profile_data, f)
+            temp_path = f.name
+
+        try:
+            loader = UserProfileLoader(temp_path)
+            profile = loader.load()
+            assert profile.max_daily_calories == 2200
+        finally:
+            Path(temp_path).unlink()
+
+    def test_load_profile_without_max_daily_calories(self):
+        """Test loading user profile without max_daily_calories (feature disabled)."""
+        profile_data = {
+            "nutrition_goals": {
+                "daily_calories": 2400,
+                "daily_protein_g": 150,
+                "daily_fat_g": {"min": 50, "max": 100},
+                # max_daily_calories NOT specified
+            },
+            "schedule": {"07:00": 2, "12:00": 3, "18:00": 3},
+            "preferences": {
+                "liked_foods": [],
+                "disliked_foods": [],
+                "allergies": [],
+            },
+        }
+        with NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+            yaml.dump(profile_data, f)
+            temp_path = f.name
+
+        try:
+            loader = UserProfileLoader(temp_path)
+            profile = loader.load()
+            assert profile.max_daily_calories is None
+        finally:
+            Path(temp_path).unlink()
+

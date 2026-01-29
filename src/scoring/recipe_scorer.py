@@ -99,6 +99,11 @@ class RecipeScorer:
         micronutrient_score = self._score_micronutrient_bonus(recipe_nutrition, context)
         balance_score = self._score_balance_match(recipe_nutrition, user_profile, current_daily_nutrition)
         
+        # Hard exclusion for balance score of 0.0 (Calorie Deficit Mode)
+        # When max_daily_calories is exceeded, balance_score returns 0.0 as hard exclusion
+        if balance_score == 0.0 and user_profile.max_daily_calories is not None:
+            return 0.0
+        
         # Weighted combination
         total_score = (
             nutrition_score * self.weights.nutrition_weight +
@@ -702,13 +707,22 @@ class RecipeScorer:
                            current_daily_nutrition: NutritionProfile) -> float:
         """Score how well recipe fits into remaining daily budget (0-100).
            Prioritize not exceeding daily limits.
+           
+        HARD CONSTRAINT: If max_daily_calories is set and would be exceeded,
+        returns 0.0 immediately (hard exclusion like allergens).
         """
+        # HARD CONSTRAINT: Calorie Deficit Mode
+        # If max_daily_calories is set, exceeding it returns 0.0 (hard exclusion)
+        proj_cals = current_daily_nutrition.calories + recipe_nutrition.calories
+        if user_profile.max_daily_calories is not None:
+            if proj_cals > user_profile.max_daily_calories:
+                return 0.0  # Hard exclusion
+        
         score = 100.0
         
-        # Check Calories
-        proj_cals = current_daily_nutrition.calories + recipe_nutrition.calories
+        # Soft penalty: Check Calories against daily target (not hard cap)
         daily_cals = user_profile.daily_calories
-        if daily_cals > 0 and proj_cals > daily_cals * 1.1: # 10% tolerance
+        if daily_cals > 0 and proj_cals > daily_cals * 1.1:  # 10% tolerance
              # Penalize
              overage = (proj_cals - daily_cals) / daily_cals
              # Linear penalty

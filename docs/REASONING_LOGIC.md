@@ -16,6 +16,7 @@ LOAD user_profile:
     - Satiety requirements (long overnight fast, frequent meals, etc.)
     - Taste preferences (liked foods, disliked foods, allergies)
     - Activity schedule (work times, workout times, etc.)
+    - OPTIONAL: max_daily_calories (hard cap for Calorie Deficit Mode)
 
 LOAD weekly_tracker:
     - Running totals of all nutrients consumed so far this week
@@ -148,11 +149,16 @@ FOR each meal_slot in day (breakfast, lunch, snack, dinner, etc.):
             
             // Balance (10 points)
             - balance_score = score_balance(recipe, daily_tracker):
+                * HARD CONSTRAINT: If max_daily_calories is set and would be exceeded → score = 0.0
                 * Complements other meals (doesn't duplicate nutrients excessively)
                 * Avoids nutrient overlap where not needed
                 * Fat diversity (doesn't rely on same fat sources)
 
-    SELECT best_recipe = candidate with highest total_score
+    // HARD EXCLUSION CHECK
+    IF balance_score == 0.0 AND max_daily_calories is set:
+        EXCLUDE recipe (hard constraint violated)
+
+    SELECT best_recipe = candidate with highest total_score (excluding hard failures)
 
     // STEP 5: CALCULATE NUTRITION FOR SELECTED RECIPE
     CALCULATE recipe_nutrition:

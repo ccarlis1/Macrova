@@ -1262,6 +1262,176 @@ class TestValidateDailyPlan:
         assert abs(adherence["fat"] - 100.0) < 0.1
 
 
+class TestCalorieDeficitModeValidation:
+    """Tests for Calorie Deficit Mode validation in meal planning."""
+    
+    @pytest.fixture
+    def planner(self):
+        """Create a MealPlanner instance."""
+        nutrition_db = NutritionDB("tests/fixtures/test_ingredients.json")
+        nutrition_calculator = NutritionCalculator(nutrition_db)
+        nutrition_aggregator = NutritionAggregator()
+        recipe_scorer = RecipeScorer(nutrition_calculator)
+        recipe_db = RecipeDB("tests/fixtures/test_recipes.json")
+        recipe_retriever = RecipeRetriever(recipe_db)
+        
+        return MealPlanner(recipe_scorer, recipe_retriever, nutrition_aggregator)
+    
+    @pytest.fixture
+    def sample_goals(self):
+        """Create sample nutrition goals."""
+        return NutritionGoals(
+            calories=2400,
+            protein_g=150.0,
+            fat_g_min=50.0,
+            fat_g_max=100.0,
+            carbs_g=300.0
+        )
+    
+    def test_validate_warns_on_max_daily_calories_exceeded(self, planner, sample_goals):
+        """Test that validation warns when max_daily_calories is exceeded."""
+        from src.data_layer.models import Meal, Recipe
+        
+        # User profile with hard calorie cap
+        user_profile = UserProfile(
+            daily_calories=2400,
+            daily_protein_g=150.0,
+            daily_fat_g=(50.0, 100.0),
+            daily_carbs_g=300.0,
+            schedule={},
+            liked_foods=[],
+            disliked_foods=[],
+            allergies=[],
+            max_daily_calories=2000  # Hard cap
+        )
+        
+        # Meals totaling 2400 kcal (exceeds 2000 hard cap)
+        meals = [
+            Meal(
+                recipe=Recipe(id="m1", name="Meal 1", ingredients=[], cooking_time_minutes=10, instructions=[]),
+                nutrition=NutritionProfile(calories=800.0, protein_g=50.0, fat_g=25.0, carbs_g=100.0),
+                meal_type="breakfast",
+                scheduled_time=None,
+                busyness_level=2
+            ),
+            Meal(
+                recipe=Recipe(id="m2", name="Meal 2", ingredients=[], cooking_time_minutes=15, instructions=[]),
+                nutrition=NutritionProfile(calories=800.0, protein_g=50.0, fat_g=25.0, carbs_g=100.0),
+                meal_type="lunch",
+                scheduled_time=None,
+                busyness_level=2
+            ),
+            Meal(
+                recipe=Recipe(id="m3", name="Meal 3", ingredients=[], cooking_time_minutes=20, instructions=[]),
+                nutrition=NutritionProfile(calories=800.0, protein_g=50.0, fat_g=25.0, carbs_g=100.0),
+                meal_type="dinner",
+                scheduled_time=None,
+                busyness_level=3
+            )
+        ]
+        
+        success, adherence, warnings = planner._validate_daily_plan(meals, sample_goals, user_profile)
+        
+        # Should fail due to hard cap violation
+        assert success is False
+        assert any("HARD LIMIT" in w or "max" in w.lower() for w in warnings)
+    
+    def test_validate_passes_when_within_max_daily_calories(self, planner, sample_goals):
+        """Test that validation passes when within max_daily_calories."""
+        from src.data_layer.models import Meal, Recipe
+        
+        # User profile with hard calorie cap
+        user_profile = UserProfile(
+            daily_calories=2400,
+            daily_protein_g=150.0,
+            daily_fat_g=(50.0, 100.0),
+            daily_carbs_g=300.0,
+            schedule={},
+            liked_foods=[],
+            disliked_foods=[],
+            allergies=[],
+            max_daily_calories=2500  # Hard cap above total
+        )
+        
+        # Meals totaling 2400 kcal (within 2500 hard cap)
+        meals = [
+            Meal(
+                recipe=Recipe(id="m1", name="Meal 1", ingredients=[], cooking_time_minutes=10, instructions=[]),
+                nutrition=NutritionProfile(calories=800.0, protein_g=50.0, fat_g=25.0, carbs_g=100.0),
+                meal_type="breakfast",
+                scheduled_time=None,
+                busyness_level=2
+            ),
+            Meal(
+                recipe=Recipe(id="m2", name="Meal 2", ingredients=[], cooking_time_minutes=15, instructions=[]),
+                nutrition=NutritionProfile(calories=800.0, protein_g=50.0, fat_g=25.0, carbs_g=100.0),
+                meal_type="lunch",
+                scheduled_time=None,
+                busyness_level=2
+            ),
+            Meal(
+                recipe=Recipe(id="m3", name="Meal 3", ingredients=[], cooking_time_minutes=20, instructions=[]),
+                nutrition=NutritionProfile(calories=800.0, protein_g=50.0, fat_g=25.0, carbs_g=100.0),
+                meal_type="dinner",
+                scheduled_time=None,
+                busyness_level=3
+            )
+        ]
+        
+        success, adherence, warnings = planner._validate_daily_plan(meals, sample_goals, user_profile)
+        
+        # Should pass (within hard cap and all targets met)
+        assert success is True
+        assert not any("HARD LIMIT" in w for w in warnings)
+    
+    def test_validate_ignores_max_when_not_set(self, planner, sample_goals):
+        """Test that validation ignores max_daily_calories when not set."""
+        from src.data_layer.models import Meal, Recipe
+        
+        # User profile WITHOUT hard calorie cap
+        user_profile = UserProfile(
+            daily_calories=2400,
+            daily_protein_g=150.0,
+            daily_fat_g=(50.0, 100.0),
+            daily_carbs_g=300.0,
+            schedule={},
+            liked_foods=[],
+            disliked_foods=[],
+            allergies=[],
+            max_daily_calories=None  # Feature disabled
+        )
+        
+        # Meals totaling 2400 kcal (matches target perfectly)
+        meals = [
+            Meal(
+                recipe=Recipe(id="m1", name="Meal 1", ingredients=[], cooking_time_minutes=10, instructions=[]),
+                nutrition=NutritionProfile(calories=800.0, protein_g=50.0, fat_g=25.0, carbs_g=100.0),
+                meal_type="breakfast",
+                scheduled_time=None,
+                busyness_level=2
+            ),
+            Meal(
+                recipe=Recipe(id="m2", name="Meal 2", ingredients=[], cooking_time_minutes=15, instructions=[]),
+                nutrition=NutritionProfile(calories=800.0, protein_g=50.0, fat_g=25.0, carbs_g=100.0),
+                meal_type="lunch",
+                scheduled_time=None,
+                busyness_level=2
+            ),
+            Meal(
+                recipe=Recipe(id="m3", name="Meal 3", ingredients=[], cooking_time_minutes=20, instructions=[]),
+                nutrition=NutritionProfile(calories=800.0, protein_g=50.0, fat_g=25.0, carbs_g=100.0),
+                meal_type="dinner",
+                scheduled_time=None,
+                busyness_level=3
+            )
+        ]
+        
+        success, adherence, warnings = planner._validate_daily_plan(meals, sample_goals, user_profile)
+        
+        # Should pass (no hard cap, meets all targets)
+        assert success is True
+
+
 class TestCanonicalProgressiveDayMealPlan:
     """Test canonical day-of-meals scenario for diagnostic validation.
     

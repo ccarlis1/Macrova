@@ -1879,3 +1879,183 @@ class TestCompleteRecipeScoring:
         
         # Should score low (multiple criteria not met)
         assert score < 50.0
+
+
+class TestCalorieDeficitMode:
+    """Tests for Calorie Deficit Mode (hard calorie cap constraint)."""
+    
+    @pytest.fixture
+    def scorer(self):
+        """Create a RecipeScorer instance."""
+        nutrition_db = NutritionDB("tests/fixtures/test_ingredients.json")
+        nutrition_calculator = NutritionCalculator(nutrition_db)
+        return RecipeScorer(nutrition_calculator)
+    
+    @pytest.fixture
+    def sample_recipe(self):
+        """Create a sample recipe with known calories (~216 kcal from 3 eggs)."""
+        return Recipe(
+            id="test_recipe",
+            name="Test Recipe",
+            ingredients=[
+                Ingredient(name="egg", quantity=3.0, unit="large", is_to_taste=False)
+            ],
+            cooking_time_minutes=10,
+            instructions=["Cook eggs"]
+        )
+    
+    @pytest.fixture
+    def high_calorie_recipe(self):
+        """Create a high-calorie recipe (~720 kcal from 10 eggs)."""
+        return Recipe(
+            id="high_cal_recipe",
+            name="High Calorie Recipe",
+            ingredients=[
+                Ingredient(name="egg", quantity=10.0, unit="large", is_to_taste=False)
+            ],
+            cooking_time_minutes=15,
+            instructions=["Cook eggs"]
+        )
+    
+    @pytest.fixture
+    def sample_context(self):
+        """Create a sample meal context."""
+        return MealContext(
+            meal_type="dinner",
+            time_slot="evening",
+            cooking_time_max=30,
+            target_calories=500.0,
+            target_protein=30.0,
+            target_fat_min=10.0,
+            target_fat_max=25.0,
+            target_carbs=50.0,
+            satiety_requirement="high",
+            carb_timing_preference="slow_digesting",
+            priority_micronutrients=[]
+        )
+    
+    def test_balance_score_zero_when_exceeds_max_daily_calories(self, scorer, high_calorie_recipe, sample_context):
+        """Test that balance score is 0.0 when recipe would exceed max_daily_calories."""
+        # User with hard calorie cap
+        user_profile = UserProfile(
+            daily_calories=2400,
+            daily_protein_g=150.0,
+            daily_fat_g=(50.0, 100.0),
+            daily_carbs_g=300.0,
+            schedule={},
+            liked_foods=["egg"],
+            disliked_foods=[],
+            allergies=[],
+            max_daily_calories=2000  # Hard cap
+        )
+        
+        # Already consumed 1800 kcal, recipe adds ~720 kcal → projected 2520 > 2000
+        current_nutrition = NutritionProfile(
+            calories=1800.0, protein_g=100.0, fat_g=60.0, carbs_g=200.0
+        )
+        
+        score = scorer.score_recipe(
+            high_calorie_recipe,
+            sample_context,
+            user_profile,
+            current_nutrition
+        )
+        
+        # Should be 0.0 due to hard constraint violation
+        assert score == 0.0
+    
+    def test_balance_score_nonzero_when_within_max_daily_calories(self, scorer, sample_recipe, sample_context):
+        """Test that balance score is > 0.0 when recipe stays within max_daily_calories."""
+        # User with hard calorie cap
+        user_profile = UserProfile(
+            daily_calories=2400,
+            daily_protein_g=150.0,
+            daily_fat_g=(50.0, 100.0),
+            daily_carbs_g=300.0,
+            schedule={},
+            liked_foods=["egg"],
+            disliked_foods=[],
+            allergies=[],
+            max_daily_calories=2000  # Hard cap
+        )
+        
+        # Already consumed 1500 kcal, recipe adds ~216 kcal → projected 1716 < 2000
+        current_nutrition = NutritionProfile(
+            calories=1500.0, protein_g=80.0, fat_g=50.0, carbs_g=150.0
+        )
+        
+        score = scorer.score_recipe(
+            sample_recipe,
+            sample_context,
+            user_profile,
+            current_nutrition
+        )
+        
+        # Should be > 0.0 since within hard cap
+        assert score > 0.0
+    
+    def test_balance_score_ignores_max_when_not_set(self, scorer, high_calorie_recipe, sample_context):
+        """Test that when max_daily_calories is None, behavior is unchanged (soft penalty only)."""
+        # User WITHOUT hard calorie cap
+        user_profile = UserProfile(
+            daily_calories=2400,
+            daily_protein_g=150.0,
+            daily_fat_g=(50.0, 100.0),
+            daily_carbs_g=300.0,
+            schedule={},
+            liked_foods=["egg"],
+            disliked_foods=[],
+            allergies=[],
+            max_daily_calories=None  # Feature disabled
+        )
+        
+        # Already consumed 1800 kcal, recipe adds ~720 kcal → projected 2520 > 2400 target
+        current_nutrition = NutritionProfile(
+            calories=1800.0, protein_g=100.0, fat_g=60.0, carbs_g=200.0
+        )
+        
+        score = scorer.score_recipe(
+            high_calorie_recipe,
+            sample_context,
+            user_profile,
+            current_nutrition
+        )
+        
+        # Should be > 0.0 (soft penalty, not hard exclusion)
+        assert score > 0.0
+    
+    def test_max_daily_calories_exact_boundary(self, scorer, sample_recipe, sample_context):
+        """Test that recipe is allowed when projected calories exactly equal max."""
+        # Recipe has ~216 kcal from 3 eggs
+        recipe_nutrition = scorer.nutrition_calculator.calculate_recipe_nutrition(sample_recipe)
+        recipe_calories = recipe_nutrition.calories
+        
+        # Set max so that current + recipe = exactly max
+        max_cal = 2000
+        current_cal = max_cal - recipe_calories
+        
+        user_profile = UserProfile(
+            daily_calories=2400,
+            daily_protein_g=150.0,
+            daily_fat_g=(50.0, 100.0),
+            daily_carbs_g=300.0,
+            schedule={},
+            liked_foods=["egg"],
+            disliked_foods=[],
+            allergies=[],
+            max_daily_calories=max_cal
+        )
+        
+        current_nutrition = NutritionProfile(
+            calories=current_cal, protein_g=80.0, fat_g=50.0, carbs_g=150.0
+        )
+        
+        score = scorer.score_recipe(
+            sample_recipe,
+            sample_context,
+            user_profile,
+            current_nutrition
+        )
+        
+        # Exactly at boundary should be allowed (score > 0.0)
+        assert score > 0.0

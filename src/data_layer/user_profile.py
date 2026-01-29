@@ -54,6 +54,11 @@ class UserProfileLoader:
         disliked_foods = [str(food) for food in preferences.get("disliked_foods", [])]
         allergies = [str(allergen) for allergen in preferences.get("allergies", [])]
 
+        # Extract optional max_daily_calories (Calorie Deficit Mode)
+        max_daily_calories = nutrition_goals.get("max_daily_calories")
+        if max_daily_calories is not None:
+            max_daily_calories = int(max_daily_calories)
+
         return UserProfile(
             daily_calories=daily_calories,
             daily_protein_g=daily_protein_g,
@@ -63,5 +68,6 @@ class UserProfileLoader:
             liked_foods=liked_foods,
             disliked_foods=disliked_foods,
             allergies=allergies,
+            max_daily_calories=max_daily_calories,
         )
 

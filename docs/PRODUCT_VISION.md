@@ -37,6 +37,7 @@ The system will leverage LLMs' ability to read user input accurately and apply i
 - **Dietary Patterns**: Support Mediterranean, Asian, American, etc. cuisine preferences
 - **Ingredient Preferences**: "I really like salmon. I want to eat salmon every day"
 - **Regional Constraints**: "Only use ingredients relatively common in an American grocery store"
+- **Calorie Deficit Mode**: Hard cap on daily calories for strict deficit adherence (implemented)
 
 ### 4. Specialized Agent Training
 

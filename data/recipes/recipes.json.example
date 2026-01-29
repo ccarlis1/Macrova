@@ -2,64 +2,273 @@
   "recipes": [
     {
       "id": "recipe_001",
-      "name": "Preworkout Meal",
+      "name": "Carb Heavy",
       "ingredients": [
-        {"quantity": 200, "unit": "g", "name": "cream of rice"},
-        {"quantity": 1, "unit": "scoop", "name": "whey protein powder"},
-        {"quantity": 1, "unit": "tsp", "name": "almond butter"},
-        {"quantity": 50, "unit": "g", "name": "blueberries"}
+        {
+          "quantity": 494.9,
+          "unit": "g",
+          "name": "carb_heavy"
+        }
       ],
-      "cooking_time_minutes": 5,
+      "cooking_time_minutes": 15,
       "instructions": [
-        "Cook cream of rice according to package directions",
-        "Mix in protein powder while still warm",
-        "Top with almond butter and blueberries"
+        "Prepare Carb Heavy according to recipe"
       ]
     },
     {
       "id": "recipe_002",
-      "name": "Mexican-Style Breakfast Scramble",
+      "name": "Spaghetti Squash",
       "ingredients": [
-        {"quantity": 5, "unit": "large", "name": "eggs"},
-        {"quantity": 175, "unit": "g", "name": "potatoes"},
-        {"quantity": 50, "unit": "g", "name": "red peppers"},
-        {"quantity": 40, "unit": "g", "name": "raw spinach"},
-        {"quantity": 1, "unit": "oz", "name": "sharp cheddar cheese"},
-        {"quantity": 3, "unit": "oz", "name": "lean turkey sausage"},
-        {"quantity": 50, "unit": "g", "name": "pinto beans"},
-        {"quantity": 2, "unit": "tsp", "name": "olive oil"},
-        {"quantity": 1, "unit": "to taste", "name": "salsa"},
-        {"quantity": 1, "unit": "to taste", "name": "green onion"}
+        {
+          "quantity": 876.7,
+          "unit": "g",
+          "name": "spaghetti_squash"
+        }
       ],
-      "cooking_time_minutes": 25,
+      "cooking_time_minutes": 15,
       "instructions": [
-        "Dice potatoes and cook in olive oil until golden brown",
-        "Add diced red peppers and cook for 2 minutes",
-        "Add turkey sausage and cook until browned",
-        "Add spinach and cook until wilted",
-        "Scramble eggs in a separate pan",
-        "Combine all ingredients, add cheese",
-        "Top with salsa and green onion"
+        "Prepare Spaghetti Squash according to recipe"
       ]
     },
     {
       "id": "recipe_003",
-      "name": "Hot Honey Salmon with Rice",
+      "name": "Poke Bowl, Tuna",
       "ingredients": [
-        {"quantity": 4, "unit": "oz", "name": "salmon"},
-        {"quantity": 1, "unit": "cup", "name": "jasmine rice"},
-        {"quantity": 1, "unit": "tbsp", "name": "honey"},
-        {"quantity": 1, "unit": "tsp", "name": "chili crisp"}
+        {
+          "quantity": 655.9,
+          "unit": "g",
+          "name": "poke_bowl_tuna"
+        }
       ],
-      "cooking_time_minutes": 20,
+      "cooking_time_minutes": 15,
       "instructions": [
-        "Cook jasmine rice according to package directions",
-        "Season salmon with salt and pepper",
-        "Cook salmon skin-side down for 4-5 minutes, flip and cook 2-3 minutes",
-        "Mix honey and chili crisp, brush on salmon",
-        "Serve salmon over rice"
+        "Prepare Poke Bowl, Tuna according to recipe"
+      ]
+    },
+    {
+      "id": "recipe_004",
+      "name": "Bolognese",
+      "ingredients": [
+        {
+          "quantity": 622.2,
+          "unit": "g",
+          "name": "bolognese"
+        }
+      ],
+      "cooking_time_minutes": 15,
+      "instructions": [
+        "Prepare Bolognese according to recipe"
+      ]
+    },
+    {
+      "id": "recipe_005",
+      "name": "Fried Rice",
+      "ingredients": [
+        {
+          "quantity": 722.3,
+          "unit": "g",
+          "name": "fried_rice"
+        }
+      ],
+      "cooking_time_minutes": 15,
+      "instructions": [
+        "Prepare Fried Rice according to recipe"
+      ]
+    },
+    {
+      "id": "recipe_006",
+      "name": "Mexican Egg Skillet",
+      "ingredients": [
+        {
+          "quantity": 869.2,
+          "unit": "g",
+          "name": "mexican_egg_skillet"
+        }
+      ],
+      "cooking_time_minutes": 15,
+      "instructions": [
+        "Prepare Mexican Egg Skillet according to recipe"
+      ]
+    },
+    {
+      "id": "recipe_007",
+      "name": "Canned Salmon Wrap",
+      "ingredients": [
+        {
+          "quantity": 325.0,
+          "unit": "g",
+          "name": "canned_salmon_wrap"
+        }
+      ],
+      "cooking_time_minutes": 15,
+      "instructions": [
+        "Prepare Canned Salmon Wrap according to recipe"
+      ]
+    },
+    {
+      "id": "recipe_008",
+      "name": "Shakshuka",
+      "ingredients": [
+        {
+          "quantity": 1049.5,
+          "unit": "g",
+          "name": "shakshuka"
+        }
+      ],
+      "cooking_time_minutes": 15,
+      "instructions": [
+        "Prepare Shakshuka according to recipe"
+      ]
+    },
+    {
+      "id": "recipe_009",
+      "name": "Greek Yogurt Protein Bowl",
+      "ingredients": [
+        {
+          "quantity": 410.8,
+          "unit": "g",
+          "name": "greek_yogurt_protein_bowl"
+        }
+      ],
+      "cooking_time_minutes": 15,
+      "instructions": [
+        "Prepare Greek Yogurt Protein Bowl according to recipe"
+      ]
+    },
+    {
+      "id": "recipe_010",
+      "name": "Dense Bean Salad",
+      "ingredients": [
+        {
+          "quantity": 506.1,
+          "unit": "g",
+          "name": "dense_bean_salad"
+        }
+      ],
+      "cooking_time_minutes": 15,
+      "instructions": [
+        "Prepare Dense Bean Salad according to recipe"
+      ]
+    },
+    {
+      "id": "recipe_011",
+      "name": "Greek Yogurt Balance",
+      "ingredients": [
+        {
+          "quantity": 442.8,
+          "unit": "g",
+          "name": "greek_yogurt_balance"
+        }
+      ],
+      "cooking_time_minutes": 15,
+      "instructions": [
+        "Prepare Greek Yogurt Balance according to recipe"
+      ]
+    },
+    {
+      "id": "recipe_012",
+      "name": "Pre Workout 1",
+      "ingredients": [
+        {
+          "quantity": 217.0,
+          "unit": "g",
+          "name": "pre_workout_1"
+        }
+      ],
+      "cooking_time_minutes": 5,
+      "instructions": [
+        "Prepare Pre Workout 1 according to recipe"
+      ]
+    },
+    {
+      "id": "recipe_013",
+      "name": "Pre Workout 2",
+      "ingredients": [
+        {
+          "quantity": 327.0,
+          "unit": "g",
+          "name": "pre_workout_2"
+        }
+      ],
+      "cooking_time_minutes": 5,
+      "instructions": [
+        "Prepare Pre Workout 2 according to recipe"
+      ]
+    },
+    {
+      "id": "recipe_014",
+      "name": "Power Shake",
+      "ingredients": [
+        {
+          "quantity": 1020.8,
+          "unit": "g",
+          "name": "power_shake"
+        }
+      ],
+      "cooking_time_minutes": 15,
+      "instructions": [
+        "Prepare Power Shake according to recipe"
+      ]
+    },
+    {
+      "id": "recipe_015",
+      "name": "Slop Bowl",
+      "ingredients": [
+        {
+          "quantity": 1022.5,
+          "unit": "g",
+          "name": "slop_bowl"
+        }
+      ],
+      "cooking_time_minutes": 15,
+      "instructions": [
+        "Prepare Slop Bowl according to recipe"
+      ]
+    },
+    {
+      "id": "recipe_016",
+      "name": "Sweet Potato Bowl",
+      "ingredients": [
+        {
+          "quantity": 568.5,
+          "unit": "g",
+          "name": "sweet_potato_bowl"
+        }
+      ],
+      "cooking_time_minutes": 15,
+      "instructions": [
+        "Prepare Sweet Potato Bowl according to recipe"
+      ]
+    },
+    {
+      "id": "recipe_017",
+      "name": "Power Omelette",
+      "ingredients": [
+        {
+          "quantity": 576.5,
+          "unit": "g",
+          "name": "power_omelette"
+        }
+      ],
+      "cooking_time_minutes": 15,
+      "instructions": [
+        "Prepare Power Omelette according to recipe"
+      ]
+    },
+    {
+      "id": "recipe_018",
+      "name": "Roast Beef Sandwich",
+      "ingredients": [
+        {
+          "quantity": 342.6,
+          "unit": "g",
+          "name": "roast_beef_sandwich"
+        }
+      ],
+      "cooking_time_minutes": 15,
+      "instructions": [
+        "Prepare Roast Beef Sandwich according to recipe"
       ]
     }
   ]
 }
-

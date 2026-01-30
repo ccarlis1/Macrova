@@ -1,0 +1,518 @@
+{
+  "recipes": [
+    {
+      "id": "test_recipe_1",
+      "name": "Quick Eggs",
+      "ingredients": [
+        {"quantity": 2, "unit": "large", "name": "egg"}
+      ],
+      "cooking_time_minutes": 5,
+      "instructions": ["Cook eggs"]
+    },
+    {
+      "id": "test_recipe_2",
+      "name": "Salmon Meal",
+      "ingredients": [
+        {"quantity": 200, "unit": "g", "name": "salmon"}
+      ],
+      "cooking_time_minutes": 20,
+      "instructions": ["Cook salmon"]
+    },
+    {
+      "id": "test_recipe_3",
+      "name": "Slow Eggs",
+      "ingredients": [
+        {"quantity": 3, "unit": "large", "name": "egg"}
+      ],
+      "cooking_time_minutes": 30,
+      "instructions": ["Cook eggs slowly"]
+    },
+    {
+      "id": "canonical_breakfast",
+      "name": "Blueberry Protein Cream of Rice Bowl",
+      "ingredients": [
+        {"quantity": 120, "unit": "g", "name": "cream of rice"},
+        {"quantity": 2, "unit": "scoop", "name": "whey protein powder"},
+        {"quantity": 100, "unit": "g", "name": "blueberries"},
+        {"quantity": 300, "unit": "g", "name": "water"}
+      ],
+      "cooking_time_minutes": 5,
+      "instructions": [
+        "Bring water to boil",
+        "Stir in cream of rice and cook for 2-3 minutes",
+        "Remove from heat and mix in whey protein powder",
+        "Top with fresh blueberries"
+      ]
+    },
+    {
+      "id": "canonical_lunch",
+      "name": "Loaded Egg & Potato Skillet",
+      "ingredients": [
+        {"quantity": 4, "unit": "large", "name": "egg"},
+        {"quantity": 400, "unit": "g", "name": "potato"},
+        {"quantity": 15, "unit": "g", "name": "olive oil"},
+        {"quantity": 0, "unit": "to taste", "name": "salt", "is_to_taste": true}
+      ],
+      "cooking_time_minutes": 15,
+      "instructions": [
+        "Dice potatoes into small cubes",
+        "Heat olive oil in skillet over medium heat",
+        "Cook potatoes until golden and crispy (10-12 min)",
+        "Push potatoes to side, scramble eggs in same pan",
+        "Season with salt to taste and combine"
+      ]
+    },
+    {
+      "id": "canonical_dinner",
+      "name": "Teriyaki Salmon Rice Bowl",
+      "ingredients": [
+        {"quantity": 225, "unit": "g", "name": "salmon"},
+        {"quantity": 300, "unit": "g", "name": "white rice"},
+        {"quantity": 100, "unit": "g", "name": "broccoli"},
+        {"quantity": 30, "unit": "g", "name": "teriyaki sauce"},
+        {"quantity": 0, "unit": "to taste", "name": "salt", "is_to_taste": true}
+      ],
+      "cooking_time_minutes": 30,
+      "instructions": [
+        "Cook rice according to package directions",
+        "Steam broccoli until tender-crisp",
+        "Pan-sear salmon with teriyaki sauce until cooked through",
+        "Assemble bowl with rice base, salmon on top, broccoli on side",
+        "Drizzle remaining teriyaki sauce"
+      ]
+    },
+    {
+      "id": "test_recipe_4",
+      "name": "Simple Banana",
+      "ingredients": [
+        {"quantity": 1, "unit": "medium", "name": "banana"}
+      ],
+      "cooking_time_minutes": 0,
+      "instructions": ["Eat banana"]
+    },
+    {
+      "id": "test_recipe_5",
+      "name": "Protein Shake",
+      "ingredients": [
+        {"quantity": 1, "unit": "scoop", "name": "whey protein powder"},
+        {"quantity": 250, "unit": "ml", "name": "water"}
+      ],
+      "cooking_time_minutes": 2,
+      "instructions": ["Mix protein powder with water", "Shake well"]
+    },
+    {
+      "id": "test_recipe_6",
+      "name": "High Protein Chicken Bowl",
+      "ingredients": [
+        {"quantity": 300, "unit": "g", "name": "chicken breast"},
+        {"quantity": 200, "unit": "g", "name": "broccoli"},
+        {"quantity": 1, "unit": "tbsp", "name": "olive oil"}
+      ],
+      "cooking_time_minutes": 25,
+      "instructions": [
+        "Cook chicken breast",
+        "Steam broccoli",
+        "Drizzle with olive oil"
+      ]
+    },
+    {
+      "id": "test_recipe_7",
+      "name": "Carb Heavy Rice Bowl",
+      "ingredients": [
+        {"quantity": 400, "unit": "g", "name": "white rice"},
+        {"quantity": 100, "unit": "g", "name": "potato"},
+        {"quantity": 1, "unit": "tbsp", "name": "olive oil"}
+      ],
+      "cooking_time_minutes": 30,
+      "instructions": [
+        "Cook white rice",
+        "Roast potato",
+        "Combine and drizzle with olive oil"
+      ]
+    },
+    {
+      "id": "test_recipe_8",
+      "name": "Fat Rich Snack",
+      "ingredients": [
+        {"quantity": 50, "unit": "g", "name": "almonds"},
+        {"quantity": 30, "unit": "g", "name": "almond butter"},
+        {"quantity": 100, "unit": "g", "name": "avocado"}
+      ],
+      "cooking_time_minutes": 0,
+      "instructions": [
+        "Mix almonds with almond butter",
+        "Serve with sliced avocado"
+      ]
+    },
+    {
+      "id": "test_recipe_9",
+      "name": "Balanced Breakfast",
+      "ingredients": [
+        {"quantity": 2, "unit": "large", "name": "egg"},
+        {"quantity": 100, "unit": "g", "name": "oatmeal"},
+        {"quantity": 1, "unit": "medium", "name": "banana"},
+        {"quantity": 20, "unit": "g", "name": "almonds"}
+      ],
+      "cooking_time_minutes": 15,
+      "instructions": [
+        "Cook eggs",
+        "Prepare oatmeal",
+        "Slice banana and add almonds"
+      ]
+    },
+    {
+      "id": "test_recipe_10",
+      "name": "Massive Bodybuilder Meal",
+      "ingredients": [
+        {"quantity": 500, "unit": "g", "name": "chicken breast"},
+        {"quantity": 500, "unit": "g", "name": "white rice"},
+        {"quantity": 300, "unit": "g", "name": "broccoli"},
+        {"quantity": 2, "unit": "scoop", "name": "whey protein powder"},
+        {"quantity": 2, "unit": "tbsp", "name": "olive oil"}
+      ],
+      "cooking_time_minutes": 35,
+      "instructions": [
+        "Cook large portion of chicken",
+        "Prepare massive serving of rice",
+        "Steam large amount of broccoli",
+        "Mix protein powder",
+        "Drizzle with olive oil"
+      ]
+    },
+    {
+      "id": "test_recipe_11",
+      "name": "Light Salad",
+      "ingredients": [
+        {"quantity": 50, "unit": "g", "name": "spinach"},
+        {"quantity": 50, "unit": "g", "name": "broccoli"},
+        {"quantity": 1, "unit": "tsp", "name": "olive oil"}
+      ],
+      "cooking_time_minutes": 5,
+      "instructions": [
+        "Combine spinach and broccoli",
+        "Drizzle with olive oil"
+      ]
+    },
+    {
+      "id": "test_recipe_12",
+      "name": "Complex Pasta Dish",
+      "ingredients": [
+        {"quantity": 200, "unit": "g", "name": "pasta"},
+        {"quantity": 200, "unit": "g", "name": "ground beef"},
+        {"quantity": 100, "unit": "g", "name": "broccoli"},
+        {"quantity": 50, "unit": "g", "name": "cheese"},
+        {"quantity": 1, "unit": "tbsp", "name": "olive oil"},
+        {"quantity": 1, "unit": "pinch", "name": "salt"}
+      ],
+      "cooking_time_minutes": 30,
+      "instructions": [
+        "Cook pasta",
+        "Brown ground beef",
+        "Steam broccoli",
+        "Combine all ingredients",
+        "Top with cheese and olive oil",
+        "Season with salt"
+      ]
+    },
+    {
+      "id": "test_recipe_13",
+      "name": "Tuna Power Bowl",
+      "ingredients": [
+        {"quantity": 200, "unit": "g", "name": "tuna"},
+        {"quantity": 150, "unit": "g", "name": "quinoa"},
+        {"quantity": 100, "unit": "g", "name": "avocado"},
+        {"quantity": 50, "unit": "g", "name": "spinach"},
+        {"quantity": 1, "unit": "tbsp", "name": "olive oil"}
+      ],
+      "cooking_time_minutes": 20,
+      "instructions": [
+        "Prepare tuna",
+        "Cook quinoa",
+        "Slice avocado",
+        "Layer in bowl with spinach",
+        "Drizzle with olive oil"
+      ]
+    },
+    {
+      "id": "test_recipe_14",
+      "name": "Sweet Potato Feast",
+      "ingredients": [
+        {"quantity": 400, "unit": "g", "name": "sweet potato"},
+        {"quantity": 200, "unit": "g", "name": "chicken breast"},
+        {"quantity": 100, "unit": "g", "name": "broccoli"},
+        {"quantity": 1, "unit": "tbsp", "name": "olive oil"}
+      ],
+      "cooking_time_minutes": 40,
+      "instructions": [
+        "Roast sweet potatoes",
+        "Cook chicken breast",
+        "Steam broccoli",
+        "Drizzle with olive oil"
+      ]
+    },
+    {
+      "id": "test_recipe_15",
+      "name": "Cottage Cheese Delight",
+      "ingredients": [
+        {"quantity": 200, "unit": "g", "name": "cottage cheese"},
+        {"quantity": 100, "unit": "g", "name": "blueberries"},
+        {"quantity": 50, "unit": "g", "name": "almonds"},
+        {"quantity": 1, "unit": "tsp", "name": "honey"}
+      ],
+      "cooking_time_minutes": 2,
+      "instructions": [
+        "Scoop cottage cheese",
+        "Top with blueberries and almonds",
+        "Drizzle with honey"
+      ]
+    },
+    {
+      "id": "test_recipe_16",
+      "name": "Peanut Butter Toast",
+      "ingredients": [
+        {"quantity": 2, "unit": "slices", "name": "bread"},
+        {"quantity": 30, "unit": "g", "name": "peanut butter"},
+        {"quantity": 1, "unit": "medium", "name": "banana"}
+      ],
+      "cooking_time_minutes": 5,
+      "instructions": [
+        "Toast bread",
+        "Spread peanut butter",
+        "Slice banana on top"
+      ]
+    },
+    {
+      "id": "test_recipe_17",
+      "name": "Greek Yogurt Parfait",
+      "ingredients": [
+        {"quantity": 200, "unit": "g", "name": "greek yogurt"},
+        {"quantity": 50, "unit": "g", "name": "blueberries"},
+        {"quantity": 50, "unit": "g", "name": "strawberries"},
+        {"quantity": 30, "unit": "g", "name": "almonds"},
+        {"quantity": 1, "unit": "tsp", "name": "honey"}
+      ],
+      "cooking_time_minutes": 5,
+      "instructions": [
+        "Layer greek yogurt",
+        "Add berries",
+        "Top with almonds and honey"
+      ]
+    },
+    {
+      "id": "test_recipe_18",
+      "name": "Fish and Rice Combo",
+      "ingredients": [
+        {"quantity": 250, "unit": "g", "name": "tilapia"},
+        {"quantity": 300, "unit": "g", "name": "brown rice"},
+        {"quantity": 150, "unit": "g", "name": "broccoli"},
+        {"quantity": 1, "unit": "tbsp", "name": "olive oil"}
+      ],
+      "cooking_time_minutes": 25,
+      "instructions": [
+        "Cook tilapia",
+        "Prepare brown rice",
+        "Steam broccoli",
+        "Drizzle with olive oil"
+      ]
+    },
+    {
+      "id": "test_recipe_19",
+      "name": "Bean and Rice Bowl",
+      "ingredients": [
+        {"quantity": 200, "unit": "g", "name": "black beans"},
+        {"quantity": 250, "unit": "g", "name": "brown rice"},
+        {"quantity": 100, "unit": "g", "name": "avocado"},
+        {"quantity": 1, "unit": "tbsp", "name": "olive oil"}
+      ],
+      "cooking_time_minutes": 20,
+      "instructions": [
+        "Heat black beans",
+        "Cook brown rice",
+        "Slice avocado",
+        "Combine and drizzle with olive oil"
+      ]
+    },
+    {
+      "id": "test_recipe_20",
+      "name": "Ultra High Protein",
+      "ingredients": [
+        {"quantity": 400, "unit": "g", "name": "chicken breast"},
+        {"quantity": 200, "unit": "g", "name": "tuna"},
+        {"quantity": 3, "unit": "scoop", "name": "whey protein powder"},
+        {"quantity": 200, "unit": "g", "name": "cottage cheese"}
+      ],
+      "cooking_time_minutes": 30,
+      "instructions": [
+        "Cook chicken breast",
+        "Prepare tuna",
+        "Mix protein powder",
+        "Serve with cottage cheese"
+      ]
+    },
+    {
+      "id": "test_recipe_21",
+      "name": "High Carb Load",
+      "ingredients": [
+        {"quantity": 500, "unit": "g", "name": "white rice"},
+        {"quantity": 300, "unit": "g", "name": "sweet potato"},
+        {"quantity": 200, "unit": "g", "name": "potato"},
+        {"quantity": 2, "unit": "medium", "name": "banana"}
+      ],
+      "cooking_time_minutes": 45,
+      "instructions": [
+        "Cook large portion of rice",
+        "Roast sweet potatoes and regular potatoes",
+        "Serve with bananas"
+      ]
+    },
+    {
+      "id": "test_recipe_22",
+      "name": "Fat Bomb Snack",
+      "ingredients": [
+        {"quantity": 100, "unit": "g", "name": "almonds"},
+        {"quantity": 50, "unit": "g", "name": "almond butter"},
+        {"quantity": 150, "unit": "g", "name": "avocado"},
+        {"quantity": 50, "unit": "g", "name": "cheese"},
+        {"quantity": 2, "unit": "tbsp", "name": "olive oil"}
+      ],
+      "cooking_time_minutes": 5,
+      "instructions": [
+        "Combine almonds and almond butter",
+        "Slice avocado and cheese",
+        "Drizzle with olive oil"
+      ]
+    },
+    {
+      "id": "test_recipe_23",
+      "name": "Minimalist Egg",
+      "ingredients": [
+        {"quantity": 1, "unit": "large", "name": "egg"}
+      ],
+      "cooking_time_minutes": 3,
+      "instructions": ["Cook single egg"]
+    },
+    {
+      "id": "test_recipe_24",
+      "name": "Complete Breakfast Spread",
+      "ingredients": [
+        {"quantity": 3, "unit": "large", "name": "egg"},
+        {"quantity": 150, "unit": "g", "name": "oatmeal"},
+        {"quantity": 1, "unit": "medium", "name": "banana"},
+        {"quantity": 30, "unit": "g", "name": "almonds"},
+        {"quantity": 100, "unit": "g", "name": "greek yogurt"},
+        {"quantity": 50, "unit": "g", "name": "blueberries"},
+        {"quantity": 1, "unit": "tsp", "name": "honey"}
+      ],
+      "cooking_time_minutes": 20,
+      "instructions": [
+        "Scramble eggs",
+        "Prepare oatmeal with banana and almonds",
+        "Serve with greek yogurt topped with blueberries and honey"
+      ]
+    },
+    {
+      "id": "test_recipe_25",
+      "name": "Lean Protein Stack",
+      "ingredients": [
+        {"quantity": 300, "unit": "g", "name": "chicken breast"},
+        {"quantity": 200, "unit": "g", "name": "tilapia"},
+        {"quantity": 150, "unit": "g", "name": "tuna"},
+        {"quantity": 200, "unit": "g", "name": "broccoli"},
+        {"quantity": 100, "unit": "g", "name": "spinach"}
+      ],
+      "cooking_time_minutes": 30,
+      "instructions": [
+        "Cook all proteins",
+        "Steam vegetables",
+        "Arrange in layers"
+      ]
+    },
+    {
+      "id": "test_recipe_26",
+      "name": "Vegetarian Power Bowl",
+      "ingredients": [
+        {"quantity": 200, "unit": "g", "name": "quinoa"},
+        {"quantity": 150, "unit": "g", "name": "black beans"},
+        {"quantity": 100, "unit": "g", "name": "avocado"},
+        {"quantity": 100, "unit": "g", "name": "spinach"},
+        {"quantity": 50, "unit": "g", "name": "broccoli"},
+        {"quantity": 1, "unit": "tbsp", "name": "olive oil"}
+      ],
+      "cooking_time_minutes": 25,
+      "instructions": [
+        "Cook quinoa",
+        "Heat black beans",
+        "Prepare vegetables",
+        "Combine in bowl",
+        "Drizzle with olive oil"
+      ]
+    },
+    {
+      "id": "test_recipe_27",
+      "name": "Quick Protein Fix",
+      "ingredients": [
+        {"quantity": 2, "unit": "scoop", "name": "whey protein powder"},
+        {"quantity": 1, "unit": "medium", "name": "banana"}
+      ],
+      "cooking_time_minutes": 3,
+      "instructions": [
+        "Mix protein powder",
+        "Eat with banana"
+      ]
+    },
+    {
+      "id": "test_recipe_28",
+      "name": "Mega Mixed Bowl",
+      "ingredients": [
+        {"quantity": 300, "unit": "g", "name": "chicken breast"},
+        {"quantity": 250, "unit": "g", "name": "brown rice"},
+        {"quantity": 150, "unit": "g", "name": "black beans"},
+        {"quantity": 200, "unit": "g", "name": "broccoli"},
+        {"quantity": 100, "unit": "g", "name": "avocado"},
+        {"quantity": 50, "unit": "g", "name": "cheese"},
+        {"quantity": 2, "unit": "tbsp", "name": "olive oil"},
+        {"quantity": 1, "unit": "pinch", "name": "salt"}
+      ],
+      "cooking_time_minutes": 35,
+      "instructions": [
+        "Cook chicken",
+        "Prepare rice and beans",
+        "Steam broccoli",
+        "Slice avocado",
+        "Combine all ingredients",
+        "Top with cheese and olive oil",
+        "Season with salt"
+      ]
+    },
+    {
+      "id": "test_recipe_29",
+      "name": "Light Snack Pack",
+      "ingredients": [
+        {"quantity": 100, "unit": "g", "name": "greek yogurt"},
+        {"quantity": 50, "unit": "g", "name": "blueberries"},
+        {"quantity": 20, "unit": "g", "name": "almonds"}
+      ],
+      "cooking_time_minutes": 2,
+      "instructions": [
+        "Combine yogurt with blueberries",
+        "Top with almonds"
+      ]
+    },
+    {
+      "id": "test_recipe_30",
+      "name": "Post Workout Recovery",
+      "ingredients": [
+        {"quantity": 1, "unit": "scoop", "name": "whey protein powder"},
+        {"quantity": 200, "unit": "g", "name": "white rice"},
+        {"quantity": 1, "unit": "medium", "name": "banana"},
+        {"quantity": 1, "unit": "tsp", "name": "honey"}
+      ],
+      "cooking_time_minutes": 15,
+      "instructions": [
+        "Mix protein powder",
+        "Cook rice",
+        "Combine with banana and honey"
+      ]
+    }
+  ]
+}

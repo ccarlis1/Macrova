@@ -84,6 +84,9 @@ class UserProfile:
     disliked_foods: List[str]    # Foods to avoid
     allergies: List[str]         # Allergens to avoid
     
+    # Calorie Deficit Mode (optional hard constraint)
+    max_daily_calories: Optional[int] = None  # Hard cap on daily calories
+    
     # Future (post-MVP)
     # meal_prep_meals: List[Meal]
     # weekly_targets: Dict[str, float]
@@ -154,6 +157,10 @@ nutrition_goals:
     min: 50
     max: 100
   # Carbs calculated automatically: (calories - protein*4 - fat*9) / 4
+  
+  # OPTIONAL: Hard maximum daily calorie limit (Calorie Deficit Mode)
+  # When set, meal plans exceeding this value are rejected (hard constraint)
+  # max_daily_calories: 2200
 
 schedule:
   # Format: "HH:MM": busyness_level

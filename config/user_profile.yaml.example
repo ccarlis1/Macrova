@@ -5,15 +5,20 @@ nutrition_goals:
   # Daily calorie target
   daily_calories: 2400
   
+  # OPTIONAL: Hard maximum daily calorie limit (Calorie Deficit Mode)
+  # When set, meal plans exceeding this value are rejected (hard constraint)
+  # Uncomment to enable:
+  # max_daily_calories: 2200
+  
   # Protein target (grams per day)
   # Based on 0.7-0.8g per pound bodyweight (from knowledge.md)
-  daily_protein_g: 150
+  daily_protein_g: 138
   
   # Fat target range (grams per day)
   # From knowledge.md: 50-100g range, median ~75g
   daily_fat_g:
-    min: 50
-    max: 100
+    min: 65
+    max: 85
   
   # Carbs are calculated automatically:
   # carbs = (calories - protein*4 - fat*9) / 4
@@ -24,20 +29,21 @@ schedule:
   # Format: "HH:MM": busyness_level
   # Busyness levels:
   #   1 = snack (< 5 minutes)
-  #   2 = quick meal (≤ 15 minutes)
   #   3 = weeknight meal (≤ 30 minutes)
   #   4 = weekend/meal prep (30+ minutes)
+  # Note: The first 3 times are treated as breakfast, lunch, dinner (in order)
+  # Any 4th time is treated as workout time
   
   # Example schedule - adjust to your routine
-  "07:00": 2  # Morning: quick meal before workout
-  "12:00": 3  # Lunch: weeknight meal
-  "18:00": 3  # Dinner: weeknight meal
+  "07:00": 2 # Morning: quick meal (breakfast)
+  "12:00": 2 # Lunch: weeknight meal
+  "18:00": 2 # Dinner: snack
+  "08:00": 0 # Workout time
 
 preferences:
   # Foods you like (will be prioritized in recommendations)
   liked_foods:
     - "salmon"
-    - "eggs"
     - "rice"
     - "potatoes"
     - "chicken"
@@ -63,7 +69,56 @@ preferences:
 #     nutrition: {...}
 # 
 # weekly_targets:
-#   vitamin_e_mg: 100
-#   fiber_g: 140
-#   # ... other micronutrients
-
+#   # NOTE: Values below are WEEKLY targets (daily target × 7)
+#   # Only nutrients marked "Visible" in your screenshots are included.
+#
+#   # Vitamins
+#   vitamin_a_ug: 6300
+#   vitamin_c_mg: 630
+#   vitamin_d_iu: 4200
+#   vitamin_e_mg: 105
+#   vitamin_k_ug: 840
+#   b1_thiamine_mg: 8.4
+#   b2_riboflavin_mg: 9.1
+#   b3_niacin_mg: 112
+#   b5_pantothenic_acid_mg: 35
+#   b6_pyridoxine_mg: 9.1
+#   b12_cobalamin_ug: 16.8
+#   folate_ug: 2800
+#
+#   # Minerals
+#   calcium_mg: 7000
+#   copper_mg: 6.3
+#   iron_mg: 56
+#   magnesium_mg: 2800
+#   manganese_mg: 16.1
+#   phosphorus_mg: 4900
+#   potassium_mg: 23800
+#   selenium_ug: 385
+#   sodium_mg: 10500
+#   zinc_mg: 77
+#
+#   # Carbohydrates
+#   carbs_g: dynamic
+#   fiber_g: 266
+#
+#   # Lipids
+#   fat_g: dynamic
+#   monounsaturated_fat_g: null
+#   polyunsaturated_fat_g: null
+#   omega_3_g: 11.2
+#   omega_6_g: 119
+#
+#   # Protein
+#   protein_g: dynamic
+#   cystine_g: 5.6
+#   histidine_g: 8.4
+#   isoleucine_g: 11.2
+#   leucine_g: 25.2
+#   lysine_g: 23.1
+#   methionine_g: 5.6
+#   phenylalanine_g: 9.8
+#   threonine_g: 11.9
+#   tryptophan_g: 2.8
+#   tyrosine_g: 9.8
+#   valine_g: 14.7

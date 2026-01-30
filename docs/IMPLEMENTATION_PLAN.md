@@ -23,72 +23,73 @@
 ## Phase 1: Foundation (Week 1)
 
 ### Step 1.1: Project Setup
-- [ ] Initialize Python project structure
-- [ ] Create virtual environment
-- [ ] Set up `requirements.txt` with core dependencies
-- [ ] Create directory structure
-- [ ] Set up `.gitignore` and basic config files
+- [x] Initialize Python project structure
+- [x] Create virtual environment
+- [x] Set up `requirements.txt` with core dependencies
+- [x] Create directory structure
+- [x] Set up `.gitignore` and basic config files
 
 ### Step 1.2: Data Models
-- [ ] Define `Ingredient` data class
-- [ ] Define `Recipe` data class
-- [ ] Define `NutritionProfile` data class
-- [ ] Define `Meal` data class
-- [ ] Define `UserProfile` data class
+- [x] Define `Ingredient` data class
+- [x] Define `Recipe` data class
+- [x] Define `NutritionProfile` data class
+- [x] Define `Meal` data class
+- [x] Define `UserProfile` data class
 
 ### Step 1.3: Basic Data Layer
-- [ ] Create simple JSON-based ingredient database
-- [ ] Create simple JSON-based recipe database (10-20 recipes)
-- [ ] Implement basic CRUD operations for databases
-- [ ] Create sample data files
+- [x] Create simple JSON-based ingredient database
+- [x] Create simple JSON-based recipe database (10-20 recipes)
+- [x] Implement basic CRUD operations for databases
+- [x] Create sample data files
 
 ## Phase 2: Core Functionality (Week 2)
 
 ### Step 2.1: Ingredient Parsing
-- [ ] Implement ingredient parser (extract quantities, units, names)
-- [ ] Normalize ingredient names (e.g., "eggs" → "egg")
-- [ ] Handle common units (g, oz, cup, tsp, tbsp)
-- [ ] **Detect and handle "to taste" ingredients**:
+- [x] Implement ingredient parser (extract quantities, units, names)
+- [x] Normalize ingredient names (e.g., "eggs" → "egg")
+- [x] Handle common units (g, oz, cup, tsp, tbsp)
+- [x] **Detect and handle "to taste" ingredients**:
   - Parse ingredients with "to taste" pattern
   - Mark with `is_to_taste=True` flag
   - Include in recipe display but exclude from nutrition calculations
-- [ ] Write unit tests (including "to taste" cases)
+- [x] Write unit tests (including "to taste" cases)
 
 ### Step 2.2: Nutrition Calculation
-- [ ] Implement nutrition calculator for individual ingredients
-- [ ] Implement nutrition calculator for recipes (sum ingredients)
+- [x] Implement nutrition calculator for individual ingredients
+- [x] Implement nutrition calculator for recipes (sum ingredients)
   - **Filter out "to taste" ingredients** before calculation (per KNOWLEDGE.md)
   - Only calculate nutrition for measured ingredients
-- [ ] Implement daily aggregator (sum meals)
-- [ ] Write unit tests (verify "to taste" ingredients are excluded)
+- [x] Implement daily aggregator (sum meals)
+- [x] Write unit tests (verify "to taste" ingredients are excluded)
 
 ### Step 2.3: Recipe Retrieval
-- [ ] Implement keyword-based recipe search
-- [ ] Filter recipes by cooking time
-- [ ] Filter recipes by ingredient availability
-- [ ] Write unit tests
+- [x] Implement keyword-based recipe search
+- [x] Filter recipes by cooking time
+- [x] Filter recipes by ingredient availability
+- [x] Write unit tests
 
 ## Phase 3: Scoring & Planning (Week 3)
 
 ### Step 3.1: Rule-Based Scoring
-- [ ] Implement recipe scorer with rules:
+- [x] Implement recipe scorer with rules:
   - Calories match target range
   - Macros match target ranges
   - Cooking time matches schedule constraint
   - Basic preference matching
-- [ ] Write unit tests
+  - **Calorie Deficit Mode**: Hard constraint on max_daily_calories (score = 0.0 if exceeded)
+- [x] Write unit tests
 
 ### Step 3.2: Meal Planning
-- [ ] Implement basic meal planner:
+- [x] Implement basic meal planner:
   - Select 3 meals for a day
   - Ensure total calories/macros meet goals
   - Respect cooking time constraints
-- [ ] Write unit tests
+- [x] Write unit tests
 
 ### Step 3.3: Output Formatting
-- [ ] Implement meal formatter (human-readable)
-- [ ] Implement structured JSON output
-- [ ] Create example output
+- [x] Implement meal formatter (human-readable)
+- [x] Implement structured JSON output
+- [x] Create example output
 
 ## Phase 4: Integration & Testing (Week 4)
 
@@ -98,9 +99,10 @@
 - [ ] Test full workflow with sample data
 
 ### Step 4.2: User Profile
-- [ ] Implement user profile loader from YAML
-- [ ] Support basic preferences (likes/dislikes)
-- [ ] Support schedule constraints (busyness scale)
+- [x] Implement user profile loader from YAML
+- [x] Support basic preferences (likes/dislikes)
+- [x] Support schedule constraints (busyness scale)
+- [x] Support optional `max_daily_calories` (Calorie Deficit Mode)
 
 ### Step 4.3: Documentation & Examples
 - [ ] Write usage examples
@@ -198,6 +200,7 @@ mypy>=1.0            # Type checking
 - ✅ Can run locally without external API calls
 - ✅ **Foundation Priority**: Accurate nutrition calculations above all else
 - ✅ Modular architecture supports future LLM integration
+- ✅ **Calorie Deficit Mode**: Optional hard cap on daily calories (hard constraint)
 
 ## Success Criteria for End Game
 

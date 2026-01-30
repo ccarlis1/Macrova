@@ -1,0 +1,356 @@
+{
+  "ingredients": [
+    {
+      "name": "egg",
+      "per_large": {
+        "calories": 72,
+        "protein_g": 6.3,
+        "fat_g": 4.8,
+        "carbs_g": 0.4
+      },
+      "unit_size_g": 50,
+      "aliases": ["eggs", "large egg"]
+    },
+    {
+      "name": "salt",
+      "per_100g": {
+        "calories": 0,
+        "protein_g": 0.0,
+        "fat_g": 0.0,
+        "carbs_g": 0.0
+      },
+      "aliases": ["table salt", "sea salt"]
+    },
+    {
+      "name": "salmon",
+      "per_100g": {
+        "calories": 208,
+        "protein_g": 25.4,
+        "fat_g": 12.4,
+        "carbs_g": 0.0
+      },
+      "aliases": ["salmon fillet", "atlantic salmon"]
+    },
+    {
+      "name": "cream of rice",
+      "per_100g": {
+        "calories": 370,
+        "protein_g": 7.0,
+        "fat_g": 0.5,
+        "carbs_g": 82.0
+      },
+      "aliases": ["cream of rice cereal", "rice cereal"]
+    },
+    {
+      "name": "chicken breast",
+      "per_100g": {
+        "calories": 165,
+        "protein_g": 31.0,
+        "fat_g": 3.6,
+        "carbs_g": 0.0
+      },
+      "aliases": ["chicken", "boneless chicken breast"]
+    },
+    {
+      "name": "white rice",
+      "per_100g": {
+        "calories": 130,
+        "protein_g": 2.7,
+        "fat_g": 0.3,
+        "carbs_g": 28.0
+      },
+      "aliases": ["rice", "jasmine rice", "cooked rice", "cooked white rice"]
+    },
+    {
+      "name": "olive oil",
+      "per_100g": {
+        "calories": 884,
+        "protein_g": 0.0,
+        "fat_g": 100.0,
+        "carbs_g": 0.0
+      },
+      "aliases": ["evoo", "extra virgin olive oil"]
+    },
+    {
+      "name": "broccoli",
+      "per_100g": {
+        "calories": 34,
+        "protein_g": 2.8,
+        "fat_g": 0.4,
+        "carbs_g": 7.0
+      },
+      "aliases": ["broccoli florets", "steamed broccoli"]
+    },
+    {
+      "name": "almonds",
+      "per_100g": {
+        "calories": 579,
+        "protein_g": 21.0,
+        "fat_g": 50.0,
+        "carbs_g": 22.0
+      },
+      "aliases": ["almond", "raw almonds"]
+    },
+    {
+      "name": "banana",
+      "per_100g": {
+        "calories": 89,
+        "protein_g": 1.1,
+        "fat_g": 0.3,
+        "carbs_g": 23.0
+      },
+      "aliases": ["bananas"]
+    },
+    {
+      "name": "oatmeal",
+      "per_100g": {
+        "calories": 389,
+        "protein_g": 16.9,
+        "fat_g": 6.9,
+        "carbs_g": 66.0
+      },
+      "aliases": ["oats", "rolled oats"]
+    },
+    {
+      "name": "whey protein powder",
+      "per_scoop": {
+        "calories": 120,
+        "protein_g": 24.0,
+        "fat_g": 1.0,
+        "carbs_g": 3.0
+      },
+      "scoop_size_g": 30,
+      "aliases": ["protein powder", "whey", "whey protein", "protein"]
+    },
+    {
+      "name": "peanut butter",
+      "per_100g": {
+        "calories": 588,
+        "protein_g": 25.0,
+        "fat_g": 50.0,
+        "carbs_g": 20.0
+      },
+      "aliases": ["pb", "natural peanut butter"]
+    },
+    {
+      "name": "pasta",
+      "per_100g": {
+        "calories": 131,
+        "protein_g": 5.0,
+        "fat_g": 1.1,
+        "carbs_g": 25.0
+      },
+      "aliases": ["spaghetti", "noodles", "whole wheat pasta"]
+    },
+    {
+      "name": "ground beef",
+      "per_100g": {
+        "calories": 250,
+        "protein_g": 26.0,
+        "fat_g": 17.0,
+        "carbs_g": 0.0
+      },
+      "aliases": ["beef", "lean ground beef"]
+    },
+    {
+      "name": "potato",
+      "per_100g": {
+        "calories": 77,
+        "protein_g": 2.0,
+        "fat_g": 0.1,
+        "carbs_g": 17.0
+      },
+      "aliases": ["potatoes", "russet potato", "white potato"]
+    },
+    {
+      "name": "cheese",
+      "per_100g": {
+        "calories": 402,
+        "protein_g": 25.0,
+        "fat_g": 33.0,
+        "carbs_g": 1.3
+      },
+      "aliases": ["cheddar cheese", "sharp cheddar"]
+    },
+    {
+      "name": "avocado",
+      "per_100g": {
+        "calories": 160,
+        "protein_g": 2.0,
+        "fat_g": 15.0,
+        "carbs_g": 9.0
+      },
+      "aliases": ["avocados"]
+    },
+    {
+      "name": "spinach",
+      "per_100g": {
+        "calories": 23,
+        "protein_g": 2.9,
+        "fat_g": 0.4,
+        "carbs_g": 3.6
+      },
+      "aliases": ["raw spinach", "fresh spinach"]
+    },
+    {
+      "name": "greek yogurt",
+      "per_100g": {
+        "calories": 59,
+        "protein_g": 10.0,
+        "fat_g": 0.4,
+        "carbs_g": 3.6
+      },
+      "aliases": ["plain greek yogurt", "yogurt"]
+    },
+    {
+      "name": "blueberries",
+      "per_100g": {
+        "calories": 57,
+        "protein_g": 0.7,
+        "fat_g": 0.3,
+        "carbs_g": 14.5
+      },
+      "aliases": ["blueberry", "fresh blueberries"]
+    },
+    {
+      "name": "quinoa",
+      "per_100g": {
+        "calories": 120,
+        "protein_g": 4.4,
+        "fat_g": 1.9,
+        "carbs_g": 22.0
+      },
+      "aliases": ["cooked quinoa"]
+    },
+    {
+      "name": "tuna",
+      "per_100g": {
+        "calories": 144,
+        "protein_g": 30.0,
+        "fat_g": 1.0,
+        "carbs_g": 0.0
+      },
+      "aliases": ["canned tuna", "tuna fish"]
+    },
+    {
+      "name": "sweet potato",
+      "per_100g": {
+        "calories": 86,
+        "protein_g": 1.6,
+        "fat_g": 0.1,
+        "carbs_g": 20.0
+      },
+      "aliases": ["sweet potatoes", "yam"]
+    },
+    {
+      "name": "cottage cheese",
+      "per_100g": {
+        "calories": 98,
+        "protein_g": 11.0,
+        "fat_g": 4.3,
+        "carbs_g": 3.4
+      },
+      "aliases": ["low fat cottage cheese"]
+    },
+    {
+      "name": "almond butter",
+      "per_100g": {
+        "calories": 614,
+        "protein_g": 21.0,
+        "fat_g": 55.0,
+        "carbs_g": 19.0
+      },
+      "aliases": ["almond spread"]
+    },
+    {
+      "name": "brown rice",
+      "per_100g": {
+        "calories": 111,
+        "protein_g": 2.6,
+        "fat_g": 0.9,
+        "carbs_g": 23.0
+      },
+      "aliases": ["cooked brown rice"]
+    },
+    {
+      "name": "tilapia",
+      "per_100g": {
+        "calories": 128,
+        "protein_g": 26.0,
+        "fat_g": 2.7,
+        "carbs_g": 0.0
+      },
+      "aliases": ["tilapia fillet", "fish"]
+    },
+    {
+      "name": "black beans",
+      "per_100g": {
+        "calories": 132,
+        "protein_g": 8.9,
+        "fat_g": 0.5,
+        "carbs_g": 24.0
+      },
+      "aliases": ["black bean", "cooked black beans"]
+    },
+    {
+      "name": "honey",
+      "per_100g": {
+        "calories": 304,
+        "protein_g": 0.3,
+        "fat_g": 0.0,
+        "carbs_g": 82.0
+      },
+      "aliases": ["raw honey"]
+    },
+    {
+      "name": "strawberries",
+      "per_100g": {
+        "calories": 32,
+        "protein_g": 0.7,
+        "fat_g": 0.3,
+        "carbs_g": 7.7
+      },
+      "aliases": ["strawberry", "fresh strawberries"]
+    },
+    {
+      "name": "teriyaki sauce",
+      "per_100g": {
+        "calories": 89,
+        "protein_g": 5.9,
+        "fat_g": 0.0,
+        "carbs_g": 16.0
+      },
+      "aliases": ["teriyaki", "teriyaki glaze"]
+    },
+    {
+      "name": "water",
+      "per_100g": {
+        "calories": 0,
+        "protein_g": 0.0,
+        "fat_g": 0.0,
+        "carbs_g": 0.0
+      },
+      "aliases": ["tap water", "filtered water"]
+    },
+    {
+      "name": "mushroom",
+      "per_100g": {
+        "calories": 22,
+        "protein_g": 3.1,
+        "fat_g": 0.3,
+        "carbs_g": 3.3
+      },
+      "aliases": ["mushrooms", "white mushroom", "button mushroom"]
+    },
+    {
+      "name": "bread",
+      "per_100g": {
+        "calories": 247,
+        "protein_g": 13.0,
+        "fat_g": 4.2,
+        "carbs_g": 41.0
+      },
+      "aliases": ["whole wheat bread", "whole grain bread", "toast"]
+    }
+  ]
+}

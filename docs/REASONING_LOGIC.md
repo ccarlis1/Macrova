@@ -218,7 +218,15 @@ VALIDATE daily_plan:
             ADJUST meal_plan (if possible) OR
             FLAG as acceptable_deviation (if within tolerance)
 
-    // Micronutrient Validation
+    // Upper Tolerable Intake (UL) Validation — DAILY enforcement
+    // ULs are DAILY limits, NOT averaged over the week
+    FOR each micronutrient with non-null UL:
+        IF daily_tracker.micronutrients[micronutrient] > resolved_ul[micronutrient]:
+            MARK plan as INVALID
+            ADD violation: "UL EXCEEDED: {nutrient} {actual} > {limit} (excess: {excess})"
+            // Weekly tracking does NOT weaken this — each day must pass independently
+
+    // Micronutrient RDI Validation (separate from UL)
     FOR each micronutrient:
         CALCULATE percentage_of_RDI = (daily_tracker.micronutrients[micronutrient] / daily_RDI) * 100
         

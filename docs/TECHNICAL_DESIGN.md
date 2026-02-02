@@ -87,9 +87,37 @@ class UserProfile:
     # Calorie Deficit Mode (optional hard constraint)
     max_daily_calories: Optional[int] = None  # Hard cap on daily calories
     
+    # Upper Limit validation (optional)
+    demographic: str = "adult_male"  # For UL reference lookup
+    upper_limits_overrides: Optional[Dict[str, float]] = None  # Clinician overrides
+    
     # Future (post-MVP)
     # meal_prep_meals: List[Meal]
     # weekly_targets: Dict[str, float]
+```
+
+### Upper Limits Model
+```python
+@dataclass
+class UpperLimits:
+    """Daily upper tolerable intake limits for micronutrients.
+    
+    Field names EXACTLY match MicronutrientProfile.
+    Values are DAILY limits (not weekly) — enforced per-day, never averaged.
+    None = no UL established (validation skipped for that nutrient).
+    """
+    vitamin_a_ug: Optional[float] = None
+    vitamin_c_mg: Optional[float] = None
+    vitamin_d_iu: Optional[float] = None
+    # ... all MicronutrientProfile fields with Optional[float] ...
+    
+@dataclass
+class ULViolation:
+    """Represents a single Upper Limit violation."""
+    nutrient: str    # Field name (e.g., "vitamin_a_ug")
+    actual: float    # Actual daily intake
+    limit: float     # Upper limit that was exceeded
+    excess: float    # Amount over limit
 ```
 
 ## Data Storage Formats
@@ -270,6 +298,38 @@ preferences:
 4. **Balance** (10 points):
    - Complements other meals in day: +10 points
    - Avoids nutrient overlap: +5 points
+
+### Upper Limits Validation
+**Input**: `MicronutrientProfile` (daily totals), `UpperLimits` (resolved limits)  
+**Output**: `List[ULViolation]` (empty = passed)
+
+**Validation Logic**:
+1. Load reference ULs from `data/reference/ul_by_demographic.json` for user's demographic
+2. Merge with user overrides from `upper_limits` (overrides replace reference values)
+3. For each micronutrient field:
+   - If UL is `None`: skip (no limit established)
+   - If `daily_total <= UL`: pass
+   - If `daily_total > UL`: create `ULViolation` record
+4. Return list of violations (empty list = all limits passed)
+
+**Key Constraints**:
+- ULs are **DAILY** limits — enforced per-day, never averaged over week
+- Weekly tracking does NOT weaken daily UL enforcement
+- No implicit weekly ULs — only daily limits exist
+- Intake exactly at UL (==) is valid; only strict excess (>) is violation
+
+**Example**:
+```python
+# Daily totals after meal plan
+daily_micros = MicronutrientProfile(vitamin_a_ug=3500.0, iron_mg=30.0)
+
+# Resolved ULs (reference + overrides)
+upper_limits = UpperLimits(vitamin_a_ug=3000.0, iron_mg=45.0)
+
+# Validation
+violations = validate_daily_upper_limits(daily_micros, upper_limits)
+# Returns: [ULViolation(nutrient="vitamin_a_ug", actual=3500, limit=3000, excess=500)]
+```
 
 ### Meal Planner
 **Input**: `UserProfile`, available `Recipe` list  

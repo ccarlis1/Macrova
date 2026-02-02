@@ -1,7 +1,7 @@
 """Nutrition calculator for computing nutrition values for ingredients and recipes."""
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
-from src.data_layer.models import Ingredient, Recipe, NutritionProfile
+from src.data_layer.models import Ingredient, Recipe, NutritionProfile, MicronutrientProfile
 from src.data_layer.nutrition_db import NutritionDB
 from src.data_layer.exceptions import IngredientNotFoundError
 
@@ -16,6 +16,39 @@ class NutritionCalculator:
         "tsp": 4.93,  # tsp to ml
         "tbsp": 14.79,  # tbsp to ml
     }
+
+    # Micronutrient field names that match MicronutrientProfile attributes
+    # These are the keys we look for in ingredient nutrition data
+    MICRONUTRIENT_FIELDS: List[str] = [
+        # Vitamins
+        "vitamin_a_ug",
+        "vitamin_c_mg",
+        "vitamin_d_iu",
+        "vitamin_e_mg",
+        "vitamin_k_ug",
+        "b1_thiamine_mg",
+        "b2_riboflavin_mg",
+        "b3_niacin_mg",
+        "b5_pantothenic_acid_mg",
+        "b6_pyridoxine_mg",
+        "b12_cobalamin_ug",
+        "folate_ug",
+        # Minerals
+        "calcium_mg",
+        "copper_mg",
+        "iron_mg",
+        "magnesium_mg",
+        "manganese_mg",
+        "phosphorus_mg",
+        "potassium_mg",
+        "selenium_ug",
+        "sodium_mg",
+        "zinc_mg",
+        # Other
+        "fiber_g",
+        "omega_3_g",
+        "omega_6_g",
+    ]
 
     def __init__(self, nutrition_db: NutritionDB):
         """Initialize calculator with nutrition database.
@@ -75,6 +108,10 @@ class NutritionCalculator:
             protein_g = (nutrition_data.get("protein_g", 0.0) * converted_quantity) / 100.0
             fat_g = (nutrition_data.get("fat_g", 0.0) * converted_quantity) / 100.0
             carbs_g = (nutrition_data.get("carbs_g", 0.0) * converted_quantity) / 100.0
+            # Calculate micronutrients with same scaling
+            micronutrients = self._calculate_micronutrients(
+                nutrition_data, converted_quantity / 100.0
+            )
         else:
             # For per_scoop or per_large, quantity is already in the right unit
             # Calculate: nutrition_per_unit * quantity
@@ -82,12 +119,17 @@ class NutritionCalculator:
             protein_g = nutrition_data.get("protein_g", 0.0) * ingredient.quantity
             fat_g = nutrition_data.get("fat_g", 0.0) * ingredient.quantity
             carbs_g = nutrition_data.get("carbs_g", 0.0) * ingredient.quantity
+            # Calculate micronutrients with same scaling
+            micronutrients = self._calculate_micronutrients(
+                nutrition_data, ingredient.quantity
+            )
 
         return NutritionProfile(
             calories=calories,
             protein_g=protein_g,
             fat_g=fat_g,
             carbs_g=carbs_g,
+            micronutrients=micronutrients,
         )
 
     def calculate_recipe_nutrition(self, recipe: Recipe) -> NutritionProfile:
@@ -103,6 +145,8 @@ class NutritionCalculator:
         total_protein = 0.0
         total_fat = 0.0
         total_carbs = 0.0
+        # Initialize micronutrient totals
+        total_micros: Dict[str, float] = {field: 0.0 for field in self.MICRONUTRIENT_FIELDS}
 
         # Filter out "to taste" ingredients
         for ingredient in recipe.ingredients:
@@ -115,6 +159,9 @@ class NutritionCalculator:
                 total_protein += ingredient_nutrition.protein_g
                 total_fat += ingredient_nutrition.fat_g
                 total_carbs += ingredient_nutrition.carbs_g
+                # Aggregate micronutrients
+                if ingredient_nutrition.micronutrients is not None:
+                    self._add_micronutrients(total_micros, ingredient_nutrition.micronutrients)
             except IngredientNotFoundError:
                 # Log warning but continue with other ingredients
                 # In MVP, we'll skip missing ingredients
@@ -125,6 +172,7 @@ class NutritionCalculator:
             protein_g=total_protein,
             fat_g=total_fat,
             carbs_g=total_carbs,
+            micronutrients=MicronutrientProfile(**total_micros),
         )
 
     def _find_nutrition_unit_key(
@@ -214,4 +262,37 @@ class NutritionCalculator:
             return ingredient_info.get("large_size_g", 50.0)  # Default 50g
         else:
             return 1.0  # Default to 1
+
+    def _calculate_micronutrients(
+        self, nutrition_data: Dict[str, Any], multiplier: float
+    ) -> MicronutrientProfile:
+        """Calculate micronutrient values from nutrition data.
+        
+        Args:
+            nutrition_data: Dict containing nutrition values (may include micronutrients)
+            multiplier: Scaling factor based on quantity (e.g., 2.0 for 200g when per_100g)
+        
+        Returns:
+            MicronutrientProfile with calculated values (zeros for missing data)
+        """
+        micro_values: Dict[str, float] = {}
+        
+        for field in self.MICRONUTRIENT_FIELDS:
+            # Get value from nutrition data, default to 0.0 if not present
+            base_value = nutrition_data.get(field, 0.0)
+            micro_values[field] = base_value * multiplier
+        
+        return MicronutrientProfile(**micro_values)
+
+    def _add_micronutrients(
+        self, totals: Dict[str, float], micros: MicronutrientProfile
+    ) -> None:
+        """Add micronutrient values to running totals.
+        
+        Args:
+            totals: Dict of running micronutrient totals (modified in place)
+            micros: MicronutrientProfile to add
+        """
+        for field in self.MICRONUTRIENT_FIELDS:
+            totals[field] += getattr(micros, field, 0.0)
 

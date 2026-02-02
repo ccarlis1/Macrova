@@ -18,6 +18,13 @@ The Nutrition Agent is a modular system that generates personalized meal recomme
 - **Nutrition Database**: Comprehensive nutrition values (macros + micros) per ingredient/recipe
 - **User Profile**: Personal preferences, goals, constraints, meal prep plans
   - Includes optional `max_daily_calories` for Calorie Deficit Mode (hard constraint)
+  - Includes optional `demographic` for UL lookup (e.g., `adult_male`)
+  - Includes optional `upper_limits` overrides for clinician-specified limits
+- **Upper Limits Reference**: Daily tolerable upper intake limits by demographic
+  - Stored in `data/reference/ul_by_demographic.json`
+  - Field names match `MicronutrientProfile` exactly
+  - `null` = no UL established for that nutrient
+  - ULs are DAILY limits (not weekly) — enforced per-day, never averaged
 
 ### 2. Ingestion Layer
 **Purpose**: Parse and retrieve data from various sources
@@ -41,6 +48,10 @@ The Nutrition Agent is a modular system that generates personalized meal recomme
   - Enforces hard constraints (allergens, max_daily_calories) with 0.0 score exclusion
 - **LLM Reasoner**: Use LLM to understand context and make nuanced decisions (Phase 5.1: post-MVP)
 - **Constraint Checker**: Validate recipes against cooking time, satiety, taste preferences, calorie limits
+- **UL Validator**: Post-plan validation of daily micronutrient intake against upper tolerable limits
+  - Loads reference ULs from `data/reference/ul_by_demographic.json`
+  - Merges with user overrides from `upper_limits` in user profile
+  - Enforced per-day (not averaged over week) — exceeding any daily UL marks plan invalid
 
 ### 5. Planning Layer
 **Purpose**: Generate meal plans considering all constraints

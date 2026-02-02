@@ -60,6 +60,55 @@ class MicronutrientProfile:
 
 
 @dataclass
+class UpperLimits:
+    """Daily upper tolerable intake limits for micronutrients.
+    
+    Field names EXACTLY match MicronutrientProfile for easy comparison.
+    A value of None means no UL is established (validation skipped for that nutrient).
+    Values are DAILY limits (not weekly).
+    
+    Units follow standard conventions (same as MicronutrientProfile):
+    - _ug: micrograms
+    - _mg: milligrams
+    - _g: grams
+    - _iu: international units (Vitamin D)
+    
+    Source: IOM DRI / EFSA guidelines (loaded from data/reference/ul_by_demographic.json)
+    """
+
+    # Vitamins
+    vitamin_a_ug: Optional[float] = None
+    vitamin_c_mg: Optional[float] = None
+    vitamin_d_iu: Optional[float] = None
+    vitamin_e_mg: Optional[float] = None
+    vitamin_k_ug: Optional[float] = None
+    b1_thiamine_mg: Optional[float] = None
+    b2_riboflavin_mg: Optional[float] = None
+    b3_niacin_mg: Optional[float] = None
+    b5_pantothenic_acid_mg: Optional[float] = None
+    b6_pyridoxine_mg: Optional[float] = None
+    b12_cobalamin_ug: Optional[float] = None
+    folate_ug: Optional[float] = None
+
+    # Minerals
+    calcium_mg: Optional[float] = None
+    copper_mg: Optional[float] = None
+    iron_mg: Optional[float] = None
+    magnesium_mg: Optional[float] = None
+    manganese_mg: Optional[float] = None
+    phosphorus_mg: Optional[float] = None
+    potassium_mg: Optional[float] = None
+    selenium_ug: Optional[float] = None
+    sodium_mg: Optional[float] = None
+    zinc_mg: Optional[float] = None
+
+    # Other
+    fiber_g: Optional[float] = None
+    omega_3_g: Optional[float] = None
+    omega_6_g: Optional[float] = None
+
+
+@dataclass
 class WeeklyNutritionTargets:
     """Represents weekly RDI targets for micronutrients.
     

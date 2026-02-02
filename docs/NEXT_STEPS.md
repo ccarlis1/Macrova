@@ -12,7 +12,14 @@ Currently, the scope of the MVP is decent, but I think it should be slightly res
 	1b. Update NutritionCalculator to calculate micronutrients
 	1c. Update NutritionAggregator to aggregate micronutrients
 	1d. Add weekly tracking data structures
-	1e. Include maximum tolerable intake handling for micronutrients.
+	1e. ✅ Include maximum tolerable intake handling for micronutrients. **IMPLEMENTED**
+		- **Status:** Data structures, reference loading, and daily validation complete
+		- **Key constraint:** ULs are DAILY limits — enforced per-day, never averaged
+		- Weekly tracking does NOT weaken daily UL enforcement
+		- **Components:** `UpperLimits`, `UpperLimitsLoader`, `resolve_upper_limits()`, `validate_daily_upper_limits()`, `ULViolation`
+		- **Tests:** 34 unit tests in `tests/test_upper_limits.py`
+		- **Pending:** Integration with `MealPlanner` (requires Step 1b first)
+	1e-original. Original requirement for reference:
 		- This value should be calculated for every nutrient based on RDIs for each individual
 		- The idea is that when a weekly meal plan is generated, no nutrient should be in the maximum tolerable intake value whatsoever, to avoid risk of poisoning
 		- Most nutrients are exempt from this, however certain upper intake thresholds could be dangerous for some nutrients (Ex. Vitamin A)

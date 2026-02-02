@@ -116,13 +116,19 @@ The following documents have been updated to reflect the "to taste" handling:
 ## Design Consistency
 
 All design decisions align with KNOWLEDGE.md:
-- ✅ Calorie Deficit Mode (hard cap) - Line 7 ⭐ **NEW**
+- ✅ Calorie Deficit Mode (hard cap) - Line 7 ⭐
 - ✅ Weekly nutrient tracking (running totals) - Line 12
 - ✅ Daily flexibility with weekly requirements - Line 12
 - ✅ Busyness scale (1-4) - Line 15
 - ✅ Satiety considerations - Line 16
 - ✅ "To taste" ingredient exclusion - Line 17 ⭐
 - ✅ Meal prep integration (post-MVP) - Line 18
+- ✅ Upper Tolerable Intake (UL) validation ⭐ **NEW**
+  - ULs are DAILY limits — enforced per-day, never averaged
+  - Weekly tracking does NOT weaken daily UL enforcement
+  - No implicit weekly ULs introduced
+  - Reference data: `data/reference/ul_by_demographic.json`
+  - User overrides: `upper_limits` section in `user_profile.yaml`
 
 ## Next Steps
 

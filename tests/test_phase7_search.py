@@ -6,6 +6,7 @@ import pytest
 
 from src.data_layer.models import Ingredient, MicronutrientProfile, NutritionProfile
 from src.planning.phase0_models import MealSlot, PlanningRecipe, PlanningUserProfile
+from src.planning.phase0_models import Assignment
 from src.planning.phase7_search import (
     DEFAULT_ATTEMPT_LIMIT,
     PlanFailure,
@@ -134,7 +135,7 @@ class TestSearchWithPinnedSlots:
         ok, result = run_meal_plan_search(profile, pool, 2, None)
         assert ok is True, getattr(result, "constraint_detail", result)
         assert isinstance(result, PlanSuccess)
-        assert (0, 0, "r1") in result.assignments
+        assert Assignment(0, 0, "r1") in result.assignments
         assert len(result.assignments) == 4
 
 

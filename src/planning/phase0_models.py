@@ -5,7 +5,7 @@ No search, constraint, or scoring logic — data structures and validation only.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple, NamedTuple
 
 from src.data_layer.models import NutritionProfile, MicronutrientProfile, Ingredient
 
@@ -103,7 +103,8 @@ class PlanningRecipe:
     """Recipe as consumed by the planner. Spec Section 2.2.
 
     Nutrition is pre-computed before the planner runs. primary_carb_contribution
-    is optional and used only when Primary Carb Downscaling is enabled (later phase).
+    is optional and used only when Primary Carb Downscaling is enabled (Phase 9).
+    primary_carb_source identifies the scalable carb (e.g. 'rice', 'potato') for step 8.
     """
 
     id: str
@@ -112,13 +113,36 @@ class PlanningRecipe:
     cooking_time_minutes: int
     nutrition: NutritionProfile
     primary_carb_contribution: Optional[NutritionProfile] = None
+    primary_carb_source: Optional[str] = None
 
 
 # --- Section 3.1 Assignment Sequence ---
 
-# Assignment is (day, slot_index, recipe_id). Day and slot_index are 1-based in spec;
-# we use 0-based indices internally: (day_index, slot_index, recipe_id).
-Assignment = Tuple[int, int, str]
+
+class Assignment(NamedTuple):
+    """One slot assignment. Spec Section 3.1. variant_index 0 = base recipe; >0 = scaled variant (Phase 9)."""
+
+    day_index: int
+    slot_index: int
+    recipe_id: str
+    variant_index: int = 0
+
+
+def get_effective_nutrition(
+    recipe: PlanningRecipe,
+    variant_index: int,
+    variant_nutrition: Optional[NutritionProfile] = None,
+) -> NutritionProfile:
+    """Nutrition to use for this assignment.
+
+    variant_index 0 → recipe.nutrition;
+    variant_index > 0 → variant_nutrition (Phase 9, required).
+    """
+    if variant_index == 0:
+        return recipe.nutrition
+    if variant_nutrition is None:
+        raise RuntimeError("Variant nutrition missing for variant_index > 0")
+    return variant_nutrition
 
 
 # --- Section 3.2 Daily Tracker ---

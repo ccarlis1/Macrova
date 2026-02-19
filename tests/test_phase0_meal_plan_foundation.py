@@ -267,11 +267,14 @@ class TestStateStructures:
         assert w.weekly_totals.calories == 0.0
 
     def test_assignment_sequence_type(self):
-        # Assignment = (day_0based, slot_index_0based, recipe_id) or (day_1based, slot_0based, recipe_id)
-        a = (0, 0, "recipe_1")
-        assert isinstance(a, tuple)
-        assert len(a) == 3
-        assert a[2] == "recipe_1"
+        from src.planning.phase0_models import Assignment
+        a = Assignment(0, 0, "recipe_1")
+        assert a.day_index == 0
+        assert a.slot_index == 0
+        assert a.recipe_id == "recipe_1"
+        assert a.variant_index == 0
+        a2 = Assignment(1, 1, "r2", 1)
+        assert a2.variant_index == 1
 
 
 # --- Planning horizon (Section 2.4) ---

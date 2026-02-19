@@ -1,10 +1,8 @@
-"""Phase 6: Candidate generation at (d, s). Spec Section 6.3 steps 1–7.
+"""Phase 6: Candidate generation at (d, s). Spec Section 6.3 steps 1–8.
 
 Generates C(d, s) by filtering the recipe pool with hard constraints and
-forward feasibility. Signals backtrack when C is empty or a future slot has
-zero eligible candidates. No scoring, no search, no state mutation.
-Step 8 (Primary Carb Downscaling) is not implemented.
-Reference: MEALPLAN_SPECIFICATION_v1.md Section 6.3.
+forward feasibility. Step 8 adds scaled variants when enable_primary_carb_downscaling.
+Reference: MEALPLAN_SPECIFICATION_v1.md Section 6.3, 6.7.
 """
 
 from __future__ import annotations
@@ -12,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Tuple
 
-from src.data_layer.models import UpperLimits
+from src.data_layer.models import NutritionProfile, UpperLimits
 
 from src.planning.phase0_models import (
     DailyTracker,
@@ -37,15 +35,21 @@ from src.planning.phase3_feasibility import (
     check_fc3_incremental_ul,
 )
 from src.planning.slot_attributes import activity_context, is_workout_slot
+from src.planning.phase9_carb_scaling import generate_scaled_variants
 
 
 @dataclass
 class CandidateGenerationResult:
-    """Result of candidate generation at (d, s). Spec Section 6.3."""
+    """Result of candidate generation at (d, s). Spec Section 6.3.
 
-    candidates: Set[str]  # recipe IDs that survive filtering
+    candidates: (recipe_id, variant_index); variant_index 0 = base recipe.
+    variant_nutritions: nutrition for variant_index > 0 only.
+    """
+
+    candidates: Set[Tuple[str, int]]  # (recipe_id, variant_index)
     trigger_backtrack: bool
     calorie_excess_rejections: Set[str] = field(default_factory=set)  # metadata for Phase 9
+    variant_nutritions: Dict[Tuple[str, int], NutritionProfile] = field(default_factory=dict)
 
 
 def _get_slot(
@@ -69,6 +73,9 @@ def _rejected_solely_calorie_fc1(
     profile: PlanningUserProfile,
 ) -> bool:
     """True if FC-1 would reject this recipe solely due to calorie overflow (c_used > max_daily_calories)."""
+    # TODO: tighten "solely calorie excess" detection to align more precisely with
+    # MEALPLAN_SPECIFICATION_v1.md Section 6.7.2 by ensuring the recipe has already
+    # passed HC-1, HC-2, HC-3, and HC-8 before being classified as calorie-only rejected.
     if profile.max_daily_calories is None:
         return False
     tracker = state.daily_trackers.get(day_index)
@@ -219,10 +226,11 @@ def generate_candidates(
     profile: PlanningUserProfile,
     resolved_ul: Optional[UpperLimits],
     macro_bounds: MacroBoundsPrecomputation,
+    scalable_sources: Optional[Dict[str, List[str]]] = None,
 ) -> CandidateGenerationResult:
-    """Compute C(d, s) and backtrack signal. Spec Section 6.3 steps 1–7.
+    """Compute C(d, s) and backtrack signal. Spec Section 6.3 steps 1–8.
 
-    Does not mutate state. No scoring, no Step 8.
+    When enable_primary_carb_downscaling is True, pass scalable_sources (from Phase 9 loader).
     """
     slot = _get_slot(schedule, day_index, slot_index)
     if slot is None:
@@ -230,6 +238,7 @@ def generate_candidates(
             candidates=set(),
             trigger_backtrack=True,
             calorie_excess_rejections=set(),
+            variant_nutritions={},
         )
 
     constraint_state = ConstraintStateView(daily_trackers=daily_trackers)
@@ -243,7 +252,7 @@ def generate_candidates(
     act_ctx = activity_context(slot, slot_index, day_slots, next_first, profile.activity_schedule or {})
     is_workout = is_workout_slot(act_ctx)
 
-    candidates, calorie_excess_rejections = _filter_step_1_through_7(
+    base_candidate_ids, calorie_excess_rejections = _filter_step_1_through_7(
         recipe_pool,
         day_index,
         slot_index,
@@ -255,6 +264,30 @@ def generate_candidates(
         macro_bounds,
         is_workout,
     )
+    candidates: Set[Tuple[str, int]] = {(rid, 0) for rid in base_candidate_ids}
+    variant_nutritions: Dict[Tuple[str, int], NutritionProfile] = {}
+
+    # Step 8: Primary Carb Downscaling (Phase 9)
+    if profile.enable_primary_carb_downscaling and scalable_sources is not None:
+        act_ctx_set = set(act_ctx)
+        scaled = generate_scaled_variants(
+            recipe_pool,
+            calorie_excess_rejections,
+            day_index,
+            slot_index,
+            slot,
+            constraint_state,
+            feasibility_state,
+            profile,
+            resolved_ul,
+            macro_bounds,
+            scalable_sources,
+            act_ctx_set,
+            is_workout,
+        )
+        for rid, vi, nut in scaled:
+            candidates.add((rid, vi))
+            variant_nutritions[(rid, vi)] = nut
 
     trigger = False
     if not candidates:
@@ -274,4 +307,5 @@ def generate_candidates(
         candidates=candidates,
         trigger_backtrack=trigger,
         calorie_excess_rejections=calorie_excess_rejections,
+        variant_nutritions=variant_nutritions,
     )

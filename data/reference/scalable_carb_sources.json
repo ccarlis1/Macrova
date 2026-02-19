@@ -1,0 +1,17 @@
+{
+  "source": "MEALPLAN_SPECIFICATION_v1.md Section 6.7",
+  "note": "Ingredient/source identifiers for scalable rice and potato variants. Used when enable_primary_carb_downscaling is true.",
+  "rice_variants": [
+    "white_rice",
+    "brown_rice",
+    "jasmine_rice",
+    "basmati_rice",
+    "rice"
+  ],
+  "potato_variants": [
+    "potato",
+    "sweet_potato",
+    "yukon_gold_potato",
+    "russet_potato"
+  ]
+}

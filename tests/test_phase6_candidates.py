@@ -99,7 +99,7 @@ class TestHC1Filtering:
             pool, 0, 0, state_0, WeeklyTracker(), schedule,
             profile, None, _macro_bounds(pool),
         )
-        assert res.candidates == {"r1"}
+        assert res.candidates == {("r1", 0)}
         assert not res.trigger_backtrack
 
 
@@ -122,7 +122,7 @@ class TestHC2Filtering:
             pool, 0, 1, {0: tracker}, WeeklyTracker(), schedule,
             profile, None, _macro_bounds(pool),
         )
-        assert res.candidates == {"r2"}
+        assert res.candidates == {("r2", 0)}
         assert not res.trigger_backtrack
 
 
@@ -142,7 +142,7 @@ class TestHC3Filtering:
             pool, 0, 0, state_0, WeeklyTracker(), schedule,
             profile, None, _macro_bounds(pool),
         )
-        assert res.candidates == {"r1"}
+        assert res.candidates == {("r1", 0)}
         assert not res.trigger_backtrack
 
 
@@ -164,7 +164,7 @@ class TestHC5Filtering:
             pool, 0, 1, {0: tracker}, WeeklyTracker(), schedule,
             profile, None, _macro_bounds(pool),
         )
-        assert res.candidates == {"r1"}
+        assert res.candidates == {("r1", 0)}
         assert "r2" in res.calorie_excess_rejections
         assert not res.trigger_backtrack
 
@@ -190,7 +190,7 @@ class TestHC8Filtering:
             pool, 1, 0, state_1, WeeklyTracker(), schedule,
             profile, None, _macro_bounds(pool),
         )
-        assert res.candidates == {"r2"}
+        assert res.candidates == {("r2", 0)}
         assert not res.trigger_backtrack
 
     def test_hc8_no_restriction_on_day_0(self):
@@ -202,7 +202,7 @@ class TestHC8Filtering:
             pool, 0, 0, {}, WeeklyTracker(), schedule,
             profile, None, _macro_bounds(pool),
         )
-        assert res.candidates == {"r1"}
+        assert res.candidates == {("r1", 0)}
 
 
 # --- FC-1, FC-2, FC-3 ---
@@ -223,7 +223,7 @@ class TestFeasibilityFiltering:
             pool, 0, 1, {0: tracker}, WeeklyTracker(), schedule,
             profile, None, _macro_bounds(pool),
         )
-        assert res.candidates == {"r1"}
+        assert res.candidates == {("r1", 0)}
 
     def test_recipe_fails_fc1_calorie_overflow_recorded(self):
         profile = _make_profile(max_daily_calories=600)
@@ -253,7 +253,7 @@ class TestFeasibilityFiltering:
             pool, 0, 1, {0: tracker}, WeeklyTracker(), schedule,
             profile, None, macro,
         )
-        assert res.candidates == {"r2"}
+        assert res.candidates == {("r2", 0)}
 
     def test_recipe_fails_fc3_ul_feasibility(self):
         profile = _make_profile(daily_calories=2000, daily_protein_g=80.0, daily_fat_g=(52.0, 80.0), daily_carbs_g=205.0)
@@ -271,7 +271,7 @@ class TestFeasibilityFiltering:
             pool, 0, 1, {0: tracker}, WeeklyTracker(), schedule,
             profile, ul, _macro_bounds(pool),
         )
-        assert res.candidates == {"r1"}
+        assert res.candidates == {("r1", 0)}
 
 
 # --- Backtrack signal ---
@@ -301,7 +301,7 @@ class TestBacktrackSignal:
             pool, 0, 0, state_0, WeeklyTracker(), schedule,
             profile, None, _macro_bounds(pool),
         )
-        assert res.candidates == {"r1", "r2"}
+        assert res.candidates == {("r1", 0), ("r2", 0)}
         assert res.trigger_backtrack is False
 
     def test_future_slot_zero_eligible_triggers_backtrack(self):
@@ -328,7 +328,7 @@ class TestBacktrackSignal:
             pool, 0, 0, state_0, WeeklyTracker(), schedule,
             profile, None, _macro_bounds(pool),
         )
-        assert res.candidates == {"r1", "r2"}
+        assert res.candidates == {("r1", 0), ("r2", 0)}
         assert res.trigger_backtrack is True
 
 
@@ -346,5 +346,6 @@ class TestResultShape:
         )
         assert isinstance(res, CandidateGenerationResult)
         assert isinstance(res.candidates, set)
+        assert all(isinstance(x, tuple) and len(x) == 2 for x in res.candidates)
         assert isinstance(res.trigger_backtrack, bool)
         assert isinstance(res.calorie_excess_rejections, set)

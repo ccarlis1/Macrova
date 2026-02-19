@@ -23,6 +23,7 @@ from src.planning.phase0_models import (
     PlanningRecipe,
     PlanningUserProfile,
     WeeklyTracker,
+    get_effective_nutrition,
     micronutrient_profile_to_dict,
 )
 from src.planning.phase1_state import (
@@ -40,8 +41,9 @@ from src.planning.phase3_feasibility import (
     precompute_max_daily_achievable,
 )
 from src.planning.phase4_scoring import ScoringStateView, composite_score
-from src.planning.phase5_ordering import OrderingStateView, order_scored_candidates
+from src.planning.phase5_ordering import OrderingStateView, ordering_key
 from src.planning.phase6_candidates import generate_candidates, CandidateGenerationResult
+from src.planning.phase9_carb_scaling import compute_variant_nutrition, load_scalable_carb_sources
 from src.planning.slot_attributes import activity_context, is_workout_slot
 
 from src.data_layer.models import UpperLimits
@@ -178,8 +180,10 @@ def _apply_assignment(
     recipe: PlanningRecipe,
     is_workout: bool,
     schedule: List[List[MealSlot]],
+    variant_index: int = 0,
+    variant_nutrition: Optional[NutritionProfile] = None,
 ) -> None:
-    """Update state with one assignment. Mutates daily_trackers and assignments."""
+    """Update state with one assignment. Mutates daily_trackers and assignments. HC-2/HC-8 use recipe_id only."""
     day_slots = schedule[day_index]
     slots_total = len(day_slots)
     tracker = daily_trackers.get(day_index)
@@ -187,13 +191,13 @@ def _apply_assignment(
         tracker = DailyTracker(slots_total=slots_total)
         daily_trackers[day_index] = tracker
 
-    n = _recipe_to_nutrition_profile(recipe)
-    micro = micronutrient_profile_to_dict(n.micronutrients) if n.micronutrients else {}
+    nut = get_effective_nutrition(recipe, variant_index, variant_nutrition)
+    micro = micronutrient_profile_to_dict(nut.micronutrients) if nut.micronutrients else {}
 
-    new_cal = tracker.calories_consumed + n.calories
-    new_pro = tracker.protein_consumed + n.protein_g
-    new_fat = tracker.fat_consumed + n.fat_g
-    new_carbs = tracker.carbs_consumed + n.carbs_g
+    new_cal = tracker.calories_consumed + nut.calories
+    new_pro = tracker.protein_consumed + nut.protein_g
+    new_fat = tracker.fat_consumed + nut.fat_g
+    new_carbs = tracker.carbs_consumed + nut.carbs_g
     new_micro = _dict_subtract(tracker.micronutrients_consumed, {})  # copy
     for k, v in micro.items():
         new_micro[k] = new_micro.get(k, 0.0) + v
@@ -212,7 +216,7 @@ def _apply_assignment(
         slots_assigned=tracker.slots_assigned + 1,
         slots_total=slots_total,
     )
-    assignments.append((day_index, slot_index, recipe_id))
+    assignments.append(Assignment(day_index, slot_index, recipe_id, variant_index))
 
 
 # --- Remove assignment (unwind) ---
@@ -222,9 +226,7 @@ def _remove_assignment(
     daily_trackers: Dict[int, DailyTracker],
     weekly_tracker: WeeklyTracker,
     assignments: List[Assignment],
-    day_index: int,
-    slot_index: int,
-    recipe_id: str,
+    assignment: Assignment,
     recipe: PlanningRecipe,
     is_workout: bool,
     schedule: List[List[MealSlot]],
@@ -232,9 +234,13 @@ def _remove_assignment(
     completed_days: Optional[Set[int]] = None,
 ) -> None:
     """Remove one assignment from state. Handles day-boundary: subtract day from weekly only if day was completed."""
+    day_index, slot_index, recipe_id = assignment.day_index, assignment.slot_index, assignment.recipe_id
     tracker = daily_trackers[day_index]
-    n = _recipe_to_nutrition_profile(recipe)
-    micro = micronutrient_profile_to_dict(n.micronutrients) if n.micronutrients else {}
+    if assignment.variant_index > 0:
+        nut = compute_variant_nutrition(recipe, assignment.variant_index, profile)
+    else:
+        nut = get_effective_nutrition(recipe, 0)
+    micro = micronutrient_profile_to_dict(nut.micronutrients) if nut.micronutrients else {}
     slots_total = tracker.slots_total
     new_slots_assigned = tracker.slots_assigned - 1
 
@@ -255,10 +261,10 @@ def _remove_assignment(
         if day_index in daily_trackers:
             del daily_trackers[day_index]
     else:
-        new_cal = tracker.calories_consumed - n.calories
-        new_pro = tracker.protein_consumed - n.protein_g
-        new_fat = tracker.fat_consumed - n.fat_g
-        new_carbs = tracker.carbs_consumed - n.carbs_g
+        new_cal = tracker.calories_consumed - nut.calories
+        new_pro = tracker.protein_consumed - nut.protein_g
+        new_fat = tracker.fat_consumed - nut.fat_g
+        new_carbs = tracker.carbs_consumed - nut.carbs_g
         new_micro = {k: tracker.micronutrients_consumed.get(k, 0.0) - micro.get(k, 0.0) for k in set(tracker.micronutrients_consumed) | set(micro)}
         new_used = set(tracker.used_recipe_ids) - {recipe_id}
         new_non_workout = set(tracker.non_workout_recipe_ids)
@@ -277,7 +283,7 @@ def _remove_assignment(
         )
 
     try:
-        assignments.remove((day_index, slot_index, recipe_id))
+        assignments.remove(assignment)
     except ValueError:
         pass
 
@@ -394,7 +400,8 @@ def _update_weekly_after_day(
 
 @dataclass
 class _CandidateCacheEntry:
-    ordered: List[PlanningRecipe]  # ordered by score then tie-break
+    ordered: List[Tuple[str, int]]  # (recipe_id, variant_index) ordered by score then tie-break
+    variant_nutritions: Dict[Tuple[str, int], NutritionProfile]  # for variant_index > 0
     pointer: int
 
 
@@ -459,6 +466,11 @@ def run_meal_plan_search(
     nutrient_names = list(profile.micronutrient_targets.keys()) or list(MicronutrientProfile.__dataclass_fields__.keys())
     max_daily_achievable = precompute_max_daily_achievable(recipe_pool, nutrient_names, slot_counts)
 
+    scalable_sources: Optional[Dict[str, List[str]]] = None
+    if profile.enable_primary_carb_downscaling:
+        # Fail fast on malformed or missing primary carb reference data.
+        scalable_sources = load_scalable_carb_sources()
+
     order = _decision_order(schedule, D)
     cache: Dict[Tuple[int, int], _CandidateCacheEntry] = {}
     completed_days: Set[int] = set()
@@ -516,7 +528,7 @@ def run_meal_plan_search(
                 continue
 
         if _is_pinned(profile, day_index, slot_index):
-            assigned_slots = {(a[0], a[1]) for a in assignments}
+            assigned_slots = {(a.day_index, a.slot_index) for a in assignments}
             if (day_index, slot_index) in assigned_slots:
                 i += 1
                 continue
@@ -526,7 +538,7 @@ def run_meal_plan_search(
             next_first = schedule[day_index + 1][0] if day_index + 1 < D else None
             act_ctx = activity_context(day_slots[slot_index], slot_index, day_slots, next_first, profile.activity_schedule or {})
             is_w = is_workout_slot(act_ctx)
-            _apply_assignment(daily_trackers, assignments, day_index, slot_index, recipe_id, recipe, is_w, schedule)
+            _apply_assignment(daily_trackers, assignments, day_index, slot_index, recipe_id, recipe, is_w, schedule, variant_index=0)
             i += 1
             attempt_count += 1
             if stats is not None and stats.enabled:
@@ -543,6 +555,7 @@ def run_meal_plan_search(
                 recipe_pool, day_index, slot_index,
                 dict(daily_trackers), copy.deepcopy(weekly_tracker), schedule,
                 profile, resolved_ul, macro_bounds,
+                scalable_sources=scalable_sources,
             )
             if cg.trigger_backtrack:
                 target = _find_backtrack_target(order, i, cache, profile)
@@ -566,15 +579,33 @@ def run_meal_plan_search(
                     completed_days, recipe_by_id, schedule, profile,
                 )
                 continue
-            scored = []
-            for rid in sorted(cg.candidates):
+            scored_triples: List[Tuple[str, int, PlanningRecipe, float]] = []
+            for (rid, vi) in sorted(cg.candidates):
                 r = recipe_by_id[rid]
+                nut = cg.variant_nutritions.get((rid, vi)) or get_effective_nutrition(r, vi, None)
+                recipe_view = PlanningRecipe(
+                    id=r.id,
+                    name=r.name,
+                    ingredients=r.ingredients,
+                    cooking_time_minutes=r.cooking_time_minutes,
+                    nutrition=nut,
+                    primary_carb_contribution=r.primary_carb_contribution,
+                    primary_carb_source=r.primary_carb_source,
+                )
                 state_view = ScoringStateView(daily_trackers=dict(daily_trackers), weekly_tracker=weekly_tracker, schedule=schedule)
-                sc = composite_score(r, day_index, slot_index, state_view, profile)
-                scored.append((r, sc))
+                sc = composite_score(recipe_view, day_index, slot_index, state_view, profile)
+                scored_triples.append((rid, vi, recipe_view, sc))
             ord_state = OrderingStateView(daily_trackers=dict(daily_trackers), weekly_tracker=weekly_tracker)
-            ordered = order_scored_candidates(scored, ord_state, profile, day_index)
-            cache[key] = _CandidateCacheEntry(ordered=[r for r, _ in ordered], pointer=0)
+            ordered_triples = sorted(
+                scored_triples,
+                key=lambda t: ordering_key((t[2], t[3]), ord_state, profile, day_index),
+            )
+            ordered_ids = [(rid, vi) for rid, vi, _rv, _sc in ordered_triples]
+            cache[key] = _CandidateCacheEntry(
+                ordered=ordered_ids,
+                variant_nutritions=cg.variant_nutritions,
+                pointer=0,
+            )
             if stats is not None and stats.enabled:
                 stats.branching_factors[key] = len(cache[key].ordered)
 
@@ -600,13 +631,18 @@ def run_meal_plan_search(
             )
             continue
 
-        recipe = entry.ordered[entry.pointer]
-        recipe_id = recipe.id
+        recipe_id, variant_index = entry.ordered[entry.pointer]
+        recipe = recipe_by_id[recipe_id]
+        variant_nutrition = entry.variant_nutritions.get((recipe_id, variant_index)) if variant_index > 0 else None
         day_slots = schedule[day_index]
         next_first = schedule[day_index + 1][0] if day_index + 1 < D else None
         act_ctx = activity_context(day_slots[slot_index], slot_index, day_slots, next_first, profile.activity_schedule or {})
         is_w = is_workout_slot(act_ctx)
-        _apply_assignment(daily_trackers, assignments, day_index, slot_index, recipe_id, recipe, is_w, schedule)
+        _apply_assignment(
+            daily_trackers, assignments, day_index, slot_index, recipe_id, recipe, is_w, schedule,
+            variant_index=variant_index,
+            variant_nutrition=variant_nutrition,
+        )
         entry.pointer += 1
         i += 1
         attempt_count += 1
@@ -771,26 +807,25 @@ def _unwind_to(
 ) -> Tuple[int, Dict[int, DailyTracker], WeeklyTracker, List[Assignment], Dict[Tuple[int, int], _CandidateCacheEntry]]:
     """Unwind state to target_i by value: remove target (non-pinned) and all later non-pinned assignments. Pinned never removed."""
     target_day, target_slot = order[target_i]
-    to_remove: List[Tuple[int, int, str]] = [
-        (d, s, rid)
-        for (d, s, rid) in assignments
-        if (d, s) >= (target_day, target_slot) and not _is_pinned(profile, d, s)
+    to_remove_list: List[Assignment] = [
+        a for a in assignments
+        if (a.day_index, a.slot_index) >= (target_day, target_slot) and not _is_pinned(profile, a.day_index, a.slot_index)
     ]
-    to_remove.sort(key=lambda x: (x[0], x[1]), reverse=True)
+    to_remove_list.sort(key=lambda a: (a.day_index, a.slot_index), reverse=True)
 
-    for di, si, rid in to_remove:
-        recipe = recipe_by_id.get(rid)
+    for a in to_remove_list:
+        recipe = recipe_by_id.get(a.recipe_id)
         if recipe is None:
             continue
-        day_slots = schedule[di]
-        next_first = schedule[di + 1][0] if di + 1 < len(schedule) else None
-        act_ctx = activity_context(day_slots[si], si, day_slots, next_first, profile.activity_schedule or {})
+        day_slots = schedule[a.day_index]
+        next_first = schedule[a.day_index + 1][0] if a.day_index + 1 < len(schedule) else None
+        act_ctx = activity_context(day_slots[a.slot_index], a.slot_index, day_slots, next_first, profile.activity_schedule or {})
         is_w = is_workout_slot(act_ctx)
         _remove_assignment(
-            daily_trackers, weekly_tracker, assignments, di, si, rid, recipe, is_w, schedule, profile, completed_days
+            daily_trackers, weekly_tracker, assignments, a, recipe, is_w, schedule, profile, completed_days
         )
 
-    current_day = to_remove[0][0] if to_remove else target_day
+    current_day = to_remove_list[0].day_index if to_remove_list else target_day
     crossed_day_boundary = target_day < current_day
     cache_cleaned: Dict[Tuple[int, int], _CandidateCacheEntry] = {}
     for (d, s), entry in cache.items():

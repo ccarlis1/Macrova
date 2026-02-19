@@ -8,6 +8,7 @@ import pytest
 
 from src.data_layer.models import NutritionProfile, MicronutrientProfile, Ingredient
 from src.planning.phase0_models import (
+    Assignment,
     MealSlot,
     PlanningUserProfile,
     PlanningRecipe,
@@ -87,7 +88,7 @@ class TestInitialState:
         assert val.success is True
         state = build_initial_state(profile, R, 2)
         assert len(state.assignments) == 1
-        assert state.assignments[0] == (0, 0, "r1")
+        assert state.assignments[0] == Assignment(0, 0, "r1")
         assert 0 in state.daily_trackers
         t = state.daily_trackers[0]
         assert t.calories_consumed == 600.0
@@ -109,8 +110,8 @@ class TestInitialState:
         assert val.success is True
         state = build_initial_state(profile, R, 2)
         assert len(state.assignments) == 2
-        assert state.assignments[0] == (0, 0, "r1")
-        assert state.assignments[1] == (1, 1, "r2")
+        assert state.assignments[0] == Assignment(0, 0, "r1")
+        assert state.assignments[1] == Assignment(1, 1, "r2")
         assert state.daily_trackers[0].calories_consumed == 400.0
         assert state.daily_trackers[1].calories_consumed == 500.0
         assert state.weekly_tracker.weekly_totals.calories == 900.0
@@ -127,9 +128,9 @@ class TestInitialState:
         R = {f"r{i}": _make_recipe(f"r{i}") for i in (1, 2, 3)}
         state = build_initial_state(profile, R, 2)
         # Decision order: (0,0), (0,1), (1,0), (1,1)
-        assert state.assignments[0] == (0, 0, "r1")
-        assert state.assignments[1] == (0, 1, "r2")
-        assert state.assignments[2] == (1, 0, "r3")
+        assert state.assignments[0] == Assignment(0, 0, "r1")
+        assert state.assignments[1] == Assignment(0, 1, "r2")
+        assert state.assignments[2] == Assignment(1, 0, "r3")
 
 
 # --- Pinned pre-validation ---

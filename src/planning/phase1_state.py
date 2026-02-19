@@ -16,6 +16,7 @@ from src.planning.phase0_models import (
     DailyTracker,
     WeeklyTracker,
     Assignment,
+    get_effective_nutrition,
     validate_schedule_structure,
     validate_planning_horizon,
     micronutrient_profile_to_dict,
@@ -222,12 +223,13 @@ def build_initial_state(
                 continue
             recipe_id = pinned[key]
             recipe = recipe_by_id[recipe_id]
-            assignments.append((day_index, slot_index, recipe_id))
-            calories_d += recipe.nutrition.calories
-            protein_d += recipe.nutrition.protein_g
-            fat_d += recipe.nutrition.fat_g
-            carbs_d += recipe.nutrition.carbs_g
-            micro_d = _dict_sum(micro_d, micronutrient_profile_to_dict(recipe.nutrition.micronutrients))
+            assignments.append(Assignment(day_index, slot_index, recipe_id, 0))
+            nut = get_effective_nutrition(recipe, 0)
+            calories_d += nut.calories
+            protein_d += nut.protein_g
+            fat_d += nut.fat_g
+            carbs_d += nut.carbs_g
+            micro_d = _dict_sum(micro_d, micronutrient_profile_to_dict(nut.micronutrients))
             used_ids.add(recipe_id)
             slot = day_slots[slot_index]
             ctx = activity_context(slot, slot_index, day_slots, next_day_first, activity_schedule)

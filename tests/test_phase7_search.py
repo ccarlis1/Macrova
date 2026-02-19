@@ -10,6 +10,7 @@ from src.planning.phase7_search import (
     DEFAULT_ATTEMPT_LIMIT,
     PlanFailure,
     PlanSuccess,
+    SearchStats,
     run_meal_plan_search,
 )
 
@@ -265,6 +266,26 @@ class TestDeterminism:
         assert ok1 is True
         assert [a for a in result1.assignments] == [a for a in result2.assignments]
 
+    def test_stats_enabled_vs_disabled_identical_plan(self):
+        schedule = _make_schedule(ndays=2, slots_per_day=2)
+        profile = _make_profile(schedule)
+        pool = [
+            _make_recipe("r1", 1000.0, 50.0, 32.0, 125.0),
+            _make_recipe("r2", 1000.0, 50.0, 32.0, 125.0),
+            _make_recipe("r3", 1000.0, 50.0, 32.0, 125.0),
+            _make_recipe("r4", 1000.0, 50.0, 32.0, 125.0),
+        ]
+        ok_no_stats, result_no = run_meal_plan_search(profile, pool, 2, None)
+        profile2 = _make_profile(schedule)
+        stats = SearchStats(enabled=True)
+        ok_with_stats, result_with = run_meal_plan_search(profile2, pool, 2, None, stats=stats)
+        assert ok_no_stats is ok_with_stats
+        assert ok_no_stats is True
+        assert [a for a in result_no.assignments] == [a for a in result_with.assignments]
+        assert stats.total_attempts == 4
+        assert stats.total_runtime() >= 0
+        assert len(stats.branching_factors) <= 4
+
 
 # --- Report structure ---
 
@@ -289,3 +310,53 @@ class TestFailureReportStructure:
     def test_attempt_limit_configurable_default(self):
         assert DEFAULT_ATTEMPT_LIMIT > 0
         assert isinstance(DEFAULT_ATTEMPT_LIMIT, int)
+
+
+# --- Optional SearchStats instrumentation ---
+
+
+class TestSearchStatsInstrumentation:
+    def test_stats_disabled_by_default(self):
+        stats = SearchStats()
+        assert stats.enabled is False
+
+    def test_stats_populated_when_enabled(self):
+        schedule = _make_schedule(ndays=2, slots_per_day=2)
+        profile = _make_profile(schedule)
+        pool = [
+            _make_recipe("r1", 1000.0, 50.0, 32.0, 125.0),
+            _make_recipe("r2", 1000.0, 50.0, 32.0, 125.0),
+            _make_recipe("r3", 1000.0, 50.0, 32.0, 125.0),
+            _make_recipe("r4", 1000.0, 50.0, 32.0, 125.0),
+        ]
+        stats = SearchStats(enabled=True)
+        ok, result = run_meal_plan_search(profile, pool, 2, None, stats=stats)
+        assert ok is True
+        assert stats.total_attempts == 4
+        assert stats.total_runtime() >= 0
+        assert isinstance(stats.branching_factors, dict)
+        assert stats.time_per_attempt() >= 0
+
+    def test_d7_timing_measurable(self):
+        schedule = _make_schedule(ndays=7, slots_per_day=2)
+        profile = _make_profile(schedule)
+        pool = [_make_recipe(f"r{i}", 1000.0, 50.0, 32.0, 125.0) for i in range(14)]
+        stats = SearchStats(enabled=True)
+        ok, result = run_meal_plan_search(profile, pool, 7, None, stats=stats)
+        assert ok is True
+        assert stats.total_attempts == 14
+        assert stats.total_runtime() >= 0
+        assert stats.time_per_attempt() >= 0
+
+    def test_single_day_mode_stats(self):
+        schedule = _make_schedule(ndays=1, slots_per_day=2)
+        profile = _make_profile(schedule)
+        pool = [
+            _make_recipe("r1", 1000.0, 50.0, 32.0, 125.0),
+            _make_recipe("r2", 1000.0, 50.0, 32.0, 125.0),
+        ]
+        stats = SearchStats(enabled=True)
+        ok, result = run_meal_plan_search(profile, pool, 1, None, stats=stats)
+        assert ok is True
+        assert stats.total_attempts == 2
+        assert stats.total_runtime() >= 0

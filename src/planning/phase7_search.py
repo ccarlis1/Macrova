@@ -9,6 +9,7 @@ Reference: MEALPLAN_SPECIFICATION_v1.md.
 from __future__ import annotations
 
 import copy
+import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -47,6 +48,45 @@ from src.data_layer.models import UpperLimits
 
 # Attempt limit: configurable, sensible default. Spec Section 9.4.
 DEFAULT_ATTEMPT_LIMIT = 50_000
+
+
+# --- Optional instrumentation (observational only) ---
+
+
+@dataclass
+class SearchStats:
+    """Optional stats collection. All updates guarded by stats.enabled. Does not affect search behavior."""
+
+    enabled: bool = False
+    total_attempts: int = 0
+    attempts_per_slot: Dict[Tuple[int, int], int] = field(default_factory=dict)
+    attempts_per_day: Dict[int, int] = field(default_factory=dict)
+    branching_factors: Dict[Tuple[int, int], int] = field(default_factory=dict)
+    _backtrack_depths: List[int] = field(default_factory=list, repr=False)
+    _start_time: Optional[float] = field(default=None, repr=False)
+    _end_time: Optional[float] = field(default=None, repr=False)
+    _day_starts: Dict[int, float] = field(default_factory=dict, repr=False)
+    day_runtimes: Dict[int, float] = field(default_factory=dict)
+
+    def total_runtime(self) -> float:
+        if self._start_time is not None and self._end_time is not None:
+            return self._end_time - self._start_time
+        return 0.0
+
+    @property
+    def max_depth(self) -> int:
+        return max(self._backtrack_depths, default=0)
+
+    @property
+    def average_backtrack_depth(self) -> float:
+        if not self._backtrack_depths:
+            return 0.0
+        return sum(self._backtrack_depths) / len(self._backtrack_depths)
+
+    def time_per_attempt(self) -> float:
+        if self.total_attempts <= 0:
+            return 0.0
+        return self.total_runtime() / self.total_attempts
 
 
 # --- Result types ---
@@ -373,19 +413,29 @@ def run_meal_plan_search(
     D: int,
     resolved_ul: Optional[UpperLimits],
     attempt_limit: int = DEFAULT_ATTEMPT_LIMIT,
+    stats: Optional[SearchStats] = None,
 ) -> Tuple[bool, Any]:
     """
     Run the full meal plan search. Returns (success, PlanSuccess | PlanFailure).
     Spec Sections 6.1–6.6, 9, 10, 11. Deterministic.
+    If stats is provided and stats.enabled, observational metrics are recorded.
     """
+    if stats is not None and stats.enabled:
+        stats._start_time = time.perf_counter()
     schedule = profile.schedule
     if len(schedule) != D:
+        if stats is not None and stats.enabled:
+            stats._end_time = time.perf_counter()
+            stats.total_attempts = 0
         return False, PlanFailure(failure_mode="FM-3", constraint_detail="Schedule length != D")
     recipe_by_id = {r.id: r for r in recipe_pool}
 
     # Pinned pre-validation (Section 3.5)
     pin_result = validate_pinned_assignments(profile, recipe_by_id, D)
     if not pin_result.success:
+        if stats is not None and stats.enabled:
+            stats._end_time = time.perf_counter()
+            stats.total_attempts = 0
         return False, PlanFailure(
             failure_mode="FM-3",
             constraint_detail=pin_result.failed_hc,
@@ -421,6 +471,9 @@ def run_meal_plan_search(
     while i < len(order):
         day_index, slot_index = order[i]
         if attempt_count >= attempt_limit:
+            if stats is not None and stats.enabled:
+                stats._end_time = time.perf_counter()
+                stats.total_attempts = attempt_count
             return False, PlanFailure(
                 failure_mode="FM-5",
                 best_partial_assignments=best_assignments,
@@ -428,6 +481,9 @@ def run_meal_plan_search(
                 attempt_count=attempt_count,
                 sodium_advisory=sodium_advisory,
             )
+
+        if stats is not None and stats.enabled and slot_index == 0:
+            stats._day_starts[day_index] = time.perf_counter()
 
         # FC-4 at start of day d > 1 (Section 6, BT-4)
         if day_index > 0 and slot_index == 0:
@@ -440,6 +496,9 @@ def run_meal_plan_search(
                 # BT-4: backtrack
                 target = _find_backtrack_target(order, i, cache, profile)
                 if target is None:
+                    if stats is not None and stats.enabled:
+                        stats._end_time = time.perf_counter()
+                        stats.total_attempts = attempt_count
                     return False, PlanFailure(
                         failure_mode="FM-4",
                         day_index=day_index,
@@ -448,6 +507,8 @@ def run_meal_plan_search(
                         best_partial_daily_trackers=dict(daily_trackers),
                         attempt_count=attempt_count,
                     )
+                if stats is not None and stats.enabled:
+                    stats._backtrack_depths.append(i - target)
                 i, daily_trackers, weekly_tracker, assignments, cache = _unwind_to(
                     target, order, daily_trackers, weekly_tracker, assignments, cache,
                     completed_days, recipe_by_id, schedule, profile,
@@ -468,6 +529,9 @@ def run_meal_plan_search(
             _apply_assignment(daily_trackers, assignments, day_index, slot_index, recipe_id, recipe, is_w, schedule)
             i += 1
             attempt_count += 1
+            if stats is not None and stats.enabled:
+                stats.attempts_per_slot[(day_index, slot_index)] = stats.attempts_per_slot.get((day_index, slot_index), 0) + 1
+                stats.attempts_per_day[day_index] = stats.attempts_per_day.get(day_index, 0) + 1
             if _update_best(assignments, daily_trackers, best_assignments, best_daily_trackers):
                 pass
             continue
@@ -483,6 +547,9 @@ def run_meal_plan_search(
             if cg.trigger_backtrack:
                 target = _find_backtrack_target(order, i, cache, profile)
                 if target is None:
+                    if stats is not None and stats.enabled:
+                        stats._end_time = time.perf_counter()
+                        stats.total_attempts = attempt_count
                     return False, PlanFailure(
                         failure_mode="FM-1",
                         day_index=day_index,
@@ -492,6 +559,8 @@ def run_meal_plan_search(
                         best_partial_daily_trackers=dict(daily_trackers),
                         attempt_count=attempt_count,
                     )
+                if stats is not None and stats.enabled:
+                    stats._backtrack_depths.append(i - target)
                 i, daily_trackers, weekly_tracker, assignments, cache = _unwind_to(
                     target, order, daily_trackers, weekly_tracker, assignments, cache,
                     completed_days, recipe_by_id, schedule, profile,
@@ -506,11 +575,16 @@ def run_meal_plan_search(
             ord_state = OrderingStateView(daily_trackers=dict(daily_trackers), weekly_tracker=weekly_tracker)
             ordered = order_scored_candidates(scored, ord_state, profile, day_index)
             cache[key] = _CandidateCacheEntry(ordered=[r for r, _ in ordered], pointer=0)
+            if stats is not None and stats.enabled:
+                stats.branching_factors[key] = len(cache[key].ordered)
 
         entry = cache[key]
         if entry.pointer >= len(entry.ordered):
             target = _find_backtrack_target(order, i, cache, profile)
             if target is None:
+                if stats is not None and stats.enabled:
+                    stats._end_time = time.perf_counter()
+                    stats.total_attempts = attempt_count
                 return False, PlanFailure(
                     failure_mode="FM-2",
                     best_partial_assignments=list(best_assignments),
@@ -518,6 +592,8 @@ def run_meal_plan_search(
                     attempt_count=attempt_count,
                     sodium_advisory=sodium_advisory,
                 )
+            if stats is not None and stats.enabled:
+                stats._backtrack_depths.append(i - target)
             i, daily_trackers, weekly_tracker, assignments, cache = _unwind_to(
                 target, order, daily_trackers, weekly_tracker, assignments, cache,
                 completed_days, recipe_by_id, schedule, profile,
@@ -534,6 +610,9 @@ def run_meal_plan_search(
         entry.pointer += 1
         i += 1
         attempt_count += 1
+        if stats is not None and stats.enabled:
+            stats.attempts_per_slot[(day_index, slot_index)] = stats.attempts_per_slot.get((day_index, slot_index), 0) + 1
+            stats.attempts_per_day[day_index] = stats.attempts_per_day.get(day_index, 0) + 1
         if _update_best(assignments, daily_trackers, best_assignments, best_daily_trackers):
             pass
 
@@ -544,6 +623,9 @@ def run_meal_plan_search(
             if not ok:
                 target = _find_backtrack_target(order, i, cache, profile)
                 if target is None:
+                    if stats is not None and stats.enabled:
+                        stats._end_time = time.perf_counter()
+                        stats.total_attempts = attempt_count
                     return False, PlanFailure(
                         failure_mode="FM-2",
                         day_index=day_index,
@@ -552,11 +634,15 @@ def run_meal_plan_search(
                         best_partial_daily_trackers=dict(daily_trackers),
                         attempt_count=attempt_count,
                     )
+                if stats is not None and stats.enabled:
+                    stats._backtrack_depths.append(i - target)
                 i, daily_trackers, weekly_tracker, assignments, cache = _unwind_to(
                     target, order, daily_trackers, weekly_tracker, assignments, cache,
                     completed_days, recipe_by_id, schedule, profile,
                 )
                 continue
+            if stats is not None and stats.enabled:
+                stats.day_runtimes[day_index] = time.perf_counter() - stats._day_starts.get(day_index, stats._start_time or 0)
             _update_weekly_after_day(daily_trackers, weekly_tracker, day_index, schedule, profile, D)
             completed_days.add(day_index)
 
@@ -565,6 +651,11 @@ def run_meal_plan_search(
             last_tracker = daily_trackers.get(day_index)
             if last_tracker is not None and last_tracker.slots_assigned == last_tracker.slots_total:
                 if D == 1:
+                    if stats is not None and stats.enabled:
+                        stats._end_time = time.perf_counter()
+                        stats.total_attempts = attempt_count
+                        if day_index in stats._day_starts:
+                            stats.day_runtimes[day_index] = stats._end_time - stats._day_starts[day_index]
                     return True, PlanSuccess(
                         assignments=list(assignments),
                         daily_trackers=dict(daily_trackers),
@@ -577,6 +668,9 @@ def run_meal_plan_search(
                 if not ok:
                     target = _find_backtrack_target(order, i, cache, profile)
                     if target is None:
+                        if stats is not None and stats.enabled:
+                            stats._end_time = time.perf_counter()
+                            stats.total_attempts = attempt_count
                         return False, PlanFailure(
                             failure_mode="FM-4",
                             constraint_detail=reason or "weekly_validation",
@@ -585,11 +679,16 @@ def run_meal_plan_search(
                             attempt_count=attempt_count,
                             sodium_advisory=sodium_advisory,
                         )
+                    if stats is not None and stats.enabled:
+                        stats._backtrack_depths.append(i - target)
                     i, daily_trackers, weekly_tracker, assignments, cache = _unwind_to(
                         target, order, daily_trackers, weekly_tracker, assignments, cache,
                         completed_days, recipe_by_id, schedule, profile,
                     )
                     continue
+                if stats is not None and stats.enabled:
+                    stats._end_time = time.perf_counter()
+                    stats.total_attempts = attempt_count
                 return True, PlanSuccess(
                     assignments=list(assignments),
                     daily_trackers=dict(daily_trackers),
@@ -597,6 +696,9 @@ def run_meal_plan_search(
                     sodium_advisory=sodium_advisory,
                 )
 
+    if stats is not None and stats.enabled:
+        stats._end_time = time.perf_counter()
+        stats.total_attempts = attempt_count
     return False, PlanFailure(
         failure_mode="FM-2",
         best_partial_assignments=list(best_assignments),

@@ -193,7 +193,7 @@ def check_fc1_daily_calories(
 
     k = slots_remaining_after_assigning(state, day_index, slot_index)
     if k == 0:
-        if c_remaining < -DAILY_TOLERANCE_FRACTION * daily_cal:
+        if abs(c_remaining) > DAILY_TOLERANCE_FRACTION * daily_cal:
             return False
         return True
 

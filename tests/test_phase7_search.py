@@ -7,10 +7,9 @@ import pytest
 from src.data_layer.models import Ingredient, MicronutrientProfile, NutritionProfile
 from src.planning.phase0_models import MealSlot, PlanningRecipe, PlanningUserProfile
 from src.planning.phase0_models import Assignment
+from src.planning.phase10_reporting import MealPlanResult
 from src.planning.phase7_search import (
     DEFAULT_ATTEMPT_LIMIT,
-    PlanFailure,
-    PlanSuccess,
     SearchStats,
     run_meal_plan_search,
 )
@@ -82,10 +81,10 @@ class TestSearchSuccessNoPins:
             _make_recipe("r1", 1000.0, 50.0, 32.0, 125.0),
             _make_recipe("r2", 1000.0, 50.0, 32.0, 125.0),
         ]
-        ok, result = run_meal_plan_search(profile, pool, 1, None)
-        assert ok is True
-        assert isinstance(result, PlanSuccess)
-        assert len(result.assignments) == 2
+        result = run_meal_plan_search(profile, pool, 1, None)
+        assert isinstance(result, MealPlanResult)
+        assert result.success is True
+        assert result.plan is not None and len(result.plan) == 2
         assert result.daily_trackers and 0 in result.daily_trackers
         assert result.daily_trackers[0].slots_assigned == 2
         assert result.daily_trackers[0].calories_consumed == 2000.0
@@ -99,20 +98,20 @@ class TestSearchSuccessNoPins:
             _make_recipe("r3", 1000.0, 50.0, 32.0, 125.0),
             _make_recipe("r4", 1000.0, 50.0, 32.0, 125.0),
         ]
-        ok, result = run_meal_plan_search(profile, pool, 2, None)
-        assert ok is True
-        assert isinstance(result, PlanSuccess)
-        assert len(result.assignments) == 4
+        result = run_meal_plan_search(profile, pool, 2, None)
+        assert isinstance(result, MealPlanResult)
+        assert result.success is True
+        assert result.plan is not None and len(result.plan) == 4
         assert result.weekly_tracker.days_completed == 2
 
     def test_d7_success(self):
         schedule = _make_schedule(ndays=7, slots_per_day=2)
         profile = _make_profile(schedule)
         pool = [_make_recipe(f"r{i}", 1000.0, 50.0, 32.0, 125.0) for i in range(14)]
-        ok, result = run_meal_plan_search(profile, pool, 7, None)
-        assert ok is True
-        assert isinstance(result, PlanSuccess)
-        assert len(result.assignments) == 14
+        result = run_meal_plan_search(profile, pool, 7, None)
+        assert isinstance(result, MealPlanResult)
+        assert result.success is True
+        assert result.plan is not None and len(result.plan) == 14
         assert result.weekly_tracker.days_completed == 7
 
 
@@ -132,11 +131,12 @@ class TestSearchWithPinnedSlots:
             _make_recipe("r3", 1000.0, 50.0, 32.0, 125.0),
             _make_recipe("r4", 1000.0, 50.0, 32.0, 125.0),
         ]
-        ok, result = run_meal_plan_search(profile, pool, 2, None)
-        assert ok is True, getattr(result, "constraint_detail", result)
-        assert isinstance(result, PlanSuccess)
-        assert Assignment(0, 0, "r1") in result.assignments
-        assert len(result.assignments) == 4
+        result = run_meal_plan_search(profile, pool, 2, None)
+        assert result.success is True, getattr(result, "report", result)
+        assert isinstance(result, MealPlanResult)
+        assert result.plan is not None
+        assert Assignment(0, 0, "r1") in result.plan
+        assert len(result.plan) == 4
 
 
 # --- Failure modes ---
@@ -149,11 +149,11 @@ class TestFailureModes:
         schedule = _make_schedule(ndays=2, slots_per_day=2)
         profile = _make_profile(schedule)
         pool = [_make_recipe("r1"), _make_recipe("r2")]
-        ok, result = run_meal_plan_search(profile, pool, 3, None)
-        assert ok is False
-        assert isinstance(result, PlanFailure)
+        result = run_meal_plan_search(profile, pool, 3, None)
+        assert result.success is False
+        assert isinstance(result, MealPlanResult)
         assert result.failure_mode == "FM-3"
-        assert result.constraint_detail is not None
+        assert result.report.get("pinned_conflicts")
 
     def test_fm3_pinned_invalid_hc1(self):
         schedule = _make_schedule(ndays=1, slots_per_day=2)
@@ -174,25 +174,24 @@ class TestFailureModes:
                 ingredients=[Ingredient("peanut", 10.0, "g", False, "g", 10.0)],
             ),
         ]
-        ok, result = run_meal_plan_search(profile, pool, 1, None)
-        assert ok is False
-        assert isinstance(result, PlanFailure)
+        result = run_meal_plan_search(profile, pool, 1, None)
+        assert result.success is False
+        assert isinstance(result, MealPlanResult)
         assert result.failure_mode == "FM-3"
-        assert result.constraint_detail is not None
+        assert result.report.get("pinned_conflicts")
 
     def test_fm1_insufficient_pool_empty_candidates(self):
         schedule = _make_schedule(ndays=1, slots_per_day=2)
         profile = _make_profile(schedule)
         pool = [_make_recipe("r1", 1000.0, 50.0, 32.0, 125.0)]
-        ok, result = run_meal_plan_search(profile, pool, 1, None)
-        assert ok is False
-        assert isinstance(result, PlanFailure)
+        result = run_meal_plan_search(profile, pool, 1, None)
+        assert result.success is False
+        assert isinstance(result, MealPlanResult)
         assert result.failure_mode == "FM-1"
-        assert result.day_index is not None
-        assert result.slot_index is not None
-        assert result.attempt_count >= 0
-        assert hasattr(result, "best_partial_assignments")
-        assert hasattr(result, "best_partial_daily_trackers")
+        unfillable = result.report.get("unfillable_slots", [])
+        assert len(unfillable) >= 1
+        assert result.stats is not None and result.stats.get("attempts", 0) >= 0
+        assert "closest_plan" in result.report or "best_plan" in result.report or result.report.get("unfillable_slots")
 
     def test_fm2_daily_infeasible_exhaustion(self):
         schedule = _make_schedule(ndays=1, slots_per_day=2)
@@ -205,12 +204,12 @@ class TestFailureModes:
             _make_recipe("r2", 1000.0, 30.0, 32.0, 125.0),
             _make_recipe("r3", 1000.0, 30.0, 32.0, 125.0),
         ]
-        ok, result = run_meal_plan_search(profile, pool, 1, None)
-        assert ok is False
-        assert isinstance(result, PlanFailure)
+        result = run_meal_plan_search(profile, pool, 1, None)
+        assert result.success is False
+        assert isinstance(result, MealPlanResult)
         assert result.failure_mode in ("FM-1", "FM-2")
-        assert hasattr(result, "best_partial_assignments")
-        assert hasattr(result, "attempt_count")
+        assert result.report
+        assert result.stats is not None and "attempts" in result.stats
 
     def test_fm5_attempt_limit(self):
         schedule = _make_schedule(ndays=1, slots_per_day=2)
@@ -219,13 +218,13 @@ class TestFailureModes:
             _make_recipe("r1", 1000.0, 50.0, 32.0, 125.0),
             _make_recipe("r2", 1000.0, 50.0, 32.0, 125.0),
         ]
-        ok, result = run_meal_plan_search(profile, pool, 1, None, attempt_limit=1)
-        assert ok is False
-        assert isinstance(result, PlanFailure)
+        result = run_meal_plan_search(profile, pool, 1, None, attempt_limit=1)
+        assert result.success is False
+        assert isinstance(result, MealPlanResult)
         assert result.failure_mode == "FM-5"
-        assert result.attempt_count == 1
-        assert hasattr(result, "best_partial_assignments")
-        assert hasattr(result, "best_partial_daily_trackers")
+        assert result.stats is not None and result.stats.get("attempts") == 1
+        assert result.report.get("search_exhaustive") is False
+        assert "attempts" in result.report and result.report["attempts"] == 1
 
     def test_fm4_weekly_validation_failure(self):
         schedule = _make_schedule(ndays=2, slots_per_day=2)
@@ -240,11 +239,11 @@ class TestFailureModes:
             _make_recipe("r3", 1000.0, 50.0, 32.0, 125.0, micronutrients=zero_iron),
             _make_recipe("r4", 1000.0, 50.0, 32.0, 125.0, micronutrients=zero_iron),
         ]
-        ok, result = run_meal_plan_search(profile, pool, 2, None)
-        assert ok is False
-        assert isinstance(result, PlanFailure)
+        result = run_meal_plan_search(profile, pool, 2, None)
+        assert result.success is False
+        assert isinstance(result, MealPlanResult)
         assert result.failure_mode in ("FM-1", "FM-2", "FM-4")
-        assert hasattr(result, "attempt_count")
+        assert result.stats is not None and "attempts" in result.stats
 
 
 # --- Determinism ---
@@ -260,12 +259,13 @@ class TestDeterminism:
             _make_recipe("r3", 1000.0, 50.0, 32.0, 125.0),
             _make_recipe("r4", 1000.0, 50.0, 32.0, 125.0),
         ]
-        ok1, result1 = run_meal_plan_search(profile, pool, 2, None)
+        result1 = run_meal_plan_search(profile, pool, 2, None)
         profile2 = _make_profile(schedule)
-        ok2, result2 = run_meal_plan_search(profile2, pool, 2, None)
-        assert ok1 is ok2
-        assert ok1 is True
-        assert [a for a in result1.assignments] == [a for a in result2.assignments]
+        result2 = run_meal_plan_search(profile2, pool, 2, None)
+        assert result1.success is result2.success
+        assert result1.success is True
+        assert result1.plan is not None and result2.plan is not None
+        assert [a for a in result1.plan] == [a for a in result2.plan]
 
     def test_stats_enabled_vs_disabled_identical_plan(self):
         schedule = _make_schedule(ndays=2, slots_per_day=2)
@@ -276,13 +276,14 @@ class TestDeterminism:
             _make_recipe("r3", 1000.0, 50.0, 32.0, 125.0),
             _make_recipe("r4", 1000.0, 50.0, 32.0, 125.0),
         ]
-        ok_no_stats, result_no = run_meal_plan_search(profile, pool, 2, None)
+        result_no = run_meal_plan_search(profile, pool, 2, None)
         profile2 = _make_profile(schedule)
         stats = SearchStats(enabled=True)
-        ok_with_stats, result_with = run_meal_plan_search(profile2, pool, 2, None, stats=stats)
-        assert ok_no_stats is ok_with_stats
-        assert ok_no_stats is True
-        assert [a for a in result_no.assignments] == [a for a in result_with.assignments]
+        result_with = run_meal_plan_search(profile2, pool, 2, None, stats=stats)
+        assert result_no.success is result_with.success
+        assert result_no.success is True
+        assert result_no.plan is not None and result_with.plan is not None
+        assert [a for a in result_no.plan] == [a for a in result_with.plan]
         assert stats.total_attempts == 4
         assert stats.total_runtime() >= 0
         assert len(stats.branching_factors) <= 4
@@ -299,14 +300,14 @@ class TestFailureReportStructure:
             _make_recipe("r1", 1000.0, 30.0, 32.0, 125.0),
             _make_recipe("r2", 1000.0, 30.0, 32.0, 125.0),
         ]
-        ok, result = run_meal_plan_search(profile, pool, 1, None)
-        assert ok is False
+        result = run_meal_plan_search(profile, pool, 1, None)
+        assert result.success is False
         assert result.failure_mode in ("FM-1", "FM-2")
         assert isinstance(result.failure_mode, str)
-        assert isinstance(result.best_partial_assignments, list)
-        assert isinstance(result.best_partial_daily_trackers, dict)
-        assert isinstance(result.attempt_count, int)
-        assert result.attempt_count >= 0
+        assert "failed_days" in result.report or "unfillable_slots" in result.report
+        assert "closest_plan" in result.report or "unfillable_slots" in result.report
+        assert result.stats is not None and isinstance(result.stats.get("attempts", 0), int)
+        assert result.stats.get("attempts", 0) >= 0
 
     def test_attempt_limit_configurable_default(self):
         assert DEFAULT_ATTEMPT_LIMIT > 0
@@ -331,8 +332,8 @@ class TestSearchStatsInstrumentation:
             _make_recipe("r4", 1000.0, 50.0, 32.0, 125.0),
         ]
         stats = SearchStats(enabled=True)
-        ok, result = run_meal_plan_search(profile, pool, 2, None, stats=stats)
-        assert ok is True
+        result = run_meal_plan_search(profile, pool, 2, None, stats=stats)
+        assert result.success is True
         assert stats.total_attempts == 4
         assert stats.total_runtime() >= 0
         assert isinstance(stats.branching_factors, dict)
@@ -343,8 +344,8 @@ class TestSearchStatsInstrumentation:
         profile = _make_profile(schedule)
         pool = [_make_recipe(f"r{i}", 1000.0, 50.0, 32.0, 125.0) for i in range(14)]
         stats = SearchStats(enabled=True)
-        ok, result = run_meal_plan_search(profile, pool, 7, None, stats=stats)
-        assert ok is True
+        result = run_meal_plan_search(profile, pool, 7, None, stats=stats)
+        assert result.success is True
         assert stats.total_attempts == 14
         assert stats.total_runtime() >= 0
         assert stats.time_per_attempt() >= 0
@@ -357,7 +358,7 @@ class TestSearchStatsInstrumentation:
             _make_recipe("r2", 1000.0, 50.0, 32.0, 125.0),
         ]
         stats = SearchStats(enabled=True)
-        ok, result = run_meal_plan_search(profile, pool, 1, None, stats=stats)
-        assert ok is True
+        result = run_meal_plan_search(profile, pool, 1, None, stats=stats)
+        assert result.success is True
         assert stats.total_attempts == 2
         assert stats.total_runtime() >= 0

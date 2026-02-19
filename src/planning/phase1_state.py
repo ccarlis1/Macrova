@@ -39,10 +39,14 @@ class PinnedValidationResult:
 
     If success is True, failed_hc is None. If success is False, failed_hc
     indicates which hard constraint failed (e.g. 'HC-1', 'HC-2').
+    Optional conflict location for FM-3 reporting (Section 11).
     """
 
     success: bool
     failed_hc: Optional[str] = None  # e.g. 'HC-1', 'HC-2', 'HC-3', 'HC-5', 'HC-8'
+    failed_pin_day_1based: Optional[int] = None
+    failed_pin_slot_index: Optional[int] = None
+    failed_pin_recipe_id: Optional[str] = None
 
 
 def _normalize_ingredient_name(name: str) -> str:
@@ -86,27 +90,27 @@ def validate_pinned_assignments(
             return PinnedValidationResult(success=False, failed_hc="HC-6")
         day_index = day_1based - 1
         if day_index >= len(schedule) or slot_index < 0 or slot_index >= len(schedule[day_index]):
-            return PinnedValidationResult(success=False, failed_hc="HC-6")
+            return PinnedValidationResult(success=False, failed_hc="HC-6", failed_pin_day_1based=day_1based, failed_pin_slot_index=slot_index, failed_pin_recipe_id=recipe_id)
 
         if recipe_id not in recipe_by_id:
-            return PinnedValidationResult(success=False, failed_hc="HC-6")
+            return PinnedValidationResult(success=False, failed_hc="HC-6", failed_pin_day_1based=day_1based, failed_pin_slot_index=slot_index, failed_pin_recipe_id=recipe_id)
         recipe = recipe_by_id[recipe_id]
 
         # HC-1: excluded ingredients
         if _recipe_contains_excluded_ingredient(recipe, profile.excluded_ingredients):
-            return PinnedValidationResult(success=False, failed_hc="HC-1")
+            return PinnedValidationResult(success=False, failed_hc="HC-1", failed_pin_day_1based=day_1based, failed_pin_slot_index=slot_index, failed_pin_recipe_id=recipe_id)
 
         # HC-3: cooking time
         day_slots = schedule[day_index]
         slot = day_slots[slot_index]
         max_time = cooking_time_max(slot.busyness_level)
         if max_time is not None and recipe.cooking_time_minutes > max_time:
-            return PinnedValidationResult(success=False, failed_hc="HC-3")
+            return PinnedValidationResult(success=False, failed_hc="HC-3", failed_pin_day_1based=day_1based, failed_pin_slot_index=slot_index, failed_pin_recipe_id=recipe_id)
 
         # HC-5: single recipe would exceed daily calorie ceiling (for that day)
         if profile.max_daily_calories is not None:
             if recipe.nutrition.calories > profile.max_daily_calories:
-                return PinnedValidationResult(success=False, failed_hc="HC-5")
+                return PinnedValidationResult(success=False, failed_hc="HC-5", failed_pin_day_1based=day_1based, failed_pin_slot_index=slot_index, failed_pin_recipe_id=recipe_id)
 
     # HC-2: two pinned on same day with same recipe_id
     by_day: Dict[int, List[Tuple[int, str]]] = {}
@@ -115,7 +119,9 @@ def validate_pinned_assignments(
     for day_1based, slots in by_day.items():
         recipe_ids = [rid for _, rid in slots]
         if len(recipe_ids) != len(set(recipe_ids)):
-            return PinnedValidationResult(success=False, failed_hc="HC-2")
+            slot_idx = slots[0][0]
+            rid = slots[0][1]
+            return PinnedValidationResult(success=False, failed_hc="HC-2", failed_pin_day_1based=day_1based, failed_pin_slot_index=slot_idx, failed_pin_recipe_id=rid)
 
     # HC-8: consecutive-day non-workout repetition among pinned
     # For each consecutive day pair, collect non-workout pinned recipe_ids per day
@@ -138,7 +144,7 @@ def validate_pinned_assignments(
     for d in range(1, D):
         for rid in non_workout_pinned_by_day.get(d, set()):
             if rid in non_workout_pinned_by_day.get(d + 1, set()):
-                return PinnedValidationResult(success=False, failed_hc="HC-8")
+                return PinnedValidationResult(success=False, failed_hc="HC-8", failed_pin_day_1based=d + 1, failed_pin_slot_index=0, failed_pin_recipe_id=rid)
 
     return PinnedValidationResult(success=True)
 

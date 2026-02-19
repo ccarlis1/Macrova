@@ -17,12 +17,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src.data_layer.models import NutritionProfile, MicronutrientProfile
 from src.planning.phase0_models import MealSlot, PlanningRecipe, PlanningUserProfile
-from src.planning.phase7_search import (
-    PlanFailure,
-    PlanSuccess,
-    SearchStats,
-    run_meal_plan_search,
-)
+from src.planning.phase7_search import SearchStats, run_meal_plan_search
 
 
 def make_slot(busyness: int = 2) -> MealSlot:
@@ -72,30 +67,31 @@ def main() -> None:
 
     stats = SearchStats(enabled=True)
     t0 = time.perf_counter()
-    ok, result = run_meal_plan_search(profile, pool, D, resolved_ul=None, stats=stats)
+    result = run_meal_plan_search(profile, pool, D, resolved_ul=None, stats=stats)
     t1 = time.perf_counter()
 
     print("--- Meal plan search benchmark ---")
-    print(f"Success: {ok}")
+    print(f"Success: {result.success}")
     print(f"Wall time: {t1 - t0:.3f}s")
     print(f"Stats total_runtime: {stats.total_runtime():.3f}s")
     print(f"Attempts: {stats.total_attempts}")
     print(f"Time per attempt: {stats.time_per_attempt():.6f}s")
-    if ok and isinstance(result, PlanSuccess):
-        print(f"Assignments: {len(result.assignments)}")
-        print(f"Days completed: {result.weekly_tracker.days_completed}")
-        for day_index in range(D):
-            dt = result.daily_trackers.get(day_index)
-            if dt:
-                print(
-                    f"  Day {day_index + 1}: slots={dt.slots_assigned}, "
-                    f"cal={dt.calories_consumed:.0f}, protein={dt.protein_consumed:.1f}g"
-                )
+    if result.success and result.plan is not None:
+        print(f"Assignments: {len(result.plan)}")
+        if result.weekly_tracker:
+            print(f"Days completed: {result.weekly_tracker.days_completed}")
+        if result.daily_trackers:
+            for day_index in range(D):
+                dt = result.daily_trackers.get(day_index)
+                if dt:
+                    print(
+                        f"  Day {day_index + 1}: slots={dt.slots_assigned}, "
+                        f"cal={dt.calories_consumed:.0f}, protein={dt.protein_consumed:.1f}g"
+                    )
     else:
-        assert isinstance(result, PlanFailure)
         print(f"Failure mode: {result.failure_mode}")
-        print(f"Constraint detail: {result.constraint_detail}")
-        print(f"Attempt count: {result.attempt_count}")
+        print(f"Report: {result.report}")
+        print(f"Stats (attempts/backtracks): {result.stats}")
     print("----------------------------------")
 
 

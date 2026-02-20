@@ -1,0 +1,11 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+
+# Generated in platform folders
+macos/Flutter/ephemeral/
+ios/Flutter/ephemeral/
+android/Flutter/ephemeral/

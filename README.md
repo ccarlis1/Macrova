@@ -1,8 +1,8 @@
-# Nutriton Agent
-An agent designed to generate healthy meals based on a users schedule and nutrition goals. Currently designed for personal use
+# Macrova
+An LLM-powered meal planner designed to generate healthy meals based on a users schedule and nutrition goals.
 
 ### Current Usage (MVP)
-The agent currently recommends recipes based on a user's schedule and nutrition goals, using structured nutrition calculations and rule-based meal selection. It solves the problem of constantly thinking about what meals to make, drastically decreasing the time needed to plan meals while ensuring optimal nutrition.
+The application currently recommends recipes based on a user's schedule and nutrition goals, using structured nutrition calculations and rule-based meal selection. It solves the problem of constantly thinking about what meals to make, drastically decreasing the time needed to plan meals while ensuring optimal nutrition.
 
 ### End Game Vision
 The ultimate goal is to create an **all-purpose nutritious meals generator** that combines:
@@ -65,7 +65,7 @@ The system will intelligently parse this request, account for the chili's nutrit
 	- 1 tsp chili crisp
 	- *Meal Instructions go here*
 	- Nutrition Breakdown: *full micro/macro calculation goes here*
-- *Total Micronutrient breakdown goes here*
+- *Micronutrient Breakdown*
 
 
 ## Functional Requirements
@@ -95,7 +95,7 @@ The system will intelligently parse this request, account for the chili's nutrit
 ### Phase 1-4: MVP Foundation (Current)
 - ✅ Accurate nutrition calculations and meal balancing
 - ✅ Rule-based recipe scoring and selection
-- ✅ Local recipe and nutrition databases
+- ✅ Local ingredient databases
 - ✅ Basic user preferences and scheduling
 
 ### Phase 5+: LLM Integration & Creativity

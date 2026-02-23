@@ -1,10 +1,6 @@
 # Nutriton Agent
 An agent designed to generate healthy meals based on a users schedule and nutrition goals. Currently designed for personal use
 
-## Purpose
-### Experience
-- Gain experience with working with LLMs and agents. This project will be open-source and is a good resume project
-
 ### Current Usage (MVP)
 The agent currently recommends recipes based on a user's schedule and nutrition goals, using structured nutrition calculations and rule-based meal selection. It solves the problem of constantly thinking about what meals to make, drastically decreasing the time needed to plan meals while ensuring optimal nutrition.
 

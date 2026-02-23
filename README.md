@@ -1,7 +1,7 @@
 # Macrova
 An LLM-powered meal planner designed to generate healthy meals based on a users schedule and nutrition goals.
 
-### Current Usage (MVP)
+## Current Usage (MVP)
 The application currently recommends recipes based on a user's schedule and nutrition goals, using structured nutrition calculations and rule-based meal selection. It solves the problem of constantly thinking about what meals to make, drastically decreasing the time needed to plan meals while ensuring optimal nutrition.
 
 ### End Game Vision

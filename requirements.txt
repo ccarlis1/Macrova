@@ -1,6 +1,8 @@
 # Core Dependencies (MVP)
 pyyaml>=6.0          # Config file parsing
 pydantic>=2.0        # Data validation and models
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
 
 # Development Dependencies
 pytest>=7.0          # Testing framework

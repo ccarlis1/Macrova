@@ -30,6 +30,12 @@ Currently, the scope of the MVP is decent, but I think it should be slightly res
 			- **Resolution:** Look up reference by user demographic (e.g. `adult_male`, `adult_female`, `pregnancy`, `lactation`); merge in user overrides; use result for validation (each day’s total must not exceed daily UL).
 			- See **Upper Tolerable Intake (UL) schema** below for concrete formats.
 ## Step 2: Connect Ingredient API (USDA FoodData Central)
+2. Connect ingredient API **IMPLEMENTED**
+	- This is very important because it gives the most accurate description of an ingredients full nutrition array
+	- Also saves the user a ton of bottleneck not having to manually enter all ingredients for a recipe and their corresponding nutrition info
+	- The thought process of no recipe API yet is because its true power is not unlocked without LLM integration, which is a late stage feature, and manually entering recipes is much easier than ingredients
+
+## Step 2: Connect Ingredient API (USDA FoodData Central) **IMPLEMENTED**
 
 ### Purpose
 
@@ -201,6 +207,8 @@ After completing this step, the system will:
 
 This step unlocks meaningful refinement of the meal planner algorithm in subsequent phases.
 
+---
+
 3. Adjust the meal planner to handle micronutrient totals
 	3a. Update scoring to consider micronutrients (priority nutrients)
 	3b. Update meal planner to track daily micronutrient totals
@@ -219,7 +227,7 @@ This step unlocks meaningful refinement of the meal planner algorithm in subsequ
 
 ## Upper Tolerable Intake (UL) schema
 
-Field names match `MicronutrientProfile` / `WeeklyNutritionTargets`. ULs are **daily** values (IOM/EFSA). Validation: each day’s total must not exceed the daily UL for that nutrient.
+Field names match `MicronutrientProfile` / `WeeklyNutritionTargets`. ULs are **daily** values (IOM/EFSA). Validation: each day's total must not exceed the daily UL for that nutrient.
 
 ### 1. Reference: `data/reference/ul_by_demographic.json`
 
@@ -309,6 +317,10 @@ upper_limits:
 
 ### 3. Resolution and validation
 
-1. **Resolve ULs for user:** Load reference ULs for the user’s demographic (from profile, e.g. `demographic: adult_male`). Override any nutrient present in `upper_limits` with the user’s value.
+1. **Resolve ULs for user:** Load reference ULs for the user's demographic (from profile, e.g. `demographic: adult_male`). Override any nutrient present in `upper_limits` with the user's value.
 2. **Validation (weekly plan):** For each day in the plan, for each nutrient that has a non-null UL, ensure `day_total[nutrient] <= resolved_ul[nutrient]`. If any day exceeds, fail or filter that combination (e.g. avoid multiple high–vitamin A meals like liver).
 3. **Data layer:** Add a model (e.g. `UpperLimits` or `DailyNutritionLimits`) with the same field names as `MicronutrientProfile`; populate from reference + user overrides for the active user.
+
+---
+
+## CURRENT STEP: 3

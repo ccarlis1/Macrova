@@ -49,6 +49,7 @@ config/nutrition_goals.yaml
 config/model_config.yaml
 
 # Data files (keep examples, ignore actual data)
+docs/rules/*.md
 # Ingredients
 data/ingredients/usda_ingredients.json
 data/ingredients/custom_ingredients.json

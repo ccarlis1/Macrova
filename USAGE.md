@@ -56,8 +56,30 @@ python3 plan_meals.py \
 | `--profile` | Path to user profile YAML file | `config/user_profile.yaml` |
 | `--recipes` | Path to recipes JSON file | `data/recipes/recipes.json` |
 | `--ingredients` | Path to ingredients JSON file | `data/ingredients/custom_ingredients.json` |
+| `--ingredient-source` | `local` = bundled JSON DB; `api` = USDA API (requires `USDA_API_KEY`) | `local` |
 | `--output` | Output format: `markdown`, `json`, or `both` | `markdown` |
 | `--output-file` | Optional file path to save output | (prints to stdout) |
+
+## Ingredient source
+
+- **`local`** (default): Uses the bundled ingredient nutrition database (e.g. `data/ingredients/custom_ingredients.json`). No API key or network required.
+- **`api`**: Fetches ingredient nutrition from the USDA FoodData Central API. Requires a free API key and network access. Use when you want up-to-date USDA data or ingredients not in your local DB.
+
+### API mode setup
+
+1. Copy `.env.example` to `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+2. Edit `.env` and set your USDA API key (get one at [USDA API key signup](https://fdc.nal.usda.gov/api-key-signup.html)):
+   ```
+   USDA_API_KEY=your_actual_key_here
+   ```
+3. Run the planner with API ingredient source:
+   ```bash
+   python3 plan_meals.py --ingredient-source api
+   ```
+   The first run will fetch and cache ingredient data; later runs use the cache when possible.
 
 ## Example Output
 

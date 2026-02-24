@@ -1,6 +1,12 @@
 # Macrova (nutrition-agent)
 
-A meal planner that generates daily meal plans (breakfast, lunch, dinner) from your schedule and nutrition goals. The current MVP uses **rule-based recipe scoring** and **structured nutrition calculations**—no LLM yet.
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-pytest-green.svg)](tests/)
+
+**Version: v0.1.0**
+
+A meal planner that generates daily meal plans (breakfast, lunch, dinner) from your schedule and nutrition goals. The current MVP uses **rule-based recipe scoring** and **structured nutrition calculations**. LLM integration is coming soon.
 
 ---
 
@@ -10,12 +16,22 @@ A meal planner that generates daily meal plans (breakfast, lunch, dinner) from y
 
 ```bash
 git clone <repository-url>
-cd macrova
+cd nutrition-agent
 python3 -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
-Replace `<repository-url>` with the actual clone URL (e.g. from GitHub).
+Replace `<repository-url>` with your clone URL (e.g. from GitHub). The folder name after clone is `nutrition-agent`.
+
+### Quick run (local mode)
+
+After copying the example config and data files (see below), run:
+
+```bash
+python3 plan_meals.py
+```
+
+This uses the bundled ingredient database (no API key). For USDA API mode, see [USAGE.md](USAGE.md#api-mode-setup).
 
 ### Configure and run
 
@@ -42,11 +58,13 @@ pytest tests/
 
 No API key or network access is required; USDA-dependent tests use mocks.
 
+**Environment variables:** None for local mode. For USDA API mode, copy `.env.example` to `.env` and set `USDA_API_KEY`; see [USAGE.md](USAGE.md#api-mode-setup).
+
 ---
 
 ## Current state (MVP)
 
-The app recommends **three meals per day** (breakfast, lunch, dinner) from your recipe list, using:
+The app recommends **three meals per day** (breakfast, lunch, dinner) from your recipe list. Ingredient nutrition is provided by a **provider abstraction** (local JSON or USDA API). In practice:
 
 - **User profile:** Daily calories, protein, fat range, carbs, meal times, and busyness (cooking-time limits).
 - **Recipe scoring:** Nutrition fit, cooking time vs schedule, preferences (likes/dislikes/allergies), and simple micronutrient scoring.

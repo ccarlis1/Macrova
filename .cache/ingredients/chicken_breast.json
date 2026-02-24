@@ -1,0 +1,39 @@
+{
+  "canonical_name": "chicken breast",
+  "fdc_id": 174608,
+  "description": "Chicken breast, roll, oven-roasted",
+  "data_type": "SR Legacy",
+  "nutrition": {
+    "calories": 134.0,
+    "protein_g": 14.59,
+    "fat_g": 7.65,
+    "carbs_g": 1.79,
+    "micronutrients": {
+      "vitamin_a_ug": 0.0,
+      "vitamin_c_mg": 0.0,
+      "vitamin_d_iu": 0.0,
+      "vitamin_e_mg": 0.07,
+      "vitamin_k_ug": 0.5,
+      "b1_thiamine_mg": 0.043,
+      "b2_riboflavin_mg": 0.062,
+      "b3_niacin_mg": 6.536,
+      "b5_pantothenic_acid_mg": 0.565,
+      "b6_pyridoxine_mg": 0.298,
+      "b12_cobalamin_ug": 0.24,
+      "folate_ug": 3.0,
+      "calcium_mg": 6.0,
+      "copper_mg": 0.069,
+      "iron_mg": 0.32,
+      "magnesium_mg": 17.0,
+      "manganese_mg": 0.017,
+      "phosphorus_mg": 121.0,
+      "potassium_mg": 324.0,
+      "selenium_ug": 11.7,
+      "sodium_mg": 883.0,
+      "zinc_mg": 0.65,
+      "fiber_g": 0.0,
+      "omega_3_g": 0.015,
+      "omega_6_g": 1.325
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "canonical_name": "Sweet potatoes, orange flesh, without skin, raw",
+  "fdc_id": 171689,
+  "description": "Apples, raw, without skin",
+  "data_type": "SR Legacy",
+  "nutrition": {
+    "calories": 48.0,
+    "protein_g": 0.27,
+    "fat_g": 0.13,
+    "carbs_g": 12.76,
+    "micronutrients": {
+      "vitamin_a_ug": 2.0,
+      "vitamin_c_mg": 4.0,
+      "vitamin_d_iu": 0.0,
+      "vitamin_e_mg": 0.05,
+      "vitamin_k_ug": 0.6,
+      "b1_thiamine_mg": 0.019,
+      "b2_riboflavin_mg": 0.028,
+      "b3_niacin_mg": 0.091,
+      "b5_pantothenic_acid_mg": 0.071,
+      "b6_pyridoxine_mg": 0.037,
+      "b12_cobalamin_ug": 0.0,
+      "folate_ug": 0.0,
+      "calcium_mg": 5.0,
+      "copper_mg": 0.031,
+      "iron_mg": 0.07,
+      "magnesium_mg": 4.0,
+      "manganese_mg": 0.038,
+      "phosphorus_mg": 11.0,
+      "potassium_mg": 90.0,
+      "selenium_ug": 0.0,
+      "sodium_mg": 0.0,
+      "zinc_mg": 0.05,
+      "fiber_g": 1.3,
+      "omega_3_g": 0.0,
+      "omega_6_g": 0.031
+    }
+  }
+}

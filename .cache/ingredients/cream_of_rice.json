@@ -1,0 +1,39 @@
+{
+  "canonical_name": "Cream of rice",
+  "fdc_id": 173900,
+  "description": "Cereals, CREAM OF RICE, dry",
+  "data_type": "SR Legacy",
+  "nutrition": {
+    "calories": 370.0,
+    "protein_g": 6.3,
+    "fat_g": 0.5,
+    "carbs_g": 82.4,
+    "micronutrients": {
+      "vitamin_a_ug": 0.0,
+      "vitamin_c_mg": 0.0,
+      "vitamin_d_iu": 0.0,
+      "vitamin_e_mg": 0.11,
+      "vitamin_k_ug": 0.1,
+      "b1_thiamine_mg": 0.51,
+      "b2_riboflavin_mg": 0.13,
+      "b3_niacin_mg": 7.46,
+      "b5_pantothenic_acid_mg": 0.55,
+      "b6_pyridoxine_mg": 0.195,
+      "b12_cobalamin_ug": 0.0,
+      "folate_ug": 29.0,
+      "calcium_mg": 5.0,
+      "copper_mg": 0.244,
+      "iron_mg": 28.44,
+      "magnesium_mg": 23.0,
+      "manganese_mg": 1.033,
+      "phosphorus_mg": 124.0,
+      "potassium_mg": 143.0,
+      "selenium_ug": 19.0,
+      "sodium_mg": 6.0,
+      "zinc_mg": 1.12,
+      "fiber_g": 0.7,
+      "omega_3_g": 0.0,
+      "omega_6_g": 0.111
+    }
+  }
+}

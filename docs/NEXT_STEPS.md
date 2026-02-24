@@ -29,10 +29,178 @@ Currently, the scope of the MVP is decent, but I think it should be slightly res
 			- **User overrides:** Optional `upper_limits` section in `user_profile.yaml` — same field names; only include nutrients to override. User value overrides reference for that nutrient.
 			- **Resolution:** Look up reference by user demographic (e.g. `adult_male`, `adult_female`, `pregnancy`, `lactation`); merge in user overrides; use result for validation (each day’s total must not exceed daily UL).
 			- See **Upper Tolerable Intake (UL) schema** below for concrete formats.
-2. Connect ingredient API
-	- This is very important because it gives the most accurate description of an ingredients full nutrition array
-	- Also saves the user a ton of bottleneck not having to manually enter all ingredients for a recipe and their corresponding nutrition info
-	- The thought process of no recipe API yet is because its true power is not unlocked without LLM integration, which is a late stage feature, and manually entering recipes is much easier than ingredients
+## Step 2: Connect Ingredient API (USDA FoodData Central)
+
+### Purpose
+
+This step integrates a **deterministic ingredient lookup pipeline** using the USDA FoodData Central (FDC) API. The goal is to automatically resolve ingredient nutrition data with high accuracy, removing the need for users to manually enter detailed nutrition information for each ingredient.
+
+This step intentionally **does NOT** include a recipe API or advanced NLP parsing. Recipes are user-curated for now. Ingredient accuracy is the foundation that enables later improvements to the meal planner, micronutrient tracking, and scoring logic.
+
+Reference API: USDA FoodData Central
+[https://fdc.nal.usda.gov/api-guide](https://fdc.nal.usda.gov/api-guide)
+
+---
+
+### Scope (What This Step Includes)
+
+* Deterministic ingredient lookup by name
+* Retrieval of full macro + micronutrient profiles
+* Unit-aware quantity scaling
+* Internal normalization into app-specific nutrition models
+* Caching and explicit error handling
+
+### Non-Goals (Explicitly Out of Scope)
+
+* Recipe API integration
+* Natural-language recipe parsing
+* Synonym inference or fuzzy matching
+* LLM-assisted ingredient resolution
+
+---
+
+## Step 2.1: Ingredient Name Normalization
+
+**Goal:** Prepare parsed ingredient names for reliable API lookup.
+
+Actions:
+
+* Normalize ingredient names (lowercase, trim whitespace)
+* Remove controlled descriptors (e.g. "large", "raw", "fresh")
+* Ensure output is a deterministic string
+
+Output:
+
+* Canonical ingredient name suitable for API search
+
+---
+
+## Step 2.2: Ingredient Search (USDA API)
+
+**Goal:** Resolve a canonical ingredient name to a single USDA FDC ID.
+
+Actions:
+
+* Call USDA search endpoint using normalized ingredient name
+* Filter out branded foods
+* Select a single result using deterministic rules (e.g. first non-branded match)
+
+Output:
+
+* Selected `fdcId` for the ingredient
+
+Failure Modes:
+
+* No results found
+* Multiple ambiguous results
+
+---
+
+## Step 2.3: Nutrition Data Retrieval
+
+**Goal:** Fetch authoritative nutrition data for the resolved ingredient.
+
+Actions:
+
+* Call USDA food details endpoint using `fdcId`
+* Retrieve macro and micronutrient data
+* Preserve raw values for mapping
+
+Output:
+
+* Raw USDA nutrition payload
+
+---
+
+## Step 2.4: Nutrient Mapping
+
+**Goal:** Convert USDA nutrient identifiers into internal schema fields.
+
+Actions:
+
+* Maintain a static mapping table (USDA nutrient ID → internal field name)
+* Ignore nutrients not tracked by the app
+* Convert units where required
+* Default missing nutrients to zero
+
+Output:
+
+* Normalized micronutrient + macronutrient dictionary
+
+---
+
+## Step 2.5: Quantity & Unit Scaling
+
+**Goal:** Scale nutrition data to match user-specified quantity and unit.
+
+Actions:
+
+* Define a unit-to-gram conversion table
+* Resolve base serving weight (e.g. 1 large egg = 50g)
+* Multiply nutrition values by scaled factor
+
+Rules:
+
+* Unknown units must raise explicit errors
+* No heuristic guessing
+
+Output:
+
+* Nutrition values adjusted for actual ingredient quantity
+
+---
+
+## Step 2.6: NutritionProfile Construction
+
+**Goal:** Produce a clean internal representation used throughout the app.
+
+Actions:
+
+* Populate `NutritionProfile` with scaled values
+* Ensure schema consistency with existing models
+* Strip all USDA-specific fields
+
+Output:
+
+* Fully populated `NutritionProfile`
+
+---
+
+## Step 2.7: Caching Layer
+
+**Goal:** Prevent redundant API calls and stabilize tests.
+
+Actions:
+
+* Cache ingredient lookups by normalized name
+* Store resolved `fdcId` and normalized nutrition data
+* Prefer disk-based cache for development and testing
+
+---
+
+## Step 2.8: Explicit Error Handling
+
+**Goal:** Ensure predictable failure behavior.
+
+Actions:
+
+* Define structured error types (e.g. INGREDIENT_NOT_FOUND, UNIT_NOT_SUPPORTED)
+* Fail fast on ambiguity or missing data
+* Surface errors to caller without silent fallback
+
+---
+
+## Outcome of Step 2
+
+After completing this step, the system will:
+
+* Reliably convert parsed ingredients into accurate nutrition data
+* Support micronutrient-aware meal planning
+* Enable UL validation and weekly aggregation
+* Provide a stable foundation for future recipe APIs and LLM integration
+
+This step unlocks meaningful refinement of the meal planner algorithm in subsequent phases.
+
 3. Adjust the meal planner to handle micronutrient totals
 	3a. Update scoring to consider micronutrients (priority nutrients)
 	3b. Update meal planner to track daily micronutrient totals

@@ -1,0 +1,39 @@
+{
+  "canonical_name": "ground beef",
+  "fdc_id": 1942314,
+  "description": "GROUND BEEF",
+  "data_type": "Branded",
+  "nutrition": {
+    "calories": 312.0,
+    "protein_g": 16.96,
+    "fat_g": 26.79,
+    "carbs_g": 0.0,
+    "micronutrients": {
+      "vitamin_a_ug": 0.0,
+      "vitamin_c_mg": 0.0,
+      "vitamin_d_iu": 0.0,
+      "vitamin_e_mg": 0.0,
+      "vitamin_k_ug": 0.0,
+      "b1_thiamine_mg": 0.0,
+      "b2_riboflavin_mg": 0.0,
+      "b3_niacin_mg": 0.0,
+      "b5_pantothenic_acid_mg": 0.0,
+      "b6_pyridoxine_mg": 0.0,
+      "b12_cobalamin_ug": 0.0,
+      "folate_ug": 0.0,
+      "calcium_mg": 18.0,
+      "copper_mg": 0.0,
+      "iron_mg": 1.61,
+      "magnesium_mg": 0.0,
+      "manganese_mg": 0.0,
+      "phosphorus_mg": 0.0,
+      "potassium_mg": 0.0,
+      "selenium_ug": 0.0,
+      "sodium_mg": 67.0,
+      "zinc_mg": 0.0,
+      "fiber_g": 0.0,
+      "omega_3_g": 0.0,
+      "omega_6_g": 0.0
+    }
+  }
+}

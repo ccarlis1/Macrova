@@ -29,6 +29,7 @@ Currently, the scope of the MVP is decent, but I think it should be slightly res
 			- **User overrides:** Optional `upper_limits` section in `user_profile.yaml` — same field names; only include nutrients to override. User value overrides reference for that nutrient.
 			- **Resolution:** Look up reference by user demographic (e.g. `adult_male`, `adult_female`, `pregnancy`, `lactation`); merge in user overrides; use result for validation (each day’s total must not exceed daily UL).
 			- See **Upper Tolerable Intake (UL) schema** below for concrete formats.
+## Step 2: Connect Ingredient API (USDA FoodData Central)
 2. Connect ingredient API **IMPLEMENTED**
 	- This is very important because it gives the most accurate description of an ingredients full nutrition array
 	- Also saves the user a ton of bottleneck not having to manually enter all ingredients for a recipe and their corresponding nutrition info

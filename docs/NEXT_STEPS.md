@@ -29,10 +29,186 @@ Currently, the scope of the MVP is decent, but I think it should be slightly res
 			- **User overrides:** Optional `upper_limits` section in `user_profile.yaml` — same field names; only include nutrients to override. User value overrides reference for that nutrient.
 			- **Resolution:** Look up reference by user demographic (e.g. `adult_male`, `adult_female`, `pregnancy`, `lactation`); merge in user overrides; use result for validation (each day’s total must not exceed daily UL).
 			- See **Upper Tolerable Intake (UL) schema** below for concrete formats.
+## Step 2: Connect Ingredient API (USDA FoodData Central)
 2. Connect ingredient API **IMPLEMENTED**
 	- This is very important because it gives the most accurate description of an ingredients full nutrition array
 	- Also saves the user a ton of bottleneck not having to manually enter all ingredients for a recipe and their corresponding nutrition info
 	- The thought process of no recipe API yet is because its true power is not unlocked without LLM integration, which is a late stage feature, and manually entering recipes is much easier than ingredients
+
+## Step 2: Connect Ingredient API (USDA FoodData Central) **IMPLEMENTED**
+
+### Purpose
+
+This step integrates a **deterministic ingredient lookup pipeline** using the USDA FoodData Central (FDC) API. The goal is to automatically resolve ingredient nutrition data with high accuracy, removing the need for users to manually enter detailed nutrition information for each ingredient.
+
+This step intentionally **does NOT** include a recipe API or advanced NLP parsing. Recipes are user-curated for now. Ingredient accuracy is the foundation that enables later improvements to the meal planner, micronutrient tracking, and scoring logic.
+
+Reference API: USDA FoodData Central
+[https://fdc.nal.usda.gov/api-guide](https://fdc.nal.usda.gov/api-guide)
+
+---
+
+### Scope (What This Step Includes)
+
+* Deterministic ingredient lookup by name
+* Retrieval of full macro + micronutrient profiles
+* Unit-aware quantity scaling
+* Internal normalization into app-specific nutrition models
+* Caching and explicit error handling
+
+### Non-Goals (Explicitly Out of Scope)
+
+* Recipe API integration
+* Natural-language recipe parsing
+* Synonym inference or fuzzy matching
+* LLM-assisted ingredient resolution
+
+---
+
+## Step 2.1: Ingredient Name Normalization
+
+**Goal:** Prepare parsed ingredient names for reliable API lookup.
+
+Actions:
+
+* Normalize ingredient names (lowercase, trim whitespace)
+* Remove controlled descriptors (e.g. "large", "raw", "fresh")
+* Ensure output is a deterministic string
+
+Output:
+
+* Canonical ingredient name suitable for API search
+
+---
+
+## Step 2.2: Ingredient Search (USDA API)
+
+**Goal:** Resolve a canonical ingredient name to a single USDA FDC ID.
+
+Actions:
+
+* Call USDA search endpoint using normalized ingredient name
+* Filter out branded foods
+* Select a single result using deterministic rules (e.g. first non-branded match)
+
+Output:
+
+* Selected `fdcId` for the ingredient
+
+Failure Modes:
+
+* No results found
+* Multiple ambiguous results
+
+---
+
+## Step 2.3: Nutrition Data Retrieval
+
+**Goal:** Fetch authoritative nutrition data for the resolved ingredient.
+
+Actions:
+
+* Call USDA food details endpoint using `fdcId`
+* Retrieve macro and micronutrient data
+* Preserve raw values for mapping
+
+Output:
+
+* Raw USDA nutrition payload
+
+---
+
+## Step 2.4: Nutrient Mapping
+
+**Goal:** Convert USDA nutrient identifiers into internal schema fields.
+
+Actions:
+
+* Maintain a static mapping table (USDA nutrient ID → internal field name)
+* Ignore nutrients not tracked by the app
+* Convert units where required
+* Default missing nutrients to zero
+
+Output:
+
+* Normalized micronutrient + macronutrient dictionary
+
+---
+
+## Step 2.5: Quantity & Unit Scaling
+
+**Goal:** Scale nutrition data to match user-specified quantity and unit.
+
+Actions:
+
+* Define a unit-to-gram conversion table
+* Resolve base serving weight (e.g. 1 large egg = 50g)
+* Multiply nutrition values by scaled factor
+
+Rules:
+
+* Unknown units must raise explicit errors
+* No heuristic guessing
+
+Output:
+
+* Nutrition values adjusted for actual ingredient quantity
+
+---
+
+## Step 2.6: NutritionProfile Construction
+
+**Goal:** Produce a clean internal representation used throughout the app.
+
+Actions:
+
+* Populate `NutritionProfile` with scaled values
+* Ensure schema consistency with existing models
+* Strip all USDA-specific fields
+
+Output:
+
+* Fully populated `NutritionProfile`
+
+---
+
+## Step 2.7: Caching Layer
+
+**Goal:** Prevent redundant API calls and stabilize tests.
+
+Actions:
+
+* Cache ingredient lookups by normalized name
+* Store resolved `fdcId` and normalized nutrition data
+* Prefer disk-based cache for development and testing
+
+---
+
+## Step 2.8: Explicit Error Handling
+
+**Goal:** Ensure predictable failure behavior.
+
+Actions:
+
+* Define structured error types (e.g. INGREDIENT_NOT_FOUND, UNIT_NOT_SUPPORTED)
+* Fail fast on ambiguity or missing data
+* Surface errors to caller without silent fallback
+
+---
+
+## Outcome of Step 2
+
+After completing this step, the system will:
+
+* Reliably convert parsed ingredients into accurate nutrition data
+* Support micronutrient-aware meal planning
+* Enable UL validation and weekly aggregation
+* Provide a stable foundation for future recipe APIs and LLM integration
+
+This step unlocks meaningful refinement of the meal planner algorithm in subsequent phases.
+
+---
+
 3. Adjust the meal planner to handle micronutrient totals
 	3a. Update scoring to consider micronutrients (priority nutrients)
 	3b. Update meal planner to track daily micronutrient totals
@@ -46,6 +222,104 @@ Currently, the scope of the MVP is decent, but I think it should be slightly res
     - Test edge cases (deficits, surpluses)
     - Validate backtracking logic
 5. Create a simple, lightweight frontend portion of the app, mainly for open testing purposes. No web integration just yet
+
+---
+
+## Upper Tolerable Intake (UL) schema
+
+Field names match `MicronutrientProfile` / `WeeklyNutritionTargets`. ULs are **daily** values (IOM/EFSA). Validation: each day's total must not exceed the daily UL for that nutrient.
+
+### 1. Reference: `data/reference/ul_by_demographic.json`
+
+Authoritative daily ULs by demographic. Source: IOM DRI tables (e.g. NIH ODS) or EFSA. Use `null` for nutrients with no established UL (e.g. vitamin K, thiamine, riboflavin, B12, potassium from food).
+
+```json
+{
+  "source": "IOM DRI",
+  "note": "Values are DAILY upper limits. Units match MicronutrientProfile.",
+  "demographics": {
+    "adult_male": {
+      "vitamin_a_ug": 3000,
+      "vitamin_c_mg": 2000,
+      "vitamin_d_iu": 4000,
+      "vitamin_e_mg": 1000,
+      "vitamin_k_ug": null,
+      "b1_thiamine_mg": null,
+      "b2_riboflavin_mg": null,
+      "b3_niacin_mg": 35,
+      "b5_pantothenic_acid_mg": null,
+      "b6_pyridoxine_mg": 100,
+      "b12_cobalamin_ug": null,
+      "folate_ug": 1000,
+      "calcium_mg": 2500,
+      "copper_mg": 10,
+      "iron_mg": 45,
+      "magnesium_mg": 350,
+      "manganese_mg": 11,
+      "phosphorus_mg": 4000,
+      "potassium_mg": null,
+      "selenium_ug": 400,
+      "sodium_mg": null,
+      "zinc_mg": 40,
+      "fiber_g": null,
+      "omega_3_g": null,
+      "omega_6_g": null
+    },
+    "adult_female": {
+      "vitamin_a_ug": 3000,
+      "vitamin_c_mg": 2000,
+      "vitamin_d_iu": 4000,
+      "vitamin_e_mg": 1000,
+      "vitamin_k_ug": null,
+      "b3_niacin_mg": 35,
+      "b6_pyridoxine_mg": 100,
+      "folate_ug": 1000,
+      "calcium_mg": 2500,
+      "copper_mg": 10,
+      "iron_mg": 45,
+      "magnesium_mg": 350,
+      "manganese_mg": 11,
+      "phosphorus_mg": 4000,
+      "selenium_ug": 400,
+      "zinc_mg": 40
+    },
+    "pregnancy": {},
+    "lactation": {}
+  }
+}
+```
+
+- Extend `demographics` with more keys as needed (e.g. `pregnancy`, `lactation`, age bands).
+- Omitted fields in a demographic can default to `null` (no UL).
+
+### 2. User overrides: `upper_limits` in `user_profile.yaml`
+
+Optional. Only include nutrients the user (or clinician) wants to override. Same field names and units as `MicronutrientProfile`. These override the reference value for that user.
+
+```yaml
+# user_profile.yaml (excerpt)
+
+nutrition_goals:
+  daily_calories: 2400
+  daily_protein_g: 138
+  daily_fat_g: { min: 65, max: 85 }
+  # ... other goals ...
+
+# OPTIONAL: Override upper tolerable intake (UL) for specific nutrients.
+# Only list nutrients to override; others use reference UL from ul_by_demographic.json.
+# Units match MicronutrientProfile (e.g. vitamin_a_ug, vitamin_d_iu, iron_mg).
+# Example: clinician sets lower vitamin A cap due to liver concern.
+upper_limits:
+  vitamin_a_ug: 2000
+  # vitamin_d_iu: 2000
+  # folate_ug: 800
+```
+
+### 3. Resolution and validation
+
+1. **Resolve ULs for user:** Load reference ULs for the user's demographic (from profile, e.g. `demographic: adult_male`). Override any nutrient present in `upper_limits` with the user's value.
+2. **Validation (weekly plan):** For each day in the plan, for each nutrient that has a non-null UL, ensure `day_total[nutrient] <= resolved_ul[nutrient]`. If any day exceeds, fail or filter that combination (e.g. avoid multiple high–vitamin A meals like liver).
+3. **Data layer:** Add a model (e.g. `UpperLimits` or `DailyNutritionLimits`) with the same field names as `MicronutrientProfile`; populate from reference + user overrides for the active user.
 
 ---
 

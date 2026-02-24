@@ -16,6 +16,42 @@ class Ingredient:
 
 
 @dataclass
+class IngredientInput:
+    """Structured input for ingredient validation (MVP parsing).
+    
+    Per SYSTEM_RULES.md:
+    - All three fields are REQUIRED (no guessing)
+    - This is the input format before validation
+    - Ambiguous or missing fields should not reach this model
+    """
+    name: str       # Ingredient name (e.g., "chicken breast")
+    quantity: float # Amount (e.g., 200.0)
+    unit: str       # Unit (e.g., "g", "oz", "cup", "to taste")
+
+
+@dataclass
+class ValidatedIngredient:
+    """Validated and normalized ingredient ready for nutrition lookup.
+    
+    Per SYSTEM_RULES.md:
+    - Only validated ingredients are used for nutrition calculations
+    - Normalization converts to base units (g, ml) where applicable
+    - "to taste" ingredients have is_to_taste=True and are excluded from nutrition
+    
+    Per Step 2.1 (Ingredient Name Normalization):
+    - canonical_name is the normalized name for USDA API lookup
+    - Lowercased, whitespace-normalized, controlled descriptors removed
+    """
+    name: str                   # Original ingredient name (preserved)
+    quantity: float             # Original quantity
+    unit: str                   # Original unit
+    normalized_quantity: float  # Quantity in base unit
+    normalized_unit: str        # Base unit (g, ml, or special like "large", "scoop")
+    is_to_taste: bool           # True if "to taste" (excluded from nutrition)
+    canonical_name: str = ""    # Normalized name for USDA API lookup (Step 2.1)
+
+
+@dataclass
 class MicronutrientProfile:
     """Represents micronutrient values (vitamins, minerals, etc.).
     

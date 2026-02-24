@@ -4,17 +4,43 @@
 import argparse
 import sys
 from pathlib import Path
+from typing import List
 
 from src.data_layer.user_profile import UserProfileLoader
 from src.data_layer.recipe_db import RecipeDB
 from src.data_layer.nutrition_db import NutritionDB
-from src.data_layer.ingredient_db import IngredientDB
+from src.data_layer.models import Recipe
 from src.nutrition.calculator import NutritionCalculator
 from src.nutrition.aggregator import NutritionAggregator
 from src.scoring.recipe_scorer import RecipeScorer
 from src.ingestion.recipe_retriever import RecipeRetriever
+from src.ingestion.usda_client import USDAClient
+from src.ingestion.ingredient_cache import CachedIngredientLookup
 from src.planning.meal_planner import MealPlanner, DailySchedule
 from src.output.formatters import format_plan_markdown, format_plan_json_string
+from src.providers.local_provider import LocalIngredientProvider
+from src.providers.api_provider import APIIngredientProvider, IngredientResolutionError
+
+
+def extract_ingredient_names(recipes: List[Recipe]) -> List[str]:
+    """Return sorted unique ingredient names, excluding 'to taste' and empty names.
+
+    Used to drive eager resolution before planning so no API calls occur
+    during scoring or backtracking.
+    """
+    names: set[str] = set()
+    for recipe in recipes:
+        for ing in recipe.ingredients:
+            if ing.is_to_taste:
+                continue
+            n = ing.name
+            if n is None:
+                continue
+            n = str(n).strip()
+            if not n:
+                continue
+            names.add(n)
+    return sorted(names)
 
 
 def create_daily_schedule(user_profile) -> DailySchedule:
@@ -97,6 +123,12 @@ def main():
         type=str,
         help="Optional file path to save output (default: print to stdout)"
     )
+    parser.add_argument(
+        "--ingredient-source",
+        choices=["local", "api"],
+        default="local",
+        help="Source for ingredient nutrition data (default: local)"
+    )
     
     args = parser.parse_args()
     
@@ -123,16 +155,37 @@ def main():
         profile_loader = UserProfileLoader(str(profile_path))
         user_profile = profile_loader.load()
         
-        # Load data
+        # Load recipes
         print(f"Loading recipes from {recipes_path}...", file=sys.stderr)
         recipe_db = RecipeDB(str(recipes_path))
+        all_recipes = recipe_db.get_all_recipes()
+        print(f"Found {len(all_recipes)} recipes", file=sys.stderr)
         
-        print(f"Loading ingredients from {ingredients_path}...", file=sys.stderr)
-        ingredient_db = IngredientDB(str(ingredients_path))
-        nutrition_db = NutritionDB(str(ingredients_path))
+        # Create ingredient provider (local or API)
+        if args.ingredient_source == "api":
+            try:
+                usda_client = USDAClient.from_env()
+                cached_lookup = CachedIngredientLookup(usda_client=usda_client)
+                provider = APIIngredientProvider(cached_lookup)
+            except Exception as e:
+                print("Failed to initialize ingredient API:", file=sys.stderr)
+                print(str(e), file=sys.stderr)
+                sys.exit(3)
+        else:
+            print(f"Loading ingredients from {ingredients_path}...", file=sys.stderr)
+            nutrition_db = NutritionDB(str(ingredients_path))
+            provider = LocalIngredientProvider(nutrition_db)
+        
+        # Eager ingredient resolution (deterministic, fail-fast; no API calls after this)
+        all_ingredient_names = extract_ingredient_names(all_recipes)
+        try:
+            provider.resolve_all(all_ingredient_names)
+        except IngredientResolutionError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            sys.exit(3)
         
         # Initialize components
-        nutrition_calculator = NutritionCalculator(nutrition_db)
+        nutrition_calculator = NutritionCalculator(provider)
         nutrition_aggregator = NutritionAggregator()
         recipe_scorer = RecipeScorer(nutrition_calculator)
         recipe_retriever = RecipeRetriever(recipe_db)
@@ -140,10 +193,6 @@ def main():
         
         # Create daily schedule
         daily_schedule = create_daily_schedule(user_profile)
-        
-        # Get all available recipes
-        all_recipes = recipe_db.get_all_recipes()
-        print(f"Found {len(all_recipes)} recipes", file=sys.stderr)
         
         # Plan meals
         print("Planning meals...", file=sys.stderr)

@@ -11,7 +11,9 @@ from src.data_layer.models import UserProfile
 from src.data_layer.recipe_db import RecipeDB
 from src.data_layer.nutrition_db import NutritionDB
 from src.data_layer.ingredient_db import IngredientDB
+from src.providers.local_provider import LocalIngredientProvider
 from src.nutrition.calculator import NutritionCalculator
+from src.cli import extract_ingredient_names
 from src.nutrition.aggregator import NutritionAggregator
 from src.scoring.recipe_scorer import RecipeScorer
 from src.ingestion.recipe_retriever import RecipeRetriever
@@ -122,14 +124,18 @@ def plan_meals(request: PlanRequest) -> Dict[str, Any]:
         # Keep ingredient_db loaded for parity with CLI data initialization.
         _ = ingredient_db
 
-        nutrition_calculator = NutritionCalculator(nutrition_db)
+        provider = LocalIngredientProvider(nutrition_db)
+        all_recipes = recipe_db.get_all_recipes()
+        all_ingredient_names = extract_ingredient_names(all_recipes)
+        provider.resolve_all(all_ingredient_names)
+
+        nutrition_calculator = NutritionCalculator(provider)
         nutrition_aggregator = NutritionAggregator()
         recipe_scorer = RecipeScorer(nutrition_calculator)
         recipe_retriever = RecipeRetriever(recipe_db)
         meal_planner = MealPlanner(recipe_scorer, recipe_retriever, nutrition_aggregator)
 
         daily_schedule = create_daily_schedule(user_profile)
-        all_recipes = recipe_db.get_all_recipes()
         result = meal_planner.plan_daily_meals(
             user_profile=user_profile,
             schedule=daily_schedule,

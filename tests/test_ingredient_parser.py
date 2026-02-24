@@ -100,25 +100,24 @@ class TestIngredientParser:
             assert ingredient.quantity == expected_qty
             assert ingredient.unit == expected_unit
 
-    def test_parse_missing_quantity(self, parser):
-        """Test parsing when quantity is missing - should default to 1 serving."""
-        ingredient = parser.parse("cream of rice")
-        assert ingredient.quantity == 1.0
-        assert ingredient.unit == "serving"
-        assert ingredient.name == "cream of rice"
+    def test_parse_missing_quantity_raises(self, parser):
+        """Test parsing when quantity is missing - should raise ValueError (STRICT MODE)."""
+        with pytest.raises(ValueError, match="missing quantity and unit"):
+            parser.parse("cream of rice")
 
-    def test_parse_number_without_unit(self, parser):
-        """Test parsing number without unit - should assume servings."""
-        ingredient = parser.parse("3 rice")
-        assert ingredient.quantity == 3.0
-        assert ingredient.unit == "serving"
-        assert ingredient.name == "rice"
+    def test_parse_number_without_unit_raises(self, parser):
+        """Test parsing number without unit - should raise ValueError (STRICT MODE)."""
+        with pytest.raises(ValueError, match="unit is missing"):
+            parser.parse("3 rice")
 
-    def test_parse_missing_unit_with_number(self, parser):
-        """Test parsing number without explicit unit - should default to serving."""
-        ingredient = parser.parse("200 cream of rice")
-        assert ingredient.quantity == 200.0
-        assert ingredient.unit == "serving"
+    def test_parse_missing_unit_with_number_raises(self, parser):
+        """Test parsing number without explicit unit - should raise ValueError (STRICT MODE).
+        
+        Note: "200 cream of rice" parses as qty=200, unit=cream (invalid), name=of rice
+        so it raises "Unsupported unit" rather than "unit is missing".
+        """
+        with pytest.raises(ValueError, match="Unsupported unit"):
+            parser.parse("200 cream of rice")
 
     def test_parse_unknown_ingredient(self, parser):
         """Test parsing unknown ingredient - should return original name."""
@@ -141,8 +140,11 @@ class TestIngredientParser:
 
     def test_parse_case_insensitive(self, parser):
         """Test parsing is case-insensitive for normalization."""
-        ingredient = parser.parse("EGGS")
+        # Must provide explicit quantity and unit (STRICT MODE)
+        ingredient = parser.parse("2 large EGGS")
         assert ingredient.name == "egg"  # Normalized via alias (case-insensitive)
+        assert ingredient.quantity == 2.0
+        assert ingredient.unit == "large"
 
     def test_detect_to_taste(self, parser):
         """Test 'to taste' detection."""
@@ -156,4 +158,34 @@ class TestIngredientParser:
         assert parser.normalize_name("eggs") == "egg"  # Via alias
         assert parser.normalize_name("cream of rice") == "cream of rice"  # Direct match
         assert parser.normalize_name("unknown") == "unknown"  # Not found
+
+    def test_parse_unsupported_unit_raises(self, parser):
+        """Test parsing with unsupported unit - should raise ValueError (STRICT MODE)."""
+        with pytest.raises(ValueError, match="Unsupported unit"):
+            parser.parse("5 xyz ingredient")
+
+    def test_parse_empty_to_taste_raises(self, parser):
+        """Test parsing 'to taste' without name - should raise ValueError."""
+        with pytest.raises(ValueError, match="missing ingredient name"):
+            parser.parse("to taste")
+
+    def test_parse_serving_unit_explicit(self, parser):
+        """Test parsing with explicit 'serving' unit - should work."""
+        ingredient = parser.parse("2 serving rice")
+        assert ingredient.quantity == 2.0
+        assert ingredient.unit == "serving"
+        assert ingredient.name == "rice"
+
+    def test_parse_supported_units_list(self, parser):
+        """Test that SUPPORTED_UNITS is documented and accessible."""
+        # Verify key units are supported
+        assert "g" in parser.SUPPORTED_UNITS
+        assert "oz" in parser.SUPPORTED_UNITS
+        assert "cup" in parser.SUPPORTED_UNITS
+        assert "tsp" in parser.SUPPORTED_UNITS
+        assert "tbsp" in parser.SUPPORTED_UNITS
+        assert "scoop" in parser.SUPPORTED_UNITS
+        assert "large" in parser.SUPPORTED_UNITS
+        assert "serving" in parser.SUPPORTED_UNITS
+        assert "to taste" in parser.SUPPORTED_UNITS
 

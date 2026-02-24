@@ -6,7 +6,7 @@
 
 **Version: v0.1.0**
 
-A meal planner that generates daily meal plans (breakfast, lunch, dinner) from your schedule and nutrition goals. The current MVP uses **rule-based recipe scoring** and **structured nutrition calculations**. LLM integration is coming soon.
+A meal planner that generates meal plans (breakfast, lunch, dinner) from your schedule and nutrition goals. The current MVP uses **rule-based recipe scoring** and **structured nutrition calculations**. LLM integration is coming soon.
 
 ---
 

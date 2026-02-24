@@ -18,7 +18,11 @@ from src.ingestion.ingredient_cache import CachedIngredientLookup, CacheEntry
 
 
 class IngredientResolutionError(Exception):
-    """Raised when eager ingredient resolution fails for one or more names."""
+    """Raised when eager ingredient resolution fails.
+
+    Fail-fast: no partial planning. The CLI exits with code 3 when this
+    is raised during resolve_all().
+    """
 
 
 class APIIngredientProvider(IngredientDataProvider):
@@ -69,20 +73,27 @@ class APIIngredientProvider(IngredientDataProvider):
 
         Names are sorted before processing to guarantee deterministic
         ordering of API calls (and therefore deterministic cache behaviour).
+        On first failure, raises immediately; does not partially populate cache.
 
         Raises:
-            IngredientResolutionError: If any lookup fails.
+            IngredientResolutionError: If any lookup fails (None or exception).
         """
         for name in sorted(ingredient_names):
             key = name.lower()
             if key in self._resolved:
                 continue
 
-            entry: Optional[CacheEntry] = self._lookup.lookup(name)
+            try:
+                entry: Optional[CacheEntry] = self._lookup.lookup(name)
+            except Exception as e:
+                raise IngredientResolutionError(
+                    f"Failed to resolve ingredient '{name}': {e}"
+                ) from e
+
             if entry is None:
                 raise IngredientResolutionError(
-                    f"Failed to resolve ingredient '{name}' via API. "
-                    f"Check that the USDA API key is set and the ingredient name is valid."
+                    f"Failed to resolve ingredient '{name}': no result from API. "
+                    "Check that the USDA API key is set and the ingredient name is valid."
                 )
 
             self._resolved[key] = self._entry_to_dict(name, entry)

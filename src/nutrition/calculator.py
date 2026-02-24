@@ -2,8 +2,8 @@
 from typing import Dict, Any, Optional, List
 
 from src.data_layer.models import Ingredient, Recipe, NutritionProfile, MicronutrientProfile
-from src.data_layer.nutrition_db import NutritionDB
 from src.data_layer.exceptions import IngredientNotFoundError
+from src.providers.ingredient_provider import IngredientDataProvider
 
 
 class NutritionCalculator:
@@ -50,13 +50,13 @@ class NutritionCalculator:
         "omega_6_g",
     ]
 
-    def __init__(self, nutrition_db: NutritionDB):
-        """Initialize calculator with nutrition database.
+    def __init__(self, provider: IngredientDataProvider):
+        """Initialize calculator with ingredient data provider.
         
         Args:
-            nutrition_db: NutritionDB instance for nutrition data lookup
+            provider: IngredientDataProvider instance for nutrition data lookup
         """
-        self.nutrition_db = nutrition_db
+        self.provider = provider
 
     def calculate_ingredient_nutrition(
         self, ingredient: Ingredient
@@ -76,8 +76,8 @@ class NutritionCalculator:
         if ingredient.is_to_taste:
             raise ValueError("Cannot calculate nutrition for 'to taste' ingredients")
 
-        # Get ingredient info from database
-        ingredient_info = self.nutrition_db.get_ingredient_info(ingredient.name)
+        # Get ingredient info from provider
+        ingredient_info = self.provider.get_ingredient_info(ingredient.name)
         if ingredient_info is None:
             raise IngredientNotFoundError(ingredient.name)
 
@@ -182,7 +182,7 @@ class NutritionCalculator:
         
         Args:
             ingredient: Ingredient object
-            ingredient_info: Full ingredient info from NutritionDB
+            ingredient_info: Full ingredient info from provider
         
         Returns:
             Unit key (e.g., "per_100g", "per_scoop", "per_large") or None

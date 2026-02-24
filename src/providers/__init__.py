@@ -6,10 +6,11 @@ concrete data sources (local JSON vs. external API).
 
 from src.providers.ingredient_provider import IngredientDataProvider
 from src.providers.local_provider import LocalIngredientProvider
-from src.providers.api_provider import APIIngredientProvider
+from src.providers.api_provider import APIIngredientProvider, IngredientResolutionError
 
 __all__ = [
     "IngredientDataProvider",
     "LocalIngredientProvider",
     "APIIngredientProvider",
+    "IngredientResolutionError",
 ]

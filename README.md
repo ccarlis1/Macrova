@@ -1,12 +1,77 @@
-# Nutriton Agent
-An agent designed to generate healthy meals based on a users schedule and nutrition goals. Currently designed for personal use
+# Macrova (nutrition-agent)
 
-## Purpose
-### Experience
-- Gain experience with working with LLMs and agents. This project will be open-source and is a good resume project
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-pytest-green.svg)](tests/)
 
-### Current Usage (MVP)
-The agent currently recommends recipes based on a user's schedule and nutrition goals, using structured nutrition calculations and rule-based meal selection. It solves the problem of constantly thinking about what meals to make, drastically decreasing the time needed to plan meals while ensuring optimal nutrition.
+**Version: v0.1.0**
+
+A meal planner that generates daily meal plans (breakfast, lunch, dinner) from your schedule and nutrition goals. The current MVP uses **rule-based recipe scoring** and **structured nutrition calculations**. LLM integration is coming soon.
+
+---
+
+## Getting started
+
+### Install
+
+```bash
+git clone <repository-url>
+cd nutrition-agent
+python3 -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+```
+Replace `<repository-url>` with your clone URL (e.g. from GitHub). The folder name after clone is `nutrition-agent`.
+
+### Quick run (local mode)
+
+After copying the example config and data files (see below), run:
+
+```bash
+python3 plan_meals.py
+```
+
+This uses the bundled ingredient database (no API key). For USDA API mode, see [USAGE.md](USAGE.md#api-mode-setup).
+
+### Configure and run
+
+1. **Copy example config and data** (recipe/ingredient data are not in the repo):
+   ```bash
+   cp config/user_profile.yaml.example config/user_profile.yaml
+   cp data/recipes/recipes.json.example data/recipes/recipes.json
+   cp data/ingredients/custom_ingredients.json.example data/ingredients/custom_ingredients.json
+   ```
+2. Edit `config/user_profile.yaml` with your goals, schedule, and preferences.
+3. **Run the planner:**
+   ```bash
+   python3 plan_meals.py
+   ```
+   Output is Markdown by default. Use `--output json` for JSON, or see below for more options.
+
+**More detail:** [QUICK_START.md](QUICK_START.md) for a short run-through; [USAGE.md](USAGE.md) for all CLI options, API mode, and the REST API.
+
+### Run tests
+
+```bash
+pytest tests/
+```
+
+No API key or network access is required; USDA-dependent tests use mocks.
+
+**Environment variables:** None for local mode. For USDA API mode, copy `.env.example` to `.env` and set `USDA_API_KEY`; see [USAGE.md](USAGE.md#api-mode-setup).
+
+---
+
+## Current state (MVP)
+
+The app recommends **three meals per day** (breakfast, lunch, dinner) from your recipe list. Ingredient nutrition is provided by a **provider abstraction** (local JSON or USDA API). In practice:
+
+- **User profile:** Daily calories, protein, fat range, carbs, meal times, and busyness (cooking-time limits).
+- **Recipe scoring:** Nutrition fit, cooking time vs schedule, preferences (likes/dislikes/allergies), and simple micronutrient scoring.
+- **Ingredient nutrition:** Either a **local JSON** ingredient DB (default) or the **USDA FoodData Central API** (optional, `--ingredient-source api` and `USDA_API_KEY`).
+- **Output:** Structured daily plan with per-meal and daily nutrition, adherence to goals, and warnings.
+
+**Interfaces:** CLI (`plan_meals.py` / `python3 -m src.cli`) and an optional **REST API** (FastAPI server in `src/api/server.py`) for programmatic use.
 
 ### End Game Vision
 The ultimate goal is to create an **all-purpose nutritious meals generator** that combines:
@@ -69,7 +134,7 @@ The system will intelligently parse this request, account for the chili's nutrit
 	- 1 tsp chili crisp
 	- *Meal Instructions go here*
 	- Nutrition Breakdown: *full micro/macro calculation goes here*
-- *Total Micronutrient breakdown goes here*
+- *Micronutrient Breakdown*
 
 
 ## Functional Requirements
@@ -94,13 +159,33 @@ The system will intelligently parse this request, account for the chili's nutrit
 - Minimal dependencies
 
 
-## Development Roadmap
+## Project structure
 
-### Phase 1-4: MVP Foundation (Current)
+```
+config/          # User profile (YAML); copy from .example
+data/            # Recipes and ingredients JSON; copy from .example
+src/
+  cli.py         # CLI entrypoint
+  api/           # Optional REST API (FastAPI)
+  providers/     # Ingredient data (local JSON or USDA API)
+  nutrition/     # Nutrition calculator and aggregation
+  planning/      # Meal planner
+  scoring/       # Recipe scorer
+  ingestion/     # Recipe retrieval, USDA client, ingredient cache
+  data_layer/    # Models, recipe/ingredient DBs, user profile loader
+  output/        # Markdown/JSON formatters
+tests/           # Pytest suite (no network required)
+```
+
+## Development roadmap
+
+### Phase 1–4: MVP foundation (current)
 - ✅ Accurate nutrition calculations and meal balancing
 - ✅ Rule-based recipe scoring and selection
-- ✅ Local recipe and nutrition databases
-- ✅ Basic user preferences and scheduling
+- ✅ Local ingredient database (JSON)
+- ✅ Optional USDA API ingredient source (`--ingredient-source api`; requires `USDA_API_KEY`)
+- ✅ User profile, schedule, and preferences (likes, dislikes, allergies)
+- ✅ CLI and optional REST API
 
 ### Phase 5+: LLM Integration & Creativity
 - **LLM-Enhanced Reasoning**: Replace rule-based scoring with intelligent AI reasoning
@@ -121,4 +206,10 @@ The final product may feature:
 - GUI with drag-and-drop meal scheduling
 - Hybrid approach combining structured inputs with AI flexibility
 
-**Current Priority**: Nail the foundational nutrition logic and meal balancing before adding creative AI features.
+**Current priority:** Nail the foundational nutrition logic and meal balancing before adding creative AI features.
+
+---
+
+## License
+
+This project is licensed under the MIT License—see [LICENSE](LICENSE).

@@ -4,88 +4,18 @@
 import argparse
 import sys
 from pathlib import Path
-from typing import List
 
 from src.data_layer.user_profile import UserProfileLoader
 from src.data_layer.recipe_db import RecipeDB
 from src.data_layer.nutrition_db import NutritionDB
-from src.data_layer.models import Recipe
 from src.nutrition.calculator import NutritionCalculator
-from src.nutrition.aggregator import NutritionAggregator
-from src.scoring.recipe_scorer import RecipeScorer
-from src.ingestion.recipe_retriever import RecipeRetriever
 from src.ingestion.usda_client import USDAClient
 from src.ingestion.ingredient_cache import CachedIngredientLookup
-from src.planning.meal_planner import MealPlanner, DailySchedule
-from src.output.formatters import format_plan_markdown, format_plan_json_string
+from src.planning.converters import convert_recipes, convert_profile, extract_ingredient_names
+from src.planning.planner import plan_meals
+from src.output.formatters import format_result_markdown, format_result_json_string
 from src.providers.local_provider import LocalIngredientProvider
 from src.providers.api_provider import APIIngredientProvider, IngredientResolutionError
-
-
-def extract_ingredient_names(recipes: List[Recipe]) -> List[str]:
-    """Return sorted unique ingredient names, excluding 'to taste' and empty names.
-
-    Used to drive eager resolution before planning so no API calls occur
-    during scoring or backtracking.
-    """
-    names: set[str] = set()
-    for recipe in recipes:
-        for ing in recipe.ingredients:
-            if ing.is_to_taste:
-                continue
-            n = ing.name
-            if n is None:
-                continue
-            n = str(n).strip()
-            if not n:
-                continue
-            names.add(n)
-    return sorted(names)
-
-
-def create_daily_schedule(user_profile) -> DailySchedule:
-    """Convert UserProfile schedule dict to DailySchedule object.
-    
-    Args:
-        user_profile: UserProfile object with schedule dict
-        
-    Returns:
-        DailySchedule object
-        
-    Raises:
-        ValueError: If schedule doesn't have required meal times
-    """
-    schedule = user_profile.schedule
-    
-    # Separate workout time (busyness level 0) from meal times
-    workout_time = None
-    meal_times = []
-    for time_str, busyness in schedule.items():
-        if busyness == 0:
-            workout_time = time_str
-        else:
-            meal_times.append(time_str)
-    
-    # Sort meal times chronologically
-    meal_times = sorted(meal_times)
-    
-    if len(meal_times) < 3:
-        raise ValueError(f"Schedule must have at least 3 meal times, found {len(meal_times)}")
-    
-    # Assume first meal is breakfast, second is lunch, third is dinner
-    breakfast_time = meal_times[0]
-    lunch_time = meal_times[1]
-    dinner_time = meal_times[2]
-    
-    return DailySchedule(
-        breakfast_time=breakfast_time,
-        breakfast_busyness=schedule[breakfast_time],
-        lunch_time=lunch_time,
-        lunch_busyness=schedule[lunch_time],
-        dinner_time=dinner_time,
-        dinner_busyness=schedule[dinner_time],
-        workout_time=workout_time
-    )
 
 
 def main():
@@ -129,7 +59,14 @@ def main():
         default="local",
         help="Source for ingredient nutrition data (default: local)"
     )
-    
+    parser.add_argument(
+        "--days",
+        type=int,
+        default=1,
+        choices=range(1, 8),
+        help="Planning horizon: 1-7 days"
+    )
+
     args = parser.parse_args()
     
     # Validate file paths
@@ -183,28 +120,18 @@ def main():
         except IngredientResolutionError as e:
             print(f"Error: {e}", file=sys.stderr)
             sys.exit(3)
-        
-        # Initialize components
-        nutrition_calculator = NutritionCalculator(provider)
-        nutrition_aggregator = NutritionAggregator()
-        recipe_scorer = RecipeScorer(nutrition_calculator)
-        recipe_retriever = RecipeRetriever(recipe_db)
-        meal_planner = MealPlanner(recipe_scorer, recipe_retriever, nutrition_aggregator)
-        
-        # Create daily schedule
-        daily_schedule = create_daily_schedule(user_profile)
-        
-        # Plan meals
+
+        calculator = NutritionCalculator(provider)
+        recipe_pool = convert_recipes(all_recipes, calculator)
+        recipe_by_id = {r.id: r for r in recipe_pool}
+        planning_profile = convert_profile(user_profile, args.days)
+
         print("Planning meals...", file=sys.stderr)
-        result = meal_planner.plan_daily_meals(
-            user_profile=user_profile,
-            schedule=daily_schedule,
-            available_recipes=all_recipes
-        )
-        
+        result = plan_meals(planning_profile, recipe_pool, args.days)
+
         # Format output
         if args.output in ["markdown", "both"]:
-            markdown_output = format_plan_markdown(result)
+            markdown_output = format_result_markdown(result, recipe_by_id, planning_profile, args.days)
             if args.output_file:
                 output_path = Path(args.output_file)
                 if args.output == "both":
@@ -213,9 +140,9 @@ def main():
                 print(f"Markdown output saved to {output_path}", file=sys.stderr)
             else:
                 print(markdown_output)
-        
+
         if args.output in ["json", "both"]:
-            json_output = format_plan_json_string(result, indent=2)
+            json_output = format_result_json_string(result, recipe_by_id, planning_profile, args.days)
             if args.output_file:
                 output_path = Path(args.output_file)
                 if args.output == "both":
@@ -228,14 +155,15 @@ def main():
                 if args.output == "both":
                     print("\n" + "="*80 + "\n", file=sys.stdout)
                 print(json_output)
-        
+
         # Print summary to stderr
         if result.success:
             print("\n✅ Meal plan generated successfully!", file=sys.stderr)
         else:
             print("\n⚠️  Meal plan generated with warnings:", file=sys.stderr)
-            for warning in result.warnings:
-                print(f"   - {warning}", file=sys.stderr)
+            if result.warning:
+                for k, v in result.warning.items():
+                    print(f"   - {k}: {v}", file=sys.stderr)
         
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)

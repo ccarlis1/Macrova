@@ -245,7 +245,7 @@ def _remove_assignment(
     profile: PlanningUserProfile,
     completed_days: Optional[Set[int]] = None,
 ) -> None:
-    """Remove one assignment from state. Handles day-boundary: subtract day from weekly only if day was completed."""
+    """Remove one assignment from state. When day was completed, subtract this slot's nutrition from weekly (per-slot so unwind order is correct)."""
     day_index, slot_index, recipe_id = assignment.day_index, assignment.slot_index, assignment.recipe_id
     tracker = daily_trackers[day_index]
     if assignment.variant_index > 0:
@@ -256,16 +256,13 @@ def _remove_assignment(
     slots_total = tracker.slots_total
     new_slots_assigned = tracker.slots_assigned - 1
 
+    # Subtract this slot's nutrition from weekly when the day was completed (symmetrical with _update_weekly_after_day adding full day).
+    # Done per-slot so that reverse-order unwind still subtracts the correct amount (full day = sum of slots).
+    if completed_days is not None and day_index in completed_days:
+        weekly_tracker.weekly_totals = _subtract_nutrition(weekly_tracker.weekly_totals, nut)
+
     if new_slots_assigned == 0:
-        if completed_days is not None and day_index in completed_days:
-            day_totals_before = NutritionProfile(
-                tracker.calories_consumed,
-                tracker.protein_consumed,
-                tracker.fat_consumed,
-                tracker.carbs_consumed,
-                micronutrients=_daily_tracker_to_micro_profile(tracker) if tracker.micronutrients_consumed else None,
-            )
-            weekly_tracker.weekly_totals = _subtract_nutrition(weekly_tracker.weekly_totals, day_totals_before)
+        if completed_days is not None:
             completed_days.discard(day_index)
         weekly_tracker.days_completed = max(0, weekly_tracker.days_completed - 1)
         weekly_tracker.days_remaining = len(schedule) - weekly_tracker.days_completed

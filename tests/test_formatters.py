@@ -2,21 +2,10 @@
 
 import pytest
 import json
-from src.data_layer.models import (
-    Ingredient,
-    Recipe,
-    Meal,
-    DailyMealPlan,
-    NutritionProfile,
-    NutritionGoals
-)
-from src.planning.meal_planner import PlanningResult
+from src.data_layer.models import Ingredient, NutritionProfile
 from src.output.formatters import (
     format_ingredient_string,
     format_nutrition_breakdown,
-    format_plan_markdown,
-    format_plan_json,
-    format_plan_json_string
 )
 
 
@@ -109,321 +98,198 @@ class TestFormatNutritionBreakdown:
         assert "  **Protein:**" in result
 
 
-class TestFormatPlanMarkdown:
-    """Test Markdown plan formatting."""
-    
+# --- Formatters (MealPlanResult) ---
+
+
+class TestFormatResultMarkdownAndJson:
+    """Tests for format_result_markdown, format_result_json, format_result_json_string (MealPlanResult)."""
+
     @pytest.fixture
-    def sample_plan_result(self):
-        """Create a sample PlanningResult for testing."""
-        # Create ingredients
-        ingredient1 = Ingredient(
-            name="cream of rice",
-            quantity=200.0,
-            unit="g",
-            is_to_taste=False
-        )
-        ingredient2 = Ingredient(
-            name="whey protein powder",
-            quantity=1.0,
-            unit="scoop",
-            is_to_taste=False
-        )
-        ingredient3 = Ingredient(
-            name="salt",
-            quantity=0.0,
-            unit="to taste",
-            is_to_taste=True
-        )
-        
-        # Create recipes
-        recipe1 = Recipe(
+    def sample_planning_recipe(self):
+        from src.planning.phase0_models import PlanningRecipe
+        return PlanningRecipe(
             id="r1",
-            name="Preworkout Meal",
-            ingredients=[ingredient1, ingredient2, ingredient3],
-            cooking_time_minutes=5,
-            instructions=["Mix cream of rice with water", "Add protein powder", "Season to taste"]
-        )
-        
-        recipe2 = Recipe(
-            id="r2",
-            name="Breakfast Scramble",
+            name="Test Recipe One",
             ingredients=[
-                Ingredient(name="eggs", quantity=5.0, unit="large", is_to_taste=False),
-                Ingredient(name="potatoes", quantity=175.0, unit="g", is_to_taste=False)
+                Ingredient("egg", 2.0, "large", is_to_taste=False),
+                Ingredient("salt", 0.0, "to taste", is_to_taste=True),
             ],
-            cooking_time_minutes=20,
-            instructions=["Scramble eggs", "Cook potatoes"]
+            cooking_time_minutes=10,
+            nutrition=NutritionProfile(350.0, 25.0, 15.0, 20.0),
+            primary_carb_contribution=None,
+            primary_carb_source=None,
         )
-        
-        # Create meals
-        meal1 = Meal(
-            recipe=recipe1,
-            nutrition=NutritionProfile(calories=600.0, protein_g=40.0, fat_g=5.0, carbs_g=80.0),
-            meal_type="breakfast",
-            busyness_level=2
-        )
-        
-        meal2 = Meal(
-            recipe=recipe2,
-            nutrition=NutritionProfile(calories=800.0, protein_g=50.0, fat_g=30.0, carbs_g=100.0),
-            meal_type="lunch",
-            busyness_level=3
-        )
-        
-        # Create daily plan
-        goals = NutritionGoals(
-            calories=2400,
-            protein_g=150.0,
-            fat_g_min=50.0,
-            fat_g_max=100.0,
-            carbs_g=300.0
-        )
-        
-        total_nutrition = NutritionProfile(
-            calories=1400.0,
-            protein_g=90.0,
-            fat_g=35.0,
-            carbs_g=180.0
-        )
-        
-        daily_plan = DailyMealPlan(
-            date="2024-01-01",
-            meals=[meal1, meal2],
-            total_nutrition=total_nutrition,
-            goals=goals,
-            meets_goals=True
-        )
-        
-        return PlanningResult(
-            daily_plan=daily_plan,
-            success=True,
-            total_nutrition=total_nutrition,
-            target_adherence={
-                "calories": 95.0,
-                "protein": 98.0,
-                "fat": 85.0,
-                "carbs": 92.0
-            },
-            warnings=[]
-        )
-    
-    def test_format_markdown_basic(self, sample_plan_result):
-        """Test basic Markdown formatting."""
-        result = format_plan_markdown(sample_plan_result)
-        
-        # Check header
-        assert "# Daily Meal Plan" in result
-        
-        # Check success status
-        assert "✅ **Plan meets nutrition goals**" in result
-        
-        # Check meal names
-        assert "## Meal 1: Preworkout Meal" in result
-        assert "## Meal 2: Breakfast Scramble" in result
-        
-        # Check ingredients
-        assert "200 g cream of rice" in result
-        assert "1 scoop whey protein powder" in result
-        assert "salt to taste" in result
-        
-        # Check cooking time
-        assert "**Cooking Time:** 5 minutes" in result
-        assert "**Cooking Time:** 20 minutes" in result
-        
-        # Check nutrition breakdown
-        assert "**Calories:** 600 kcal" in result
-        assert "**Protein:** 40.0g" in result
-        
-        # Check daily totals
-        assert "## Daily Totals" in result
-        assert "**Calories:** 1400 kcal" in result
-        
-        # Check goals
-        assert "## Goals & Adherence" in result
-        assert "**Target Calories:** 2400" in result
-    
-    def test_format_markdown_with_warnings(self, sample_plan_result):
-        """Test Markdown formatting with warnings."""
-        sample_plan_result.warnings = [
-            "Calories below target: 1400 / 2400 (58.3%)",
-            "Protein below target: 90.0g / 150.0g (60.0%)"
-        ]
-        sample_plan_result.success = False
-        
-        result = format_plan_markdown(sample_plan_result)
-        
-        assert "⚠️ **Plan has warnings**" in result
-        assert "## Warnings" in result
-        assert "Calories below target" in result
-        assert "Protein below target" in result
-    
-    def test_format_markdown_instructions(self, sample_plan_result):
-        """Test that instructions are included in Markdown."""
-        result = format_plan_markdown(sample_plan_result)
-        
-        assert "### Instructions" in result
-        assert "Mix cream of rice with water" in result
-        assert "Add protein powder" in result
 
-
-class TestFormatPlanJson:
-    """Test JSON plan formatting."""
-    
     @pytest.fixture
-    def sample_plan_result(self):
-        """Create a sample PlanningResult for testing."""
-        ingredient = Ingredient(
-            name="cream of rice",
-            quantity=200.0,
-            unit="g",
-            is_to_taste=False
+    def sample_planning_recipe_two(self):
+        from src.planning.phase0_models import PlanningRecipe
+        return PlanningRecipe(
+            id="r2",
+            name="Test Recipe Two",
+            ingredients=[Ingredient("chicken", 150.0, "g", is_to_taste=False)],
+            cooking_time_minutes=25,
+            nutrition=NutritionProfile(250.0, 35.0, 8.0, 0.0),
+            primary_carb_contribution=None,
+            primary_carb_source=None,
         )
-        
-        recipe = Recipe(
-            id="r1",
-            name="Preworkout Meal",
-            ingredients=[ingredient],
-            cooking_time_minutes=5,
-            instructions=["Mix and cook"]
+
+    @pytest.fixture
+    def recipe_by_id(self, sample_planning_recipe, sample_planning_recipe_two):
+        return {
+            "r1": sample_planning_recipe,
+            "r2": sample_planning_recipe_two,
+        }
+
+    @pytest.fixture
+    def sample_planning_profile(self):
+        from src.planning.phase0_models import PlanningUserProfile, MealSlot
+        return PlanningUserProfile(
+            daily_calories=2400,
+            daily_protein_g=150.0,
+            daily_fat_g=(50.0, 100.0),
+            daily_carbs_g=300.0,
+            schedule=[
+                [
+                    MealSlot("07:00", 2, "breakfast"),
+                    MealSlot("12:00", 3, "lunch"),
+                ],
+            ],
+            excluded_ingredients=[],
+            liked_foods=[],
         )
-        
-        meal = Meal(
-            recipe=recipe,
-            nutrition=NutritionProfile(calories=600.0, protein_g=40.0, fat_g=5.0, carbs_g=80.0),
-            meal_type="breakfast",
-            busyness_level=2
-        )
-        
-        goals = NutritionGoals(
-            calories=2400,
-            protein_g=150.0,
-            fat_g_min=50.0,
-            fat_g_max=100.0,
-            carbs_g=300.0
-        )
-        
-        daily_plan = DailyMealPlan(
-            date="2024-01-01",
-            meals=[meal],
-            total_nutrition=NutritionProfile(calories=600.0, protein_g=40.0, fat_g=5.0, carbs_g=80.0),
-            goals=goals,
-            meets_goals=True
-        )
-        
-        return PlanningResult(
-            daily_plan=daily_plan,
+
+    @pytest.fixture
+    def sample_meal_plan_result_success(self):
+        from src.planning.phase0_models import Assignment, DailyTracker, WeeklyTracker
+        from src.planning.phase10_reporting import MealPlanResult
+        from src.data_layer.models import NutritionProfile
+        return MealPlanResult(
             success=True,
-            total_nutrition=NutritionProfile(calories=600.0, protein_g=40.0, fat_g=5.0, carbs_g=80.0),
-            target_adherence={"calories": 95.0, "protein": 98.0, "fat": 85.0, "carbs": 92.0},
-            warnings=[]
+            termination_code="TC-1",
+            failure_mode=None,
+            plan=[
+                Assignment(0, 0, "r1", 0),
+                Assignment(0, 1, "r2", 0),
+            ],
+            daily_trackers={
+                0: DailyTracker(
+                    calories_consumed=600.0,
+                    protein_consumed=60.0,
+                    fat_consumed=23.0,
+                    carbs_consumed=20.0,
+                    slots_assigned=2,
+                    slots_total=2,
+                ),
+            },
+            weekly_tracker=WeeklyTracker(
+                weekly_totals=NutritionProfile(600.0, 60.0, 23.0, 20.0),
+                days_completed=1,
+                days_remaining=0,
+                carryover_needs={},
+            ),
+            warning=None,
+            report={},
+            stats=None,
         )
-    
-    def test_format_json_basic(self, sample_plan_result):
-        """Test basic JSON formatting."""
-        result = format_plan_json(sample_plan_result)
-        
-        # Check top-level structure
-        assert "success" in result
-        assert "date" in result
-        assert "meals" in result
-        assert "total_nutrition" in result
-        assert "goals" in result
-        assert "target_adherence" in result
-        assert "warnings" in result
-        assert "meets_goals" in result
-        
-        # Check values
-        assert result["success"] is True
-        assert result["date"] == "2024-01-01"
-        assert len(result["meals"]) == 1
-    
-    def test_format_json_meal_structure(self, sample_plan_result):
-        """Test meal structure in JSON."""
-        result = format_plan_json(sample_plan_result)
-        meal = result["meals"][0]
-        
-        assert meal["meal_type"] == "breakfast"
-        assert meal["busyness_level"] == 2
-        assert "recipe" in meal
-        assert "nutrition" in meal
-        
-        # Check recipe structure
-        recipe = meal["recipe"]
-        assert recipe["id"] == "r1"
-        assert recipe["name"] == "Preworkout Meal"
-        assert recipe["cooking_time_minutes"] == 5
-        assert len(recipe["ingredients"]) == 1
-        
-        # Check ingredient structure
-        ingredient = recipe["ingredients"][0]
-        assert ingredient["name"] == "cream of rice"
-        assert ingredient["quantity"] == 200.0
-        assert ingredient["unit"] == "g"
-        assert ingredient["is_to_taste"] is False
-        assert ingredient["display"] == "200 g cream of rice"
-    
-    def test_format_json_nutrition(self, sample_plan_result):
-        """Test nutrition formatting in JSON."""
-        result = format_plan_json(sample_plan_result)
-        
-        # Check meal nutrition
-        meal_nutrition = result["meals"][0]["nutrition"]
-        assert meal_nutrition["calories"] == 600.0
-        assert meal_nutrition["protein_g"] == 40.0
-        assert meal_nutrition["fat_g"] == 5.0
-        assert meal_nutrition["carbs_g"] == 80.0
-        
-        # Check total nutrition
-        total_nutrition = result["total_nutrition"]
-        assert total_nutrition["calories"] == 600.0
-    
-    def test_format_json_to_taste_ingredient(self, sample_plan_result):
-        """Test JSON formatting with 'to taste' ingredient."""
-        # Add a 'to taste' ingredient
-        to_taste_ingredient = Ingredient(
-            name="salt",
-            quantity=0.0,
-            unit="to taste",
-            is_to_taste=True
+
+    def test_markdown_contains_recipe_names(self, sample_meal_plan_result_success, recipe_by_id, sample_planning_profile):
+        from src.output.formatters import format_result_markdown
+        md = format_result_markdown(sample_meal_plan_result_success, recipe_by_id, sample_planning_profile, D=1)
+        assert "Test Recipe One" in md
+        assert "Test Recipe Two" in md
+
+    def test_markdown_contains_nutrition_values(self, sample_meal_plan_result_success, recipe_by_id, sample_planning_profile):
+        from src.output.formatters import format_result_markdown
+        md = format_result_markdown(sample_meal_plan_result_success, recipe_by_id, sample_planning_profile, D=1)
+        assert "350" in md
+        assert "25.0" in md
+        assert "600.0" in md or "600" in md
+
+    def test_markdown_contains_day_grouping(self, sample_meal_plan_result_success, recipe_by_id, sample_planning_profile):
+        from src.output.formatters import format_result_markdown
+        md = format_result_markdown(sample_meal_plan_result_success, recipe_by_id, sample_planning_profile, D=1)
+        assert "Day 1" in md
+
+    def test_markdown_weekly_totals_when_d_gt_1(self, sample_meal_plan_result_success, recipe_by_id):
+        from src.planning.phase0_models import PlanningUserProfile, MealSlot
+        from src.output.formatters import format_result_markdown
+        profile_2day = PlanningUserProfile(
+            daily_calories=2400,
+            daily_protein_g=150.0,
+            daily_fat_g=(50.0, 100.0),
+            daily_carbs_g=300.0,
+            schedule=[
+                [MealSlot("07:00", 2, "breakfast"), MealSlot("12:00", 3, "lunch")],
+                [MealSlot("07:00", 2, "breakfast"), MealSlot("12:00", 3, "lunch")],
+            ],
+            excluded_ingredients=[],
+            liked_foods=[],
         )
-        sample_plan_result.daily_plan.meals[0].recipe.ingredients.append(to_taste_ingredient)
-        
-        result = format_plan_json(sample_plan_result)
-        ingredients = result["meals"][0]["recipe"]["ingredients"]
-        
-        # Find the 'to taste' ingredient
-        salt_ingredient = next(ing for ing in ingredients if ing["name"] == "salt")
-        assert salt_ingredient["is_to_taste"] is True
-        assert salt_ingredient["display"] == "salt to taste"
-    
-    def test_format_json_string(self, sample_plan_result):
-        """Test JSON string formatting."""
-        result = format_plan_json_string(sample_plan_result)
-        
-        # Should be valid JSON
-        parsed = json.loads(result)
+        md = format_result_markdown(sample_meal_plan_result_success, recipe_by_id, profile_2day, D=2)
+        assert "Weekly totals" in md
+
+    def test_json_has_required_top_level_keys(self, sample_meal_plan_result_success, recipe_by_id, sample_planning_profile):
+        from src.output.formatters import format_result_json
+        data = format_result_json(sample_meal_plan_result_success, recipe_by_id, sample_planning_profile, D=1)
+        assert "success" in data
+        assert "termination_code" in data
+        assert "days" in data
+        assert "daily_plans" in data
+        assert "warnings" in data
+        assert "goals" in data
+
+    def test_json_structure_and_values(self, sample_meal_plan_result_success, recipe_by_id, sample_planning_profile):
+        from src.output.formatters import format_result_json
+        data = format_result_json(sample_meal_plan_result_success, recipe_by_id, sample_planning_profile, D=1)
+        assert data["success"] is True
+        assert data["termination_code"] == "TC-1"
+        assert data["days"] == 1
+        assert len(data["daily_plans"]) == 1
+        assert data["daily_plans"][0]["day"] == 1
+        assert len(data["daily_plans"][0]["meals"]) == 2
+        assert data["daily_plans"][0]["totals"]["calories"] == 600.0
+        assert data["goals"]["daily_calories"] == 2400
+
+    def test_json_string_roundtrip(self, sample_meal_plan_result_success, recipe_by_id, sample_planning_profile):
+        from src.output.formatters import format_result_json_string
+        s = format_result_json_string(sample_meal_plan_result_success, recipe_by_id, sample_planning_profile, D=1)
+        parsed = json.loads(s)
         assert parsed["success"] is True
-        assert isinstance(result, str)
-    
-    def test_format_json_warnings(self, sample_plan_result):
-        """Test JSON formatting with warnings."""
-        sample_plan_result.warnings = ["Warning 1", "Warning 2"]
-        sample_plan_result.success = False
-        
-        result = format_plan_json(sample_plan_result)
-        
-        assert result["success"] is False
-        assert len(result["warnings"]) == 2
-        assert "Warning 1" in result["warnings"]
-        assert "Warning 2" in result["warnings"]
-    
-    def test_format_json_adherence(self, sample_plan_result):
-        """Test adherence formatting in JSON."""
-        result = format_plan_json(sample_plan_result)
-        
-        adherence = result["target_adherence"]
-        assert adherence["calories"] == 95.0
-        assert adherence["protein"] == 98.0
-        assert adherence["fat"] == 85.0
-        assert adherence["carbs"] == 92.0
+        assert parsed["termination_code"] == "TC-1"
+
+    def test_failure_case_markdown_renders_warning(self, recipe_by_id, sample_planning_profile):
+        from src.planning.phase10_reporting import MealPlanResult
+        from src.output.formatters import format_result_markdown
+        result = MealPlanResult(
+            success=False,
+            termination_code="TC-2",
+            failure_mode="FM-4",
+            plan=None,
+            daily_trackers=None,
+            weekly_tracker=None,
+            warning={"sodium_advisory": "Weekly sodium exceeds 200% of prorated RDI."},
+            report={},
+            stats=None,
+        )
+        md = format_result_markdown(result, recipe_by_id, sample_planning_profile, D=1)
+        assert "False" in md or "failure" in md.lower() or "Failure" in md
+        assert "sodium" in md or "Sodium" in md or "warning" in md.lower()
+
+    def test_failure_case_json_includes_warning(self, recipe_by_id, sample_planning_profile):
+        from src.planning.phase10_reporting import MealPlanResult
+        from src.output.formatters import format_result_json
+        result = MealPlanResult(
+            success=False,
+            termination_code="TC-2",
+            failure_mode="FM-4",
+            plan=None,
+            daily_trackers=None,
+            weekly_tracker=None,
+            warning={"sodium_advisory": "Weekly sodium exceeds 200% of prorated RDI."},
+            report={},
+            stats=None,
+        )
+        data = format_result_json(result, recipe_by_id, sample_planning_profile, D=1)
+        assert data["success"] is False
+        assert "sodium_advisory" in data["warnings"] or "sodium" in str(data["warnings"]).lower()
 

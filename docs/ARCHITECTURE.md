@@ -56,11 +56,13 @@ The Nutrition Agent is a modular system that generates personalized meal recomme
 ### 5. Planning Layer
 **Purpose**: Generate meal plans considering all constraints
 
-- **Meal Planner**: Orchestrate meal generation for a day (MVP: daily only, weekly post-MVP)
-- **Schedule Handler**: Process time constraints and busyness levels (1-4 scale)
-- **Satiety Calculator**: Ensure appropriate satiety distribution throughout day (basic for MVP)
+- **Unified planner engine (phase7)**: Canonical search engine for meal plan generation. Deterministic backtracking search over slot assignments; validates constraints (macros, cooking time, exclusions, upper limits) and returns a single result type.
+- **MealPlanResult**: Single result type for both success and failure. Includes `success`, `termination_code`, `plan` (list of `Assignment`), `daily_trackers`, `weekly_tracker` (when D > 1), `warning`, `report`, `stats`.
+- **Multi-day planning**: Planning horizon of 1–7 days. Schedule is propagated via `PlanningUserProfile.schedule` (list of days, each day a list of `MealSlot`). Weekly totals and tracker included only when days > 1.
+- **Provider abstraction**: Ingredient resolution is delegated to a provider (local or API). Entry points call `extract_ingredient_names`, then `provider.resolve_all`, before building `NutritionCalculator` and converting recipes. No API calls during planning.
+- **Conversion layer**: `convert_profile` (UserProfile → PlanningUserProfile), `convert_recipes` (Recipe + NutritionCalculator → PlanningRecipe), `extract_ingredient_names` (Recipe list → sorted ingredient names).
+- **Schedule Handler**: Time constraints and busyness levels (1–4 scale) represented as `MealSlot` per meal type (breakfast, lunch, dinner, snack).
 - **Meal Prep Integrator**: Factor in pre-planned meals (Phase 5.4: post-MVP)
-- **Weekly Tracker**: Track running totals as days are planned (Phase 5.3: post-MVP)
 
 ### 6. Output Layer
 **Purpose**: Format and structure final recommendations
@@ -72,21 +74,23 @@ The Nutrition Agent is a modular system that generates personalized meal recomme
 ## Data Flow (MVP)
 
 ```
-User Profile (YAML) + Recipe DB (JSON) + Nutrition DB (JSON)
+UserProfile (YAML) + Recipe DB (JSON) + Nutrition DB (JSON)
     ↓
-Planning Layer (Meal Planner)
+convert_profile (UserProfile, days) → PlanningUserProfile
     ↓
-Recipe Retriever (keyword-based search from local JSON)
+extract_ingredient_names (recipes) → list of ingredient names
     ↓
-Nutrition Calculator (compute macros/calories from local DB)
+provider.resolve_all (ingredient names) — local or API provider
     ↓
-Recipe Scorer (rule-based scoring: calories, macros, cooking time, preferences)
+NutritionCalculator (provider)
     ↓
-Meal Planner (select best 3-meal combination for day)
+convert_recipes (recipes, calculator) → list of PlanningRecipe
     ↓
-Daily Aggregator (validate daily nutrition goals)
+plan_meals (PlanningUserProfile, recipe_pool, days) — phase7 search engine
     ↓
-Output Formatter (generate JSON + Markdown output)
+format_result_markdown / format_result_json (MealPlanResult, recipe_by_id, profile, days)
+    ↓
+JSON or Markdown output
 ```
 
 **Post-MVP Flow** (adds):

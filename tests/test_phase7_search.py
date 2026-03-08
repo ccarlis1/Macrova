@@ -55,6 +55,7 @@ def _make_profile(
     pinned_assignments: dict | None = None,
     excluded_ingredients: list | None = None,
     micronutrient_targets: dict | None = None,
+    max_daily_calories: int | None = None,
 ) -> PlanningUserProfile:
     return PlanningUserProfile(
         daily_calories=daily_calories,
@@ -65,7 +66,23 @@ def _make_profile(
         pinned_assignments=pinned_assignments or {},
         excluded_ingredients=excluded_ingredients or [],
         micronutrient_targets=micronutrient_targets or {},
+        max_daily_calories=max_daily_calories,
     )
+
+
+def _assert_weekly_equals_sum_daily(result: MealPlanResult, tol: float = 1e-6) -> None:
+    """Invariant: weekly_totals must equal sum of daily_trackers (macros)."""
+    if not result.success or not result.daily_trackers or not result.weekly_tracker:
+        return
+    wt = result.weekly_tracker.weekly_totals
+    sum_cal = sum(result.daily_trackers[d].calories_consumed for d in sorted(result.daily_trackers))
+    sum_p = sum(result.daily_trackers[d].protein_consumed for d in sorted(result.daily_trackers))
+    sum_f = sum(result.daily_trackers[d].fat_consumed for d in sorted(result.daily_trackers))
+    sum_c = sum(result.daily_trackers[d].carbs_consumed for d in sorted(result.daily_trackers))
+    assert abs(wt.calories - sum_cal) <= tol, f"weekly calories {wt.calories} != sum(daily) {sum_cal}"
+    assert abs(wt.protein_g - sum_p) <= tol, f"weekly protein {wt.protein_g} != sum(daily) {sum_p}"
+    assert abs(wt.fat_g - sum_f) <= tol, f"weekly fat {wt.fat_g} != sum(daily) {sum_f}"
+    assert abs(wt.carbs_g - sum_c) <= tol, f"weekly carbs {wt.carbs_g} != sum(daily) {sum_c}"
 
 
 # --- Integration: success D=1, D=2, D=7 no pins ---
@@ -88,6 +105,7 @@ class TestSearchSuccessNoPins:
         assert result.daily_trackers and 0 in result.daily_trackers
         assert result.daily_trackers[0].slots_assigned == 2
         assert result.daily_trackers[0].calories_consumed == 2000.0
+        _assert_weekly_equals_sum_daily(result)
 
     def test_d2_four_slots_success(self):
         schedule = _make_schedule(ndays=2, slots_per_day=2)
@@ -103,6 +121,7 @@ class TestSearchSuccessNoPins:
         assert result.success is True
         assert result.plan is not None and len(result.plan) == 4
         assert result.weekly_tracker.days_completed == 2
+        _assert_weekly_equals_sum_daily(result)
 
     def test_d7_success(self):
         schedule = _make_schedule(ndays=7, slots_per_day=2)
@@ -113,6 +132,23 @@ class TestSearchSuccessNoPins:
         assert result.success is True
         assert result.plan is not None and len(result.plan) == 14
         assert result.weekly_tracker.days_completed == 7
+        _assert_weekly_equals_sum_daily(result)
+
+    def test_weekly_totals_equal_sum_daily_with_max_daily_calories(self):
+        """With max_daily_calories (backtracking), weekly must still equal sum(daily)."""
+        schedule = _make_schedule(ndays=3, slots_per_day=2)
+        profile = _make_profile(schedule, max_daily_calories=2200, daily_calories=2000)
+        pool = [
+            _make_recipe("r1", 500.0, 25.0, 16.0, 62.0),
+            _make_recipe("r2", 500.0, 25.0, 16.0, 62.0),
+            _make_recipe("r3", 500.0, 25.0, 16.0, 62.0),
+            _make_recipe("r4", 500.0, 25.0, 16.0, 62.0),
+            _make_recipe("r5", 500.0, 25.0, 16.0, 62.0),
+            _make_recipe("r6", 500.0, 25.0, 16.0, 62.0),
+        ]
+        result = run_meal_plan_search(profile, pool, 3, None)
+        if result.success:
+            _assert_weekly_equals_sum_daily(result)
 
 
 # --- Integration: with pinned slots ---
@@ -137,6 +173,7 @@ class TestSearchWithPinnedSlots:
         assert result.plan is not None
         assert Assignment(0, 0, "r1") in result.plan
         assert len(result.plan) == 4
+        _assert_weekly_equals_sum_daily(result)
 
 
 # --- Failure modes ---

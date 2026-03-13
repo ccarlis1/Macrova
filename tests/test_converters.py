@@ -7,7 +7,6 @@ from src.data_layer.models import (
     Ingredient,
     UserProfile,
     NutritionProfile,
-    WeeklyNutritionTargets,
 )
 from src.data_layer.nutrition_db import NutritionDB
 from src.data_layer.recipe_db import RecipeDB
@@ -168,8 +167,8 @@ def _user_profile_no_weekly() -> UserProfile:
     )
 
 
-def _user_profile_with_weekly_targets() -> UserProfile:
-    weekly = WeeklyNutritionTargets(iron_mg=70.0, vitamin_c_mg=700.0)
+def _user_profile_with_daily_micro_targets() -> UserProfile:
+    daily_micro = {"iron_mg": 10.0, "vitamin_c_mg": 100.0}
     return UserProfile(
         daily_calories=2000,
         daily_protein_g=100.0,
@@ -179,12 +178,12 @@ def _user_profile_with_weekly_targets() -> UserProfile:
         liked_foods=["chicken"],
         disliked_foods=[],
         allergies=["shellfish"],
-        weekly_targets=weekly,
+        daily_micronutrient_targets=daily_micro,
     )
 
 
 class TestConvertProfile:
-    """With/without weekly_targets, D=1, D=7, schedule replication, excluded, defaults, determinism."""
+    """With/without daily_micronutrient_targets, D=1, D=7, schedule replication, excluded, defaults, determinism."""
 
     def test_excluded_ingredients_combined(self):
         profile = _user_profile_no_weekly()
@@ -198,12 +197,29 @@ class TestConvertProfile:
         planning = convert_profile(profile, days=1)
         assert planning.micronutrient_targets == {}
 
-    def test_with_weekly_targets_extracts_daily(self):
-        profile = _user_profile_with_weekly_targets()
+    def test_with_daily_micro_targets_passes_through(self):
+        profile = _user_profile_with_daily_micro_targets()
         planning = convert_profile(profile, days=1)
         assert "iron_mg" in planning.micronutrient_targets
-        assert planning.micronutrient_targets["iron_mg"] == pytest.approx(70.0 / 7.0)
-        assert planning.micronutrient_targets["vitamin_c_mg"] == pytest.approx(700.0 / 7.0)
+        assert planning.micronutrient_targets["iron_mg"] == pytest.approx(10.0)
+        assert planning.micronutrient_targets["vitamin_c_mg"] == pytest.approx(100.0)
+
+    def test_daily_micronutrient_targets_pass_through(self):
+        """Verify converter does not modify daily values (no division by 7)."""
+        profile = UserProfile(
+            daily_calories=2000,
+            daily_protein_g=100.0,
+            daily_fat_g=(50.0, 80.0),
+            daily_carbs_g=200.0,
+            schedule={"08:00": 2, "13:00": 3},
+            liked_foods=[],
+            disliked_foods=[],
+            allergies=[],
+            daily_micronutrient_targets={"iron_mg": 8, "vitamin_c_mg": 90},
+        )
+        planning_profile = convert_profile(profile, days=1)
+        assert planning_profile.micronutrient_targets["iron_mg"] == 8
+        assert planning_profile.micronutrient_targets["vitamin_c_mg"] == 90
 
     def test_d1_schedule_length_one_day(self):
         profile = _user_profile_no_weekly()
@@ -261,7 +277,7 @@ class TestConvertProfile:
         assert planning.schedule[1][1].meal_type == "snack"
 
     def test_deterministic_same_input_twice(self):
-        profile = _user_profile_with_weekly_targets()
+        profile = _user_profile_with_daily_micro_targets()
         p1 = convert_profile(profile, days=3)
         p2 = convert_profile(profile, days=3)
         assert len(p1.schedule) == len(p2.schedule) == 3

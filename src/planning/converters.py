@@ -3,7 +3,6 @@
 Pure functions only. No I/O, no provider access. Deterministic.
 """
 
-from dataclasses import fields
 from typing import List, Optional
 
 from src.data_layer.models import (
@@ -11,7 +10,6 @@ from src.data_layer.models import (
     UserProfile,
     NutritionProfile,
     Ingredient,
-    WeeklyNutritionTargets,
 )
 from src.planning.phase0_models import PlanningRecipe, PlanningUserProfile, MealSlot
 from src.nutrition.calculator import NutritionCalculator
@@ -65,23 +63,6 @@ def convert_recipes(
     return out
 
 
-def _weekly_targets_to_daily_dict(weekly_targets: WeeklyNutritionTargets) -> dict:
-    """Convert WeeklyNutritionTargets (weekly totals) to daily RDI dict for micronutrient_targets."""
-    result = {}
-    for f in fields(weekly_targets):
-        val = getattr(weekly_targets, f.name)
-        if val is None:
-            continue
-        try:
-            v = float(val)
-        except (TypeError, ValueError):
-            continue
-        if v <= 0:
-            continue
-        result[f.name] = v / 7.0
-    return result
-
-
 def _schedule_dict_to_slots_one_day(
     schedule: dict,
     meal_types_per_day: Optional[List[List[str]]] = None,
@@ -112,8 +93,8 @@ def convert_profile(
     """Convert UserProfile and planning horizon to PlanningUserProfile.
 
     Excluded ingredients = allergies + disliked_foods. Schedule is replicated
-    for `days` days. Micronutrient targets from weekly_targets (weekly totals
-    converted to daily). Deterministic.
+    for `days` days. Micronutrient targets from daily_micronutrient_targets
+    (daily RDI values, pass-through). Deterministic.
     """
     excluded_ingredients = list(user_profile.allergies) + list(user_profile.disliked_foods)
 
@@ -134,10 +115,7 @@ def convert_profile(
             slots_d = one_day_slots
         schedule.append(slots_d)
 
-    if user_profile.weekly_targets is not None:
-        micronutrient_targets = _weekly_targets_to_daily_dict(user_profile.weekly_targets)
-    else:
-        micronutrient_targets = {}
+    micronutrient_targets = dict(user_profile.daily_micronutrient_targets or {})
 
     return PlanningUserProfile(
         daily_calories=user_profile.daily_calories,

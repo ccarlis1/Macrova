@@ -267,8 +267,8 @@ class UserProfile:
     # Calorie Deficit Mode (optional hard constraint)
     max_daily_calories: Optional[int] = None  # Hard cap on daily calories
 
-    # Weekly micronutrient targets (optional)
-    weekly_targets: Optional[WeeklyNutritionTargets] = None
+    # Daily micronutrient RDI targets (optional); keys = MicronutrientProfile field names
+    daily_micronutrient_targets: Optional[Dict[str, float]] = None
 
     # Future (post-MVP)
     # meal_prep_meals: List[Meal]

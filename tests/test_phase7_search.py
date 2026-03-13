@@ -351,6 +351,38 @@ class TestFailureReportStructure:
         assert isinstance(DEFAULT_ATTEMPT_LIMIT, int)
 
 
+# --- Micronutrient accumulation ---
+
+
+class TestDailyTrackerMicronutrients:
+    """Verify daily tracker accumulates micronutrients when recipes have them."""
+
+    def test_daily_tracker_accumulates_micronutrients(self):
+        """Assigning a recipe with micronutrients updates daily_tracker.micronutrients_consumed."""
+        schedule = _make_schedule(ndays=1, slots_per_day=2)
+        profile = _make_profile(schedule)
+        # Use 1000 cal each so daily total 2000 meets profile.daily_calories (FC-2)
+        recipe_with_iron = _make_recipe(
+            "r1",
+            1000.0,
+            50.0,
+            32.0,
+            125.0,
+            micronutrients=MicronutrientProfile(iron_mg=3.0, vitamin_c_mg=10.0),
+        )
+        pool = [
+            recipe_with_iron,
+            _make_recipe("r2", 1000.0, 50.0, 32.0, 125.0),
+        ]
+        result = run_meal_plan_search(profile, pool, 1, None)
+        assert result.success is True
+        assert result.daily_trackers is not None and 0 in result.daily_trackers
+        tracker = result.daily_trackers[0]
+        # At least one recipe has micronutrients; daily total should reflect it
+        assert tracker.micronutrients_consumed.get("iron_mg", 0) > 0
+        assert tracker.micronutrients_consumed.get("vitamin_c_mg", 0) > 0
+
+
 # --- Optional SearchStats instrumentation ---
 
 

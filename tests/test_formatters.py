@@ -2,7 +2,7 @@
 
 import pytest
 import json
-from src.data_layer.models import Ingredient, NutritionProfile
+from src.data_layer.models import Ingredient, NutritionProfile, MicronutrientProfile
 from src.output.formatters import (
     format_ingredient_string,
     format_nutrition_breakdown,
@@ -96,6 +96,22 @@ class TestFormatNutritionBreakdown:
         result = format_nutrition_breakdown(nutrition, indent="  ")
         assert result.startswith("  **Calories:**")
         assert "  **Protein:**" in result
+
+    def test_format_nutrition_breakdown_includes_micronutrients(self):
+        """Test that format_nutrition_breakdown shows micronutrients when provided."""
+        nutrition = NutritionProfile(
+            calories=500.0,
+            protein_g=30.0,
+            fat_g=20.0,
+            carbs_g=50.0,
+        )
+        micros = MicronutrientProfile(iron_mg=4.1, vitamin_c_mg=32.0)
+        result = format_nutrition_breakdown(nutrition, micronutrients=micros)
+        assert "Iron" in result
+        assert "Vitamin C" in result
+        assert "4.1" in result
+        assert "32" in result
+        assert "**Micronutrients:**" in result
 
 
 # --- Formatters (MealPlanResult) ---
@@ -292,4 +308,84 @@ class TestFormatResultMarkdownAndJson:
         data = format_result_json(result, recipe_by_id, sample_planning_profile, D=1)
         assert data["success"] is False
         assert "sodium_advisory" in data["warnings"] or "sodium" in str(data["warnings"]).lower()
+
+    def test_format_result_json_contains_micronutrients(self):
+        """Verify JSON output includes micronutrients in recipe nutrition, day totals, and weekly totals."""
+        from src.planning.phase0_models import (
+            PlanningRecipe,
+            PlanningUserProfile,
+            MealSlot,
+            Assignment,
+            DailyTracker,
+            WeeklyTracker,
+        )
+        from src.planning.phase10_reporting import MealPlanResult
+        from src.output.formatters import format_result_json
+
+        recipe_with_micros = PlanningRecipe(
+            id="r1",
+            name="Recipe With Micros",
+            ingredients=[Ingredient("spinach", 100.0, "g", is_to_taste=False)],
+            cooking_time_minutes=5,
+            nutrition=NutritionProfile(
+                200.0, 10.0, 2.0, 30.0,
+                micronutrients=MicronutrientProfile(iron_mg=3.0, vitamin_c_mg=15.0),
+            ),
+            primary_carb_contribution=None,
+            primary_carb_source=None,
+        )
+        recipe_by_id = {"r1": recipe_with_micros}
+        profile = PlanningUserProfile(
+            daily_calories=2400,
+            daily_protein_g=150.0,
+            daily_fat_g=(50.0, 100.0),
+            daily_carbs_g=300.0,
+            schedule=[[MealSlot("07:00", 2, "breakfast"), MealSlot("12:00", 3, "lunch")]],
+            excluded_ingredients=[],
+            liked_foods=[],
+        )
+        result = MealPlanResult(
+            success=True,
+            termination_code="TC-1",
+            failure_mode=None,
+            plan=[Assignment(0, 0, "r1", 0)],
+            daily_trackers={
+                0: DailyTracker(
+                    calories_consumed=200.0,
+                    protein_consumed=10.0,
+                    fat_consumed=2.0,
+                    carbs_consumed=30.0,
+                    slots_assigned=1,
+                    slots_total=2,
+                    micronutrients_consumed={"iron_mg": 3.0, "vitamin_c_mg": 15.0},
+                ),
+            },
+            weekly_tracker=WeeklyTracker(
+                weekly_totals=NutritionProfile(
+                    200.0, 10.0, 2.0, 30.0,
+                    micronutrients=MicronutrientProfile(iron_mg=3.0, vitamin_c_mg=15.0),
+                ),
+                days_completed=1,
+                days_remaining=0,
+                carryover_needs={},
+            ),
+            warning=None,
+            report={},
+            stats=None,
+        )
+        data = format_result_json(result, recipe_by_id, profile, D=1)
+        assert data["daily_plans"][0]["meals"][0]["nutrition"].get("micronutrients") == {
+            "iron_mg": 3.0,
+            "vitamin_c_mg": 15.0,
+        }
+        assert data["daily_plans"][0]["totals"].get("micronutrients") == {
+            "iron_mg": 3.0,
+            "vitamin_c_mg": 15.0,
+        }
+        data_2day = format_result_json(result, recipe_by_id, profile, D=2)
+        assert "weekly_totals" in data_2day
+        assert data_2day["weekly_totals"].get("micronutrients") == {
+            "iron_mg": 3.0,
+            "vitamin_c_mg": 15.0,
+        }
 

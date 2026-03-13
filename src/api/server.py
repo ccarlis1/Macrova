@@ -1,6 +1,6 @@
 """FastAPI server for the Nutrition Agent meal planning pipeline."""
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
@@ -45,6 +45,7 @@ class PlanRequest(BaseModel):
     allergies: List[str] = Field(default_factory=list)
     days: int = Field(default=1, ge=1, le=7)
     ingredient_source: str = Field(default="local", pattern="^(local|api)$")
+    micronutrient_goals: Optional[Dict[str, float]] = None
 
 
 def _build_user_profile(request: PlanRequest) -> UserProfile:
@@ -63,6 +64,7 @@ def _build_user_profile(request: PlanRequest) -> UserProfile:
         liked_foods=[str(food) for food in request.liked_foods],
         disliked_foods=[str(food) for food in request.disliked_foods],
         allergies=[str(allergen) for allergen in request.allergies],
+        daily_micronutrient_targets=request.micronutrient_goals,
     )
 
 

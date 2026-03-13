@@ -236,7 +236,12 @@ class USDAClient:
             )
         return cls(api_key=api_key)
     
-    def lookup(self, ingredient_name: str, normalize: bool = True) -> USDALookupResult:
+    def lookup(
+        self,
+        ingredient_name: str,
+        normalize: bool = True,
+        include_branded: bool = True,
+    ) -> USDALookupResult:
         """Look up an ingredient by name.
         
         Performs a search and selects the best matching food item
@@ -249,6 +254,8 @@ class USDAClient:
         Args:
             ingredient_name: Ingredient name to search for
             normalize: If True, lowercase the query for consistency (default True)
+            include_branded: If False, search only SR Legacy, Foundation, Survey
+                (exclude Branded). Use when Branded results lack micronutrient data.
             
         Returns:
             USDALookupResult with food data or structured error
@@ -266,7 +273,7 @@ class USDAClient:
         
         # Perform search
         try:
-            search_results = self._make_request(query)
+            search_results = self._make_request(query, include_branded=include_branded)
         except USDALookupError as e:
             return USDALookupResult.failure(
                 error_code=e.error_code,
@@ -305,11 +312,15 @@ class USDAClient:
             }
         )
     
-    def _make_request(self, query: str) -> Dict[str, Any]:
+    def _make_request(
+        self, query: str, include_branded: bool = True
+    ) -> Dict[str, Any]:
         """Make API request to USDA search endpoint.
         
         Args:
             query: Search query string
+            include_branded: If False, request only SR Legacy, Foundation, Survey
+                (exclude Branded). Branded foods often lack full micronutrient data.
             
         Returns:
             Parsed JSON response
@@ -318,11 +329,16 @@ class USDAClient:
             USDALookupError: If API request fails
         """
         url = f"{self.BASE_URL}/foods/search"
+        data_type = (
+            "SR Legacy,Foundation,Survey (FNDDS),Branded"
+            if include_branded
+            else "SR Legacy,Foundation,Survey (FNDDS)"
+        )
         params = {
             "api_key": self.api_key,
             "query": query,
             "pageSize": 25,  # Get enough results for good selection
-            "dataType": "SR Legacy,Foundation,Survey (FNDDS),Branded"
+            "dataType": data_type,
         }
         
         try:

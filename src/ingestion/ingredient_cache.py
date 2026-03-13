@@ -177,15 +177,30 @@ class IngredientCache:
     
     def has(self, canonical_name: str) -> bool:
         """Check if ingredient is cached.
-        
+
         Args:
             canonical_name: Normalized ingredient name
-            
+
         Returns:
             True if cached, False otherwise
         """
         file_path = self._get_file_path(canonical_name)
         return file_path.exists()
+
+    def delete(self, canonical_name: str) -> bool:
+        """Remove a cache entry if it exists.
+
+        Args:
+            canonical_name: Normalized ingredient name
+
+        Returns:
+            True if a file was removed, False if it did not exist
+        """
+        file_path = self._get_file_path(canonical_name)
+        if file_path.exists():
+            file_path.unlink()
+            return True
+        return False
     
     def _get_file_path(self, canonical_name: str) -> Path:
         """Get file path for cache entry.

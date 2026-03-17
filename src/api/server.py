@@ -1,6 +1,6 @@
 """FastAPI server for the Nutrition Agent meal planning pipeline."""
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
@@ -10,15 +10,14 @@ from pydantic import BaseModel, Field
 from src.data_layer.models import UserProfile
 from src.data_layer.recipe_db import RecipeDB
 from src.data_layer.nutrition_db import NutritionDB
-from src.data_layer.ingredient_db import IngredientDB
 from src.providers.local_provider import LocalIngredientProvider
 from src.nutrition.calculator import NutritionCalculator
-from src.cli import extract_ingredient_names
-from src.nutrition.aggregator import NutritionAggregator
-from src.scoring.recipe_scorer import RecipeScorer
-from src.ingestion.recipe_retriever import RecipeRetriever
-from src.planning.meal_planner import MealPlanner, DailySchedule
-from src.output.formatters import format_plan_json
+from src.planning.converters import convert_recipes, convert_profile, extract_ingredient_names
+from src.planning.planner import plan_meals
+from src.output.formatters import format_result_json
+from src.ingestion.usda_client import USDAClient
+from src.ingestion.ingredient_cache import CachedIngredientLookup
+from src.providers.api_provider import APIIngredientProvider
 
 
 recipes_path = "data/recipes/recipes.json"
@@ -44,53 +43,9 @@ class PlanRequest(BaseModel):
     liked_foods: List[str] = Field(default_factory=list)
     disliked_foods: List[str] = Field(default_factory=list)
     allergies: List[str] = Field(default_factory=list)
-
-
-def create_daily_schedule(user_profile) -> DailySchedule:
-    """Convert UserProfile schedule dict to DailySchedule object.
-
-    Args:
-        user_profile: UserProfile object with schedule dict
-
-    Returns:
-        DailySchedule object
-
-    Raises:
-        ValueError: If schedule doesn't have required meal times
-    """
-    schedule = user_profile.schedule
-
-    # Separate workout time (busyness level 0) from meal times
-    workout_time = None
-    meal_times = []
-    for time_str, busyness in schedule.items():
-        if busyness == 0:
-            workout_time = time_str
-        else:
-            meal_times.append(time_str)
-
-    # Sort meal times chronologically
-    meal_times = sorted(meal_times)
-
-    if len(meal_times) < 3:
-        raise ValueError(
-            f"Schedule must have at least 3 meal times, found {len(meal_times)}"
-        )
-
-    # Assume first meal is breakfast, second is lunch, third is dinner
-    breakfast_time = meal_times[0]
-    lunch_time = meal_times[1]
-    dinner_time = meal_times[2]
-
-    return DailySchedule(
-        breakfast_time=breakfast_time,
-        breakfast_busyness=schedule[breakfast_time],
-        lunch_time=lunch_time,
-        lunch_busyness=schedule[lunch_time],
-        dinner_time=dinner_time,
-        dinner_busyness=schedule[dinner_time],
-        workout_time=workout_time,
-    )
+    days: int = Field(default=1, ge=1, le=7)
+    ingredient_source: str = Field(default="local", pattern="^(local|api)$")
+    micronutrient_goals: Optional[Dict[str, float]] = None
 
 
 def _build_user_profile(request: PlanRequest) -> UserProfile:
@@ -109,40 +64,37 @@ def _build_user_profile(request: PlanRequest) -> UserProfile:
         liked_foods=[str(food) for food in request.liked_foods],
         disliked_foods=[str(food) for food in request.disliked_foods],
         allergies=[str(allergen) for allergen in request.allergies],
+        daily_micronutrient_targets=request.micronutrient_goals,
     )
 
 
 @app.post("/api/plan")
-def plan_meals(request: PlanRequest) -> Dict[str, Any]:
+def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
     try:
         user_profile = _build_user_profile(request)
 
         recipe_db = RecipeDB(recipes_path)
-        ingredient_db = IngredientDB(ingredients_path)
-        nutrition_db = NutritionDB(ingredients_path)
-
-        # Keep ingredient_db loaded for parity with CLI data initialization.
-        _ = ingredient_db
-
-        provider = LocalIngredientProvider(nutrition_db)
         all_recipes = recipe_db.get_all_recipes()
+
+        if request.ingredient_source == "api":
+            usda_client = USDAClient.from_env()
+            cached_lookup = CachedIngredientLookup(usda_client=usda_client)
+            provider = APIIngredientProvider(cached_lookup)
+        else:
+            nutrition_db = NutritionDB(ingredients_path)
+            provider = LocalIngredientProvider(nutrition_db)
+
         all_ingredient_names = extract_ingredient_names(all_recipes)
         provider.resolve_all(all_ingredient_names)
 
-        nutrition_calculator = NutritionCalculator(provider)
-        nutrition_aggregator = NutritionAggregator()
-        recipe_scorer = RecipeScorer(nutrition_calculator)
-        recipe_retriever = RecipeRetriever(recipe_db)
-        meal_planner = MealPlanner(recipe_scorer, recipe_retriever, nutrition_aggregator)
+        calculator = NutritionCalculator(provider)
+        recipe_pool = convert_recipes(all_recipes, calculator)
+        recipe_by_id = {r.id: r for r in recipe_pool}
+        planning_profile = convert_profile(user_profile, request.days)
 
-        daily_schedule = create_daily_schedule(user_profile)
-        result = meal_planner.plan_daily_meals(
-            user_profile=user_profile,
-            schedule=daily_schedule,
-            available_recipes=all_recipes,
-        )
+        result = plan_meals(planning_profile, recipe_pool, request.days)
 
-        return format_plan_json(result)
+        return format_result_json(result, recipe_by_id, planning_profile, request.days)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 

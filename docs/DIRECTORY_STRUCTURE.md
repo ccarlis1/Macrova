@@ -59,10 +59,17 @@ nutrition-agent/
 │   │
 │   ├── planning/
 │   │   ├── __init__.py
-│   │   ├── meal_planner.py        # Main orchestration
-│   │   ├── schedule_handler.py    # Process time constraints
-│   │   ├── satiety_calculator.py  # Satiety distribution
-│   │   └── meal_prep_integrator.py # Meal prep support (future)
+│   │   ├── planner.py             # Public planning API (wraps phase 7 search)
+│   │   ├── phase0_models.py       # Planning data models (PlanningUserProfile, PlanningRecipe, trackers)
+│   │   ├── phase1_state.py        # Initial state and pinned assignment validation
+│   │   ├── phase2_constraints.py  # Hard constraints (HC)
+│   │   ├── phase3_feasibility.py  # Forward-check constraints (FC) and feasibility precomputation
+│   │   ├── phase4_scoring.py      # Composite scoring
+│   │   ├── phase5_ordering.py     # Heuristic ordering and tie-breaking
+│   │   ├── phase6_candidates.py   # Candidate generation (HC/FC application)
+│   │   ├── phase7_search.py       # Backtracking search and orchestration
+│   │   ├── phase9_carb_scaling.py # Primary carb downscaling utilities
+│   │   └── phase10_reporting.py   # MealPlanResult and reporting helpers
 │   │
 │   ├── output/
 │   │   ├── __init__.py
@@ -80,7 +87,15 @@ nutrition-agent/
 │   ├── test_ingredient_parser.py
 │   ├── test_nutrition_calculator.py
 │   ├── test_recipe_scorer.py
-│   ├── test_meal_planner.py
+│   ├── test_phase0_meal_plan_foundation.py
+│   ├── test_phase1_state.py
+│   ├── test_phase2_constraints.py
+│   ├── test_phase3_feasibility.py
+│   ├── test_phase4_scoring.py
+│   ├── test_phase5_ordering.py
+│   ├── test_phase6_candidates.py
+│   ├── test_phase7_search.py
+│   ├── test_theoretical_perfect_week.py
 │   └── fixtures/
 │       ├── sample_recipes.json
 │       └── sample_nutrition.json

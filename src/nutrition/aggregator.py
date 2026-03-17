@@ -4,13 +4,11 @@ from typing import List, Dict
 
 from src.data_layer.models import (
     Meal,
-    Recipe,
     NutritionProfile,
     MicronutrientProfile,
     DailyNutritionTracker,
     WeeklyNutritionTracker,
 )
-from src.nutrition.calculator import NutritionCalculator
 
 
 class NutritionAggregator:
@@ -67,45 +65,6 @@ class NutritionAggregator:
             if meal.nutrition.micronutrients is not None:
                 NutritionAggregator._add_micronutrients_to_totals(
                     total_micros, meal.nutrition.micronutrients
-                )
-
-        return NutritionProfile(
-            calories=total_calories,
-            protein_g=total_protein,
-            fat_g=total_fat,
-            carbs_g=total_carbs,
-            micronutrients=MicronutrientProfile(**total_micros),
-        )
-
-    @staticmethod
-    def aggregate_recipes(
-        recipes: List[Recipe], calculator: NutritionCalculator
-    ) -> NutritionProfile:
-        """Aggregate nutrition from multiple recipes.
-        
-        Args:
-            recipes: List of Recipe objects
-            calculator: NutritionCalculator instance
-        
-        Returns:
-            NutritionProfile with summed nutrition (macros and micronutrients)
-        """
-        total_calories = 0.0
-        total_protein = 0.0
-        total_fat = 0.0
-        total_carbs = 0.0
-        total_micros = NutritionAggregator._create_empty_micro_totals()
-
-        for recipe in recipes:
-            recipe_nutrition = calculator.calculate_recipe_nutrition(recipe)
-            total_calories += recipe_nutrition.calories
-            total_protein += recipe_nutrition.protein_g
-            total_fat += recipe_nutrition.fat_g
-            total_carbs += recipe_nutrition.carbs_g
-            # Aggregate micronutrients if present
-            if recipe_nutrition.micronutrients is not None:
-                NutritionAggregator._add_micronutrients_to_totals(
-                    total_micros, recipe_nutrition.micronutrients
                 )
 
         return NutritionProfile(

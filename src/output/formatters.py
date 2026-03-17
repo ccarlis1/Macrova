@@ -1,16 +1,70 @@
 """Formatters for meal plan output (JSON and Markdown)."""
 
 import json
-from typing import Dict, List, Any
-from src.data_layer.models import (
-    DailyMealPlan,
-    Meal,
-    Recipe,
-    Ingredient,
-    NutritionProfile,
-    NutritionGoals
+from typing import Dict, List, Any, Optional, Union
+
+from src.data_layer.models import Ingredient, NutritionProfile, MicronutrientProfile
+from src.planning.phase0_models import (
+    PlanningRecipe,
+    PlanningUserProfile,
+    Assignment,
+    micronutrient_profile_to_dict,
 )
-from src.planning.meal_planner import PlanningResult
+from src.planning.phase10_reporting import MealPlanResult
+
+
+# Human-readable names for micronutrients in markdown output
+MICRO_DISPLAY_NAMES: Dict[str, str] = {
+    "iron_mg": "Iron",
+    "vitamin_c_mg": "Vitamin C",
+    "calcium_mg": "Calcium",
+    "potassium_mg": "Potassium",
+    "magnesium_mg": "Magnesium",
+    "zinc_mg": "Zinc",
+    "vitamin_a_ug": "Vitamin A",
+    "vitamin_d_iu": "Vitamin D",
+    "vitamin_e_mg": "Vitamin E",
+    "vitamin_k_ug": "Vitamin K",
+    "b1_thiamine_mg": "Vitamin B1",
+    "b2_riboflavin_mg": "Vitamin B2",
+    "b3_niacin_mg": "Vitamin B3",
+    "b5_pantothenic_acid_mg": "Vitamin B5",
+    "b6_pyridoxine_mg": "Vitamin B6",
+    "b12_cobalamin_ug": "Vitamin B12",
+    "folate_ug": "Folate",
+    "phosphorus_mg": "Phosphorus",
+    "selenium_ug": "Selenium",
+    "sodium_mg": "Sodium",
+    "manganese_mg": "Manganese",
+    "copper_mg": "Copper",
+    "fiber_g": "Fiber",
+    "omega_3_g": "Omega-3",
+    "omega_6_g": "Omega-6",
+}
+
+
+def _micro_key_to_display_name(key: str) -> str:
+    """Convert field key like vitamin_a_ug to 'Vitamin A' if not in MICRO_DISPLAY_NAMES."""
+    if key in MICRO_DISPLAY_NAMES:
+        return MICRO_DISPLAY_NAMES[key]
+    # Fallback: vitamin_a_ug -> Vitamin A, b6_pyridoxine_mg -> Vitamin B6 (snake to Title)
+    base = key.rsplit("_", 1)[0] if key.rsplit("_", 1)[-1] in ("ug", "mg", "g", "iu") else key
+    return base.replace("_", " ").title()
+
+
+def _micronutrients_to_dict(
+    micronutrients: Optional[Union[MicronutrientProfile, Dict[str, float]]],
+) -> Dict[str, float]:
+    """Convert micronutrients to dict and filter to values > 0."""
+    if micronutrients is None:
+        return {}
+    if isinstance(micronutrients, dict):
+        return {k: float(v) for k, v in micronutrients.items() if v and float(v) > 0}
+    return {
+        k: v
+        for k, v in micronutrient_profile_to_dict(micronutrients).items()
+        if v and v > 0
+    }
 
 
 def format_ingredient_string(ingredient: Ingredient) -> str:
@@ -41,195 +95,216 @@ def format_ingredient_string(ingredient: Ingredient) -> str:
         return f"{qty_str} {ingredient.name}"
 
 
-def format_nutrition_breakdown(nutrition: NutritionProfile, indent: str = "") -> str:
+def format_nutrition_breakdown(
+    nutrition: NutritionProfile,
+    indent: str = "",
+    micronutrients: Optional[Union[MicronutrientProfile, Dict[str, float]]] = None,
+) -> str:
     """Format nutrition profile as a readable breakdown.
-    
+
     Args:
         nutrition: NutritionProfile object
         indent: Optional indentation prefix
-        
+        micronutrients: Optional MicronutrientProfile or Dict[str, float]; shown when present with values > 0
+
     Returns:
-        Formatted string with calories and macros
+        Formatted string with calories, macros, and optionally micronutrients
     """
     lines = [
         f"{indent}**Calories:** {nutrition.calories:.0f} kcal",
         f"{indent}**Protein:** {nutrition.protein_g:.1f}g",
         f"{indent}**Fat:** {nutrition.fat_g:.1f}g",
-        f"{indent}**Carbs:** {nutrition.carbs_g:.1f}g"
+        f"{indent}**Carbs:** {nutrition.carbs_g:.1f}g",
     ]
+    micro_dict = _micronutrients_to_dict(micronutrients)
+    if micro_dict:
+        lines.append("")
+        lines.append(f"{indent}**Micronutrients:**")
+        for key in sorted(micro_dict.keys()):
+            val = micro_dict[key]
+            unit = "mg" if key.endswith("_mg") else "ug" if key.endswith("_ug") else "g" if key.endswith("_g") else "IU"
+            lines.append(f"{indent}  {_micro_key_to_display_name(key)}: {val:.1f} {unit}")
     return "\n".join(lines)
 
 
-def format_plan_markdown(result: PlanningResult) -> str:
-    """Format a PlanningResult as Markdown (matches README.md example).
-    
-    Args:
-        result: PlanningResult from meal planning
-        
-    Returns:
-        Formatted Markdown string
-    """
-    plan = result.daily_plan
+# --- Canonical formatters (MealPlanResult) ---
+
+
+def format_result_markdown(
+    result: MealPlanResult,
+    recipe_by_id: Dict[str, PlanningRecipe],
+    profile: PlanningUserProfile,
+    D: int,
+) -> str:
+    """Format a MealPlanResult as Markdown. Groups by day; shows recipe name, ingredients, nutrition, daily/weekly totals."""
     lines = []
-    
-    # Header
-    lines.append("# Daily Meal Plan\n")
-    
-    # Success status
-    if result.success:
-        lines.append("✅ **Plan meets nutrition goals**\n")
-    else:
-        lines.append("⚠️ **Plan has warnings**\n")
-    
-    # Warnings (if any)
-    if result.warnings:
-        lines.append("## Warnings\n")
-        for warning in result.warnings:
-            lines.append(f"- {warning}")
+    lines.append("# Meal Plan Result\n")
+    lines.append(f"**Success:** {result.success}")
+    lines.append(f"**Termination code:** {result.termination_code}")
+    if result.plan_incomplete_reason:
+        lines.append(f"**Plan status:** Incomplete — {result.plan_incomplete_reason}")
+    lines.append("")
+    if result.warning:
+        lines.append("## Warnings")
+        for k, v in result.warning.items():
+            lines.append(f"- {k}: {v}")
         lines.append("")
-    
-    # Meals
-    meal_names = {
-        "breakfast": "Breakfast",
-        "lunch": "Lunch",
-        "dinner": "Dinner",
-        "snack": "Snack"
-    }
-    
-    for idx, meal in enumerate(plan.meals, 1):
-        meal_type_display = meal_names.get(meal.meal_type, meal.meal_type.capitalize())
-        lines.append(f"## Meal {idx}: {meal.recipe.name}")
-        lines.append(f"**Type:** {meal_type_display}")
-        
-        # Cooking time
-        lines.append(f"**Cooking Time:** {meal.recipe.cooking_time_minutes} minutes")
-        lines.append("")
-        
-        # Ingredients
-        lines.append("### Ingredients")
-        for ingredient in meal.recipe.ingredients:
-            lines.append(f"- {format_ingredient_string(ingredient)}")
-        lines.append("")
-        
-        # Instructions (if available)
-        if meal.recipe.instructions:
-            lines.append("### Instructions")
-            for step_idx, instruction in enumerate(meal.recipe.instructions, 1):
-                lines.append(f"{step_idx}. {instruction}")
+
+    if not result.plan:
+        return "\n".join(lines)
+
+    meal_names = {"breakfast": "Breakfast", "lunch": "Lunch", "dinner": "Dinner", "snack": "Snack"}
+    by_day: Dict[int, List[Assignment]] = {}
+    for a in result.plan:
+        by_day.setdefault(a.day_index, []).append(a)
+    for day_index in sorted(by_day.keys()):
+        assignments = sorted(by_day[day_index], key=lambda x: x.slot_index)
+        lines.append(f"## Day {day_index + 1}\n")
+        for a in assignments:
+            recipe = recipe_by_id.get(a.recipe_id)
+            if recipe is None:
+                lines.append(f"- Recipe id={a.recipe_id} (not in pool)\n")
+                continue
+            slot = profile.schedule[day_index][a.slot_index] if day_index < len(profile.schedule) else None
+            meal_type = slot.meal_type if slot else "meal"
+            meal_type_display = meal_names.get(meal_type, meal_type.capitalize())
+            lines.append(f"### {recipe.name} ({meal_type_display})")
+            lines.append(f"**Cooking time:** {recipe.cooking_time_minutes} minutes")
+            lines.append("**Ingredients:**")
+            for ing in recipe.ingredients:
+                lines.append(f"- {format_ingredient_string(ing)}")
+            lines.append("**Nutrition:**")
+            lines.append(
+                format_nutrition_breakdown(
+                    recipe.nutrition,
+                    micronutrients=getattr(recipe.nutrition, "micronutrients", None),
+                )
+            )
             lines.append("")
-        
-        # Nutrition breakdown
-        lines.append("### Nutrition Breakdown")
-        lines.append(format_nutrition_breakdown(meal.nutrition))
+        if result.daily_trackers and day_index in result.daily_trackers:
+            t = result.daily_trackers[day_index]
+            day_totals = NutritionProfile(
+                t.calories_consumed, t.protein_consumed, t.fat_consumed, t.carbs_consumed
+            )
+            lines.append("**Day totals:**")
+            micro_day = getattr(t, "micronutrients_consumed", None) or {}
+            lines.append(
+                format_nutrition_breakdown(day_totals, micronutrients=micro_day if micro_day else None)
+            )
+            lines.append("")
+
+    if D > 1 and result.weekly_tracker and result.weekly_tracker.weekly_totals:
+        lines.append("## Weekly totals")
+        w = result.weekly_tracker.weekly_totals
+        micro_weekly = getattr(w, "micronutrients", None)
+        lines.append(
+            format_nutrition_breakdown(w, micronutrients=micro_weekly)
+        )
         lines.append("")
-    
-    # Daily totals
-    lines.append("## Daily Totals")
-    lines.append(format_nutrition_breakdown(plan.total_nutrition))
-    lines.append("")
-    
-    # Goals and adherence
-    lines.append("## Goals & Adherence")
-    goals = plan.goals
-    lines.append(f"**Target Calories:** {goals.calories}")
-    lines.append(f"**Target Protein:** {goals.protein_g:.1f}g")
-    lines.append(f"**Target Fat:** {goals.fat_g_min:.1f}g - {goals.fat_g_max:.1f}g")
-    lines.append(f"**Target Carbs:** {goals.carbs_g:.1f}g")
-    lines.append("")
-    
-    lines.append("**Adherence:**")
-    for macro, percentage in result.target_adherence.items():
-        lines.append(f"- {macro.capitalize()}: {percentage:.1f}%")
-    lines.append("")
-    
+
     return "\n".join(lines)
 
 
-def format_plan_json(result: PlanningResult) -> Dict[str, Any]:
-    """Format a PlanningResult as JSON (for API usage).
-    
-    Args:
-        result: PlanningResult from meal planning
-        
-    Returns:
-        Dictionary ready for JSON serialization
-    """
-    plan = result.daily_plan
-    
-    # Format meals
-    meals_json = []
-    for meal in plan.meals:
-        # Format ingredients
-        ingredients_json = []
-        for ingredient in meal.recipe.ingredients:
-            ingredients_json.append({
-                "name": ingredient.name,
-                "quantity": ingredient.quantity,
-                "unit": ingredient.unit,
-                "is_to_taste": ingredient.is_to_taste,
-                "display": format_ingredient_string(ingredient)
-            })
-        
-        meal_json = {
-            "meal_type": meal.meal_type,
-            "recipe": {
-                "id": meal.recipe.id,
-                "name": meal.recipe.name,
-                "ingredients": ingredients_json,
-                "cooking_time_minutes": meal.recipe.cooking_time_minutes,
-                "instructions": meal.recipe.instructions
-            },
-            "nutrition": {
-                "calories": round(meal.nutrition.calories, 1),
-                "protein_g": round(meal.nutrition.protein_g, 1),
-                "fat_g": round(meal.nutrition.fat_g, 1),
-                "carbs_g": round(meal.nutrition.carbs_g, 1)
-            },
-            "busyness_level": meal.busyness_level
+def format_result_json(
+    result: MealPlanResult,
+    recipe_by_id: Dict[str, PlanningRecipe],
+    profile: PlanningUserProfile,
+    D: int,
+) -> Dict[str, Any]:
+    """Format a MealPlanResult as a JSON-serializable dict. Top-level: success, termination_code, days, daily_plans, weekly_totals (if D>1), warnings, goals."""
+    daily_plans = []
+    if result.plan and result.daily_trackers:
+        by_day: Dict[int, List[Assignment]] = {}
+        for a in result.plan:
+            by_day.setdefault(a.day_index, []).append(a)
+        for day_index in sorted(by_day.keys()):
+            assignments = sorted(by_day[day_index], key=lambda x: x.slot_index)
+            meals_json = []
+            for a in assignments:
+                recipe = recipe_by_id.get(a.recipe_id)
+                if recipe is None:
+                    meals_json.append({"recipe_id": a.recipe_id, "error": "not in pool"})
+                    continue
+                slot = profile.schedule[day_index][a.slot_index] if day_index < len(profile.schedule) else None
+                meal_type = slot.meal_type if slot else "meal"
+                rec_nut = recipe.nutrition
+                nutrition_json = {
+                    "calories": round(rec_nut.calories, 1),
+                    "protein_g": round(rec_nut.protein_g, 1),
+                    "fat_g": round(rec_nut.fat_g, 1),
+                    "carbs_g": round(rec_nut.carbs_g, 1),
+                }
+                micro_rec = _micronutrients_to_dict(getattr(rec_nut, "micronutrients", None))
+                if micro_rec:
+                    nutrition_json["micronutrients"] = {k: round(v, 1) for k, v in micro_rec.items()}
+                meals_json.append({
+                    "recipe_id": recipe.id,
+                    "name": recipe.name,
+                    "meal_type": meal_type,
+                    "cooking_time_minutes": recipe.cooking_time_minutes,
+                    "ingredients": [format_ingredient_string(ing) for ing in recipe.ingredients],
+                    "nutrition": nutrition_json,
+                })
+            t = result.daily_trackers.get(day_index)
+            day_totals = None
+            if t is not None:
+                day_totals = {
+                    "calories": round(t.calories_consumed, 1),
+                    "protein_g": round(t.protein_consumed, 1),
+                    "fat_g": round(t.fat_consumed, 1),
+                    "carbs_g": round(t.carbs_consumed, 1),
+                }
+                micro_day = getattr(t, "micronutrients_consumed", None) or {}
+                if micro_day:
+                    micro_filtered = _micronutrients_to_dict(micro_day)
+                    if micro_filtered:
+                        day_totals["micronutrients"] = {k: round(v, 1) for k, v in micro_filtered.items()}
+            daily_plans.append({"day": day_index + 1, "meals": meals_json, "totals": day_totals})
+
+    weekly_totals = None
+    if D > 1 and result.weekly_tracker and result.weekly_tracker.weekly_totals:
+        w = result.weekly_tracker.weekly_totals
+        weekly_totals = {
+            "calories": round(w.calories, 1),
+            "protein_g": round(w.protein_g, 1),
+            "fat_g": round(w.fat_g, 1),
+            "carbs_g": round(w.carbs_g, 1),
         }
-        meals_json.append(meal_json)
-    
-    # Format daily totals
-    total_nutrition_json = {
-        "calories": round(plan.total_nutrition.calories, 1),
-        "protein_g": round(plan.total_nutrition.protein_g, 1),
-        "fat_g": round(plan.total_nutrition.fat_g, 1),
-        "carbs_g": round(plan.total_nutrition.carbs_g, 1)
+        micro_weekly = _micronutrients_to_dict(getattr(w, "micronutrients", None))
+        if micro_weekly:
+            weekly_totals["micronutrients"] = {k: round(v, 1) for k, v in micro_weekly.items()}
+
+    goals = {
+        "daily_calories": profile.daily_calories,
+        "daily_protein_g": profile.daily_protein_g,
+        "daily_fat_g_min": profile.daily_fat_g[0],
+        "daily_fat_g_max": profile.daily_fat_g[1],
+        "daily_carbs_g": profile.daily_carbs_g,
     }
-    
-    # Format goals
-    goals_json = {
-        "calories": plan.goals.calories,
-        "protein_g": plan.goals.protein_g,
-        "fat_g_min": plan.goals.fat_g_min,
-        "fat_g_max": plan.goals.fat_g_max,
-        "carbs_g": plan.goals.carbs_g
-    }
-    
-    # Build final JSON structure
-    return {
+
+    out = {
         "success": result.success,
-        "date": plan.date,
-        "meals": meals_json,
-        "total_nutrition": total_nutrition_json,
-        "goals": goals_json,
-        "target_adherence": {
-            macro: round(percentage, 1) for macro, percentage in result.target_adherence.items()
-        },
-        "warnings": result.warnings,
-        "meets_goals": plan.meets_goals
+        "termination_code": result.termination_code,
+        "days": D,
+        "daily_plans": daily_plans,
+        "warnings": result.warning if result.warning else {},
+        "goals": goals,
     }
+    if weekly_totals is not None:
+        out["weekly_totals"] = weekly_totals
+    if result.plan_incomplete_reason:
+        out["plan_status"] = "incomplete"
+        out["plan_status_message"] = result.plan_incomplete_reason
+    return out
 
 
-def format_plan_json_string(result: PlanningResult, indent: int = 2) -> str:
-    """Format a PlanningResult as a JSON string.
-    
-    Args:
-        result: PlanningResult from meal planning
-        indent: JSON indentation (default: 2)
-        
-    Returns:
-        JSON string
-    """
-    return json.dumps(format_plan_json(result), indent=indent)
+def format_result_json_string(
+    result: MealPlanResult,
+    recipe_by_id: Dict[str, PlanningRecipe],
+    profile: PlanningUserProfile,
+    D: int,
+    indent: int = 2,
+) -> str:
+    """Format a MealPlanResult as a JSON string."""
+    return json.dumps(format_result_json(result, recipe_by_id, profile, D), indent=indent)
 

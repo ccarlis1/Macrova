@@ -331,74 +331,54 @@ violations = validate_daily_upper_limits(daily_micros, upper_limits)
 # Returns: [ULViolation(nutrient="vitamin_a_ug", actual=3500, limit=3000, excess=500)]
 ```
 
-### Meal Planner
-**Input**: `UserProfile`, available `Recipe` list  
-**Output**: `DailyMealPlan`
+### Meal Planner (Unified Engine)
+**Input**: `PlanningUserProfile`, `List[PlanningRecipe]`, `days` (1–7)  
+**Output**: `MealPlanResult`
 
-**Planning Algorithm** (Greedy + Backtracking):
-1. Sort recipes by score (highest first)
-2. For each meal slot (breakfast, lunch, dinner):
-   - Select top-scoring recipe that fits schedule
-   - Calculate running nutrition totals
-   - If nutrition exceeds targets, backtrack and try next recipe
-3. Validate final plan meets all goals
-4. If no valid plan found, relax constraints and retry
+**Pipeline** (entry points):
+1. `extract_ingredient_names(recipes)` → sorted list of ingredient names
+2. `provider.resolve_all(ingredient_names)` — eager resolution (local or API); no API calls after this
+3. `NutritionCalculator(provider)` then `convert_recipes(recipes, calculator)` → `List[PlanningRecipe]`
+4. `convert_profile(user_profile, days)` → `PlanningUserProfile` (schedule replicated for `days` days)
+5. `plan_meals(profile, recipe_pool, days)` — delegates to phase7 search engine
+6. Result formatted via `format_result_json` / `format_result_markdown` (MealPlanResult, recipe_by_id, profile, D)
+
+**Phase7 search**: Deterministic backtracking search over slot assignments. Validates constraints (macros, cooking time, excluded ingredients, upper limits). Produces `MealPlanResult` with `plan` (list of `Assignment`: day_index, slot_index, recipe_id, variant_index), `daily_trackers`, `weekly_tracker` (when D > 1), `termination_code`, `success`, `warning`, `report`, `stats`.
+
+**Terminology** (matches code): `PlanningUserProfile`, `PlanningRecipe`, `MealPlanResult`, `Assignment`, `daily_trackers`, `weekly_tracker`, `MealSlot`.
 
 ### Output Formatter
-**JSON Output**:
+**Canonical output** is produced by `format_result_json` / `format_result_markdown` from `MealPlanResult`, `recipe_by_id` (PlanningRecipe lookup), `PlanningUserProfile`, and `D` (days).
+
+**JSON Output** (structure from format_result_json):
 ```json
 {
-  "date": "2024-01-15",
-  "meals": [
+  "success": true,
+  "termination_code": "TC-1",
+  "days": 1,
+  "daily_plans": [
     {
-      "name": "Preworkout Meal",
-      "meal_type": "breakfast",
-      "ingredients": [...],
-      "instructions": [...],
-      "nutrition": {
-        "calories": 860,
-        "protein_g": 31.5,
-        "fat_g": 6.0,
-        "carbs_g": 167.0
-      }
+      "day": 1,
+      "meals": [
+        {
+          "recipe_id": "r1",
+          "name": "Preworkout Meal",
+          "meal_type": "breakfast",
+          "cooking_time_minutes": 5,
+          "ingredients": ["200 g cream of rice", "1 scoop whey protein powder"],
+          "nutrition": { "calories": 860, "protein_g": 31.5, "fat_g": 6.0, "carbs_g": 167.0 }
+        }
+      ],
+      "totals": { "calories": 2400, "protein_g": 150, "fat_g": 75, "carbs_g": 300 }
     }
   ],
-  "total_nutrition": {...},
-  "goals": {...},
-  "meets_goals": true
+  "warnings": {},
+  "goals": { "daily_calories": 2400, "daily_protein_g": 150, "daily_fat_g_min": 50, "daily_fat_g_max": 100, "daily_carbs_g": 300 }
 }
 ```
+When D > 1, top-level `weekly_totals` is included.
 
-**Markdown Output**:
-```markdown
-## Daily Meal Plan - 2024-01-15
-
-### Meal 1: Preworkout Meal
-- Quick to make but will still give you enough carbs for your workout
-- 200g cream of rice
-- 1 scoop whey protein powder
-- 1 tsp almond butter
-- 50g blueberries
-
-**Instructions:**
-1. Cook cream of rice according to package directions
-2. Mix in protein powder
-3. Top with almond butter and blueberries
-
-**Nutrition Breakdown:**
-- Calories: 860
-- Protein: 31.5g
-- Fat: 6.0g
-- Carbs: 167.0g
-
-[... more meals ...]
-
-### Total Daily Nutrition
-- Calories: 2400 / 2400
-- Protein: 150g / 150g
-- Fat: 75g (within 50-100g range)
-- Carbs: 300g
-```
+**Markdown Output** (from format_result_markdown): Header "Meal Plan Result", success and termination code; per-day sections (Day 1, Day 2, ...) with recipe name, meal type, cooking time, ingredients, nutrition; day totals from `daily_trackers`; when D > 1, "Weekly totals" from `weekly_tracker.weekly_totals`; warnings if present.
 
 ## Error Handling
 

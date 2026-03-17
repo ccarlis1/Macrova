@@ -290,14 +290,14 @@ class TestUserProfile:
         assert "brussels sprouts" in profile.disliked_foods
         assert "shellfish" in profile.allergies
 
-    def test_user_profile_with_weekly_targets(self):
-        """Test user profile with weekly micronutrient targets."""
-        weekly_targets = WeeklyNutritionTargets(
-            vitamin_a_ug=6300.0,
-            vitamin_c_mg=630.0,
-            calcium_mg=7000.0,
-            iron_mg=56.0,
-        )
+    def test_user_profile_with_daily_micronutrient_targets(self):
+        """Test user profile with daily micronutrient RDI targets."""
+        daily_micro = {
+            "vitamin_a_ug": 900.0,
+            "vitamin_c_mg": 90.0,
+            "calcium_mg": 1000.0,
+            "iron_mg": 8.0,
+        }
         profile = UserProfile(
             daily_calories=2400,
             daily_protein_g=150.0,
@@ -307,14 +307,14 @@ class TestUserProfile:
             liked_foods=[],
             disliked_foods=[],
             allergies=[],
-            weekly_targets=weekly_targets,
+            daily_micronutrient_targets=daily_micro,
         )
-        assert profile.weekly_targets is not None
-        assert profile.weekly_targets.vitamin_a_ug == 6300.0
-        assert profile.weekly_targets.calcium_mg == 7000.0
+        assert profile.daily_micronutrient_targets is not None
+        assert profile.daily_micronutrient_targets["vitamin_a_ug"] == 900.0
+        assert profile.daily_micronutrient_targets["calcium_mg"] == 1000.0
 
-    def test_user_profile_weekly_targets_defaults_to_none(self):
-        """Test that weekly_targets defaults to None for backward compatibility."""
+    def test_user_profile_daily_micronutrient_targets_defaults_to_none(self):
+        """Test that daily_micronutrient_targets defaults to None."""
         profile = UserProfile(
             daily_calories=2400,
             daily_protein_g=150.0,
@@ -325,7 +325,7 @@ class TestUserProfile:
             disliked_foods=[],
             allergies=[],
         )
-        assert profile.weekly_targets is None
+        assert profile.daily_micronutrient_targets is None
 
 
 class TestMicronutrientProfile:

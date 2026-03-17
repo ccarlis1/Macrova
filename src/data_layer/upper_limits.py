@@ -3,6 +3,9 @@
 Loads daily UL values from reference data by demographic.
 Validates daily micronutrient intake against ULs.
 Reference source: IOM DRI / EFSA guidelines.
+
+Spec: MEALPLAN_SPECIFICATION_v1.md Section 2.3 — UL table loaded from
+data/reference/ul_by_demographic.json, merged with user overrides.
 """
 
 import json
@@ -11,6 +14,9 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List
 
 from src.data_layer.models import UpperLimits, MicronutrientProfile
+
+# Spec Section 2.3: default path for UL reference data
+DEFAULT_UL_REFERENCE_PATH = "data/reference/ul_by_demographic.json"
 
 
 @dataclass

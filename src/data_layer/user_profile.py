@@ -1,9 +1,10 @@
 """User profile loader for loading user preferences from YAML."""
+import sys
 import yaml
 from pathlib import Path
 from typing import Dict, List
 
-from src.data_layer.models import UserProfile
+from src.data_layer.models import MicronutrientProfile, UserProfile
 
 
 class UserProfileLoader:
@@ -59,6 +60,19 @@ class UserProfileLoader:
         if max_daily_calories is not None:
             max_daily_calories = int(max_daily_calories)
 
+        # Extract micronutrient_goals (daily RDIs); validate keys against MicronutrientProfile
+        micro_goals = data.get("micronutrient_goals", {})
+        valid_fields = set(MicronutrientProfile.__dataclass_fields__.keys())
+        daily_micro = {}
+        for key, val in micro_goals.items():
+            if key not in valid_fields:
+                print(
+                    f"Warning: unknown micronutrient goal '{key}', skipping",
+                    file=sys.stderr,
+                )
+                continue
+            daily_micro[key] = float(val)
+
         return UserProfile(
             daily_calories=daily_calories,
             daily_protein_g=daily_protein_g,
@@ -69,5 +83,6 @@ class UserProfileLoader:
             disliked_foods=disliked_foods,
             allergies=allergies,
             max_daily_calories=max_daily_calories,
+            daily_micronutrient_targets=daily_micro or None,
         )
 

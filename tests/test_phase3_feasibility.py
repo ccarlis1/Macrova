@@ -28,6 +28,7 @@ from src.planning.phase3_feasibility import (
     check_fc4_cross_day_rdi,
     check_fc5_candidate_set,
     check_fc1_fc2_fc3,
+    check_structural_feasibility,
     precompute_macro_bounds,
     precompute_max_daily_achievable,
 )
@@ -61,14 +62,20 @@ def _make_profile(
     daily_fat_g: tuple[float, float] = (50.0, 80.0),
     daily_carbs_g: float = 200.0,
     max_daily_calories: int | None = 2500,
+    schedule: list | None = None,
+    micronutrient_targets: dict | None = None,
 ) -> PlanningUserProfile:
-    return PlanningUserProfile(
+    kwargs = dict(
         daily_calories=daily_calories,
         daily_protein_g=daily_protein_g,
         daily_fat_g=daily_fat_g,
         daily_carbs_g=daily_carbs_g,
         max_daily_calories=max_daily_calories,
+        micronutrient_targets=micronutrient_targets or {},
     )
+    if schedule is not None:
+        kwargs["schedule"] = schedule
+    return PlanningUserProfile(**kwargs)
 
 
 def _make_state(
@@ -210,6 +217,40 @@ class TestFC3IncrementalUL:
         assert check_fc3_incremental_ul(
             recipe, _make_slot(), 0, state, _make_profile(), ul
         ) is False
+
+
+# --- Structural feasibility (pre-search) ---
+
+
+class TestStructuralFeasibility:
+    """check_structural_feasibility: horizon-level and daily-level impossibility."""
+
+    def test_structurally_feasible(self):
+        schedule = [[_make_slot(), _make_slot()], [_make_slot(), _make_slot()]]
+        profile = _make_profile(schedule=schedule, micronutrient_targets={"vitamin_c_mg": 10.0})
+        mda = {"vitamin_c_mg": {1: 5.0, 2: 20.0}}
+        assert check_structural_feasibility(profile, schedule, 2, mda) is True
+
+    def test_structurally_infeasible_horizon(self):
+        """sum_over_days(max_daily_achievable) < daily_rdi * D -> False."""
+        schedule = [[_make_slot(), _make_slot()], [_make_slot(), _make_slot()]]
+        profile = _make_profile(schedule=schedule, micronutrient_targets={"iron_mg": 100.0})
+        mda = {"iron_mg": {2: 50.0}}
+        assert check_structural_feasibility(profile, schedule, 2, mda) is False
+
+    def test_structurally_infeasible_single_day_contributes(self):
+        """One day with few slots caps contribution; total max over horizon < daily_rdi * D."""
+        schedule = [[_make_slot()], [_make_slot(), _make_slot(), _make_slot()]]
+        profile = _make_profile(schedule=schedule, micronutrient_targets={"vitamin_c_mg": 50.0})
+        mda = {"vitamin_c_mg": {1: 10.0, 3: 30.0}}
+        total_max = 10.0 + 30.0
+        assert total_max < 50.0 * 2
+        assert check_structural_feasibility(profile, schedule, 2, mda) is False
+
+    def test_no_tracked_nutrients_feasible(self):
+        schedule = [[_make_slot()]]
+        profile = _make_profile(schedule=schedule, micronutrient_targets={})
+        assert check_structural_feasibility(profile, schedule, 1, {}) is True
 
 
 # --- FC-4: Precomputation and trigger ---

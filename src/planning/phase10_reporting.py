@@ -19,18 +19,21 @@ class MealPlanResult:
     """Canonical result for both success and failure. Spec Section 10, 11.
 
     JSON-serializable (plan, report, warning, stats). daily_trackers/weekly_tracker
-    set on success for consumers that need full state.
+    set on success (or best-effort) for consumers that need full state.
+    When plan_incomplete_reason is set, plan/daily_trackers/weekly_tracker are
+    a best-effort plan that did not meet all targets (e.g. weekly validation).
     """
 
     success: bool
     termination_code: str  # TC-1, TC-2, TC-3, TC-4
     failure_mode: Optional[str] = None  # FM-1 .. FM-5
     plan: Optional[List[Assignment]] = None
-    daily_trackers: Optional[Dict[int, DailyTracker]] = None  # success path
-    weekly_tracker: Optional[WeeklyTracker] = None  # success path
+    daily_trackers: Optional[Dict[int, DailyTracker]] = None  # success or best-effort
+    weekly_tracker: Optional[WeeklyTracker] = None  # success or best-effort
     warning: Optional[Dict[str, Any]] = None  # e.g. sodium_advisory
     report: Dict[str, Any] = field(default_factory=dict)  # structured diagnostics
     stats: Optional[Dict[str, Any]] = None  # attempts, backtracks if available
+    plan_incomplete_reason: Optional[str] = None  # e.g. "Did not meet weekly targets."
 
 
 # --- Plan snapshot (serializable) ---
@@ -257,22 +260,36 @@ def result_from_failure(
     backtrack_count: int = 0,
     sodium_advisory: Optional[str] = None,
     stats: Optional[Dict[str, Any]] = None,
+    *,
+    best_effort_plan: Optional[List[Assignment]] = None,
+    best_effort_daily_trackers: Optional[Dict[int, DailyTracker]] = None,
+    best_effort_weekly_tracker: Optional[WeeklyTracker] = None,
+    plan_incomplete_reason: Optional[str] = None,
 ) -> MealPlanResult:
-    """Build MealPlanResult for failure path."""
+    """Build MealPlanResult for failure path.
+
+    When best_effort_plan and plan_incomplete_reason are provided (e.g. TC-2/FM-4),
+    the result includes the best-effort plan so the user can see the assignment
+    that failed weekly validation, with a clear incomplete label.
+    """
     warning = None
     if sodium_advisory:
         warning = {"type": "sodium_advisory_text", "message": sodium_advisory}
     st = dict(stats) if stats else {}
     st["attempts"] = attempt_count
     st["backtracks"] = backtrack_count
+    plan = best_effort_plan if best_effort_plan is not None else None
+    daily_trackers = best_effort_daily_trackers if best_effort_daily_trackers is not None else None
+    weekly_tracker = best_effort_weekly_tracker if best_effort_weekly_tracker is not None else None
     return MealPlanResult(
         success=False,
         termination_code=termination_code,
         failure_mode=failure_mode,
-        plan=None,
-        daily_trackers=None,
-        weekly_tracker=None,
+        plan=plan,
+        daily_trackers=daily_trackers,
+        weekly_tracker=weekly_tracker,
         warning=warning,
         report=report,
         stats=st,
+        plan_incomplete_reason=plan_incomplete_reason,
     )

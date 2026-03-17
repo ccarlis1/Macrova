@@ -140,7 +140,10 @@ def format_result_markdown(
     lines = []
     lines.append("# Meal Plan Result\n")
     lines.append(f"**Success:** {result.success}")
-    lines.append(f"**Termination code:** {result.termination_code}\n")
+    lines.append(f"**Termination code:** {result.termination_code}")
+    if result.plan_incomplete_reason:
+        lines.append(f"**Plan status:** Incomplete — {result.plan_incomplete_reason}")
+    lines.append("")
     if result.warning:
         lines.append("## Warnings")
         for k, v in result.warning.items():
@@ -289,6 +292,9 @@ def format_result_json(
     }
     if weekly_totals is not None:
         out["weekly_totals"] = weekly_totals
+    if result.plan_incomplete_reason:
+        out["plan_status"] = "incomplete"
+        out["plan_status_message"] = result.plan_incomplete_reason
     return out
 
 

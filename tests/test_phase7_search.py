@@ -10,8 +10,10 @@ from src.planning.phase0_models import Assignment
 from src.planning.phase10_reporting import MealPlanResult
 from src.planning.phase7_search import (
     DEFAULT_ATTEMPT_LIMIT,
+    PlannerStateError,
     SearchStats,
     run_meal_plan_search,
+    _validate_planner_state,
 )
 
 
@@ -134,6 +136,21 @@ class TestSearchSuccessNoPins:
         assert result.weekly_tracker.days_completed == 7
         _assert_weekly_equals_sum_daily(result)
 
+    def test_success_days_completed_invariant(self):
+        """On success: days_completed <= D and len(daily_trackers) == days_completed."""
+        for D in (1, 2, 3):
+            schedule = _make_schedule(ndays=D, slots_per_day=2)
+            profile = _make_profile(schedule)
+            pool = [_make_recipe(f"r{i}", 1000.0, 50.0, 32.0, 125.0) for i in range(D * 2)]
+            result = run_meal_plan_search(profile, pool, D, None)
+            assert result.success is True, f"D={D}"
+            wt = result.weekly_tracker
+            assert wt is not None
+            assert wt.days_completed <= D
+            assert result.daily_trackers is not None
+            assert len(result.daily_trackers) == wt.days_completed
+            _assert_weekly_equals_sum_daily(result)
+
     def test_weekly_totals_equal_sum_daily_with_max_daily_calories(self):
         """With max_daily_calories (backtracking), weekly must still equal sum(daily)."""
         schedule = _make_schedule(ndays=3, slots_per_day=2)
@@ -149,6 +166,32 @@ class TestSearchSuccessNoPins:
         result = run_meal_plan_search(profile, pool, 3, None)
         if result.success:
             _assert_weekly_equals_sum_daily(result)
+
+    def test_weekly_equals_sum_completed_days_after_backtracking(self):
+        """Regression: after repeated backtracking, weekly totals remain equal to sum of completed day totals."""
+        schedule = _make_schedule(ndays=3, slots_per_day=2)
+        profile = _make_profile(schedule, max_daily_calories=2100, daily_calories=2000)
+        pool = [
+            _make_recipe(f"r{i}", 500.0, 25.0, 16.0, 62.0) for i in range(8)
+        ]
+        result = run_meal_plan_search(profile, pool, 3, None)
+        if result.success and result.weekly_tracker and result.daily_trackers:
+            _assert_weekly_equals_sum_daily(result)
+
+    def test_no_candidate_skipping_on_rewind(self):
+        """Regression: backtrack does not skip next candidate (pointer advanced only at selection time)."""
+        schedule = _make_schedule(ndays=2, slots_per_day=2)
+        profile = _make_profile(schedule)
+        pool = [
+            _make_recipe("r1", 1000.0, 50.0, 32.0, 125.0),
+            _make_recipe("r2", 1000.0, 50.0, 32.0, 125.0),
+            _make_recipe("r3", 1000.0, 50.0, 32.0, 125.0),
+            _make_recipe("r4", 1000.0, 50.0, 32.0, 125.0),
+        ]
+        result = run_meal_plan_search(profile, pool, 2, None)
+        assert result.success is True
+        assert result.plan is not None and len(result.plan) == 4
+        _assert_weekly_equals_sum_daily(result)
 
 
 # --- Integration: with pinned slots ---
@@ -381,6 +424,60 @@ class TestDailyTrackerMicronutrients:
         # At least one recipe has micronutrients; daily total should reflect it
         assert tracker.micronutrients_consumed.get("iron_mg", 0) > 0
         assert tracker.micronutrients_consumed.get("vitamin_c_mg", 0) > 0
+
+
+# --- Invariant validation ---
+
+
+class TestPlannerStateInvariants:
+    """_validate_planner_state and PlannerStateError."""
+
+    def test_validate_planner_state_raises_when_days_completed_mismatch(self):
+        from src.planning.phase0_models import DailyTracker, WeeklyTracker
+        from src.data_layer.models import NutritionProfile
+
+        schedule = _make_schedule(ndays=2, slots_per_day=2)
+        profile = _make_profile(schedule)
+        wt = WeeklyTracker(
+            weekly_totals=NutritionProfile(0.0, 0.0, 0.0, 0.0),
+            days_completed=1,
+            days_remaining=1,
+            carryover_needs={},
+        )
+        daily_trackers = {0: _make_full_tracker(2)}
+        completed_days = set()
+        with pytest.raises(PlannerStateError, match="len\\(completed_days\\)"):
+            _validate_planner_state(daily_trackers, wt, completed_days, 2, schedule)
+
+    def test_validate_planner_state_raises_when_weekly_macro_large_negative(self):
+        """Large negative weekly macro (e.g. -50) must still raise; only tiny drift is tolerated."""
+        from src.planning.phase0_models import WeeklyTracker
+        from src.data_layer.models import NutritionProfile
+
+        schedule = _make_schedule(ndays=1, slots_per_day=2)
+        profile = _make_profile(schedule)
+        wt = WeeklyTracker(
+            weekly_totals=NutritionProfile(2000.0, 100.0, 65.0, -50.0),  # real negative
+            days_completed=1,
+            days_remaining=0,
+            carryover_needs={},
+        )
+        daily_trackers = {0: _make_full_tracker(2)}
+        completed_days = {0}
+        with pytest.raises(PlannerStateError, match="negative weekly macro"):
+            _validate_planner_state(daily_trackers, wt, completed_days, 1, schedule)
+
+
+def _make_full_tracker(slots_total: int):
+    from src.planning.phase0_models import DailyTracker
+    return DailyTracker(
+        calories_consumed=2000.0,
+        protein_consumed=100.0,
+        fat_consumed=65.0,
+        carbs_consumed=250.0,
+        slots_assigned=slots_total,
+        slots_total=slots_total,
+    )
 
 
 # --- Optional SearchStats instrumentation ---

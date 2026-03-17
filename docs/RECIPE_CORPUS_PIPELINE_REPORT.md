@@ -78,6 +78,7 @@
 - 170567 almonds
 - 175174 salmon canned
 - 171247 parmesan grated
+- 2685581 tomato
 
 ## Recipe reconstruction
 

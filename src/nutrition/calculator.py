@@ -4,6 +4,7 @@ from typing import Dict, Any, Optional, List
 from src.data_layer.models import Ingredient, Recipe, NutritionProfile, MicronutrientProfile
 from src.data_layer.exceptions import IngredientNotFoundError
 from src.providers.ingredient_provider import IngredientDataProvider
+from src.ingestion.nutrition_scaler import BASE_SERVING_WEIGHTS
 
 
 class NutritionCalculator:
@@ -227,19 +228,32 @@ class NutritionCalculator:
             Quantity in grams
         """
         quantity = ingredient.quantity
-        unit = ingredient.unit.lower()
+        unit = ingredient.unit.lower().strip()
 
         if unit == "g" or unit == "gram" or unit == "grams":
             return quantity
         elif unit == "oz" or unit == "ounce" or unit == "ounces":
-            # Convert oz to grams
             return quantity * self.UNIT_CONVERSIONS["oz"]
         elif unit == "serving":
-            # For servings, assume 1 serving = 100g (default)
-            # This is a simplification for MVP
             return quantity * 100.0
+        elif unit in ("large", "medium", "small"):
+            # Count-based units: use BASE_SERVING_WEIGHTS from nutrition_scaler
+            name_lower = (ingredient.name or "").lower().strip()
+            weights = BASE_SERVING_WEIGHTS.get(unit, {})
+            weight_per = weights.get(name_lower) or weights.get(name_lower.rstrip("s"))
+            if weight_per is not None:
+                return quantity * weight_per
+            # Fallback for common ingredients not in table (e.g. "eggs" with typo)
+            if unit == "large" and "egg" in name_lower:
+                return quantity * 50.0
+            if unit == "medium" and "egg" in name_lower:
+                return quantity * 44.0
+            if unit == "small" and "egg" in name_lower:
+                return quantity * 38.0
+            # Generic fallback: assume 50g per "large", 40g per "medium", 30g per "small"
+            defaults = {"large": 50.0, "medium": 40.0, "small": 30.0}
+            return quantity * defaults.get(unit, 50.0)
         else:
-            # Default: assume grams
             return quantity
 
     def _get_unit_size(self, unit_key: str, ingredient_info: Dict[str, Any]) -> float:

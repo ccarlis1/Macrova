@@ -37,6 +37,7 @@ from src.planning.phase3_feasibility import (
     FeasibilityStateView,
     MacroBoundsPrecomputation,
     check_fc4_cross_day_rdi,
+    check_structural_feasibility,
     precompute_macro_bounds,
     precompute_max_daily_achievable,
 )
@@ -62,6 +63,99 @@ from src.data_layer.models import UpperLimits
 
 # Attempt limit: configurable, sensible default. Spec Section 9.4.
 DEFAULT_ATTEMPT_LIMIT = 50_000
+
+# Debug logging gate: when True, emit structured logs for assign/remove/backtrack. No behavior change.
+DEBUG_SEARCH = False
+
+# Numerical tolerance for floating-point drift from add/subtract chains (e.g. (A+B)-B-A). Values with
+# magnitude below this are treated as zero for normalization and invariant checks.
+EPSILON = 1e-9
+
+
+def _debug_log(event: str, **kwargs: Any) -> None:
+    """Emit structured debug log when DEBUG_SEARCH is True. No-op otherwise."""
+    if DEBUG_SEARCH:
+        payload = {"event": event, **kwargs}
+        print(f"[phase7_debug] {payload}")
+
+
+def _normalize_fp(value: float) -> float:
+    """Clamp near-zero values to exact zero to absorb floating-point cancellation drift."""
+    if abs(value) < EPSILON:
+        return 0.0
+    return value
+
+
+def _normalize_nutrition_profile(profile: NutritionProfile) -> None:
+    """Normalize weekly_totals in place so tiny residuals become zero. Mutates profile."""
+    for attr in ("calories", "protein_g", "fat_g", "carbs_g"):
+        val = getattr(profile, attr)
+        new_val = _normalize_fp(val)
+        if new_val != val and DEBUG_SEARCH:
+            _debug_log("fp_normalize", nutrient=attr, before=val, after=new_val)
+        setattr(profile, attr, new_val)
+    if profile.micronutrients is not None:
+        for fname in MicronutrientProfile.__dataclass_fields__:
+            val = getattr(profile.micronutrients, fname)
+            new_val = _normalize_fp(val)
+            if new_val != val and DEBUG_SEARCH:
+                _debug_log("fp_normalize", nutrient=fname, before=val, after=new_val)
+            setattr(profile.micronutrients, fname, new_val)
+
+
+class PlannerStateError(Exception):
+    """Raised when planner state invariants are violated (e.g. weekly vs completed_days mismatch)."""
+
+
+def _validate_planner_state(
+    daily_trackers: Dict[int, DailyTracker],
+    weekly_tracker: WeeklyTracker,
+    completed_days: Set[int],
+    D: int,
+    schedule: List[List[MealSlot]],
+) -> None:
+    """Validate planner state invariants. Raises PlannerStateError on violation."""
+    if not (0 <= weekly_tracker.days_completed <= D):
+        raise PlannerStateError(
+            f"days_completed={weekly_tracker.days_completed} not in [0, {D}]"
+        )
+    if weekly_tracker.days_remaining != D - weekly_tracker.days_completed:
+        raise PlannerStateError(
+            f"days_remaining={weekly_tracker.days_remaining} != D - days_completed = {D - weekly_tracker.days_completed}"
+        )
+    if len(completed_days) != weekly_tracker.days_completed:
+        raise PlannerStateError(
+            f"len(completed_days)={len(completed_days)} != days_completed={weekly_tracker.days_completed}"
+        )
+    wt = weekly_tracker.weekly_totals
+    if wt.calories < -EPSILON or wt.protein_g < -EPSILON or wt.fat_g < -EPSILON or wt.carbs_g < -EPSILON:
+        raise PlannerStateError(
+            f"negative weekly macro: cal={wt.calories} pro={wt.protein_g} fat={wt.fat_g} carbs={wt.carbs_g}"
+        )
+    micro = micronutrient_profile_to_dict(getattr(wt, "micronutrients", None))
+    for k, v in micro.items():
+        if v < -EPSILON:
+            raise PlannerStateError(f"negative weekly micronutrient {k}={v}")
+    if completed_days:
+        sum_cal = sum(daily_trackers[d].calories_consumed for d in completed_days if d in daily_trackers)
+        sum_pro = sum(daily_trackers[d].protein_consumed for d in completed_days if d in daily_trackers)
+        sum_fat = sum(daily_trackers[d].fat_consumed for d in completed_days if d in daily_trackers)
+        sum_carbs = sum(daily_trackers[d].carbs_consumed for d in completed_days if d in daily_trackers)
+        tol = 1e-6
+        if abs(wt.calories - sum_cal) > tol:
+            raise PlannerStateError(f"weekly calories {wt.calories} != sum(completed_days) {sum_cal}")
+        if abs(wt.protein_g - sum_pro) > tol:
+            raise PlannerStateError(f"weekly protein {wt.protein_g} != sum(completed_days) {sum_pro}")
+        if abs(wt.fat_g - sum_fat) > tol:
+            raise PlannerStateError(f"weekly fat {wt.fat_g} != sum(completed_days) {sum_fat}")
+        if abs(wt.carbs_g - sum_carbs) > tol:
+            raise PlannerStateError(f"weekly carbs {wt.carbs_g} != sum(completed_days) {sum_carbs}")
+        valid = list(MicronutrientProfile.__dataclass_fields__.keys())
+        for n in valid:
+            wv = micro.get(n, 0.0)
+            dv = sum(daily_trackers[d].micronutrients_consumed.get(n, 0.0) for d in completed_days if d in daily_trackers)
+            if abs(wv - dv) > tol:
+                raise PlannerStateError(f"weekly micro {n}={wv} != sum(completed_days) {dv}")
 
 
 # --- Optional instrumentation (observational only) ---
@@ -229,6 +323,7 @@ def _apply_assignment(
         slots_total=slots_total,
     )
     assignments.append(Assignment(day_index, slot_index, recipe_id, variant_index))
+    _debug_log("assign", day_index=day_index, slot_index=slot_index, recipe_id=recipe_id, variant_index=variant_index)
 
 
 # --- Remove assignment (unwind) ---
@@ -245,9 +340,11 @@ def _remove_assignment(
     profile: PlanningUserProfile,
     completed_days: Optional[Set[int]] = None,
 ) -> None:
-    """Remove one assignment from state. When day was completed, subtract this slot's nutrition from weekly (per-slot so unwind order is correct)."""
+    """Remove one assignment from state. Weekly adjustments happen only at day granularity: when removing from a completed day, subtract full-day nutrition once and uncomplete the day."""
     day_index, slot_index, recipe_id = assignment.day_index, assignment.slot_index, assignment.recipe_id
+    _debug_log("remove", day_index=day_index, slot_index=slot_index, recipe_id=recipe_id)
     tracker = daily_trackers[day_index]
+    D = len(schedule)
     if assignment.variant_index > 0:
         nut = compute_variant_nutrition(recipe, assignment.variant_index, profile)
     else:
@@ -256,17 +353,27 @@ def _remove_assignment(
     slots_total = tracker.slots_total
     new_slots_assigned = tracker.slots_assigned - 1
 
-    # Subtract this slot's nutrition from weekly when the day was completed (symmetrical with _update_weekly_after_day adding full day).
-    # Done per-slot so that reverse-order unwind still subtracts the correct amount (full day = sum of slots).
+    # Per-day contract: if this day was completed, subtract full-day totals from weekly once and uncomplete the day.
     if completed_days is not None and day_index in completed_days:
-        weekly_tracker.weekly_totals = _subtract_nutrition(weekly_tracker.weekly_totals, nut)
+        valid = list(MicronutrientProfile.__dataclass_fields__.keys())
+        kwargs = {k: tracker.micronutrients_consumed.get(k, 0.0) for k in valid}
+        day_micro = MicronutrientProfile(**kwargs) if tracker.micronutrients_consumed else None
+        day_nut = NutritionProfile(
+            tracker.calories_consumed,
+            tracker.protein_consumed,
+            tracker.fat_consumed,
+            tracker.carbs_consumed,
+            micronutrients=day_micro,
+        )
+        weekly_tracker.weekly_totals = _subtract_nutrition(weekly_tracker.weekly_totals, day_nut)
+        _normalize_nutrition_profile(weekly_tracker.weekly_totals)
+        completed_days.discard(day_index)
+        weekly_tracker.days_completed = max(0, weekly_tracker.days_completed - 1)
+        weekly_tracker.days_remaining = D - weekly_tracker.days_completed
+        _recompute_carryover(weekly_tracker, profile, D)
+        _debug_log("day_uncomplete", day_index=day_index)
 
     if new_slots_assigned == 0:
-        if completed_days is not None:
-            completed_days.discard(day_index)
-        weekly_tracker.days_completed = max(0, weekly_tracker.days_completed - 1)
-        weekly_tracker.days_remaining = len(schedule) - weekly_tracker.days_completed
-        _recompute_carryover(weekly_tracker, profile, len(schedule))
         if day_index in daily_trackers:
             del daily_trackers[day_index]
     else:
@@ -399,6 +506,7 @@ def _update_weekly_after_day(
         micronutrients=micro,
     )
     weekly_tracker.weekly_totals = _add_nutrition(weekly_tracker.weekly_totals, day_nut)
+    _normalize_nutrition_profile(weekly_tracker.weekly_totals)
     weekly_tracker.days_completed += 1
     weekly_tracker.days_remaining = D - weekly_tracker.days_completed
     _recompute_carryover(weekly_tracker, profile, D)
@@ -481,6 +589,22 @@ def run_meal_plan_search(
     nutrient_names = list(profile.micronutrient_targets.keys()) or list(MicronutrientProfile.__dataclass_fields__.keys())
     max_daily_achievable = precompute_max_daily_achievable(recipe_pool, nutrient_names, slot_counts)
 
+    if not check_structural_feasibility(profile, schedule, D, max_daily_achievable):
+        if stats is not None and stats.enabled:
+            stats._end_time = time.perf_counter()
+            stats.total_attempts = 0
+        zero_weekly = WeeklyTracker(
+            weekly_totals=NutritionProfile(0.0, 0.0, 0.0, 0.0),
+            days_completed=0,
+            days_remaining=D,
+            carryover_needs={n: 0.0 for n in profile.micronutrient_targets},
+        )
+        report = build_report_fm4(zero_weekly, profile, D, max_daily_achievable)
+        return result_from_failure(
+            "TC-2", "FM-4", report, list(assignments), dict(daily_trackers), 0, 0, None,
+            {"attempts": 0, "backtracks": 0},
+        )
+
     scalable_sources: Optional[Dict[str, List[str]]] = None
     if profile.enable_primary_carb_downscaling:
         # Fail fast on malformed or missing primary carb reference data.
@@ -534,7 +658,7 @@ def run_meal_plan_search(
                     stats._backtrack_depths.append(i - target)
                 backtrack_count += 1
                 i, daily_trackers, weekly_tracker, assignments, cache = _unwind_to(
-                    target, order, daily_trackers, weekly_tracker, assignments, cache,
+                    i, target, order, daily_trackers, weekly_tracker, assignments, cache,
                     completed_days, recipe_by_id, schedule, profile,
                 )
                 continue
@@ -551,6 +675,7 @@ def run_meal_plan_search(
             act_ctx = activity_context(day_slots[slot_index], slot_index, day_slots, next_first, profile.activity_schedule or {})
             is_w = is_workout_slot(act_ctx)
             _apply_assignment(daily_trackers, assignments, day_index, slot_index, recipe_id, recipe, is_w, schedule, variant_index=0)
+            _validate_planner_state(daily_trackers, weekly_tracker, completed_days, D, schedule)
             i += 1
             attempt_count += 1
             if stats is not None and stats.enabled:
@@ -581,7 +706,7 @@ def run_meal_plan_search(
                     stats._backtrack_depths.append(i - target)
                 backtrack_count += 1
                 i, daily_trackers, weekly_tracker, assignments, cache = _unwind_to(
-                    target, order, daily_trackers, weekly_tracker, assignments, cache,
+                    i, target, order, daily_trackers, weekly_tracker, assignments, cache,
                     completed_days, recipe_by_id, schedule, profile,
                 )
                 continue
@@ -628,7 +753,7 @@ def run_meal_plan_search(
                 stats._backtrack_depths.append(i - target)
             backtrack_count += 1
             i, daily_trackers, weekly_tracker, assignments, cache = _unwind_to(
-                target, order, daily_trackers, weekly_tracker, assignments, cache,
+                i, target, order, daily_trackers, weekly_tracker, assignments, cache,
                 completed_days, recipe_by_id, schedule, profile,
             )
             continue
@@ -645,6 +770,7 @@ def run_meal_plan_search(
             variant_index=variant_index,
             variant_nutrition=variant_nutrition,
         )
+        _validate_planner_state(daily_trackers, weekly_tracker, completed_days, D, schedule)
         entry.pointer += 1
         i += 1
         attempt_count += 1
@@ -680,8 +806,10 @@ def run_meal_plan_search(
                 if stats is not None and stats.enabled:
                     stats._backtrack_depths.append(i - target)
                 backtrack_count += 1
+                # origin = slot that completed the day (we already did i += 1 after assignment)
+                origin_i = i - 1 if i > 0 else 0
                 i, daily_trackers, weekly_tracker, assignments, cache = _unwind_to(
-                    target, order, daily_trackers, weekly_tracker, assignments, cache,
+                    origin_i, target, order, daily_trackers, weekly_tracker, assignments, cache,
                     completed_days, recipe_by_id, schedule, profile,
                 )
                 continue
@@ -689,6 +817,8 @@ def run_meal_plan_search(
                 stats.day_runtimes[day_index] = time.perf_counter() - stats._day_starts.get(day_index, stats._start_time or 0)
             _update_weekly_after_day(daily_trackers, weekly_tracker, day_index, schedule, profile, D)
             completed_days.add(day_index)
+            _debug_log("day_complete", day_index=day_index)
+            _validate_planner_state(daily_trackers, weekly_tracker, completed_days, D, schedule)
 
         # Weekly completion (Section 6.6) or single-day success (TC-4)
         if day_index == D - 1:
@@ -712,12 +842,21 @@ def run_meal_plan_search(
                             stats._end_time = time.perf_counter()
                             stats.total_attempts = attempt_count
                         report = build_report_fm4(weekly_tracker, profile, D, max_daily_achievable)
-                        return result_from_failure("TC-2", "FM-4", report, list(assignments), dict(daily_trackers), attempt_count, backtrack_count, sodium_advisory, _stats_dict)
+                        return result_from_failure(
+                            "TC-2", "FM-4", report, list(assignments), dict(daily_trackers),
+                            attempt_count, backtrack_count, sodium_advisory, _stats_dict,
+                            best_effort_plan=list(assignments),
+                            best_effort_daily_trackers=dict(daily_trackers),
+                            best_effort_weekly_tracker=weekly_tracker,
+                            plan_incomplete_reason="Did not meet weekly targets.",
+                        )
                     if stats is not None and stats.enabled:
                         stats._backtrack_depths.append(i - target)
                     backtrack_count += 1
+                    # origin = slot that triggered failure (we already did i += 1 after assigning last slot)
+                    origin_i = i - 1 if i > 0 else 0
                     i, daily_trackers, weekly_tracker, assignments, cache = _unwind_to(
-                        target, order, daily_trackers, weekly_tracker, assignments, cache,
+                        origin_i, target, order, daily_trackers, weekly_tracker, assignments, cache,
                         completed_days, recipe_by_id, schedule, profile,
                     )
                     continue
@@ -785,6 +924,7 @@ def _find_backtrack_target(
 
 
 def _unwind_to(
+    origin_i: int,
     target_i: int,
     order: List[Tuple[int, int]],
     daily_trackers: Dict[int, DailyTracker],
@@ -796,8 +936,33 @@ def _unwind_to(
     schedule: List[List[MealSlot]],
     profile: PlanningUserProfile,
 ) -> Tuple[int, Dict[int, DailyTracker], WeeklyTracker, List[Assignment], Dict[Tuple[int, int], _CandidateCacheEntry]]:
-    """Unwind state to target_i by value: remove target (non-pinned) and all later non-pinned assignments. Pinned never removed."""
+    """Unwind state to target_i.
+
+    Origin is the index where backtrack triggered. Boundary crossing = origin_day > target_day.
+    Cache policy: ALWAYS preserve target slot cache entry (and pointer), invalidate only later slots.
+    Pointer advances only at selection time in main loop.
+    """
+    n = len(order)
+    if origin_i >= n:
+        origin_i = n - 1
+    if origin_i < 0:
+        origin_i = 0
+    assert 0 <= origin_i < len(order), "origin_i must be a valid decision index"
     target_day, target_slot = order[target_i]
+    origin_day, origin_slot = order[origin_i]
+    crossed_day_boundary = origin_day > target_day
+    cache_policy = "preserve_target_invalidate_later" if crossed_day_boundary else "keep_target_pointer"
+    _debug_log(
+        "backtrack",
+        origin_i=origin_i,
+        target_i=target_i,
+        origin_day=origin_day,
+        origin_slot=origin_slot,
+        target_day=target_day,
+        target_slot=target_slot,
+        crossed_day_boundary=crossed_day_boundary,
+        cache_policy=cache_policy,
+    )
     to_remove_list: List[Assignment] = [
         a for a in assignments
         if (a.day_index, a.slot_index) >= (target_day, target_slot) and not _is_pinned(profile, a.day_index, a.slot_index)
@@ -816,14 +981,29 @@ def _unwind_to(
             daily_trackers, weekly_tracker, assignments, a, recipe, is_w, schedule, profile, completed_days
         )
 
-    current_day = to_remove_list[0].day_index if to_remove_list else target_day
-    crossed_day_boundary = target_day < current_day
     cache_cleaned: Dict[Tuple[int, int], _CandidateCacheEntry] = {}
+    target_key = (target_day, target_slot)
     for (d, s), entry in cache.items():
         if (d, s) < (target_day, target_slot):
             cache_cleaned[(d, s)] = entry
-        elif (d, s) == (target_day, target_slot) and not crossed_day_boundary:
-            entry.pointer += 1
+        elif (d, s) == (target_day, target_slot):
+            # ALWAYS preserve target slot cache (and pointer), even across day boundaries.
             cache_cleaned[(d, s)] = entry
+        # (d, s) > (target_day, target_slot): drop (invalidate)
 
+    # Defensive assertion: the backtrack target must still have untried candidates.
+    target_entry = cache_cleaned.get(target_key)
+    if target_entry is not None:
+        _debug_log(
+            "backtrack_target_cache",
+            target_day=target_day,
+            target_slot=target_slot,
+            pointer=target_entry.pointer,
+            remaining=max(0, len(target_entry.ordered) - target_entry.pointer),
+        )
+        assert target_entry.pointer < len(
+            target_entry.ordered
+        ), "backtrack target must have untried candidates"
+
+    _validate_planner_state(daily_trackers, weekly_tracker, completed_days, len(schedule), schedule)
     return target_i, daily_trackers, weekly_tracker, assignments, cache_cleaned

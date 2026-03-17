@@ -309,6 +309,36 @@ def check_fc3_incremental_ul(
     return True
 
 
+# --- Structural feasibility (pre-search) ---
+
+
+def check_structural_feasibility(
+    profile: PlanningUserProfile,
+    schedule: List[List[MealSlot]],
+    D: int,
+    max_daily_achievable: Dict[str, Dict[int, float]],
+) -> bool:
+    """Return False if horizon is structurally impossible for any tracked micronutrient.
+
+    For each tracked nutrient n: if sum_over_days(max_daily_achievable(n, slot_count(day))) < daily_rdi * D,
+    the plan cannot meet weekly RDI (hard FM-4 pre-fail).
+    """
+    tracked = profile.micronutrient_targets
+    if not tracked:
+        return True
+    for n, daily_rdi in tracked.items():
+        if daily_rdi <= 0:
+            continue
+        total_needed = daily_rdi * D
+        max_over_horizon = 0.0
+        for day_index in range(D):
+            slot_count = len(schedule[day_index])
+            max_over_horizon += max_daily_achievable.get(n, {}).get(slot_count, 0.0)
+        if max_over_horizon < total_needed:
+            return False
+    return True
+
+
 # --- FC-4: Cross-day RDI irrecoverability ---
 
 

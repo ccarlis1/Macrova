@@ -16,6 +16,8 @@ from src.planning.planner import plan_meals
 from src.output.formatters import format_result_markdown, format_result_json_string
 from src.providers.local_provider import LocalIngredientProvider
 from src.providers.api_provider import APIIngredientProvider, IngredientResolutionError
+from src.data_layer.upper_limits import UpperLimitsLoader, resolve_upper_limits
+
 
 
 def main():
@@ -125,6 +127,10 @@ def main():
         recipe_pool = convert_recipes(all_recipes, calculator)
         recipe_by_id = {r.id: r for r in recipe_pool}
         planning_profile = convert_profile(user_profile, args.days)
+
+
+        loader = UpperLimitsLoader("data/reference/ul_by_demographic.json")
+        resolved_ul = resolve_upper_limits(loader, demographic="adult_male", overrides=None)
 
         print("Planning meals...", file=sys.stderr)
         result = plan_meals(planning_profile, recipe_pool, args.days)

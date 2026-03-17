@@ -6,7 +6,7 @@
 
 **Version: v0.1.0**
 
-A meal planner that generates **single- or multi-day meal plans** (breakfast, lunch, dinner, plus additional slots) from your schedule and nutrition goals. The current implementation uses a **spec-aligned, phase-based planner** with deterministic backtracking search, **rule-based recipe scoring**, and **structured nutrition calculations** (macros + tracked micronutrients). LLM integration is coming soon.
+A meal planner that generates meal plans (breakfast, lunch, dinner) from your schedule and nutrition goals. The current MVP uses **rule-based recipe scoring** and **structured nutrition calculations**. LLM integration is coming soon.
 
 ---
 
@@ -205,14 +205,230 @@ tests/           # Pytest suite (no network required)
 
 ### Interface Evolution Options
 The final product may feature:
-- Natural language prompts for complex meal planning
-- GUI with drag-and-drop meal scheduling
-- Hybrid approach combining structured inputs with AI flexibility
+### Interface Evolution Options
 
-**Current priority:** Nail the foundational nutrition logic and meal balancing before adding creative AI features.
+The final product may support:
+
+- Natural language prompts for complex meal planning
+- A GUI with drag-and-drop meal scheduling
+- A hybrid approach that combines structured forms with flexible AI-powered inputs
+
+**Current priority:** Establish robust nutrition logic and reliable meal balancing before integrating advanced AI features.
+
+---
+
+## Project Roadmap / Next Steps
+
+### 1. Merge Meal Planner + FoodData Central Integration
+
+A major branch is in progress which connects the new weekly meal planner with the USDA FoodData Central API, and enables micronutrient-based planning.
+
+After a final round of testing, this branch will be merged into `main`, delivering:
+
+- Comprehensive ingredient nutrition sourced from the USDA database
+- Micronutrient-aware meal planning
+- Improved ingredient caching
+- A more realistic and accurate nutrition model for recipes and plans
+
+Before merging, the following validation will be performed:
+
+- Generate meal plans with multiple user profiles
+- Verify macro and micronutrient calculations
+- Ensure ingredient caching and API lookup are consistent
+- Check for regressions in CLI features
+
+Once merged, the **core backend for the planner will be stable** and development will shift to improving the application layer and user experience.
+
+---
+
+### 2. Frontend Development
+
+With the backend solidifying, the next milestone is building a **clean, intuitive frontend** exposing the meal planner’s features.
+
+The focus is not on a perfect UI immediately, but on delivering something simple and usable that effectively demonstrates the app’s core value.
+
+**First steps:** Create basic wireframes to guide frontend development.
+
+---
+
+#### General UX Direction
+
+The interface will be inspired by proven nutrition tools like **Cronometer**, especially in presenting nutrition and ingredient breakdowns—without duplication:
+
+- Clear visibility of nutrient details
+- Quick ingredient entry
+- Fast recipe creation
+
+The UI should prioritize:
+
+- Simplicity
+- Fast data entry
+- Immediate visibility of nutrition totals
+
+---
+
+### 3. Core Interface Components
+
+#### User Profile / Configuration
+
+Users can easily define and modify a **custom profile** with their nutrition targets and preferences.
+
+Features include:
+
+- Editable user profile
+- Ability to update profile attributes at any time
+- Live calculation of derived values (like daily calorie needs)
+
+Profile configuration may cover:
+
+- Daily caloric targets
+- Macro ratios
+- Micronutrient goals
+- Meal timing preferences
+
+Additional settings:
+
+- FoodData Central API key
+- LLM API key (for future AI features)
+
+---
+
+#### Ingredient Search
+
+Ingredient searching utilizes the **FoodData Central API** much like the official USDA site:
+
+1. User searches for an ingredient
+2. Results returned from the API
+3. Selecting a result shows a nutrition preview per 100g
+4. Ingredient can be added to the **local ingredient cache**
+
+Once cached, that ingredient is available for recipes and meal planning.
+
+---
+
+#### Recipe Builder
+
+Recipes are constructed from cached ingredients. Key features:
+
+- Search or select cached ingredients
+- Query the USDA API for uncached ingredients if needed
+- Choose supported units (grams, cups, tbsp, tsp, etc.)
+- Live nutrition totals as you build
+- Ability to set the number of servings
+
+This allows users to:
+
+- Experiment with recipes easily
+- Instantly view both macro and micronutrient totals
+
+---
+
+### 4. Meal Planner Interface
+
+The planner interface is a core feature, focused on **automated meal plan generation** (not just nutrition tracking, as with Cronometer).
+
+**Viewing Meal Plans:**  
+Opening the planner displays the user’s current meal plan for the day.
+
+Possible views:
+
+- Simple daily list
+- Calendar-style display
+
+Each meal entry should show:
+
+- Recipe name
+- Serving size
+- Nutrition summary
+
+---
+
+**Creating a Meal Plan**
+
+Generating a meal plan involves:
+
+1. Setting planning parameters (number of days, meals per day)
+2. Loading the user profile (nutrition targets, meal timing, optional calorie cap)
+3. Selecting recipes from the personal recipe pool (optionally including all)
+4. Running the planner
+
+Results are displayed in a clean summary, with:
+
+- Meals for each day
+- Per-day nutrition totals
+- Weekly totals
+
+---
+
+### 5. Deployment Strategy
+
+Future deployment targets include:
+
+- PC / desktop
+- Android
+- iOS
+
+To be researched:
+
+- Cross-platform frameworks
+- Packaging and distribution methods
+- App store requirements
+- Cost-effective deployment options
+
+The objective: **Easy distribution with minimal maintenance overhead.**
+
+---
+
+### 6. Future Extension: AI Integration
+
+Plans include an **AI-assisted planning tab** within the app.  
+Initially, the frontend will include a placeholder.
+
+This will eventually allow users to connect their **LLM API key**, enabling the system to automate portions of the planning process.
+
+---
+
+### 7. LLM Integration Research
+
+Exploration of AI’s possibilities for automating meal planning.
+
+**Potential capabilities:**
+
+#### Recipe Generation
+
+LLMs could generate new recipes that:
+
+- Meet personal nutrition targets
+- Use only cached (available) ingredients
+- Match desired cuisines or stay within a budget
+
+These generated recipes can:
+
+- Query and add missing ingredients to the cache
+- Construct complete recipe entries automatically
+
+---
+
+#### Planner Assistance
+
+AI could be used to **fill gaps in meal plans**.  
+Workflow example:
+
+1. User selects preferred recipes
+2. Planner builds an initial plan
+3. If gaps remain, AI generates missing meals or recipes
+
+Users could instruct the planner in natural language, e.g.:
+
+- “Keep meals budget friendly”
+- “Focus on Mediterranean food”
+- “Include high protein dinners”
+
+
 
 ---
 
 ## License
 
 This project is licensed under the MIT License—see [LICENSE](LICENSE).
+

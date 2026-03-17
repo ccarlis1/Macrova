@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Load missed-ingredient FDC IDs into the ingredient cache.
+"""Load a list of FDC IDs into the ingredient cache.
 
-Reads (fdc_id, canonical_name) pairs from docs/RECIPE_CORPUS_PIPELINE_REPORT.md
-(Missed Ingredients section), fetches each from the USDA API, maps nutrients,
-and writes a cache entry to .cache/ingredients/.
+Takes a hard-coded list of (fdc_id, canonical_name) pairs in this script,
+fetches each from the USDA API, maps nutrients, and writes a cache entry
+to .cache/ingredients/.
 
 Requires: USDA_API_KEY in environment (or .env). Run from project root.
 
@@ -12,7 +12,6 @@ Usage:
 """
 
 import os
-import re
 import sys
 from pathlib import Path
 
@@ -35,8 +34,9 @@ from src.ingestion.usda_client import USDAClient
 from src.ingestion.nutrient_mapper import NutrientMapper
 
 
-# Fallback: if report parsing fails, use this list (from Missed Ingredients tab)
-MISSED_INGREDIENTS = [
+# List of (fdc_id, canonical_name) pairs to load.
+# Edit this list as needed and re-run the script.
+FDC_INGREDIENTS = [
     (2346404, "sweet potato"),
     (2727579, "spaghetti squash"),
     (169279, "sauerkraut"),
@@ -53,37 +53,9 @@ MISSED_INGREDIENTS = [
 ]
 
 
-def parse_missed_ingredients_from_report() -> list[tuple[int, str]]:
-    """Parse (fdc_id, canonical_name) from RECIPE_CORPUS_PIPELINE_REPORT.md."""
-    report_path = ROOT / "docs" / "RECIPE_CORPUS_PIPELINE_REPORT.md"
-    if not report_path.exists():
-        return []
-    text = report_path.read_text()
-    # Section: "### Missed Ingredients" then lines like "- 2346404 sweet potato"
-    in_section = False
-    pairs = []
-    for line in text.splitlines():
-        if line.strip() == "### Missed Ingredients":
-            in_section = True
-            continue
-        if in_section:
-            if line.strip().startswith("## ") or (line.strip().startswith("### ") and "Missed" not in line):
-                break
-            m = re.match(r"^-\s*(\d+)\s+(.+)$", line.strip())
-            if m:
-                fdc_id = int(m.group(1))
-                canonical_name = m.group(2).strip().lower()
-                pairs.append((fdc_id, canonical_name))
-    return pairs if pairs else []
-
-
 def main() -> None:
-    pairs = parse_missed_ingredients_from_report()
-    if not pairs:
-        pairs = MISSED_INGREDIENTS
-        print("Using embedded missed-ingredients list.")
-    else:
-        print(f"Parsed {len(pairs)} missed ingredients from report.")
+    pairs = FDC_INGREDIENTS
+    print(f"Loading {len(pairs)} FDC ingredients from in-script list.")
 
     try:
         client = USDAClient.from_env()

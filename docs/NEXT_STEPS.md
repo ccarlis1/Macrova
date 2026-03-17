@@ -1,654 +1,825 @@
 # Next Steps
 
-## Separate MVP
-Currently, the scope of the MVP is decent, but I think it should be slightly restructured. The Current MVP scope seems too primitive to be called a unique product. So what I shall do is separate the MVP into two parts, an alpha stage and a true MVP stage, to account for this
+# 1) Frontend Overhaul Roadmap
 
-### Alpha Stage
-	- Completed
+## Phase 1 — Environment Setup
 
-### True MVP (User-Facing Validation)
-1. Refine Data Layer to ensure micronutrient information for an ingredient and all associated data types is integrated
-	1a. Extend data models Ex/ (NutritionProfile, NutritionGoals, UserProfile)
-	1b. Update NutritionCalculator to calculate micronutrients
-	1c. Update NutritionAggregator to aggregate micronutrients
-	1d. Add weekly tracking data structures
-	1e. ✅ Include maximum tolerable intake handling for micronutrients. **IMPLEMENTED**
-		- **Status:** Data structures, reference loading, and daily validation complete
-		- **Key constraint:** ULs are DAILY limits — enforced per-day, never averaged
-		- Weekly tracking does NOT weaken daily UL enforcement
-		- **Components:** `UpperLimits`, `UpperLimitsLoader`, `resolve_upper_limits()`, `validate_daily_upper_limits()`, `ULViolation`
-		- **Tests:** 34 unit tests in `tests/test_upper_limits.py`
-		- **Pending:** Integration with `MealPlanner` (requires Step 1b first)
-	1e-original. Original requirement for reference:
-		- This value should be calculated for every nutrient based on RDIs for each individual
-		- The idea is that when a weekly meal plan is generated, no nutrient should be in the maximum tolerable intake value whatsoever, to avoid risk of poisoning
-		- Most nutrients are exempt from this, however certain upper intake thresholds could be dangerous for some nutrients (Ex. Vitamin A)
-			- For example if multiple recipes generated use liver, this could put the person at risk for vitamin A poisioning. To combat this, the algorithm should filter such combinations out, and that upper tolerable intake should be stored in the data layer.
-		- **Schema (reference + user overrides):**
-			- **Reference:** `data/reference/ul_by_demographic.json` — authoritative daily ULs by demographic (IOM/EFSA). Field names match `MicronutrientProfile`; use `null` for nutrients with no established UL.
-			- **User overrides:** Optional `upper_limits` section in `user_profile.yaml` — same field names; only include nutrients to override. User value overrides reference for that nutrient.
-			- **Resolution:** Look up reference by user demographic (e.g. `adult_male`, `adult_female`, `pregnancy`, `lactation`); merge in user overrides; use result for validation (each day’s total must not exceed daily UL).
-			- See **Upper Tolerable Intake (UL) schema** below for concrete formats.
-## Step 2: Connect Ingredient API (USDA FoodData Central)
-2. Connect ingredient API **IMPLEMENTED**
-	- This is very important because it gives the most accurate description of an ingredients full nutrition array
-	- Also saves the user a ton of bottleneck not having to manually enter all ingredients for a recipe and their corresponding nutrition info
-	- The thought process of no recipe API yet is because its true power is not unlocked without LLM integration, which is a late stage feature, and manually entering recipes is much easier than ingredients
-3. Adjust the meal planner to handle micronutrient totals **IMPLEMENTED**
+### 1. Install Core Tooling
 
-## Step 2: Connect Ingredient API (USDA FoodData Central) **IMPLEMENTED**
+Install the required development tools:
 
-### Purpose
+- Flutter SDK
+- Dart SDK (included with Flutter)
+- Visual Studio Code
+- Flutter & Dart VS Code extensions
 
-This step integrates a **deterministic ingredient lookup pipeline** using the USDA FoodData Central (FDC) API. The goal is to automatically resolve ingredient nutrition data with high accuracy, removing the need for users to manually enter detailed nutrition information for each ingredient.
-
-This step intentionally **does NOT** include a recipe API or advanced NLP parsing. Recipes are user-curated for now. Ingredient accuracy is the foundation that enables later improvements to the meal planner, micronutrient tracking, and scoring logic.
-
-Reference API: USDA FoodData Central
-[https://fdc.nal.usda.gov/api-guide](https://fdc.nal.usda.gov/api-guide)
-
----
-
-### Scope (What This Step Includes)
-
-* Deterministic ingredient lookup by name
-* Retrieval of full macro + micronutrient profiles
-* Unit-aware quantity scaling
-* Internal normalization into app-specific nutrition models
-* Caching and explicit error handling
-
-### Non-Goals (Explicitly Out of Scope)
-
-* Recipe API integration
-* Natural-language recipe parsing
-* Synonym inference or fuzzy matching
-* LLM-assisted ingredient resolution
-
----
-
-## Step 2.1: Ingredient Name Normalization
-
-**Goal:** Prepare parsed ingredient names for reliable API lookup.
-
-Actions:
-
-* Normalize ingredient names (lowercase, trim whitespace)
-* Remove controlled descriptors (e.g. "large", "raw", "fresh")
-* Ensure output is a deterministic string
-
-Output:
-
-* Canonical ingredient name suitable for API search
-
----
-
-## Step 2.2: Ingredient Search (USDA API)
-
-**Goal:** Resolve a canonical ingredient name to a single USDA FDC ID.
-
-Actions:
-
-* Call USDA search endpoint using normalized ingredient name
-* Filter out branded foods
-* Select a single result using deterministic rules (e.g. first non-branded match)
-
-Output:
-
-* Selected `fdcId` for the ingredient
-
-Failure Modes:
-
-* No results found
-* Multiple ambiguous results
-
----
-
-## Step 2.3: Nutrition Data Retrieval
-
-**Goal:** Fetch authoritative nutrition data for the resolved ingredient.
-
-Actions:
-
-* Call USDA food details endpoint using `fdcId`
-* Retrieve macro and micronutrient data
-* Preserve raw values for mapping
-
-Output:
-
-* Raw USDA nutrition payload
-
----
-
-## Step 2.4: Nutrient Mapping
-
-**Goal:** Convert USDA nutrient identifiers into internal schema fields.
-
-Actions:
-
-* Maintain a static mapping table (USDA nutrient ID → internal field name)
-* Ignore nutrients not tracked by the app
-* Convert units where required
-* Default missing nutrients to zero
-
-Output:
-
-* Normalized micronutrient + macronutrient dictionary
-
----
-
-## Step 2.5: Quantity & Unit Scaling
-
-**Goal:** Scale nutrition data to match user-specified quantity and unit.
-
-Actions:
-
-* Define a unit-to-gram conversion table
-* Resolve base serving weight (e.g. 1 large egg = 50g)
-* Multiply nutrition values by scaled factor
-
-Rules:
-
-* Unknown units must raise explicit errors
-* No heuristic guessing
-
-Output:
-
-* Nutrition values adjusted for actual ingredient quantity
-
----
-
-## Step 2.6: NutritionProfile Construction
-
-**Goal:** Produce a clean internal representation used throughout the app.
-
-Actions:
-
-* Populate `NutritionProfile` with scaled values
-* Ensure schema consistency with existing models
-* Strip all USDA-specific fields
-
-Output:
-
-* Fully populated `NutritionProfile`
-
----
-
-## Step 2.7: Caching Layer
-
-**Goal:** Prevent redundant API calls and stabilize tests.
-
-Actions:
-
-* Cache ingredient lookups by normalized name
-* Store resolved `fdcId` and normalized nutrition data
-* Prefer disk-based cache for development and testing
-
----
-
-## Step 2.8: Explicit Error Handling
-
-**Goal:** Ensure predictable failure behavior.
-
-Actions:
-
-* Define structured error types (e.g. INGREDIENT_NOT_FOUND, UNIT_NOT_SUPPORTED)
-* Fail fast on ambiguity or missing data
-* Surface errors to caller without silent fallback
-
----
-
-## Outcome of Step 2
-
-After completing this step, the system will:
-
-* Reliably convert parsed ingredients into accurate nutrition data
-* Support micronutrient-aware meal planning
-* Enable UL validation and weekly aggregation
-* Provide a stable foundation for future recipe APIs and LLM integration
-
-This step unlocks meaningful refinement of the meal planner algorithm in subsequent phases.
-
----
-
-3. Adjust the meal planner to handle micronutrient totals
-	3a. Update scoring to consider micronutrients (priority nutrients)
-	3b. Update meal planner to track daily micronutrient totals
-	3c. Add validation logic for daily micronutrient targets
-	3d. Add custom options for meals in each meal slot for both daily and weekly meal generation
-		- Example: Monday Breakfast Must be a certain recipe
-			- The algorithm cannot ignore this
-4. Implement the backtracking portion of the meal planner to handle multiple days, up to a week **IMPLEMENTED**
-
----
-
-# 4.5. Test multi-day planning with micronutrient carryover
-## Purpose
-
-Prove that the planner correctly handles nutrients that accumulate across days, specifically:
-
-* Weekly totals computed correctly
-* Partial-day progress handled safely
-* Backtracking fully restores micronutrient state
-* Failure modes (FM-2, FM-4, TC-3) remain accurate under carryover pressure
-
-This step is less about performance and more about **cross-day correctness under search stress**.
-
----
-
-# Phase A — Weekly Totals Correctness
-
-## A1. Deterministic happy-path validation
-
-**Goal:** Confirm weekly aggregation is mathematically correct.
-
-### Test shape
-
-* Small D (e.g., 3 or 5)
-* Hand-crafted recipes
-* Known micronutrient sums
-* No backtracking required
-
-### Assertions
-
-For each micronutrient:
+Verify installation:
 
 ```
-weekly_totals[nutrient]
-==
-sum(day_totals[d][nutrient] for d in completed_days)
-```
-
-Also verify:
-
-* no negative values
-* no double counting
-* no missing days
-
-**Why first:** establishes arithmetic trust before stressing search.
-
----
-
-## A2. Partial-day protection (critical edge)
-
-This targets your earlier bug class.
-
-**Goal:** Ensure incomplete days do NOT affect weekly totals.
-
-### Scenario
-
-Construct cases where:
-
-* day starts assignment
-* day never completes
-* search backtracks away
-
-### Assertions
-
-* weekly_totals unchanged
-* completed_days set accurate
-* no subtraction artifacts
-* no negative drift
-
-This is one of the highest-value tests in Step 4.5.
-
----
-
-## A3. Carryover sufficiency tests
-
-**Goal:** Verify weekly RDI logic behaves correctly.
-
-Create three canonical profiles.
-
-### Case 1 — Exact meet
-
-Weekly micronutrients land exactly on prorated RDI.
-
-Expect:
-
-* success (TC-1)
-* no FM-4
-* no warning
-
----
-
-### Case 2 — Marginal deficit
-
-Weekly slightly below RDI.
-
-Expect:
-
-* FM-4 triggered
-* “marginal vs structural” classification correct
-* closest plan reported properly
-
----
-
-### Case 3 — Structural deficit
-
-Impossible to meet even with all recipes.
-
-Expect:
-
-* early FM-4 or TC-3
-* correct diagnostic messaging
-* search does not thrash excessively
-
----
-
-# Phase B — Edge Case Stress
-
-Now you intentionally stress the carryover math.
-
----
-
-## B1. Front-loaded surplus
-
-**Pattern:** early days massively oversupply a micronutrient.
-
-**Goal:** Ensure:
-
-* no artificial caps
-* no overflow/precision issues
-* later days not forced incorrectly
-
-Watch for:
-
-* numeric overflow
-* pruning mistakes
-* incorrect “already satisfied” logic
-
----
-
-## B2. Late recovery scenario
-
-**Pattern:**
-
-* early days deficient
-* only late recipes can fix weekly RDI
-
-This is a classic backtracking trap.
-
-**Goal:** Verify search can recover.
-
-Assertions:
-
-* planner does not prematurely fail FM-4
-* backtracking explores recovery paths
-* best-plan reporting correct if still infeasible
-
----
-
-## B3. Knife-edge feasibility
-
-Design a case where:
-
-* exactly one valid weekly combination exists
-* requires deep backtracking
-
-This validates:
-
-* cross-day reasoning
-* pruning correctness
-* search completeness (within budget)
-
----
-
-# Phase C — Backtracking Integrity (High Value)
-
-This is the most important part of Step 4.5.
-
----
-
-## C1. Micronutrient state restoration
-
-Instrument snapshots.
-
-### During search
-
-At each backtrack:
+flutter doctor
 
 ```
-snapshot_before
-apply
-recurse
-undo
-snapshot_after
+
+Resolve any reported issues before continuing.
+
+---
+
+### 2. Create the Project
+
+Create the base Flutter project:
+
+```
+flutter create meal_planner_app
+cd meal_planner_app
+
 ```
 
-### Assert
+Recommended platforms to enable:
 
 ```
-snapshot_before == snapshot_after
+flutter config --enable-web
+flutter config --enable-windows-desktop
+flutter config --enable-macos-desktop
+flutter config --enable-linux-desktop
+
 ```
 
-for:
+Run the starter app to confirm setup:
 
-* daily trackers
-* weekly tracker
-* completed_days
-* sodium totals
+```
+flutter run
 
-If this fails, you have silent corruption.
-
----
-
-## C2. Pinned interaction with carryover
-
-Combine two hard features.
-
-**Scenario:**
-
-* pinned meals provide key micronutrients
-* backtracking occurs around them
-
-Verify:
-
-* pinned nutrition never removed
-* weekly totals remain stable
-* FM-3 reporting still correct
-
----
-
-## C3. Deep backtrack scenario
-
-Force:
-
-* many assignments
-* multiple day completions
-* then deep unwind
-
-Watch for:
-
-* weekly totals drift
-* completed_days corruption
-* double subtraction
-
-This catches subtle accounting bugs.
-
----
-
-# Phase D — Failure Mode Validation Under Carryover
-
-Now verify your Phase 10 work holds under pressure.
-
----
-
-## D1. FM-2 with weekly context
-
-Create cases where:
-
-* daily macros fine
-* weekly micronutrients fail
-
-Verify report includes:
-
-* specific deficient micronutrients
-* achieved vs prorated RDI
-* closest-to-valid plan
-
----
-
-## D2. FM-4 classification accuracy
-
-Test both:
-
-* marginal deficiency
-* structural impossibility
-
-Ensure classification logic is correct and stable.
-
----
-
-## D3. TC-3 exhaustion under micronutrient pressure
-
-Force search exhaustion due to micronutrient coupling.
-
-Verify report includes:
-
-* attempts/backtracks
-* best plan
-* validation failures
-* non-exhaustive indication
-
----
-
-# Phase E — Statistical Confidence Pass (light fuzz)
-
-Before moving to heavy fuzzing.
-
-Run ~200–500 randomized tests with:
-
-* varied D
-* varied recipe pools
-* random pins
-* random micronutrient tightness
-
-Track:
-
-* invariant violations
-* unexpected FM distributions
-* runtime spikes
-
-This is your early warning system.
-
----
-
-# Exit Criteria for Step 4.5
-
-You are ready to move on when:
-
-* weekly totals always match summed days
-* incomplete days never affect weekly totals
-* backtracking perfectly restores micronutrient state
-* FM-2 / FM-4 reports remain accurate
-* pinned assignments remain invariant
-* knife-edge feasibility cases succeed
-* no negative or drifting totals observed
-* randomized pass shows zero invariant violations
-
----
-
-5. Create a simple, lightweight frontend portion of the app, mainly for open testing purposes. No web integration just yet
-
----
-
-## CURRENT STEP: 4.5
-## Upper Tolerable Intake (UL) schema
-
-Field names match `MicronutrientProfile` / `WeeklyNutritionTargets`. ULs are **daily** values (IOM/EFSA). Validation: each day's total must not exceed the daily UL for that nutrient.
-
-### 1. Reference: `data/reference/ul_by_demographic.json`
-
-Authoritative daily ULs by demographic. Source: IOM DRI tables (e.g. NIH ODS) or EFSA. Use `null` for nutrients with no established UL (e.g. vitamin K, thiamine, riboflavin, B12, potassium from food).
-
-```json
-{
-  "source": "IOM DRI",
-  "note": "Values are DAILY upper limits. Units match MicronutrientProfile.",
-  "demographics": {
-    "adult_male": {
-      "vitamin_a_ug": 3000,
-      "vitamin_c_mg": 2000,
-      "vitamin_d_iu": 4000,
-      "vitamin_e_mg": 1000,
-      "vitamin_k_ug": null,
-      "b1_thiamine_mg": null,
-      "b2_riboflavin_mg": null,
-      "b3_niacin_mg": 35,
-      "b5_pantothenic_acid_mg": null,
-      "b6_pyridoxine_mg": 100,
-      "b12_cobalamin_ug": null,
-      "folate_ug": 1000,
-      "calcium_mg": 2500,
-      "copper_mg": 10,
-      "iron_mg": 45,
-      "magnesium_mg": 350,
-      "manganese_mg": 11,
-      "phosphorus_mg": 4000,
-      "potassium_mg": null,
-      "selenium_ug": 400,
-      "sodium_mg": null,
-      "zinc_mg": 40,
-      "fiber_g": null,
-      "omega_3_g": null,
-      "omega_6_g": null
-    },
-    "adult_female": {
-      "vitamin_a_ug": 3000,
-      "vitamin_c_mg": 2000,
-      "vitamin_d_iu": 4000,
-      "vitamin_e_mg": 1000,
-      "vitamin_k_ug": null,
-      "b3_niacin_mg": 35,
-      "b6_pyridoxine_mg": 100,
-      "folate_ug": 1000,
-      "calcium_mg": 2500,
-      "copper_mg": 10,
-      "iron_mg": 45,
-      "magnesium_mg": 350,
-      "manganese_mg": 11,
-      "phosphorus_mg": 4000,
-      "selenium_ug": 400,
-      "zinc_mg": 40
-    },
-    "pregnancy": {},
-    "lactation": {}
-  }
-}
 ```
 
-- Extend `demographics` with more keys as needed (e.g. `pregnancy`, `lactation`, age bands).
-- Omitted fields in a demographic can default to `null` (no UL).
+---
 
-### 2. User overrides: `upper_limits` in `user_profile.yaml`
+## Phase 2 — Core Dependencies
 
-Optional. Only include nutrients the user (or clinician) wants to override. Same field names and units as `MicronutrientProfile`. These override the reference value for that user.
+Add the core dependencies required for the architecture.
 
-```yaml
-# user_profile.yaml (excerpt)
+### State Management
 
-nutrition_goals:
-  daily_calories: 2400
-  daily_protein_g: 138
-  daily_fat_g: { min: 65, max: 85 }
-  # ... other goals ...
+```
+riverpod
+flutter_riverpod
 
-# OPTIONAL: Override upper tolerable intake (UL) for specific nutrients.
-# Only list nutrients to override; others use reference UL from ul_by_demographic.json.
-# Units match MicronutrientProfile (e.g. vitamin_a_ug, vitamin_d_iu, iron_mg).
-# Example: clinician sets lower vitamin A cap due to liver concern.
-upper_limits:
-  vitamin_a_ug: 2000
-  # vitamin_d_iu: 2000
-  # folate_ug: 800
 ```
 
-### 3. Resolution and validation
+Purpose:
 
-1. **Resolve ULs for user:** Load reference ULs for the user's demographic (from profile, e.g. `demographic: adult_male`). Override any nutrient present in `upper_limits` with the user's value.
-2. **Validation (weekly plan):** For each day in the plan, for each nutrient that has a non-null UL, ensure `day_total[nutrient] <= resolved_ul[nutrient]`. If any day exceeds, fail or filter that combination (e.g. avoid multiple high–vitamin A meals like liver).
-3. **Data layer:** Add a model (e.g. `UpperLimits` or `DailyNutritionLimits`) with the same field names as `MicronutrientProfile`; populate from reference + user overrides for the active user.
+- application state
+- reactive UI updates
+- dependency injection
 
 ---
 
-## CURRENT STEP: 3
+### Routing
+
+```
+go_router
+
+```
+
+Purpose:
+
+- structured navigation between screens
+- deep linking support
+- cleaner route definitions
+
+---
+
+### Local Database
+
+```
+isar
+isar_flutter_libs
+
+```
+
+Purpose:
+
+- local ingredient cache
+- recipe storage
+- meal plan storage
+- offline functionality
+
+---
+
+### Networking
+
+```
+dio
+
+```
+
+Purpose:
+
+- HTTP client
+- backend API communication
+- FoodData Central queries
+
+---
+
+### Charts / Visualization
+
+```
+fl_chart
+
+```
+
+Purpose:
+
+- macro distribution charts
+- micronutrient RDA bars
+- daily nutrition visualizations
+
+---
+
+### Dev Tools
+
+```
+build_runner
+isar_generator
+riverpod_generator
+
+```
+
+Purpose:
+
+- code generation
+- typed database models
+- Riverpod providers
+
+---
+
+## Phase 3 — Project Structure
+
+Create the following project structure:
+
+```
+lib/
+
+core/
+    api_client.dart
+    constants.dart
+    nutrition_calculator.dart
+
+models/
+    ingredient.dart
+    recipe.dart
+    recipe_ingredient.dart
+    meal_plan.dart
+    user_profile.dart
+
+database/
+    ingredient_db.dart
+    recipe_db.dart
+    meal_plan_db.dart
+
+services/
+    ingredient_service.dart
+    recipe_service.dart
+    planner_service.dart
+
+providers/
+    ingredient_provider.dart
+    recipe_provider.dart
+    planner_provider.dart
+    profile_provider.dart
+
+screens/
+    dashboard_screen.dart
+    profile_screen.dart
+    ingredient_search_screen.dart
+    recipe_builder_screen.dart
+    recipe_library_screen.dart
+    planner_screen.dart
+    meal_plan_view_screen.dart
+
+widgets/
+    ingredient_list.dart
+    ingredient_search_bar.dart
+    nutrition_table.dart
+    macro_chart.dart
+    recipe_card.dart
+    recipe_ingredient_row.dart
+
+```
+
+Goal:
+
+- separate UI, data, services, and state logic.
+
+---
+
+## Phase 4 — Data Models
+
+Define the core domain models.
+
+### UserProfile
+
+Stores:
+
+- calorie targets
+- macro ratios
+- micronutrient goals
+- meal timing preferences
+- API keys
+
+---
+
+### Ingredient
+
+Fields:
+
+- id
+- name
+- nutrient values
+- measurement conversions
+- source (FoodData Central)
+
+---
+
+### Recipe
+
+Fields:
+
+- id
+- name
+- servings
+- ingredient list
+- calculated nutrients
+
+---
+
+### RecipeIngredient
+
+Fields:
+
+- ingredient reference
+- quantity
+- unit
+- converted gram weight
+
+---
+
+### MealPlan
+
+Fields:
+
+- date range
+- meals per day
+- recipes assigned to meals
+- daily nutrient totals
+
+---
+
+## Phase 5 — Local Database Implementation
+
+Initialize the Isar database.
+
+Collections to implement:
+
+```
+ingredients
+recipes
+mealPlans
+userProfiles
+
+```
+
+Responsibilities:
+
+Ingredient DB
+
+- store cached USDA ingredients
+
+Recipe DB
+
+- store created recipes
+
+Meal Plan DB
+
+- store generated plans
+
+---
+
+## Phase 6 — API Layer
+
+Create a centralized HTTP client.
+
+File:
+
+```
+core/api_client.dart
+
+```
+
+Use the Dio client to implement API services:
+
+Ingredient Service
+
+Responsibilities:
+
+- search FoodData Central
+- fetch nutrient data
+- convert API responses to Ingredient models
+
+Planner Service
+
+Responsibilities:
+
+- send recipe pool
+- send user nutrition targets
+- receive generated meal plans
+
+---
+
+## Phase 7 — State Management
+
+Implement Riverpod providers.
+
+Providers should exist for:
+
+IngredientProvider
+
+- ingredient search
+- cached ingredients
+- ingredient loading state
+
+RecipeProvider
+
+- recipe creation
+- recipe editing
+- recipe library
+
+PlannerProvider
+
+- generate meal plans
+- store planner results
+
+ProfileProvider
+
+- user nutrition settings
+
+---
+
+## Phase 8 — Core Screens
+
+Implement screens in the following order.
+
+---
+
+### 1. Profile Screen
+
+Features:
+
+- editable nutrition targets
+- macro ratio configuration
+- micronutrient goals
+- API key entry
+- live calorie calculation
+
+---
+
+### 2. Ingredient Search Screen
+
+Flow:
+
+User searches ingredient  
+→ API query  
+→ result list  
+→ nutrition preview  
+→ add to local ingredient cache
+
+Components:
+
+- search bar
+- result list
+- ingredient preview card
+
+---
+
+### 3. Recipe Builder
+
+Core interactive screen.
+
+Features:
+
+- search cached ingredients
+- add ingredients
+- choose quantity and units
+- live nutrition totals
+- set servings
+
+Components:
+
+- ingredient selector
+- ingredient rows
+- nutrition totals panel
+
+---
+
+### 4. Recipe Library
+
+Features:
+
+- list of created recipes
+- recipe cards
+- recipe editing
+- recipe deletion
+
+---
+
+### 5. Meal Planner Screen
+
+User defines planner parameters:
+
+- number of days
+- meals per day
+- recipe pool
+
+Planner request is sent to backend.
+
+---
+
+### 6. Meal Plan View Screen
+
+Displays generated plan:
+
+- meals per day
+- recipes assigned to each meal
+- daily nutrition totals
+- weekly totals
+
+Possible views:
+
+- daily list
+- calendar-style planner
+
+---
+
+## Phase 9 — Nutrition Visualization
+
+Use fl_chart to display:
+
+Macro Distribution
+
+- protein
+- fat
+- carbohydrates
+
+Micronutrient Coverage
+
+- % of RDA per nutrient
+
+Calorie Progress
+
+- target vs consumed
+
+---
+
+## Phase 10 — Offline Support
+
+Implement local-first behavior.
+
+Workflow:
+
+Ingredient Search  
+→ API request  
+→ store ingredient in Isar
+
+Recipe Builder  
+→ loads cached ingredients
+
+Meal Planner  
+→ runs even if API unavailable (when possible)
+
+---
+
+## Phase 11 — Testing
+
+Test the following flows:
+
+Ingredient caching  
+Recipe creation  
+Nutrition calculations  
+Meal plan generation  
+Offline usage
+
+
+
+## Phase 12 — Deployment Targets
+
+Build outputs from the same codebase:
+
+Web PWA
+
+```
+flutter build web
+
+```
+
+Desktop Apps
+
+```
+flutter build windows
+flutter build macos
+flutter build linux
+
+```
+
+Mobile Apps
+
+```
+flutter build apk
+flutter build ios
+
+```
+
+---
+
+## Phase 13 — Future Enhancements
+
+Potential improvements:
+
+- AI recipe generation
+- automatic grocery list generation
+- nutrition optimization planner
+- cloud sync
+- multi-device support
+- user accounts
+
+---
+
+## Development Philosophy
+
+Focus on:
+
+- simple interfaces
+- fast data entry
+- instant nutrition visibility
+- reliable meal plan generation
+
+UI polish can be improved after core functionality is stable.
+
+---
+
+# 3) Proposal: Improve Planner Branching Stability via Range-Based Feasibility (FC-1 Redesign)
+
+## Background
+
+Recent diagnostics of TC-3 revealed that the planner often encounters **branching factor = 1 at the final slot of each day**.
+
+Example constraint funnel:
+
+```
+Slot (0,0): 33 → 16 → 15
+Slot (0,1): 33 → 29 → 25
+Slot (0,2): 33 → 29 → 25
+Slot (0,3): 25 → 1
+
+```
+
+The final slot collapses to a **single viable candidate** because **FC-1 (macro feasibility)** enforces an **exact-fit constraint (±10%) at every slot**.
+
+This creates several problems:
+
+```
+• Very fragile search trees
+• Forced recipe choices at the final slot
+• Frequent cross-day backtracking
+• High sensitivity to small constraint changes
+
+```
+
+Even though the search algorithm is correct, this constraint design **over-prunes the search space too early**.
+
+---
+
+## Root Cause
+
+The planner currently performs **point feasibility checks**:
+
+```
+current_macro + recipe_macro must be within ±10% of target
+
+```
+
+However, early slots should not enforce exact fits because **future slots still exist to adjust totals**.
+
+Constraint solvers normally perform **range feasibility checks** instead of point checks during partial assignments.
+
+---
+
+## Proposed Change
+
+Replace **point-based FC-1 checks** with **range-based feasibility checks** for all non-final slots.
+
+### Current Behavior
+
+```
+if current_total + recipe_value not within target ± tolerance:
+    reject candidate
+
+```
+
+### Proposed Behavior
+
+Evaluate whether the remaining slots could still correct the totals:
+
+```
+current_total + recipe_value + max_remaining ≥ target_min
+current_total + recipe_value + min_remaining ≤ target_max
+
+```
+
+Where:
+
+```
+max_remaining = best possible nutrients from remaining slots
+min_remaining = lowest possible nutrients from remaining slots
+
+```
+
+This ensures that a candidate is rejected **only if the final target is mathematically unreachable**.
+
+---
+
+## Example
+
+Target daily calories:
+
+```
+2000 ± 10%  →  [1800, 2200]
+
+```
+
+Current state after lunch:
+
+```
+current = 1100
+slots remaining = 1
+candidate dinner = 900 calories
+
+```
+
+### Current logic
+
+```
+1100 + 900 = 2000 → OK
+
+```
+
+But many candidates fail unnecessarily:
+
+```
+1100 + 850 = 1950 → OK
+1100 + 800 = 1900 → OK
+1100 + 700 = 1800 → OK
+1100 + 650 = 1750 → REJECT
+
+```
+
+### Proposed logic
+
+Check if the final target range is still reachable:
+
+```
+1100 + candidate + remaining_range overlaps [1800,2200]
+
+```
+
+This allows **multiple candidates instead of one**, dramatically improving branching.
+
+---
+
+## Expected Benefits
+
+### Larger Branching Factor
+
+Final slot will no longer collapse to a single candidate.
+
+Typical branching:
+
+```
+current: 1 candidate
+expected: 4–10 candidates
+
+```
+
+---
+
+### Reduced Backtracking
+
+Because early slots will not over-constrain the day.
+
+Expected improvement:
+
+```
+50–90% reduction in backtracking depth
+
+```
+
+---
+
+### Improved Search Stability
+
+The planner will become **less sensitive to small changes in recipe pools** or nutrient targets.
+
+---
+
+## Implementation Outline
+
+1. Modify FC-1 macro feasibility logic.
+2. Compute remaining slot bounds:
+
+```
+min_remaining
+max_remaining
+
+```
+
+1. Replace point checks with range feasibility checks.
+2. Preserve the existing **exact-fit validation at day completion**.
+
+Exact-fit validation remains necessary to ensure the final plan respects tolerances.
+
+---
+
+## Alternative / Complementary Improvements
+
+The following improvements may further enhance planner performance:
+
+### Slot Ordering (Fail-First Heuristic)
+
+Schedule the **most constrained slot first**, such as dinner.
+
+```
+dinner → lunch → breakfast
+
+```
+
+---
+
+### Recipe Value Ordering
+
+Prioritize recipes that contribute strongly toward remaining nutrient deficits.
+
+Example:
+
+```
+iron deficit → try high-iron recipes first
+
+```
+
+---
+
+### Adaptive Tolerance
+
+Allow wider tolerances in early slots:
+
+```
+slot 0 → ±40%
+slot 1 → ±30%
+slot 2 → ±20%
+slot 3 → ±10%
+
+```
+
+---
+
+## Risks
+
+Low.
+
+The change **does not weaken final plan correctness**, because final validation still enforces:
+
+```
+target ± tolerance
+
+```
+
+The modification only prevents premature pruning.
+
+---
+
+# Success Criteria
+
+The change is successful if:
+
+```
+• TC-3 passes consistently
+• branching factor at final slots > 1
+• backtracking depth decreases significantly
+• valid plans remain unchanged
+
+```
+
+---
+
+## Priority
+
+**High**
+
+This change will substantially improve the planner’s robustness and scalability as more recipes and constraints are added.

@@ -6,7 +6,7 @@
 
 **Version: v0.1.0**
 
-A meal planner that generates daily meal plans (breakfast, lunch, dinner) from your schedule and nutrition goals. The current MVP uses **rule-based recipe scoring** and **structured nutrition calculations**. LLM integration is coming soon.
+A meal planner that generates **single- or multi-day meal plans** (breakfast, lunch, dinner, plus additional slots) from your schedule and nutrition goals. The current implementation uses a **spec-aligned, phase-based planner** with deterministic backtracking search, **rule-based recipe scoring**, and **structured nutrition calculations** (macros + tracked micronutrients). LLM integration is coming soon.
 
 ---
 
@@ -62,14 +62,17 @@ No API key or network access is required; USDA-dependent tests use mocks.
 
 ---
 
-## Current state (MVP)
+## Current state (planner)
 
-The app recommends **three meals per day** (breakfast, lunch, dinner) from your recipe list. Ingredient nutrition is provided by a **provider abstraction** (local JSON or USDA API). In practice:
+The planner recommends meals over a **planning horizon of 1–7 days** from your recipe list. Ingredient nutrition is provided by a **provider abstraction** (local JSON or USDA API), and a phase-based planner enforces macro and micronutrient constraints. In practice:
 
-- **User profile:** Daily calories, protein, fat range, carbs, meal times, and busyness (cooking-time limits).
-- **Recipe scoring:** Nutrition fit, cooking time vs schedule, preferences (likes/dislikes/allergies), and simple micronutrient scoring.
-- **Ingredient nutrition:** Either a **local JSON** ingredient DB (default) or the **USDA FoodData Central API** (optional, `--ingredient-source api` and `USDA_API_KEY`).
-- **Output:** Structured daily plan with per-meal and daily nutrition, adherence to goals, and warnings.
+- **User profile:** Daily calories, protein, fat range, carbs, schedule (per-day `MealSlot` lists), activity context, excluded ingredients, pinned assignments, optional `max_daily_calories`, and optional micronutrient targets / upper limits.
+- **Recipe scoring:** Nutrition fit, cooking time vs schedule, preferences (likes/dislikes/allergies via exclusions), and micronutrient contribution, via a composite score and deterministic ordering.
+- **Ingredient nutrition:** Either a **local JSON** ingredient DB (default) or the **USDA FoodData Central API** (optional, `--ingredient-source api` and `USDA_API_KEY`), funneled through a caching and normalization pipeline into internal `NutritionProfile` objects (macros + `MicronutrientProfile`).
+- **Planner engine:** Phase 0–7 pipeline under `src/planning/`, with hard constraints, forward-check constraints, multi-day feasibility checks, and backtracking search (`plan_meals` / `run_meal_plan_search`).
+- **Output:** Structured daily and (when D > 1) weekly view with per-meal, per-day, and cross-day nutrition, adherence to goals, and warnings/failure modes.
+
+For a deeper architectural overview, see **`docs/planner_architecture.md`** and **`docs/MEALPLAN_SPECIFICATION_v1.md`**.
 
 **Interfaces:** CLI (`plan_meals.py` / `python3 -m src.cli`) and an optional **REST API** (FastAPI server in `src/api/server.py`) for programmatic use.
 

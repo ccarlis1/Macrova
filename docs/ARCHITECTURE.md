@@ -56,13 +56,14 @@ The Nutrition Agent is a modular system that generates personalized meal recomme
 ### 5. Planning Layer
 **Purpose**: Generate meal plans considering all constraints
 
-- **Unified planner engine (phase7)**: Canonical search engine for meal plan generation. Deterministic backtracking search over slot assignments; validates constraints (macros, cooking time, exclusions, upper limits) and returns a single result type.
-- **MealPlanResult**: Single result type for both success and failure. Includes `success`, `termination_code`, `plan` (list of `Assignment`), `daily_trackers`, `weekly_tracker` (when D > 1), `warning`, `report`, `stats`.
-- **Multi-day planning**: Planning horizon of 1–7 days. Schedule is propagated via `PlanningUserProfile.schedule` (list of days, each day a list of `MealSlot`). Weekly totals and tracker included only when days > 1.
-- **Provider abstraction**: Ingredient resolution is delegated to a provider (local or API). Entry points call `extract_ingredient_names`, then `provider.resolve_all`, before building `NutritionCalculator` and converting recipes. No API calls during planning.
+- **Unified planner engine (phases 0–7)**: Canonical search engine for meal plan generation. Deterministic backtracking search over `(day, slot)` assignments; validates layered constraints (macros, micronutrient RDIs, daily ULs, cooking time, exclusions, calorie ceilings) and returns a single result type.
+- **MealPlanResult**: Single result type for both success and failure. Includes `success`, `termination_code`, `plan` (list of `Assignment`), `daily_trackers`, `weekly_tracker` (when D > 1), `warning` / sodium advisory, `report`, `stats`.
+- **Multi-day planning**: Planning horizon of 1–7 days. Schedule is propagated via `PlanningUserProfile.schedule` (list of days, each day a list of `MealSlot`). Weekly totals and tracker are maintained when days > 1, with carryover of micronutrient deficits.
+- **Constraint system**: Hard constraints (HC) and forward-check constraints (FC) implemented across `phase2_constraints`, `phase3_feasibility`, and `phase6_candidates`, plus daily and weekly validation in `phase7_search` (FM-1…FM-5 failure modes).
+- **Provider abstraction**: Ingredient resolution is delegated to a provider (local or API). Entry points call `extract_ingredient_names`, then `provider.resolve_all`, before building `NutritionCalculator` and converting recipes. No API calls occur during planning; all ingredient lookups are completed up front.
 - **Conversion layer**: `convert_profile` (UserProfile → PlanningUserProfile), `convert_recipes` (Recipe + NutritionCalculator → PlanningRecipe), `extract_ingredient_names` (Recipe list → sorted ingredient names).
-- **Schedule Handler**: Time constraints and busyness levels (1–4 scale) represented as `MealSlot` per meal type (breakfast, lunch, dinner, snack).
-- **Meal Prep Integrator**: Factor in pre-planned meals (Phase 5.4: post-MVP)
+- **Schedule Handler**: Time constraints and busyness levels (1–4 scale) represented as `MealSlot` per meal type (breakfast, lunch, dinner, snack), with optional activity context for workout-aware slots.
+- **Meal Prep Integrator**: Factor in pre-planned meals (Phase 5.4: post-MVP, not yet implemented in code)
 
 ### 6. Output Layer
 **Purpose**: Format and structure final recommendations

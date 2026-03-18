@@ -1,5 +1,6 @@
 from unittest.mock import Mock, patch
 
+import requests
 import pytest
 
 from src.config.llm_settings import LLMSettings
@@ -157,4 +158,36 @@ def test_rate_limit_error_after_retries():
 
     assert exc.value.error_code == "MAX_RETRIES_EXCEEDED_RATE_LIMIT"
     assert session.post.call_count == 2
+
+
+def test_generate_json_retries_on_timeout_then_succeeds():
+    settings = LLMSettings(
+        api_key="TEST_API_KEY",
+        model="test-model",
+        timeout_seconds=5.0,
+        max_retries=2,
+        rate_limit_qps=1000.0,
+        enabled=True,
+    )
+
+    session = Mock()
+    session.post.side_effect = [
+        requests.Timeout("timeout"),
+        DummyResponse(
+            200,
+            {"choices": [{"message": {"content": '{"ok": true}'}}]},
+        ),
+    ]
+
+    client = LLMClient(settings, base_url="http://example.com", session=session)
+    with patch("src.llm.client.time.sleep") as sleep_mock:
+        result = client.generate_json(
+            system_prompt="system",
+            user_prompt="user",
+            schema_name="RecipeDraft",
+        )
+
+    assert result == {"ok": True}
+    assert session.post.call_count == 2
+    assert sleep_mock.call_count >= 1
 

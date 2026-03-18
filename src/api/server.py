@@ -1,6 +1,8 @@
 """FastAPI server for the Nutrition Agent meal planning pipeline."""
 
-from typing import Any, Dict, List, Optional
+import json
+import sys
+from typing import Any, Dict, List, Literal, Optional
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
@@ -16,7 +18,7 @@ from src.providers.local_provider import LocalIngredientProvider
 from src.nutrition.calculator import NutritionCalculator
 from src.planning.converters import convert_recipes, convert_profile, extract_ingredient_names
 from src.planning.planner import plan_meals
-from src.planning.orchestrator import plan_with_llm_feedback
+from src.planning.orchestrator import LLMPlanningModeError, plan_with_llm_feedback
 from src.output.formatters import format_result_json
 from src.ingestion.usda_client import USDAClient
 from src.ingestion.ingredient_cache import CachedIngredientLookup
@@ -31,11 +33,17 @@ from src.llm.ingredient_matcher import (
     match_ingredient_queries,
     validate_matches,
 )
+from src.llm.schemas import BudgetLevel, DietaryFlag, PrepTimeBucket
 from src.data_layer.user_profile import user_profile_from_planner_config
+from src.llm.tag_filter import filter_recipe_ids_by_preferences
+from src.llm.recipe_tagger import tag_recipes
+from src.llm.tag_repository import load_recipe_tags
+from src.llm.tag_repository import upsert_recipe_tags
 
 
 recipes_path = "data/recipes/recipes.json"
 ingredients_path = "data/ingredients/custom_ingredients.json"
+DEFAULT_TAG_PATH = "data/recipes/recipe_tags.json"
 
 app = FastAPI(title="Nutrition Agent API")
 
@@ -72,10 +80,171 @@ class PlanRequest(BaseModel):
     ingredient_source: str = Field(default="local", pattern="^(local|api)$")
     micronutrient_goals: Optional[Dict[str, float]] = None
 
+    # Optional tag-based recipe pool filtering (deterministic).
+    cuisine: Optional[List[str]] = None
+    cost_level: Optional[BudgetLevel] = None
+    prep_time_bucket: Optional[PrepTimeBucket] = None
+    dietary_flags: Optional[List[DietaryFlag]] = None
+    recipe_tags_path: Optional[str] = None
+
+    # Planner behavior selection:
+    # - `deterministic`: never call the LLM planner feedback loop
+    # - `assisted`: use the LLM feedback loop using normal cache behavior
+    # - `assisted_cached`: deterministic strict mode on cache miss
+    # - `assisted_live`: bypass feedback cache and generate drafts live
+    planning_mode: Optional[
+        Literal["deterministic", "assisted", "assisted_cached", "assisted_live"]
+    ] = None
+
 
 class PlanFromTextRequest(BaseModel):
     prompt: str = Field(..., min_length=1)
     ingredient_source: str = Field(default="local", pattern="^(local|api)$")
+
+    # Optional tag-based recipe pool filtering overrides.
+    cuisine: Optional[List[str]] = None
+    cost_level: Optional[BudgetLevel] = None
+    prep_time_bucket: Optional[PrepTimeBucket] = None
+    dietary_flags: Optional[List[DietaryFlag]] = None
+    recipe_tags_path: Optional[str] = None
+
+    # Planner behavior selection parity with `/api/plan`.
+    planning_mode: Optional[
+        Literal["deterministic", "assisted", "assisted_cached", "assisted_live"]
+    ] = None
+
+
+def _normalize_tag_pref_value(value: Any) -> Any:
+    """Normalize incoming tag preference values to plain JSON types.
+
+    Keeps tag filtering deterministic and compatible with enum-backed
+    Pydantic values.
+    """
+
+    if value is None:
+        return None
+
+    # Pydantic enums (BudgetLevel/PrepTimeBucket/DietaryFlag) expose `.value`.
+    if hasattr(value, "value"):
+        try:
+            return getattr(value, "value")
+        except Exception:
+            pass
+
+    return value
+
+
+def _extract_tag_preferences(obj: Any) -> Dict[str, Any]:
+    """Extract tag filter preferences from a request-like object.
+
+    Returns an empty dict when no explicit preferences are provided.
+    """
+
+    cuisine = getattr(obj, "cuisine", None)
+    cost_level = getattr(obj, "cost_level", None)
+    prep_time_bucket = getattr(obj, "prep_time_bucket", None)
+    dietary_flags = getattr(obj, "dietary_flags", None)
+
+    # Treat "explicitly requested" as non-empty values only.
+    preferences: Dict[str, Any] = {}
+    if cuisine is not None:
+        # Allow `cuisine` to be either a single string or a list of strings.
+        if isinstance(cuisine, list) and cuisine:
+            preferences["cuisine"] = [
+                _normalize_tag_pref_value(v) for v in cuisine
+            ]
+        elif isinstance(cuisine, str) and cuisine.strip():
+            preferences["cuisine"] = _normalize_tag_pref_value(cuisine)
+        elif not isinstance(cuisine, list) and cuisine:
+            preferences["cuisine"] = _normalize_tag_pref_value(cuisine)
+
+    cost_level = _normalize_tag_pref_value(cost_level)
+    if isinstance(cost_level, str) and cost_level.strip():
+        preferences["cost_level"] = cost_level
+
+    prep_time_bucket = _normalize_tag_pref_value(prep_time_bucket)
+    if isinstance(prep_time_bucket, str) and prep_time_bucket.strip():
+        preferences["prep_time_bucket"] = prep_time_bucket
+
+    if dietary_flags is not None:
+        # Allow single value or list of enum-backed values.
+        if isinstance(dietary_flags, list) and dietary_flags:
+            preferences["dietary_flags"] = [
+                _normalize_tag_pref_value(v) for v in dietary_flags
+            ]
+        elif isinstance(dietary_flags, str) and dietary_flags.strip():
+            preferences["dietary_flags"] = [_normalize_tag_pref_value(dietary_flags)]
+        elif not isinstance(dietary_flags, list) and dietary_flags:
+            preferences["dietary_flags"] = [_normalize_tag_pref_value(dietary_flags)]
+
+    return preferences
+
+
+def _apply_recipe_tag_filter_pre_convert(
+    *,
+    recipes: List[Any],
+    request_like: Any,
+    tag_path: str,
+) -> tuple[List[Any], Dict[str, Any]]:
+    """Optionally filter recipes deterministically based on strict tag metadata."""
+
+    input_recipe_count = len(recipes)
+    if input_recipe_count == 0:
+        return (
+            recipes,
+            {
+                "filter_applied": False,
+                "input_recipe_count": 0,
+                "output_recipe_count": 0,
+            },
+        )
+
+    preferences = _extract_tag_preferences(request_like)
+    if not preferences:
+        return (
+            recipes,
+            {
+                "filter_applied": False,
+                "input_recipe_count": input_recipe_count,
+                "output_recipe_count": input_recipe_count,
+            },
+        )
+
+    tags_by_id = load_recipe_tags(tag_path)
+
+    # `tag_filter.filter_recipe_ids_by_preferences()` supports a single cuisine
+    # value; if the caller provided multiple cuisines, we OR across them.
+    cuisine_pref = preferences.get("cuisine")
+    if isinstance(cuisine_pref, list) and cuisine_pref:
+        accepted_ids: List[str] = []
+        for cuisine in cuisine_pref:
+            single_prefs = dict(preferences)
+            single_prefs["cuisine"] = cuisine
+            accepted_ids_for_cuisine = filter_recipe_ids_by_preferences(
+                tags_by_id,
+                preferences=single_prefs,
+            )
+            accepted_ids.extend(accepted_ids_for_cuisine)
+        filtered_ids_set = set(accepted_ids)
+    else:
+        filtered_ids = filter_recipe_ids_by_preferences(
+            tags_by_id,
+            preferences=preferences,
+        )
+        filtered_ids_set = set(filtered_ids)
+
+    if not filtered_ids_set:
+        # REQUIRED fallback: if filtering returns empty, use the full pool.
+        filtered_recipes = list(recipes)
+    else:
+        filtered_recipes = [r for r in recipes if r.id in filtered_ids_set]
+
+    log_payload = {
+        "filter_applied": True,
+        "input_recipe_count": input_recipe_count,
+        "output_recipe_count": len(filtered_recipes),
+    }
+    return filtered_recipes, log_payload
 
 
 def _build_user_profile(request: PlanRequest) -> UserProfile:
@@ -159,6 +328,17 @@ def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
         recipe_db = RecipeDB(recipes_path)
         all_recipes = recipe_db.get_all_recipes()
 
+        tag_path = getattr(request, "recipe_tags_path", None) or DEFAULT_TAG_PATH
+        all_recipes, filter_log = _apply_recipe_tag_filter_pre_convert(
+            recipes=all_recipes,
+            request_like=request,
+            tag_path=tag_path,
+        )
+        print(
+            json.dumps(filter_log, sort_keys=True, ensure_ascii=True),
+            file=sys.stderr,
+        )
+
         if request.ingredient_source == "api":
             usda_client = USDAClient.from_env()
             cached_lookup = CachedIngredientLookup(usda_client=usda_client)
@@ -176,10 +356,49 @@ def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
         planning_profile = convert_profile(user_profile, request.days)
 
         llm_settings = load_llm_settings()
-        if llm_settings.enabled:
+        planning_mode_provided = request.planning_mode is not None
+        effective_mode = request.planning_mode
+        if effective_mode is None:
+            # Backward compatible default:
+            # - when LLM is enabled by config => use assisted (cache-enabled) mode
+            # - otherwise => deterministic planning
+            effective_mode = "assisted" if llm_settings.enabled else "deterministic"
+
+        if effective_mode == "deterministic":
+            result = plan_meals(planning_profile, recipe_pool, request.days)
+        else:
+            if not llm_settings.enabled:
+                raise LLMPlanningModeError(
+                    error_code="LLM_DISABLED",
+                    message=(
+                        f"planning_mode={effective_mode!r} requires LLM_ENABLED/LLM_API_KEY."
+                    ),
+                )
+
             # Feedback-enabled planning routes through an outer orchestrator.
             llm_client = build_llm_client()
             validation_provider = build_usda_provider()
+
+            # Mode controls cache behavior and strictness on cache miss.
+            deterministic_strict_override = None
+            use_feedback_cache = True
+            force_live_generation = False
+
+            if effective_mode == "assisted":
+                deterministic_strict_override = (
+                    False if planning_mode_provided else None
+                )
+                use_feedback_cache = True
+                force_live_generation = False
+            elif effective_mode == "assisted_cached":
+                deterministic_strict_override = True
+                use_feedback_cache = True
+                force_live_generation = False
+            elif effective_mode == "assisted_live":
+                deterministic_strict_override = False
+                use_feedback_cache = False
+                force_live_generation = True
+
             result = plan_with_llm_feedback(
                 planning_profile,
                 recipe_pool,
@@ -188,6 +407,9 @@ def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
                 recipes_path=recipes_path,
                 client=llm_client,
                 provider=validation_provider,
+                deterministic_strict_override=deterministic_strict_override,
+                use_feedback_cache=use_feedback_cache,
+                force_live_generation=force_live_generation,
             )
 
             # Ensure formatter sees any recipes persisted by the feedback loop.
@@ -198,8 +420,6 @@ def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
             calculator_updated = NutritionCalculator(validation_provider)
             recipe_pool_updated = convert_recipes(all_recipes_updated, calculator_updated)
             recipe_by_id = {r.id: r for r in recipe_pool_updated}
-        else:
-            result = plan_meals(planning_profile, recipe_pool, request.days)
 
         return format_result_json(result, recipe_by_id, planning_profile, request.days)
     except HTTPException:
@@ -221,6 +441,40 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
         recipe_db = RecipeDB(recipes_path)
         all_recipes = recipe_db.get_all_recipes()
 
+        # Build tag filter preferences for NL->JSON planning:
+        # - parsed NL config provides baseline cuisine + cost_level
+        # - explicit request fields override parsed values
+        parsed_cost_level = getattr(cfg.preferences, "budget", None)
+        parsed_cuisines = getattr(cfg.preferences, "cuisine", None)
+
+        final_cuisines = (
+            request.cuisine if request.cuisine is not None else parsed_cuisines
+        )
+        final_cost_level = (
+            request.cost_level if request.cost_level is not None else parsed_cost_level
+        )
+
+        tag_path = getattr(request, "recipe_tags_path", None) or DEFAULT_TAG_PATH
+        shim = type(
+            "_TagPrefShim",
+            (),
+            {
+                "cuisine": final_cuisines,
+                "cost_level": final_cost_level,
+                "prep_time_bucket": request.prep_time_bucket,
+                "dietary_flags": request.dietary_flags,
+            },
+        )()
+        all_recipes, filter_log = _apply_recipe_tag_filter_pre_convert(
+            recipes=all_recipes,
+            request_like=shim,
+            tag_path=tag_path,
+        )
+        print(
+            json.dumps(filter_log, sort_keys=True, ensure_ascii=True),
+            file=sys.stderr,
+        )
+
         if request.ingredient_source == "api":
             provider = build_usda_provider()
         else:
@@ -235,8 +489,109 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
         recipe_by_id = {r.id: r for r in recipe_pool}
         planning_profile = convert_profile(user_profile, days)
 
-        result = plan_meals(planning_profile, recipe_pool, days)
+        llm_settings = load_llm_settings()
+        planning_mode_provided = request.planning_mode is not None
+        effective_mode = request.planning_mode
+        if effective_mode is None:
+            # Backward compatible default:
+            # - when LLM is enabled by config => use assisted (cache-enabled) mode
+            # - otherwise => deterministic planning
+            effective_mode = (
+                "assisted" if llm_settings.enabled else "deterministic"
+            )
+
+        if effective_mode == "deterministic":
+            result = plan_meals(planning_profile, recipe_pool, days)
+        else:
+            if not llm_settings.enabled:
+                raise LLMPlanningModeError(
+                    error_code="LLM_DISABLED",
+                    message=(
+                        f"planning_mode={effective_mode!r} requires LLM_ENABLED/LLM_API_KEY."
+                    ),
+                )
+
+            llm_client = build_llm_client()
+            validation_provider = build_usda_provider()
+
+            # Mode controls cache behavior and strictness on cache miss.
+            deterministic_strict_override = None
+            use_feedback_cache = True
+            force_live_generation = False
+
+            if effective_mode == "assisted":
+                deterministic_strict_override = (
+                    False if planning_mode_provided else None
+                )
+                use_feedback_cache = True
+                force_live_generation = False
+            elif effective_mode == "assisted_cached":
+                deterministic_strict_override = True
+                use_feedback_cache = True
+                force_live_generation = False
+            elif effective_mode == "assisted_live":
+                deterministic_strict_override = False
+                use_feedback_cache = False
+                force_live_generation = True
+
+            result = plan_with_llm_feedback(
+                planning_profile,
+                recipe_pool,
+                days,
+                max_feedback_retries=3,
+                recipes_path=recipes_path,
+                client=llm_client,
+                provider=validation_provider,
+                deterministic_strict_override=deterministic_strict_override,
+                use_feedback_cache=use_feedback_cache,
+                force_live_generation=force_live_generation,
+            )
+
+            # Ensure formatter sees any recipes persisted by the feedback loop.
+            recipe_db_updated = RecipeDB(recipes_path)
+            all_recipes_updated = recipe_db_updated.get_all_recipes()
+            ingredient_names_updated = extract_ingredient_names(all_recipes_updated)
+            validation_provider.resolve_all(ingredient_names_updated)
+            calculator_updated = NutritionCalculator(validation_provider)
+            recipe_pool_updated = convert_recipes(
+                all_recipes_updated, calculator_updated
+            )
+            recipe_by_id = {r.id: r for r in recipe_pool_updated}
+
         return format_result_json(result, recipe_by_id, planning_profile, days)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        status_code, payload = map_exception_to_api_error(exc)
+        return JSONResponse(status_code=status_code, content=payload)
+
+
+class RecipeTagGenerationRequest(BaseModel):
+    recipes_path: Optional[str] = None
+    recipe_tags_path: Optional[str] = None
+
+
+class RecipeTagGenerationResponse(BaseModel):
+    tagged_recipe_count: int
+
+
+@app.post("/api/recipes/tags/generate", response_model=RecipeTagGenerationResponse)
+def generate_recipe_tags_endpoint(
+    request: RecipeTagGenerationRequest,
+) -> RecipeTagGenerationResponse:
+    try:
+        client = build_llm_client()
+
+        recipes_file = getattr(request, "recipes_path", None) or recipes_path
+        recipe_db = RecipeDB(recipes_file)
+        all_recipes = recipe_db.get_all_recipes()
+
+        tags_by_id = tag_recipes(client, all_recipes)
+
+        tag_path = getattr(request, "recipe_tags_path", None) or DEFAULT_TAG_PATH
+        upsert_recipe_tags(tag_path, tags_by_id)
+
+        return RecipeTagGenerationResponse(tagged_recipe_count=len(tags_by_id))
     except HTTPException:
         raise
     except Exception as exc:

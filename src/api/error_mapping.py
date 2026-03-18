@@ -16,7 +16,8 @@ from src.llm.recipe_validator import RecipeValidationError
 from src.llm.usda_contract import USDAProviderRequiredError
 from src.llm.constraint_parser import PlannerConfigParsingError
 from src.data_layer.user_profile import PlannerConfigMappingError
-from src.planning.orchestrator import LLMFeedbackOrchestratorError
+from src.llm.feedback_cache import DeterministicCacheMissError
+from src.planning.orchestrator import LLMFeedbackOrchestratorError, LLMPlanningModeError
 
 
 API_ERROR = "error"
@@ -65,8 +66,15 @@ def map_exception_to_api_error(exc: Exception) -> Tuple[int, Dict[str, Any]]:
         return 422, _payload("SCHEMA_VALIDATION_ERROR", str(exc))
 
     # Typed orchestrator failures should map deterministically.
+    if isinstance(exc, DeterministicCacheMissError):
+        return 500, _payload("DETERMINISTIC_CACHE_MISS", str(exc))
+
     if isinstance(exc, LLMFeedbackOrchestratorError):
-        return 500, _payload("PIPELINE_EXECUTION_ERROR", str(exc))
+        # Preserve the internal orchestrator error_code for stable API mapping.
+        return 500, _payload(exc.error_code, str(exc))
+
+    if isinstance(exc, LLMPlanningModeError):
+        return 422, _payload(exc.error_code, str(exc))
 
     # Validation failures that are specifically about input/provider correctness.
     if isinstance(exc, USDAProviderRequiredError):

@@ -12,6 +12,8 @@ from src.llm.client import (
 )
 from src.llm.recipe_generator import RecipeGenerationError
 from src.llm.usda_contract import USDAProviderRequiredError
+from src.llm.feedback_cache import DeterministicCacheMissError
+from src.planning.orchestrator import LLMFeedbackOrchestratorError
 
 
 def test_map_exception_to_api_error_unit_mapping():
@@ -71,6 +73,23 @@ def test_map_exception_to_api_error_unit_mapping():
     status, payload = map_exception_to_api_error(DummySchemaError("boom"))
     assert status == 500
     assert payload["error"]["code"] == "PIPELINE_EXECUTION_ERROR"
+
+    # Deterministic strict cache miss
+    status, payload = map_exception_to_api_error(
+        DeterministicCacheMissError("cache miss")
+    )
+    assert status == 500
+    assert payload["error"]["code"] == "DETERMINISTIC_CACHE_MISS"
+
+    # Related orchestrator failures
+    status, payload = map_exception_to_api_error(
+        LLMFeedbackOrchestratorError(
+            error_code="VALIDATION_EXCEPTION",
+            message="validation raised",
+        )
+    )
+    assert status == 500
+    assert payload["error"]["code"] == "VALIDATION_EXCEPTION"
 
 
 @pytest.mark.parametrize(

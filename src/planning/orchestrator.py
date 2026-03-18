@@ -27,6 +27,7 @@ from src.llm.schemas import RecipeDraft
 from src.llm.feedback_cache import (
     DEFAULT_FEEDBACK_CACHE_PATH,
     DEFAULT_CACHE_SCHEMA_VERSION,
+    FeedbackCache,
     DeterministicCacheMissError,
     build_feedback_cache_key,
     get_cached_drafts,
@@ -37,6 +38,14 @@ from src.llm.feedback_cache import (
 
 class LLMFeedbackOrchestratorError(RuntimeError):
     """Raised when the LLM feedback loop cannot safely proceed."""
+
+    def __init__(self, *, error_code: str, message: str) -> None:
+        super().__init__(message)
+        self.error_code = error_code
+
+
+class LLMPlanningModeError(RuntimeError):
+    """Raised when an API requests an LLM-assisted mode while LLM is disabled."""
 
     def __init__(self, *, error_code: str, message: str) -> None:
         super().__init__(message)
@@ -201,6 +210,9 @@ def plan_with_llm_feedback(
     client: Optional[LLMClient] = None,
     provider: Optional[IngredientDataProvider] = None,
     recipes_to_generate_per_attempt: Optional[int] = None,
+    deterministic_strict_override: Optional[bool] = None,
+    use_feedback_cache: bool = True,
+    force_live_generation: bool = False,
 ) -> MealPlanResult:
     """Wrap `plan_meals()` with a bounded LLM-driven recipe generation feedback loop.
 
@@ -233,8 +245,10 @@ def plan_with_llm_feedback(
 
     prev_failure_sig = _stable_failure_signature(result)
 
-    deterministic_strict = _parse_bool_env(
-        os.getenv("LLM_DETERMINISTIC_STRICT"), default=False
+    deterministic_strict = (
+        _parse_bool_env(os.getenv("LLM_DETERMINISTIC_STRICT"), default=False)
+        if deterministic_strict_override is None
+        else bool(deterministic_strict_override)
     )
     feedback_cache_path = os.getenv(
         "LLM_FEEDBACK_CACHE_PATH", DEFAULT_FEEDBACK_CACHE_PATH
@@ -245,10 +259,19 @@ def plan_with_llm_feedback(
             str(DEFAULT_CACHE_SCHEMA_VERSION),
         )
     )
-    feedback_cache = load_feedback_cache(
-        feedback_cache_path,
-        cache_schema_version=cache_schema_version,
-    )
+    cache_enabled = use_feedback_cache and not force_live_generation
+    if cache_enabled:
+        feedback_cache = load_feedback_cache(
+            feedback_cache_path,
+            cache_schema_version=cache_schema_version,
+        )
+    else:
+        # Avoid disk reads/writes and ensure cache-miss behavior is explicit.
+        feedback_cache = FeedbackCache(
+            path=feedback_cache_path,
+            cache_schema_version=cache_schema_version,
+            entries_by_key={},
+        )
 
     # Use the configured LLM model as part of the cache key.
     model_version = ""
@@ -276,11 +299,13 @@ def plan_with_llm_feedback(
             cache_schema_version=cache_schema_version,
         )
 
-        cached_drafts = get_cached_drafts(feedback_cache, cache_key)
+        cached_drafts = (
+            get_cached_drafts(feedback_cache, cache_key) if cache_enabled else None
+        )
         if cached_drafts is not None:
             drafts = cached_drafts
         else:
-            if deterministic_strict:
+            if deterministic_strict and cache_enabled:
                 history.append(
                     {
                         "attempt": attempt_idx,
@@ -304,15 +329,16 @@ def plan_with_llm_feedback(
 
             canonical_payload = [d.model_dump() for d in drafts]
             # Keep in-memory cache warm for additional retries in this call.
-            if feedback_cache.entries_by_key is not None:
+            if cache_enabled and feedback_cache.entries_by_key is not None:
                 feedback_cache.entries_by_key[cache_key] = canonical_payload
 
-            upsert_cached_drafts(
-                cache_path=feedback_cache_path,
-                cache_schema_version=cache_schema_version,
-                cache_key=cache_key,
-                drafts=drafts,
-            )
+            if cache_enabled:
+                upsert_cached_drafts(
+                    cache_path=feedback_cache_path,
+                    cache_schema_version=cache_schema_version,
+                    cache_key=cache_key,
+                    drafts=drafts,
+                )
 
         # Pre-validation dedupe: remove drafts already present in the accepted
         # fingerprint set, and de-dupe within this attempt too.

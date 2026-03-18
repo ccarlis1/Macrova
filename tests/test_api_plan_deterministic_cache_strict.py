@@ -85,5 +85,5 @@ def test_api_plan_strict_deterministic_cache_miss_is_mapped(monkeypatch, tmp_pat
     )
 
     assert resp.status_code == 500
-    assert resp.json()["error"]["code"] == "PIPELINE_EXECUTION_ERROR"
+    assert resp.json()["error"]["code"] == "DETERMINISTIC_CACHE_MISS"
 

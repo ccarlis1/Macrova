@@ -4,7 +4,9 @@ from typing import Any, Dict, List, Optional
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from src.data_layer.models import UserProfile
@@ -18,6 +20,9 @@ from src.output.formatters import format_result_json
 from src.ingestion.usda_client import USDAClient
 from src.ingestion.ingredient_cache import CachedIngredientLookup
 from src.providers.api_provider import APIIngredientProvider
+from src.config.llm_settings import load_llm_settings
+from src.llm.client import LLMClient
+from src.llm.pipeline import generate_validate_persist_recipes
 
 
 recipes_path = "data/recipes/recipes.json"
@@ -32,6 +37,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(RequestValidationError)
+async def _request_validation_exception_handler(
+    request, exc: RequestValidationError
+) -> JSONResponse:
+    # Per contract: structured 400 instead of FastAPI's default 422.
+    return JSONResponse(
+        status_code=400,
+        content={"error": {"code": "INVALID_REQUEST", "message": "Invalid request schema."}},
+    )
 
 
 class PlanRequest(BaseModel):
@@ -68,6 +84,23 @@ def _build_user_profile(request: PlanRequest) -> UserProfile:
     )
 
 
+class RecipeGenerationRequest(BaseModel):
+    context: Dict[str, Any]
+    count: int = Field(..., ge=1, le=20)
+
+
+class RecipeGenerationFailure(BaseModel):
+    code: str
+    message: str
+
+
+class RecipeGenerationResponse(BaseModel):
+    accepted_count: int
+    rejected_count: int
+    recipe_ids: List[str]
+    failures: List[RecipeGenerationFailure]
+
+
 @app.post("/api/plan")
 def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
     try:
@@ -97,6 +130,53 @@ def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
         return format_result_json(result, recipe_by_id, planning_profile, request.days)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.post("/api/recipes/generate-validated", response_model=RecipeGenerationResponse)
+def generate_validated_recipes_endpoint(
+    request: RecipeGenerationRequest,
+) -> RecipeGenerationResponse:
+    try:
+        llm_settings = load_llm_settings()
+        client = LLMClient(llm_settings)
+
+        # USDA-backed provider for deterministic, authoritative validation.
+        usda_client = USDAClient.from_env()
+        cached_lookup = CachedIngredientLookup(usda_client=usda_client)
+        provider = APIIngredientProvider(cached_lookup)
+
+        summary = generate_validate_persist_recipes(
+            context=request.context,
+            count=request.count,
+            recipes_path=recipes_path,
+            provider=provider,
+            client=client,
+        )
+
+        rejected = summary.get("rejected", [])
+        failures: List[RecipeGenerationFailure] = []
+        for item in rejected:
+            failures.append(
+                RecipeGenerationFailure(
+                    code=str(item.get("error_code", "VALIDATION_FAILURE")),
+                    message=str(item.get("message", "")),
+                )
+            )
+
+        recipe_ids = summary.get("persisted_ids", [])
+        return RecipeGenerationResponse(
+            accepted_count=len(recipe_ids),
+            rejected_count=len(rejected),
+            recipe_ids=list(recipe_ids),
+            failures=failures,
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        return JSONResponse(
+            status_code=500,
+            content={"error": {"code": "PIPELINE_INTERNAL_ERROR", "message": str(exc)}},
+        )
 
 
 @app.get("/api/recipes")

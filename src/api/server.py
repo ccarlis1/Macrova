@@ -16,6 +16,7 @@ from src.providers.local_provider import LocalIngredientProvider
 from src.nutrition.calculator import NutritionCalculator
 from src.planning.converters import convert_recipes, convert_profile, extract_ingredient_names
 from src.planning.planner import plan_meals
+from src.planning.orchestrator import plan_with_llm_feedback
 from src.output.formatters import format_result_json
 from src.ingestion.usda_client import USDAClient
 from src.ingestion.ingredient_cache import CachedIngredientLookup
@@ -174,7 +175,31 @@ def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
         recipe_by_id = {r.id: r for r in recipe_pool}
         planning_profile = convert_profile(user_profile, request.days)
 
-        result = plan_meals(planning_profile, recipe_pool, request.days)
+        llm_settings = load_llm_settings()
+        if llm_settings.enabled:
+            # Feedback-enabled planning routes through an outer orchestrator.
+            llm_client = build_llm_client()
+            validation_provider = build_usda_provider()
+            result = plan_with_llm_feedback(
+                planning_profile,
+                recipe_pool,
+                request.days,
+                max_feedback_retries=3,
+                recipes_path=recipes_path,
+                client=llm_client,
+                provider=validation_provider,
+            )
+
+            # Ensure formatter sees any recipes persisted by the feedback loop.
+            recipe_db_updated = RecipeDB(recipes_path)
+            all_recipes_updated = recipe_db_updated.get_all_recipes()
+            ingredient_names_updated = extract_ingredient_names(all_recipes_updated)
+            validation_provider.resolve_all(ingredient_names_updated)
+            calculator_updated = NutritionCalculator(validation_provider)
+            recipe_pool_updated = convert_recipes(all_recipes_updated, calculator_updated)
+            recipe_by_id = {r.id: r for r in recipe_pool_updated}
+        else:
+            result = plan_meals(planning_profile, recipe_pool, request.days)
 
         return format_result_json(result, recipe_by_id, planning_profile, request.days)
     except Exception as exc:

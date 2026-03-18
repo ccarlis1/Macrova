@@ -14,6 +14,7 @@ from src.ingestion.usda_client import USDAClient
 from src.ingestion.ingredient_cache import CachedIngredientLookup
 from src.planning.converters import convert_recipes, convert_profile, extract_ingredient_names
 from src.planning.planner import plan_meals
+from src.planning.orchestrator import plan_with_llm_feedback
 from src.output.formatters import format_result_markdown, format_result_json_string
 from src.providers.local_provider import LocalIngredientProvider
 from src.providers.api_provider import APIIngredientProvider, IngredientResolutionError
@@ -199,7 +200,34 @@ def main():
         resolved_ul = resolve_upper_limits(loader, demographic="adult_male", overrides=None)
 
         print("Planning meals...", file=sys.stderr)
-        result = plan_meals(planning_profile, recipe_pool, args.days)
+        llm_settings = load_llm_settings()
+        if llm_settings.enabled:
+            # Feedback-enabled planning route: validate persisted recipes via USDA.
+            client = LLMClient(llm_settings)
+            usda_client = USDAClient.from_env()
+            cached_lookup = CachedIngredientLookup(usda_client=usda_client)
+            validation_provider = APIIngredientProvider(cached_lookup)
+
+            result = plan_with_llm_feedback(
+                planning_profile,
+                recipe_pool,
+                args.days,
+                max_feedback_retries=3,
+                recipes_path=str(recipes_path),
+                client=client,
+                provider=validation_provider,
+            )
+
+            # Formatter must see any recipes persisted by the feedback loop.
+            recipe_db_updated = RecipeDB(str(recipes_path))
+            all_recipes_updated = recipe_db_updated.get_all_recipes()
+            ingredient_names_updated = extract_ingredient_names(all_recipes_updated)
+            validation_provider.resolve_all(ingredient_names_updated)
+            calculator_updated = NutritionCalculator(validation_provider)
+            recipe_pool_updated = convert_recipes(all_recipes_updated, calculator_updated)
+            recipe_by_id = {r.id: r for r in recipe_pool_updated}
+        else:
+            result = plan_meals(planning_profile, recipe_pool, args.days)
 
         # Format output
         if args.output in ["markdown", "both"]:

@@ -26,16 +26,16 @@ from src.providers.api_provider import APIIngredientProvider
 from src.config.llm_settings import load_llm_settings
 from src.api.error_mapping import map_exception_to_api_error
 from src.llm.client import LLMClient
-from src.llm.constraint_parser import parse_nl_config
+from src.llm.constraint_parser import PlannerConfigParsingError, parse_nl_config
 from src.llm.pipeline import generate_validate_persist_recipes
 from src.llm.ingredient_matcher import (
     IngredientMatchingError,
     match_ingredient_queries,
     validate_matches,
 )
-from src.llm.schemas import BudgetLevel, DietaryFlag, PrepTimeBucket
+from src.llm.schemas import BudgetLevel, DietaryFlag, PrepTimeBucket, PlannerConfigJson
 from src.data_layer.user_profile import user_profile_from_planner_config
-from src.llm.tag_filter import filter_recipe_ids_by_preferences
+from src.llm.tag_filtering_service import apply_tag_filtering
 from src.llm.recipe_tagger import tag_recipes
 from src.llm.tag_repository import load_recipe_tags
 from src.llm.tag_repository import upsert_recipe_tags
@@ -200,47 +200,17 @@ def _apply_recipe_tag_filter_pre_convert(
         )
 
     preferences = _extract_tag_preferences(request_like)
-    if not preferences:
-        return (
-            recipes,
-            {
-                "filter_applied": False,
-                "input_recipe_count": input_recipe_count,
-                "output_recipe_count": input_recipe_count,
-            },
-        )
+    filter_applied = bool(preferences)
+    tags_by_id = load_recipe_tags(tag_path) if filter_applied else {}
 
-    tags_by_id = load_recipe_tags(tag_path)
-
-    # `tag_filter.filter_recipe_ids_by_preferences()` supports a single cuisine
-    # value; if the caller provided multiple cuisines, we OR across them.
-    cuisine_pref = preferences.get("cuisine")
-    if isinstance(cuisine_pref, list) and cuisine_pref:
-        accepted_ids: List[str] = []
-        for cuisine in cuisine_pref:
-            single_prefs = dict(preferences)
-            single_prefs["cuisine"] = cuisine
-            accepted_ids_for_cuisine = filter_recipe_ids_by_preferences(
-                tags_by_id,
-                preferences=single_prefs,
-            )
-            accepted_ids.extend(accepted_ids_for_cuisine)
-        filtered_ids_set = set(accepted_ids)
-    else:
-        filtered_ids = filter_recipe_ids_by_preferences(
-            tags_by_id,
-            preferences=preferences,
-        )
-        filtered_ids_set = set(filtered_ids)
-
-    if not filtered_ids_set:
-        # REQUIRED fallback: if filtering returns empty, use the full pool.
-        filtered_recipes = list(recipes)
-    else:
-        filtered_recipes = [r for r in recipes if r.id in filtered_ids_set]
+    filtered_recipes = apply_tag_filtering(
+        recipes=list(recipes),
+        tags_by_id=tags_by_id,
+        preferences=preferences,
+    )
 
     log_payload = {
-        "filter_applied": True,
+        "filter_applied": filter_applied,
         "input_recipe_count": input_recipe_count,
         "output_recipe_count": len(filtered_recipes),
     }
@@ -433,20 +403,67 @@ def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
 @app.post("/api/plan-from-text")
 def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
     try:
-        client = build_llm_client()
-        cfg = parse_nl_config(client, request.prompt)
-        user_profile = user_profile_from_planner_config(cfg)
-        days = int(cfg.days)
+        llm_settings = load_llm_settings()
+        planning_mode_provided = request.planning_mode is not None
+        effective_mode = request.planning_mode
+        if effective_mode is None:
+            # Backward compatible default:
+            # - when LLM is enabled by config => use assisted (cache-enabled) mode
+            # - otherwise => deterministic planning
+            effective_mode = "assisted" if llm_settings.enabled else "deterministic"
+
+        if effective_mode == "deterministic":
+            # Deterministic mode MUST not invoke any LLM logic.
+            # Prompt must be explicit PlannerConfigJson-compatible JSON.
+            try:
+                parsed_prompt = json.loads(request.prompt)
+            except json.JSONDecodeError as e:
+                raise PlannerConfigParsingError(
+                    error_code="INVALID_NL_INPUT",
+                    message="deterministic mode requires prompt to be PlannerConfigJson-compatible JSON",
+                    details={"json_error": str(e)},
+                ) from e
+
+            try:
+                cfg = PlannerConfigJson.model_validate(parsed_prompt)
+            except Exception as e:
+                raise PlannerConfigParsingError(
+                    error_code="LLM_SCHEMA_VALIDATION_ERROR",
+                    message="deterministic prompt JSON did not match PlannerConfigJson schema",
+                    details={"error": str(e)},
+                ) from e
+
+            user_profile = user_profile_from_planner_config(cfg)
+            days = int(cfg.days)
+            # Deterministic mode only allows explicit request fields for recipe-pool filtering;
+            # never infer cuisine/cost from the prompt.
+            parsed_cost_level = None
+            parsed_cuisines = None
+        else:
+            if not llm_settings.enabled:
+                raise LLMPlanningModeError(
+                    error_code="LLM_DISABLED",
+                    message=(
+                        f"planning_mode={effective_mode!r} requires LLM_ENABLED/LLM_API_KEY."
+                    ),
+                )
+
+            client = build_llm_client()
+            cfg = parse_nl_config(client, request.prompt)
+            user_profile = user_profile_from_planner_config(cfg)
+            days = int(cfg.days)
+
+            # Assisted modes allow baseline cuisine + cost_level inferred from prompt cfg.
+            parsed_cost_level = getattr(cfg.preferences, "budget", None)
+            parsed_cuisines = getattr(cfg.preferences, "cuisine", None)
 
         recipe_db = RecipeDB(recipes_path)
         all_recipes = recipe_db.get_all_recipes()
 
-        # Build tag filter preferences for NL->JSON planning:
-        # - parsed NL config provides baseline cuisine + cost_level
-        # - explicit request fields override parsed values
-        parsed_cost_level = getattr(cfg.preferences, "budget", None)
-        parsed_cuisines = getattr(cfg.preferences, "cuisine", None)
-
+        # Build tag filter preferences:
+        # - assisted modes use baseline cuisine + cost_level from prompt cfg
+        # - deterministic modes set parsed_cost_level/parsed_cuisines=None, so
+        #   only explicit request fields are used for filtering.
         final_cuisines = (
             request.cuisine if request.cuisine is not None else parsed_cuisines
         )
@@ -489,28 +506,9 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
         recipe_by_id = {r.id: r for r in recipe_pool}
         planning_profile = convert_profile(user_profile, days)
 
-        llm_settings = load_llm_settings()
-        planning_mode_provided = request.planning_mode is not None
-        effective_mode = request.planning_mode
-        if effective_mode is None:
-            # Backward compatible default:
-            # - when LLM is enabled by config => use assisted (cache-enabled) mode
-            # - otherwise => deterministic planning
-            effective_mode = (
-                "assisted" if llm_settings.enabled else "deterministic"
-            )
-
         if effective_mode == "deterministic":
             result = plan_meals(planning_profile, recipe_pool, days)
         else:
-            if not llm_settings.enabled:
-                raise LLMPlanningModeError(
-                    error_code="LLM_DISABLED",
-                    message=(
-                        f"planning_mode={effective_mode!r} requires LLM_ENABLED/LLM_API_KEY."
-                    ),
-                )
-
             llm_client = build_llm_client()
             validation_provider = build_usda_provider()
 
@@ -569,6 +567,8 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
 class RecipeTagGenerationRequest(BaseModel):
     recipes_path: Optional[str] = None
     recipe_tags_path: Optional[str] = None
+    # Explicit opt-in required to avoid implicit LLM usage for tagging.
+    llm_enabled: bool = False
 
 
 class RecipeTagGenerationResponse(BaseModel):
@@ -580,6 +580,12 @@ def generate_recipe_tags_endpoint(
     request: RecipeTagGenerationRequest,
 ) -> RecipeTagGenerationResponse:
     try:
+        if not request.llm_enabled:
+            raise HTTPException(
+                status_code=400,
+                detail="LLM usage disabled for tagging operation",
+            )
+
         client = build_llm_client()
 
         recipes_file = getattr(request, "recipes_path", None) or recipes_path
@@ -696,7 +702,8 @@ def list_recipes() -> List[Dict[str, str]]:
         recipe_db = RecipeDB(recipes_path)
         return [{"id": r.id, "name": r.name} for r in recipe_db.get_all_recipes()]
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        status_code, payload = map_exception_to_api_error(exc)
+        return JSONResponse(status_code=status_code, content=payload)
 
 
 if __name__ == "__main__":

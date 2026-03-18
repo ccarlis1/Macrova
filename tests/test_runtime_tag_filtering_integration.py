@@ -786,3 +786,144 @@ def test_cli_tag_filtering_multiple_cuisines_union_preserves_order(
     assert seen["extract_ids"] == ["r1", "r2"]
     assert seen["convert_ids"] == ["r1", "r2"]
 
+
+def test_api_and_cli_use_shared_apply_tag_filtering(monkeypatch, tmp_path):
+    from src.llm.tag_filtering_service import apply_tag_filtering as real_apply_tag_filtering
+
+    # ---------------- API: ensure shared helper is called ----------------
+    recipes = [SimpleNamespace(id="r1"), SimpleNamespace(id="r2")]
+    tags_by_id = {"r1": _tags(cuisine="mexican"), "r2": _tags(cuisine="italian")}
+
+    monkeypatch.setattr("src.api.server.RecipeDB", lambda _: DummyRecipeDB(recipes))
+    monkeypatch.setattr("src.api.server.NutritionDB", lambda _: object())
+    monkeypatch.setattr("src.api.server.LocalIngredientProvider", lambda _: DummyProvider())
+    monkeypatch.setattr(
+        "src.api.server.load_llm_settings",
+        lambda: LLMSettings(
+            api_key="dummy",
+            model="dummy-model",
+            timeout_seconds=1.0,
+            max_retries=0,
+            rate_limit_qps=1.0,
+            enabled=False,
+        ),
+    )
+    monkeypatch.setattr("src.api.server.load_recipe_tags", lambda _: tags_by_id)
+
+    api_calls = {"count": 0}
+
+    def _api_spy_apply_tag_filtering(*, recipes, tags_by_id, preferences):
+        api_calls["count"] += 1
+        return real_apply_tag_filtering(
+            recipes=recipes, tags_by_id=tags_by_id, preferences=preferences
+        )
+
+    monkeypatch.setattr("src.api.server.apply_tag_filtering", _api_spy_apply_tag_filtering)
+
+    monkeypatch.setattr("src.api.server.extract_ingredient_names", lambda recipes_in: [])
+    monkeypatch.setattr("src.api.server.convert_recipes", lambda recipes_in, _calc: [])
+    monkeypatch.setattr("src.api.server.NutritionCalculator", lambda _provider: object())
+
+    monkeypatch.setattr(
+        "src.api.server.plan_meals",
+        lambda _profile, _pool, _days: MealPlanResult(
+            success=True,
+            termination_code="TC-1",
+            plan=[],
+            daily_trackers={},
+            weekly_tracker=None,
+            report={},
+            stats={"attempts": 1, "backtracks": 0},
+        ),
+    )
+    monkeypatch.setattr("src.api.server.format_result_json", lambda *_args, **_kwargs: {"ok": True})
+
+    client = TestClient(app)
+    payload = _base_plan_payload()
+    payload.update({"planning_mode": "deterministic", "cuisine": ["mexican"]})
+    resp = client.post("/api/plan", json=payload)
+    assert resp.status_code == 200
+    assert api_calls["count"] == 1
+
+    # ---------------- CLI: ensure shared helper is called ----------------
+    recipes_path = tmp_path / "recipes.json"
+    recipes_path.write_text("{}", encoding="utf-8")
+    ingredients_path = tmp_path / "ingredients.json"
+    ingredients_path.write_text("{}", encoding="utf-8")
+    tag_path = tmp_path / "tags.json"
+    tag_path.write_text("{}", encoding="utf-8")
+
+    monkeypatch.setattr("src.cli.RecipeDB", lambda _: DummyRecipeDB(recipes))
+    monkeypatch.setattr("src.cli.NutritionDB", lambda _: object())
+    monkeypatch.setattr("src.cli.LocalIngredientProvider", lambda _: DummyProvider())
+    monkeypatch.setattr("src.cli.UpperLimitsLoader", lambda *_: object())
+    monkeypatch.setattr("src.cli.resolve_upper_limits", lambda *_args, **_kwargs: {})
+    monkeypatch.setattr("src.cli.NutritionCalculator", lambda _provider: object())
+    monkeypatch.setattr("src.cli.load_recipe_tags", lambda _: tags_by_id)
+
+    cli_calls = {"count": 0}
+
+    def _cli_spy_apply_tag_filtering(*, recipes, tags_by_id, preferences):
+        cli_calls["count"] += 1
+        return real_apply_tag_filtering(
+            recipes=recipes, tags_by_id=tags_by_id, preferences=preferences
+        )
+
+    monkeypatch.setattr("src.cli.apply_tag_filtering", _cli_spy_apply_tag_filtering)
+    monkeypatch.setattr("src.cli.extract_ingredient_names", lambda recipes_in: [])
+    monkeypatch.setattr("src.cli.convert_recipes", lambda recipes_in, _calc: [])
+
+    monkeypatch.setattr(
+        "src.cli.plan_meals",
+        lambda _profile, _pool, _days: MealPlanResult(
+            success=True,
+            termination_code="TC-1",
+            plan=[],
+            daily_trackers={},
+            weekly_tracker=None,
+            report={},
+            stats={"attempts": 1, "backtracks": 0},
+        ),
+    )
+    monkeypatch.setattr("src.cli.format_result_json_string", lambda *_args, **_kwargs: "{}")
+    monkeypatch.setattr("src.cli.format_result_markdown", lambda *_args, **_kwargs: "")
+    monkeypatch.setattr(
+        "src.cli.load_llm_settings",
+        lambda: LLMSettings(
+            api_key="dummy",
+            model="dummy-model",
+            timeout_seconds=1.0,
+            max_retries=0,
+            rate_limit_qps=1.0,
+            enabled=False,
+        ),
+    )
+
+    # Re-use the repo's known-good profile schema for CLI wiring tests.
+    profile_path = "config/user_profile.yaml"
+
+    monkeypatch.setattr(
+        cli.sys,
+        "argv",
+        [
+            "cli.py",
+            "--profile",
+            str(profile_path),
+            "--recipes",
+            str(recipes_path),
+            "--ingredients",
+            str(ingredients_path),
+            "--output",
+            "json",
+            "--planning-mode",
+            "deterministic",
+            "--cuisine",
+            "mexican",
+            "--recipe-tags-path",
+            str(tag_path),
+        ],
+    )
+
+    cli.main()
+    assert cli_calls["count"] == 1
+

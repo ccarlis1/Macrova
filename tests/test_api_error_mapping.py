@@ -161,3 +161,16 @@ def test_generate_validated_recipes_api_llm_settings_error(monkeypatch):
     assert resp.status_code == 500
     assert resp.json()["error"]["code"] == "LLM_SETTINGS_ERROR"
 
+
+def test_api_recipes_maps_exceptions_to_api_error(monkeypatch):
+    class DummyRecipeDB:
+        def __init__(self, *args, **kwargs):
+            raise RuntimeError("db init failed")
+
+    monkeypatch.setattr("src.api.server.RecipeDB", DummyRecipeDB)
+
+    client = TestClient(app)
+    resp = client.get("/api/recipes")
+    assert resp.status_code == 500
+    assert resp.json()["error"]["code"] == "PIPELINE_EXECUTION_ERROR"
+

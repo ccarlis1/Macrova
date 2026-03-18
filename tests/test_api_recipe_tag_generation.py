@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from src.api.server import app
@@ -58,7 +59,7 @@ def test_api_generate_recipe_tags_persists_and_is_idempotent(
 
     resp1 = client.post(
         "/api/recipes/tags/generate",
-        json={"recipe_tags_path": tags_path},
+        json={"recipe_tags_path": tags_path, "llm_enabled": True},
     )
     assert resp1.status_code == 200
     assert resp1.json()["tagged_recipe_count"] == 2
@@ -70,7 +71,7 @@ def test_api_generate_recipe_tags_persists_and_is_idempotent(
 
     resp2 = client.post(
         "/api/recipes/tags/generate",
-        json={"recipe_tags_path": tags_path},
+        json={"recipe_tags_path": tags_path, "llm_enabled": True},
     )
     assert resp2.status_code == 200
     assert resp2.json()["tagged_recipe_count"] == 2
@@ -81,4 +82,20 @@ def test_api_generate_recipe_tags_persists_and_is_idempotent(
     loaded2 = load_recipe_tags(tags_path)
     assert loaded2["r1"].cuisine == loaded1["r1"].cuisine
     assert loaded2["r2"].cuisine == loaded1["r2"].cuisine
+
+
+def test_api_recipe_tags_requires_llm_enabled(monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        "src.api.server.build_llm_client",
+        lambda: (_ for _ in ()).throw(AssertionError("build_llm_client should not be called")),
+    )
+    client = TestClient(app)
+
+    tags_path = str(tmp_path / "recipe_tags.json")
+    resp = client.post(
+        "/api/recipes/tags/generate",
+        json={"recipe_tags_path": tags_path},
+    )
+    assert resp.status_code == 400
+    assert resp.json()["detail"] == "LLM usage disabled for tagging operation"
 

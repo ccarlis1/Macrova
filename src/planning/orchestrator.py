@@ -4,6 +4,7 @@ import copy
 import hashlib
 import os
 import json
+import sys
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from src.config.llm_settings import load_llm_settings
@@ -422,6 +423,18 @@ def plan_with_llm_feedback(
                 )
             except Exception:
                 # Safety fallback: full rebuild if incremental update fails.
+                # Observability: emit structured signal without changing behavior.
+                print(
+                    json.dumps(
+                        {
+                            "fallback_triggered": True,
+                            "reason": "incremental_update_failed",
+                        },
+                        sort_keys=True,
+                        ensure_ascii=True,
+                    ),
+                    file=sys.stderr,
+                )
                 result_recipe_pool = _rebuild_recipe_pool(
                     recipes_path=recipes_path,
                     provider=provider,

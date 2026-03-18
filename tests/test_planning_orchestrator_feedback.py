@@ -700,3 +700,94 @@ def test_orchestrator_pre_validation_dedupes_already_accepted_on_retry(monkeypat
     assert attempts[1]["recipes_generated"] == 0
     assert attempts[1]["accepted"] == 0
 
+
+def test_orchestrator_fallback_observability_on_incremental_failure(monkeypatch, capsys):
+    profile = _make_profile(days=1, slots_per_day=2)
+    base_pool: list[PlanningRecipe] = []
+
+    failure = _fake_failure_result(failure_mode="FM-2")
+    success = MealPlanResult(
+        success=True,
+        termination_code="TC-1",
+        plan=[],
+        daily_trackers={0: None},
+        weekly_tracker=None,
+        report={},
+        stats={"attempts": 1, "backtracks": 0},
+    )
+
+    plan_calls = {"count": 0}
+
+    def _fake_plan_meals(*args, **kwargs):
+        plan_calls["count"] += 1
+        return failure if plan_calls["count"] == 1 else success
+
+    monkeypatch.setattr("src.planning.orchestrator.plan_meals", _fake_plan_meals)
+
+    draft = RecipeDraft(
+        name="Generated",
+        ingredients=[RecipeIngredientDraft(name="chicken breast", quantity=200.0, unit="g")],
+        instructions=["Cook it."],
+    )
+
+    monkeypatch.setattr(
+        "src.planning.orchestrator.suggest_targeted_recipe_drafts",
+        lambda *, client, context, count: [draft],
+    )
+
+    accepted_recipe = Recipe(
+        id="",
+        name="Accepted",
+        ingredients=[
+            Ingredient(
+                name="chicken breast",
+                quantity=200.0,
+                unit="g",
+                normalized_unit="g",
+                normalized_quantity=200.0,
+            )
+        ],
+        cooking_time_minutes=10,
+        instructions=["Cook it."],
+    )
+    validated = ValidatedRecipeForPersistence(recipe=accepted_recipe)
+
+    monkeypatch.setattr(
+        "src.planning.orchestrator.validate_recipe_drafts",
+        lambda drafts, provider: ([validated], []),
+    )
+
+    # Persist at least one draft so the incremental expansion path runs.
+    monkeypatch.setattr(
+        "src.planning.orchestrator.append_validated_recipes",
+        lambda *, path, recipes: ["llm_recipe_1"],
+    )
+
+    def _raise_incremental(*args, **kwargs):
+        raise RuntimeError("incremental update failed")
+
+    monkeypatch.setattr("src.planning.orchestrator._append_new_recipes_to_pool", _raise_incremental)
+    monkeypatch.setattr(
+        "src.planning.orchestrator._rebuild_recipe_pool",
+        lambda *, recipes_path, provider: [],
+    )
+
+    dummy_client = object()
+    dummy_provider = type("P", (), {"usda_capable": True})()
+
+    out = plan_with_llm_feedback(
+        profile,
+        base_pool,
+        days=1,
+        max_feedback_retries=2,
+        recipes_path="ignored.json",
+        client=dummy_client,  # type: ignore[arg-type]
+        provider=dummy_provider,  # type: ignore[arg-type]
+        recipes_to_generate_per_attempt=1,
+    )
+
+    assert out.success is True
+    captured = capsys.readouterr()
+    assert '"fallback_triggered": true' in captured.err
+    assert '"reason": "incremental_update_failed"' in captured.err
+

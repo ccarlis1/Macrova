@@ -7,6 +7,7 @@ from src.data_layer.user_profile import user_profile_from_planner_config
 from src.llm.constraint_parser import PlannerConfigParsingError
 from src.llm.schemas import BudgetLevel, PlannerConfigJson, PlannerPreferences, PlannerTargets
 from src.planning.phase10_reporting import MealPlanResult
+import json
 
 
 class DummyRecipeDB:
@@ -50,8 +51,9 @@ def test_plan_from_text_happy_path(monkeypatch, ingredient_source):
             enabled=False,
         ),
     )
-    monkeypatch.setattr("src.api.server.build_llm_client", lambda: object())
-    monkeypatch.setattr("src.api.server.parse_nl_config", lambda client, text: cfg)
+    # Deterministic mode must not call any LLM parsing logic.
+    monkeypatch.setattr("src.api.server.build_llm_client", lambda: (_ for _ in ()).throw(AssertionError("LLM client should not be built in deterministic mode")))
+    monkeypatch.setattr("src.api.server.parse_nl_config", lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("parse_nl_config should not be called in deterministic mode")))
     monkeypatch.setattr("src.api.server.RecipeDB", DummyRecipeDB)
 
     dummy_provider = DummyProvider()
@@ -77,9 +79,10 @@ def test_plan_from_text_happy_path(monkeypatch, ingredient_source):
     )
 
     client = TestClient(app)
+    prompt_json = json.dumps(cfg.model_dump(), sort_keys=True)
     resp = client.post(
         "/api/plan-from-text",
-        json={"prompt": "some prompt", "ingredient_source": ingredient_source},
+        json={"prompt": prompt_json, "ingredient_source": ingredient_source},
     )
 
     assert resp.status_code == 200
@@ -98,6 +101,17 @@ def test_plan_from_text_happy_path(monkeypatch, ingredient_source):
 def test_plan_from_text_parse_failure_returns_schema_validation_error(monkeypatch):
     cfg = _cfg()
 
+    monkeypatch.setattr(
+        "src.api.server.load_llm_settings",
+        lambda: LLMSettings(
+            api_key="dummy",
+            model="dummy-model",
+            timeout_seconds=1.0,
+            max_retries=0,
+            rate_limit_qps=1.0,
+            enabled=True,
+        ),
+    )
     monkeypatch.setattr("src.api.server.build_llm_client", lambda: object())
 
     def _raise(*args, **kwargs):
@@ -110,7 +124,10 @@ def test_plan_from_text_parse_failure_returns_schema_validation_error(monkeypatc
     monkeypatch.setattr("src.api.server.parse_nl_config", _raise)
     client = TestClient(app)
 
-    resp = client.post("/api/plan-from-text", json={"prompt": "bad nl config"})
+    resp = client.post(
+        "/api/plan-from-text",
+        json={"prompt": "bad nl config", "planning_mode": "assisted"},
+    )
     assert resp.status_code == 422
     assert resp.json()["error"]["code"] == "SCHEMA_VALIDATION_ERROR"
 
@@ -132,8 +149,15 @@ def test_plan_from_text_planning_mode_deterministic_routes_to_plan_meals(
             enabled=True,
         ),
     )
-    monkeypatch.setattr("src.api.server.build_llm_client", lambda: object())
-    monkeypatch.setattr("src.api.server.parse_nl_config", lambda client, text: cfg)
+    # Deterministic mode MUST not call any LLM logic.
+    monkeypatch.setattr(
+        "src.api.server.build_llm_client",
+        lambda: (_ for _ in ()).throw(AssertionError("LLM client should not be built in deterministic mode")),
+    )
+    monkeypatch.setattr(
+        "src.api.server.parse_nl_config",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("parse_nl_config should not be called in deterministic mode")),
+    )
     monkeypatch.setattr("src.api.server.RecipeDB", DummyRecipeDB)
 
     monkeypatch.setattr("src.api.server.extract_ingredient_names", lambda recipes: [])
@@ -174,10 +198,11 @@ def test_plan_from_text_planning_mode_deterministic_routes_to_plan_meals(
     monkeypatch.setattr("src.api.server.plan_with_llm_feedback", _should_not_call)
 
     client = TestClient(app)
+    prompt_json = json.dumps(cfg.model_dump(), sort_keys=True)
     resp = client.post(
         "/api/plan-from-text",
         json={
-            "prompt": "some prompt",
+            "prompt": prompt_json,
             "ingredient_source": ingredient_source,
             "planning_mode": "deterministic",
         },

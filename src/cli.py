@@ -22,7 +22,7 @@ from src.config.llm_settings import load_llm_settings
 from src.llm.client import LLMClient
 from src.llm.pipeline import generate_validate_persist_recipes
 from src.data_layer.upper_limits import UpperLimitsLoader, resolve_upper_limits
-from src.llm.tag_filter import filter_recipe_ids_by_preferences
+from src.llm.tag_filtering_service import apply_tag_filtering
 from src.llm.recipe_tagger import tag_recipes
 from src.llm.tag_repository import load_recipe_tags, upsert_recipe_tags
 
@@ -103,46 +103,17 @@ def _apply_recipe_tag_filter_pre_convert(
         )
 
     preferences = _extract_tag_preferences(request_like)
-    if not preferences:
-        return (
-            recipes,
-            {
-                "filter_applied": False,
-                "input_recipe_count": input_recipe_count,
-                "output_recipe_count": input_recipe_count,
-            },
-        )
+    filter_applied = bool(preferences)
+    tags_by_id = load_recipe_tags(tag_path) if filter_applied else {}
 
-    tags_by_id = load_recipe_tags(tag_path)
-
-    cuisine_pref = preferences.get("cuisine")
-    if isinstance(cuisine_pref, list) and cuisine_pref:
-        accepted_ids: list[str] = []
-        for cuisine in cuisine_pref:
-            single_prefs = dict(preferences)
-            single_prefs["cuisine"] = cuisine
-            accepted_ids_for_cuisine = filter_recipe_ids_by_preferences(
-                tags_by_id,
-                preferences=single_prefs,
-            )
-            accepted_ids.extend(accepted_ids_for_cuisine)
-        filtered_ids_set = set(accepted_ids)
-    else:
-        filtered_ids = filter_recipe_ids_by_preferences(
-            tags_by_id,
-            preferences=preferences,
-        )
-        filtered_ids_set = set(filtered_ids)
-
-    if not filtered_ids_set:
-        filtered_recipes = list(recipes)
-    else:
-        filtered_recipes = [
-            r for r in recipes if getattr(r, "id", None) in filtered_ids_set
-        ]
+    filtered_recipes = apply_tag_filtering(
+        recipes=list(recipes),
+        tags_by_id=tags_by_id,
+        preferences=preferences,
+    )
 
     log_payload = {
-        "filter_applied": True,
+        "filter_applied": filter_applied,
         "input_recipe_count": input_recipe_count,
         "output_recipe_count": len(filtered_recipes),
     }
@@ -252,6 +223,12 @@ def main():
         help="Generate and persist recipe tags (writes to --recipe-tags-path).",
     )
 
+    parser.add_argument(
+        "--allow-llm-tagging",
+        action="store_true",
+        help="Explicitly allow LLM usage for recipe tag generation.",
+    )
+
     # ---------------------------------------------------------------------
     # LLM recipe generation (optional vertical-slice command)
     # ---------------------------------------------------------------------
@@ -301,6 +278,8 @@ def main():
         if args.tag_recipes:
             # Deterministic recipe tags are generated via the LLM and persisted
             # to the tag repository file. This command does not run planning.
+            if not args.allow_llm_tagging:
+                raise ValueError("Tagging requires --allow-llm-tagging")
             llm_settings = load_llm_settings()
             client = LLMClient(llm_settings)
 

@@ -1,3 +1,5 @@
+import pytest
+
 import src.cli as cli
 from src.config.llm_settings import LLMSettings
 from src.data_layer.models import Ingredient, Recipe
@@ -88,6 +90,7 @@ def test_cli_tag_recipes_persists_tag_repository(
             "--output",
             "json",
             "--tag-recipes",
+            "--allow-llm-tagging",
             "--recipe-tags-path",
             str(tag_path),
         ],
@@ -97,4 +100,43 @@ def test_cli_tag_recipes_persists_tag_repository(
 
     loaded = load_recipe_tags(str(tag_path))
     assert set(loaded.keys()) == {"r1", "r2"}
+
+
+def test_cli_recipe_tags_requires_allow_flag(monkeypatch, tmp_path):
+    recipes_path = tmp_path / "recipes.json"
+    recipes_path.write_text("{}", encoding="utf-8")
+
+    ingredients_path = tmp_path / "ingredients.json"
+    ingredients_path.write_text("{}", encoding="utf-8")
+
+    profile_path = tmp_path / "profile.yaml"
+    profile_path.write_text("{}", encoding="utf-8")
+
+    tag_path = tmp_path / "recipe_tags.json"
+
+    # Ensure the command fails before any planning/LLM work.
+    monkeypatch.setattr("src.cli.RecipeDB", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr("src.cli.tag_recipes", lambda *_args, **_kwargs: {})
+
+    monkeypatch.setattr(
+        cli.sys,
+        "argv",
+        [
+            "cli.py",
+            "--profile",
+            str(profile_path),
+            "--recipes",
+            str(recipes_path),
+            "--ingredients",
+            str(ingredients_path),
+            "--output",
+            "json",
+            "--tag-recipes",
+            "--recipe-tags-path",
+            str(tag_path),
+        ],
+    )
+
+    with pytest.raises(SystemExit):
+        cli.main()
 

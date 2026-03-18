@@ -7,7 +7,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, constr
 
 from src.data_layer.models import UserProfile
 from src.data_layer.recipe_db import RecipeDB
@@ -23,6 +23,11 @@ from src.providers.api_provider import APIIngredientProvider
 from src.config.llm_settings import load_llm_settings
 from src.llm.client import LLMClient
 from src.llm.pipeline import generate_validate_persist_recipes
+from src.llm.ingredient_matcher import (
+    IngredientMatchingError,
+    match_ingredient_queries,
+    validate_matches,
+)
 
 
 recipes_path = "data/recipes/recipes.json"
@@ -101,6 +106,29 @@ class RecipeGenerationResponse(BaseModel):
     failures: List[RecipeGenerationFailure]
 
 
+class IngredientMatchRequest(BaseModel):
+    queries: List[constr(strip_whitespace=True, min_length=1)] = Field(
+        ..., min_length=1
+    )
+
+
+class IngredientMatchAcceptedItem(BaseModel):
+    original_query: str
+    normalized_name: str
+    confidence: float
+
+
+class IngredientMatchRejectedItem(BaseModel):
+    code: str
+    message: str
+    original_query: str
+
+
+class IngredientMatchResponse(BaseModel):
+    accepted: List[IngredientMatchAcceptedItem]
+    rejected: List[IngredientMatchRejectedItem]
+
+
 @app.post("/api/plan")
 def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
     try:
@@ -169,6 +197,75 @@ def generate_validated_recipes_endpoint(
             rejected_count=len(rejected),
             recipe_ids=list(recipe_ids),
             failures=failures,
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        return JSONResponse(
+            status_code=500,
+            content={"error": {"code": "PIPELINE_INTERNAL_ERROR", "message": str(exc)}},
+        )
+
+
+def _extract_original_query_from_field_errors(
+    field_errors: List[str],
+) -> str:
+    for item in field_errors:
+        if item.startswith("original_query="):
+            return item.split("=", 1)[1]
+    return ""
+
+
+@app.post("/api/ingredients/match", response_model=IngredientMatchResponse)
+def ingredient_match_endpoint(request: IngredientMatchRequest) -> IngredientMatchResponse:
+    try:
+        llm_settings = load_llm_settings()
+        client = LLMClient(llm_settings)
+
+        # Provider resolution is required for deterministic validation.
+        usda_client = USDAClient.from_env()
+        cached_lookup = CachedIngredientLookup(usda_client=usda_client)
+        provider = APIIngredientProvider(cached_lookup)
+
+        matches = match_ingredient_queries(client, request.queries)
+        accepted, failures = validate_matches(matches, provider)
+
+        accepted_items: List[IngredientMatchAcceptedItem] = []
+        for m in accepted:
+            accepted_items.append(
+                IngredientMatchAcceptedItem(
+                    original_query=m.query,
+                    normalized_name=m.normalized_name,
+                    confidence=m.confidence,
+                )
+            )
+
+        rejected_items: List[IngredientMatchRejectedItem] = []
+        for f in failures:
+            rejected_items.append(
+                IngredientMatchRejectedItem(
+                    code=f.error_code,
+                    message=f.message,
+                    original_query=_extract_original_query_from_field_errors(
+                        f.field_errors
+                    ),
+                )
+            )
+
+        return IngredientMatchResponse(
+            accepted=accepted_items,
+            rejected=rejected_items,
+        )
+    except IngredientMatchingError:
+        # Matching/parsing errors are internal contract failures.
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": {
+                    "code": "PIPELINE_INTERNAL_ERROR",
+                    "message": "Ingredient matching failed.",
+                }
+            },
         )
     except HTTPException:
         raise

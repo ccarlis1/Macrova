@@ -5,6 +5,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+import os
 
 from src.data_layer.user_profile import UserProfileLoader
 from src.data_layer.recipe_db import RecipeDB
@@ -28,6 +29,19 @@ from src.llm.tag_repository import load_recipe_tags, upsert_recipe_tags
 
 
 DEFAULT_TAG_PATH = "data/recipes/recipe_tags.json"
+
+# Load .env from project root (optional).
+# If present, this lets USDAClient.from_env() find `USDA_API_KEY`
+# without requiring you to export it in your shell.
+_ROOT = Path(__file__).resolve().parent.parent
+_env_file = _ROOT / ".env"
+if _env_file.exists():
+    for line in _env_file.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            k, _, v = line.partition("=")
+            # Do not override existing environment variables.
+            os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
 
 
 def _normalize_tag_pref_value(value: object) -> object:

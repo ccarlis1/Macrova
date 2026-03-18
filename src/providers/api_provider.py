@@ -43,6 +43,9 @@ class APIIngredientProvider(IngredientDataProvider):
         # info == {"name": "chicken breast", "per_100g": { ... }}
     """
 
+    # Contract marker for USDA-backed validation.
+    usda_capable: bool = True
+
     def __init__(self, cached_lookup: CachedIngredientLookup) -> None:
         self._lookup = cached_lookup
         self._resolved: Dict[str, Dict[str, Any]] = {}

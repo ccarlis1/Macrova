@@ -2,10 +2,12 @@ import pytest
 
 from src.llm.recipe_validator import validate_recipe_draft, validate_recipe_drafts
 from src.llm.schemas import RecipeDraft
+from src.llm.usda_contract import USDAProviderRequiredError
 from src.providers.ingredient_provider import IngredientDataProvider
 
 
 class FakeProvider(IngredientDataProvider):
+    usda_capable = True
     def __init__(self, *, ingredient_info_by_name):
         self.ingredient_info_by_name = ingredient_info_by_name
         self.resolve_calls = []
@@ -119,6 +121,67 @@ def test_validate_recipe_drafts_partial_acceptance_returns_both_sets():
     )
 
     accepted, rejected = validate_recipe_drafts([ok_1, bad], provider)
-    assert [r.name for r in accepted] == ["Accept"]
+    assert [w.recipe.name for w in accepted] == ["Accept"]
     assert [f.error_code for f in rejected] == ["INGREDIENT_NOT_FOUND"]
+
+
+def test_validate_recipe_draft_rejects_non_usda_provider():
+    class NonUSDAProvider(IngredientDataProvider):
+        def get_ingredient_info(self, name: str):
+            return None
+
+        def resolve_all(self, ingredient_names):
+            return None
+
+    provider = NonUSDAProvider()
+
+    draft = RecipeDraft(
+        name="My Recipe",
+        ingredients=[{"name": "chicken breast", "quantity": 200.0, "unit": "g"}],
+        instructions=["Cook it."],
+    )
+
+    with pytest.raises(USDAProviderRequiredError) as exc:
+        validate_recipe_draft(draft, provider)
+
+    assert exc.value.error_code == "USDA_PROVIDER_REQUIRED"
+
+
+def test_validate_recipe_draft_memoizes_nutrition_computation_for_duplicate_ingredients():
+    class CountingProvider(IngredientDataProvider):
+        usda_capable = True
+
+        def __init__(self):
+            self.get_calls = 0
+            self._by_name = {
+                "chicken breast": {
+                    "name": "chicken breast",
+                    **_nutrition_dict(),
+                }
+            }
+
+        def get_ingredient_info(self, name: str):
+            self.get_calls += 1
+            return self._by_name.get(str(name).lower().strip())
+
+        def resolve_all(self, ingredient_names):
+            return None
+
+    provider = CountingProvider()
+
+    draft = RecipeDraft(
+        name="My Recipe",
+        ingredients=[
+            {"name": "chicken breast", "quantity": 200.0, "unit": "g"},
+            {"name": "chicken breast", "quantity": 200.0, "unit": "g"},
+        ],
+        instructions=["Cook it."],
+    )
+
+    ok, res = validate_recipe_draft(draft, provider)
+    assert ok is True
+    # validate_recipe_draft calls provider.get_ingredient_info:
+    # - twice in existence check (one per ingredient occurrence)
+    # - once for nutrition computation (memoized on second duplicate)
+    assert provider.get_calls == 3
 

@@ -160,3 +160,24 @@ def test_validate_matches_accepts_when_provider_has_info():
     assert accepted[0].validation_status == "ACCEPTED"
     assert provider.resolve_calls == [["chicken"]]
 
+
+def test_validate_matches_batches_provider_resolution_for_multiple_names():
+    matches = [
+        IngredientMatchResult(query="a", normalized_name="rice", confidence=0.9),
+        IngredientMatchResult(query="b", normalized_name="chicken", confidence=0.91),
+        IngredientMatchResult(query="c", normalized_name="chicken", confidence=0.92),
+    ]
+    provider = FakeProvider(
+        ingredient_info_by_name={
+            "rice": _ingredient_info("Rice"),
+            "chicken": _ingredient_info("Chicken"),
+        }
+    )
+
+    accepted, rejected = validate_matches(matches, provider)
+
+    assert rejected == []
+    assert [m.query for m in accepted] == ["a", "b", "c"]
+    # One batch resolve_all call for both unique normalized names.
+    assert provider.resolve_calls == [["chicken", "rice"]]
+

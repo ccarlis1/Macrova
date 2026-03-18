@@ -6,6 +6,7 @@ from src.llm.client import LLMClient
 from src.llm.recipe_generator import generate_recipe_drafts
 from src.llm.recipe_validator import validate_recipe_drafts
 from src.llm.repository import append_validated_recipes
+from src.llm.usda_contract import assert_usda_capable_provider
 from src.providers.ingredient_provider import IngredientDataProvider
 
 
@@ -18,6 +19,9 @@ def generate_validate_persist_recipes(
     client: LLMClient,
 ) -> Dict[str, Any]:
     """Generate -> validate -> persist Phase 1 pipeline (Steps 4-7)."""
+    # System invariant: USDA-backed validation is mandatory everywhere.
+    assert_usda_capable_provider(provider)
+
     drafts = generate_recipe_drafts(client, context=context, count=count)
 
     accepted, rejected = validate_recipe_drafts(drafts, provider)

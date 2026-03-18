@@ -1,6 +1,9 @@
 import json
 
+import pytest
+
 from src.llm.pipeline import generate_validate_persist_recipes
+from src.llm.usda_contract import USDAProviderRequiredError
 from src.providers.ingredient_provider import IngredientDataProvider
 
 
@@ -13,6 +16,7 @@ class DummyLLMClient:
 
 
 class FakeProvider(IngredientDataProvider):
+    usda_capable = True
     def __init__(self, *, ingredient_info_by_name):
         self.ingredient_info_by_name = ingredient_info_by_name
 
@@ -107,4 +111,39 @@ def test_generate_validate_persist_recipes_partial_acceptance(tmp_path):
 
     data = json.loads((tmp_path / "recipes.json").read_text(encoding="utf-8"))
     assert len(data["recipes"]) == 1
+
+
+def test_generate_validate_persist_recipes_rejects_non_usda_provider(tmp_path):
+    class NonUSDAProvider(IngredientDataProvider):
+        def get_ingredient_info(self, name: str):
+            return None
+
+        def resolve_all(self, ingredient_names):
+            return None
+
+    recipes_path = str(tmp_path / "recipes.json")
+
+    provider = NonUSDAProvider()
+    client = DummyLLMClient(
+        raw_response={
+            "drafts": [
+                {
+                    "name": "X",
+                    "ingredients": [{"name": "chicken breast", "quantity": 200.0, "unit": "g"}],
+                    "instructions": ["Cook it."],
+                }
+            ]
+        }
+    )
+
+    with pytest.raises(USDAProviderRequiredError) as exc:
+        generate_validate_persist_recipes(
+            context={},
+            count=1,
+            recipes_path=recipes_path,
+            provider=provider,
+            client=client,
+        )
+
+    assert exc.value.error_code == "USDA_PROVIDER_REQUIRED"
 

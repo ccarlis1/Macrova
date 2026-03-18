@@ -21,6 +21,7 @@ from src.ingestion.usda_client import USDAClient
 from src.ingestion.ingredient_cache import CachedIngredientLookup
 from src.providers.api_provider import APIIngredientProvider
 from src.config.llm_settings import load_llm_settings
+from src.api.error_mapping import map_exception_to_api_error
 from src.llm.client import LLMClient
 from src.llm.pipeline import generate_validate_persist_recipes
 from src.llm.ingredient_matcher import (
@@ -87,6 +88,19 @@ def _build_user_profile(request: PlanRequest) -> UserProfile:
         allergies=[str(allergen) for allergen in request.allergies],
         daily_micronutrient_targets=request.micronutrient_goals,
     )
+
+
+def build_llm_client() -> LLMClient:
+    """Factory for LLM client creation (patchable in tests)."""
+    llm_settings = load_llm_settings()
+    return LLMClient(llm_settings)
+
+
+def build_usda_provider() -> APIIngredientProvider:
+    """Factory for USDA-backed ingredient provider creation (patchable in tests)."""
+    usda_client = USDAClient.from_env()
+    cached_lookup = CachedIngredientLookup(usda_client=usda_client)
+    return APIIngredientProvider(cached_lookup)
 
 
 class RecipeGenerationRequest(BaseModel):
@@ -165,13 +179,8 @@ def generate_validated_recipes_endpoint(
     request: RecipeGenerationRequest,
 ) -> RecipeGenerationResponse:
     try:
-        llm_settings = load_llm_settings()
-        client = LLMClient(llm_settings)
-
-        # USDA-backed provider for deterministic, authoritative validation.
-        usda_client = USDAClient.from_env()
-        cached_lookup = CachedIngredientLookup(usda_client=usda_client)
-        provider = APIIngredientProvider(cached_lookup)
+        client = build_llm_client()
+        provider = build_usda_provider()
 
         summary = generate_validate_persist_recipes(
             context=request.context,
@@ -201,10 +210,8 @@ def generate_validated_recipes_endpoint(
     except HTTPException:
         raise
     except Exception as exc:
-        return JSONResponse(
-            status_code=500,
-            content={"error": {"code": "PIPELINE_INTERNAL_ERROR", "message": str(exc)}},
-        )
+        status_code, payload = map_exception_to_api_error(exc)
+        return JSONResponse(status_code=status_code, content=payload)
 
 
 def _extract_original_query_from_field_errors(
@@ -219,13 +226,8 @@ def _extract_original_query_from_field_errors(
 @app.post("/api/ingredients/match", response_model=IngredientMatchResponse)
 def ingredient_match_endpoint(request: IngredientMatchRequest) -> IngredientMatchResponse:
     try:
-        llm_settings = load_llm_settings()
-        client = LLMClient(llm_settings)
-
-        # Provider resolution is required for deterministic validation.
-        usda_client = USDAClient.from_env()
-        cached_lookup = CachedIngredientLookup(usda_client=usda_client)
-        provider = APIIngredientProvider(cached_lookup)
+        client = build_llm_client()
+        provider = build_usda_provider()
 
         matches = match_ingredient_queries(client, request.queries)
         accepted, failures = validate_matches(matches, provider)
@@ -256,24 +258,11 @@ def ingredient_match_endpoint(request: IngredientMatchRequest) -> IngredientMatc
             accepted=accepted_items,
             rejected=rejected_items,
         )
-    except IngredientMatchingError:
-        # Matching/parsing errors are internal contract failures.
-        return JSONResponse(
-            status_code=500,
-            content={
-                "error": {
-                    "code": "PIPELINE_INTERNAL_ERROR",
-                    "message": "Ingredient matching failed.",
-                }
-            },
-        )
     except HTTPException:
         raise
     except Exception as exc:
-        return JSONResponse(
-            status_code=500,
-            content={"error": {"code": "PIPELINE_INTERNAL_ERROR", "message": str(exc)}},
-        )
+        status_code, payload = map_exception_to_api_error(exc)
+        return JSONResponse(status_code=status_code, content=payload)
 
 
 @app.get("/api/recipes")

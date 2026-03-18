@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from src.llm.client import LLMClient
 from src.llm.schemas import (
@@ -184,13 +184,37 @@ def validate_matches(
     accepted: List[IngredientMatchResult] = []
     rejected: List[ValidationFailure] = []
 
-    # Memoize provider resolutions so repeated normalized_name values don't
-    # cause repeated resolution calls.
-    resolution_cache: Dict[str, Optional[Dict[str, Any]]] = {}
-
+    # Batch provider resolution to avoid one-by-one resolve_all() calls.
+    names_to_resolve: Set[str] = set()
+    normalized_by_match: List[Tuple[IngredientMatchResult, str]] = []
     for match in matches:
         original_query = str(match.query)
         normalized_name = str(match.normalized_name).strip()
+        normalized_by_match.append((match, normalized_name))
+
+        if not normalized_name:
+            continue
+        if match.confidence < INGREDIENT_MATCH_CONFIDENCE_THRESHOLD:
+            continue
+        # Candidate for provider resolution.
+        names_to_resolve.add(normalized_name)
+
+    resolved_info_by_name: Dict[str, Optional[Dict[str, Any]]] = {}
+    if names_to_resolve:
+        try:
+            provider.resolve_all(sorted(names_to_resolve))
+        except Exception:
+            # Deterministic fallback: treat all as unresolved if provider prefetch fails.
+            resolved_info_by_name = {n: None for n in names_to_resolve}
+        else:
+            for n in names_to_resolve:
+                try:
+                    resolved_info_by_name[n] = provider.get_ingredient_info(n)
+                except Exception:
+                    resolved_info_by_name[n] = None
+
+    for match, normalized_name in normalized_by_match:
+        original_query = str(match.query)
 
         if not normalized_name:
             rejected.append(
@@ -215,13 +239,7 @@ def validate_matches(
             )
             continue
 
-        if normalized_name not in resolution_cache:
-            resolution_cache[normalized_name] = _extract_provider_resolution(
-                provider=provider,
-                normalized_name=normalized_name,
-            )
-
-        info = resolution_cache[normalized_name]
+        info = resolved_info_by_name.get(normalized_name)
         if info is None:
             rejected.append(
                 ValidationFailure(

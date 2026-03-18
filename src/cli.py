@@ -2,6 +2,7 @@
 """Command-line interface for the Nutrition Agent meal planner."""
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -16,6 +17,9 @@ from src.planning.planner import plan_meals
 from src.output.formatters import format_result_markdown, format_result_json_string
 from src.providers.local_provider import LocalIngredientProvider
 from src.providers.api_provider import APIIngredientProvider, IngredientResolutionError
+from src.config.llm_settings import load_llm_settings
+from src.llm.client import LLMClient
+from src.llm.pipeline import generate_validate_persist_recipes
 from src.data_layer.upper_limits import UpperLimitsLoader, resolve_upper_limits
 
 
@@ -69,6 +73,32 @@ def main():
         help="Planning horizon: 1-7 days"
     )
 
+    # ---------------------------------------------------------------------
+    # LLM recipe generation (optional vertical-slice command)
+    # ---------------------------------------------------------------------
+    parser.add_argument(
+        "--llm-generate-validated",
+        action="store_true",
+        help="Generate validated LLM recipes and append to the recipes JSON.",
+    )
+    parser.add_argument(
+        "--count",
+        type=int,
+        default=None,
+        help="Number of recipes to generate (required with --llm-generate-validated).",
+    )
+    parser.add_argument(
+        "--context-json",
+        type=str,
+        default=None,
+        help="Generation context as inline JSON or a file path (required with --llm-generate-validated).",
+    )
+    parser.add_argument(
+        "--llm-generate-and-plan",
+        action="store_true",
+        help="After generating recipes, run the planner on the updated recipe pool.",
+    )
+
     args = parser.parse_args()
     
     # Validate file paths
@@ -89,6 +119,42 @@ def main():
         sys.exit(1)
     
     try:
+        if args.llm_generate_validated:
+            if args.count is None:
+                raise ValueError("--count is required when using --llm-generate-validated")
+            if not args.context_json:
+                raise ValueError("--context-json is required when using --llm-generate-validated")
+
+            context_raw = args.context_json.strip()
+            if context_raw.startswith("{") or context_raw.startswith("["):
+                context = json.loads(context_raw)
+            else:
+                context = json.loads(Path(context_raw).read_text(encoding="utf-8"))
+
+            if not isinstance(context, dict):
+                raise ValueError("--context-json must resolve to a JSON object (dict)")
+
+            # LLM client + USDA-backed provider (USDA gate is mandatory).
+            llm_settings = load_llm_settings()
+            client = LLMClient(llm_settings)
+
+            usda_client = USDAClient.from_env()
+            cached_lookup = CachedIngredientLookup(usda_client=usda_client)
+            validation_provider = APIIngredientProvider(cached_lookup)
+
+            summary = generate_validate_persist_recipes(
+                context=context,
+                count=args.count,
+                recipes_path=str(recipes_path),
+                provider=validation_provider,
+                client=client,
+            )
+            # Deterministic output for operators/scripts.
+            print(json.dumps(summary))
+
+            if not args.llm_generate_and_plan:
+                return
+
         # Load user profile
         print(f"Loading user profile from {profile_path}...", file=sys.stderr)
         profile_loader = UserProfileLoader(str(profile_path))

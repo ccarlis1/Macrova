@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Set
 
 from src.data_layer.models import Ingredient, Recipe
+from src.llm.types import ValidatedRecipeForPersistence
 
 
 def _normalized_ingredient_for_fingerprint(ing: Ingredient) -> Dict[str, Any]:
@@ -39,7 +40,27 @@ def compute_recipe_fingerprint(recipe: Recipe) -> str:
             normalized.append(d)
 
     normalized.sort(key=lambda d: (d["name"], d["unit"], d["quantity"]))
-    payload = {"ingredients": normalized}
+
+    # Prevent over-collapsing semantically different recipes that share the same
+    # measurable ingredients. We normalize instructions deterministically and
+    # include their hash in the fingerprint.
+    def _normalize_instruction_text(s: str) -> str:
+        # Deterministic normalization: casefold + whitespace collapse.
+        parts = str(s).strip().lower().split()
+        return " ".join(parts)
+
+    normalized_instructions: List[str] = [
+        _normalize_instruction_text(i) for i in (recipe.instructions or [])
+    ]
+    instr_json = json.dumps(
+        {"instructions": normalized_instructions},
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+    )
+    instructions_sha256 = hashlib.sha256(instr_json.encode("utf-8")).hexdigest()
+
+    payload = {"ingredients": normalized, "instructions_sha256": instructions_sha256}
     payload_json = json.dumps(payload, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(payload_json.encode("utf-8")).hexdigest()
 
@@ -81,7 +102,7 @@ def _load_recipe_json(path: Path) -> Dict[str, Any]:
 def append_validated_recipes(
     *,
     path: str,
-    recipes: List[Recipe],
+    recipes: List[ValidatedRecipeForPersistence],
 ) -> List[str]:
     """Append validated recipes to the JSON store.
 
@@ -92,6 +113,13 @@ def append_validated_recipes(
     """
     recipes_path = Path(path)
     recipes_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Repository boundary: make it impossible to persist unvalidated recipes.
+    for item in recipes:
+        if not isinstance(item, ValidatedRecipeForPersistence):
+            raise TypeError(
+                "append_validated_recipes() accepts only ValidatedRecipeForPersistence."
+            )
 
     existing_data = _load_recipe_json(recipes_path)
     existing_recipes: List[Dict[str, Any]] = existing_data["recipes"]
@@ -113,7 +141,8 @@ def append_validated_recipes(
 
     appended_ids: List[str] = []
 
-    for recipe in recipes:
+    for wrapped in recipes:
+        recipe = wrapped.recipe
         fp = compute_recipe_fingerprint(recipe)
         if fp in existing_fingerprints:
             continue  # Deduplicate by content.

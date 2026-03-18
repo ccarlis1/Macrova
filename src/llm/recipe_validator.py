@@ -9,6 +9,8 @@ from src.ingestion.ingredient_validator import IngredientValidator
 from src.nutrition.calculator import NutritionCalculator
 from src.providers.ingredient_provider import IngredientDataProvider
 from src.llm.schemas import RecipeDraft, ValidationFailure, parse_llm_json
+from src.llm.types import ValidatedRecipeForPersistence
+from src.llm.usda_contract import assert_usda_capable_provider
 
 
 class RecipeValidationError(Exception):
@@ -59,6 +61,8 @@ def validate_recipe_draft(
     2. Provider resolution and ingredient existence check (provider.resolve_all/get)
     3. Nutrition recomputation (NutritionCalculator) and failure detection
     """
+    # System invariant: USDA-backed validation is mandatory for recipe validation.
+    assert_usda_capable_provider(provider)
 
     ingredient_validator = IngredientValidator()
 
@@ -153,9 +157,14 @@ def validate_recipe_draft(
     # Since our RecipeDraft schema has no nutrition fields, the key guard is
     # that nutrition computation succeeds for every measurable ingredient.
     calculator = NutritionCalculator(provider)
+    nutrition_computation_cache: Dict[Tuple[str, float, str], bool] = {}
     for ing in measurable:
+        cache_key = (ing.name, float(ing.quantity), str(ing.unit).lower().strip())
+        if cache_key in nutrition_computation_cache:
+            continue
         try:
             calculator.calculate_ingredient_nutrition(ing)
+            nutrition_computation_cache[cache_key] = True
         except IngredientNotFoundError:
             return (
                 False,
@@ -190,20 +199,20 @@ def validate_recipe_draft(
 def validate_recipe_drafts(
     drafts: List[RecipeDraft],
     provider: IngredientDataProvider,
-) -> Tuple[List[Recipe], List[ValidationFailure]]:
+) -> Tuple[List[ValidatedRecipeForPersistence], List[ValidationFailure]]:
     """Validate many drafts, returning accepted recipes and failures."""
 
-    accepted: List[Recipe] = []
+    accepted_wrapped: List[ValidatedRecipeForPersistence] = []
     failures: List[ValidationFailure] = []
 
     for draft_idx, draft in enumerate(drafts):
         ok, res = validate_recipe_draft(draft, provider)
         if ok:
             assert isinstance(res, Recipe)
-            accepted.append(res)
+            accepted_wrapped.append(ValidatedRecipeForPersistence(recipe=res))
         else:
             assert isinstance(res, ValidationFailure)
             failures.append(res)
 
-    return accepted, failures
+    return accepted_wrapped, failures
 

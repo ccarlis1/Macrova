@@ -241,10 +241,10 @@ class TestFeasibilityFiltering:
     def test_recipe_fails_fc2_macro_feasibility(self):
         profile = _make_profile(daily_protein_g=100.0, daily_carbs_g=200.0)
         tracker = DailyTracker(
-            protein_consumed=95.0, carbs_consumed=100.0, fat_consumed=60.0, calories_consumed=1200.0,
+            protein_consumed=95.0, carbs_consumed=100.0, fat_consumed=60.0, calories_consumed=1500.0,
             slots_assigned=1, slots_total=2,
         )
-        r_high_protein = _make_recipe("r1", protein=15.0, carbs=50.0, fat=10.0, calories=400.0)
+        r_high_protein = _make_recipe("r1", protein=16.0, carbs=50.0, fat=10.0, calories=400.0)
         r_zero_protein = _make_recipe("r2", protein=0.0, carbs=100.0, fat=10.0, calories=500.0)
         pool = [r_high_protein, r_zero_protein]
         macro = _macro_bounds(pool)

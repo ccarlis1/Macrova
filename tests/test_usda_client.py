@@ -391,7 +391,7 @@ class TestLookupValidatedIngredient:
         with patch.object(client, '_make_request', return_value=mock_response) as mock:
             result = client.lookup_validated(validated)
             # Verify canonical_name was used (not original name)
-            mock.assert_called_once_with("chicken breast")
+            mock.assert_called_once_with("chicken breast", include_branded=True)
         
         assert result.success is True
         assert result.fdc_id == 171705
@@ -443,7 +443,7 @@ class TestLookupValidatedIngredient:
         with patch.object(client, '_make_request', return_value=mock_response) as mock:
             result = client.lookup_validated(validated)
             # Should fall back to original name
-            mock.assert_called_once_with("salmon")
+            mock.assert_called_once_with("salmon", include_branded=True)
         
         assert result.success is True
 

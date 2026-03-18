@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any, Dict, List, Literal, Optional, TypeVar
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictStr, ValidationError, model_validator
 
 
 SUPPORTED_UNITS: List[str] = [
@@ -47,9 +47,11 @@ def _unit_is_supported(unit: str) -> bool:
 
 
 class RecipeTagsJson(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    # Enum fields arrive from JSON as strings; allow coercion while keeping
+    # "extra" forbidden and string fields strict.
+    model_config = ConfigDict(extra="forbid", strict=False)
 
-    cuisine: str
+    cuisine: StrictStr
     cost_level: BudgetLevel
     prep_time_bucket: PrepTimeBucket
     dietary_flags: List[DietaryFlag] = Field(default_factory=list)
@@ -108,9 +110,11 @@ class PlannerTargets(BaseModel):
 
 
 class PlannerPreferences(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    # Enum fields arrive from JSON as strings; allow coercion while keeping
+    # string fields strict.
+    model_config = ConfigDict(extra="forbid", strict=False)
 
-    cuisine: List[str] = Field(default_factory=list)
+    cuisine: List[StrictStr] = Field(default_factory=list)
     budget: BudgetLevel
 
 

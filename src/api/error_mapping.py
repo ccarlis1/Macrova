@@ -14,6 +14,8 @@ from src.llm.ingredient_matcher import IngredientMatchingError
 from src.llm.recipe_generator import RecipeGenerationError
 from src.llm.recipe_validator import RecipeValidationError
 from src.llm.usda_contract import USDAProviderRequiredError
+from src.llm.constraint_parser import PlannerConfigParsingError
+from src.data_layer.user_profile import PlannerConfigMappingError
 
 
 API_ERROR = "error"
@@ -49,7 +51,16 @@ def map_exception_to_api_error(exc: Exception) -> Tuple[int, Dict[str, Any]]:
         return 502, _payload("LLM_API_ERROR", str(exc))
 
     # Schema/contract errors surfaced as deterministic internal exceptions.
-    if isinstance(exc, (RecipeGenerationError, RecipeValidationError, IngredientMatchingError)):
+    if isinstance(
+        exc,
+        (
+            RecipeGenerationError,
+            RecipeValidationError,
+            IngredientMatchingError,
+            PlannerConfigParsingError,
+            PlannerConfigMappingError,
+        ),
+    ):
         return 422, _payload("SCHEMA_VALIDATION_ERROR", str(exc))
 
     # Validation failures that are specifically about input/provider correctness.

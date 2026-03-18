@@ -23,12 +23,14 @@ from src.providers.api_provider import APIIngredientProvider
 from src.config.llm_settings import load_llm_settings
 from src.api.error_mapping import map_exception_to_api_error
 from src.llm.client import LLMClient
+from src.llm.constraint_parser import parse_nl_config
 from src.llm.pipeline import generate_validate_persist_recipes
 from src.llm.ingredient_matcher import (
     IngredientMatchingError,
     match_ingredient_queries,
     validate_matches,
 )
+from src.data_layer.user_profile import user_profile_from_planner_config
 
 
 recipes_path = "data/recipes/recipes.json"
@@ -68,6 +70,11 @@ class PlanRequest(BaseModel):
     days: int = Field(default=1, ge=1, le=7)
     ingredient_source: str = Field(default="local", pattern="^(local|api)$")
     micronutrient_goals: Optional[Dict[str, float]] = None
+
+
+class PlanFromTextRequest(BaseModel):
+    prompt: str = Field(..., min_length=1)
+    ingredient_source: str = Field(default="local", pattern="^(local|api)$")
 
 
 def _build_user_profile(request: PlanRequest) -> UserProfile:
@@ -172,6 +179,40 @@ def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
         return format_result_json(result, recipe_by_id, planning_profile, request.days)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.post("/api/plan-from-text")
+def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
+    try:
+        client = build_llm_client()
+        cfg = parse_nl_config(client, request.prompt)
+        user_profile = user_profile_from_planner_config(cfg)
+        days = int(cfg.days)
+
+        recipe_db = RecipeDB(recipes_path)
+        all_recipes = recipe_db.get_all_recipes()
+
+        if request.ingredient_source == "api":
+            provider = build_usda_provider()
+        else:
+            nutrition_db = NutritionDB(ingredients_path)
+            provider = LocalIngredientProvider(nutrition_db)
+
+        all_ingredient_names = extract_ingredient_names(all_recipes)
+        provider.resolve_all(all_ingredient_names)
+
+        calculator = NutritionCalculator(provider)
+        recipe_pool = convert_recipes(all_recipes, calculator)
+        recipe_by_id = {r.id: r for r in recipe_pool}
+        planning_profile = convert_profile(user_profile, days)
+
+        result = plan_meals(planning_profile, recipe_pool, days)
+        return format_result_json(result, recipe_by_id, planning_profile, days)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        status_code, payload = map_exception_to_api_error(exc)
+        return JSONResponse(status_code=status_code, content=payload)
 
 
 @app.post("/api/recipes/generate-validated", response_model=RecipeGenerationResponse)

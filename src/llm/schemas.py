@@ -28,9 +28,12 @@ class BudgetLevel(str, Enum):
 
 
 class PrepTimeBucket(str, Enum):
-    quick = "quick"
-    medium = "medium"
-    slow = "slow"
+    # Mirror the planner's cooking_time_max() mapping (busyness_level -> max minutes):
+    # 1 => <= 5, 2 => <= 15, 3 => <= 30, 4 => 30+ (no upper bound).
+    snack = "snack"  # <= 5 minutes (busyness_level 1)
+    quick_meal = "quick_meal"  # <= 15 minutes (busyness_level 2)
+    weeknight_meal = "weeknight_meal"  # <= 30 minutes (busyness_level 3)
+    meal_prep = "meal_prep"  # 30+ minutes (busyness_level 4)
 
 
 class DietaryFlag(str, Enum):

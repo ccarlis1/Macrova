@@ -377,7 +377,7 @@ Features:
 - editable nutrition targets
 - macro ratio configuration
 - micronutrient goals
-- API key entry
+- API key entry (recipe and LLM API)
 - live calorie calculation
 
 ---
@@ -459,6 +459,12 @@ Possible views:
 
 ---
 
+#### 7. Agent Pane
+
+- Keep as a basic chat window in this current phase.
+
+---
+
 ## Phase 9 — Nutrition Visualization
 
 Use fl_chart to display:
@@ -506,8 +512,6 @@ Recipe creation
 Nutrition calculations  
 Meal plan generation  
 Offline usage
-
-
 
 ## Phase 12 — Deployment Targets
 
@@ -564,6 +568,352 @@ Focus on:
 UI polish can be improved after core functionality is stable.
 
 ---
+
+# 2) LLM Integration Roadmap
+
+## Overview
+
+The goal of LLM integration is **not to replace the planner**, but to enhance it.
+
+The planner remains:
+
+```id="l2d4xk"
+• deterministic
+• constraint-driven
+• the source of truth for correctness
+
+```
+
+The LLM will act as:
+
+```id="2p4t9v"
+• a generator (recipes, ingredients)
+• a translator (natural language → structured inputs)
+• an assistant (help the planner succeed when it fails)
+
+```
+
+This creates a hybrid system:
+
+```id="2j4h9y"
+LLM → Suggests / Generates
+Planner → Validates / Optimizes
+
+```
+
+---
+
+# Phase 1 — Recipe Generation + Validation Loop (High Priority)
+
+## Goal
+
+Automatically expand the recipe pool using LLM-generated recipes.
+
+## Flow
+
+```id="f3a7dk"
+1. Generate recipe (LLM)
+2. Extract ingredients + quantities
+3. Query USDA API for each ingredient
+4. Validate matches (strict)
+5. Build structured recipe
+6. Add to cache
+
+```
+
+## Requirements
+
+- Only accept ingredients that match USDA entries confidently
+- Normalize all ingredient quantities (prefer grams internally)
+- Reject recipes with unmatched ingredients
+
+## Outcome
+
+```id="z9x2sm"
+• Larger and more diverse recipe pool
+• Higher planner success rate
+• Reduced manual recipe entry
+
+```
+
+---
+
+# Phase 2 — Ingredient Matching Assistant
+
+## Goal
+
+Allow users to input ingredients naturally.
+
+## Example
+
+User input:
+
+```id="q7r8al"
+"2 eggs"
+"1 cup rice"
+"chicken breast"
+
+```
+
+LLM converts to:
+
+```id="q9v1pk"
+egg, whole, raw
+rice, white, cooked
+chicken breast, skinless
+
+```
+
+Then:
+
+```id="b6n2cx"
+→ USDA API lookup
+→ validation
+→ cache
+
+```
+
+## Outcome
+
+```id="n5k2zd"
+• Faster ingredient entry
+• Better UX
+• Cleaner ingredient database
+
+```
+
+---
+
+# Phase 3 — Planner Feedback Loop (Self-Healing Planner)
+
+## Goal
+
+Automatically recover when the planner fails.
+
+## Flow
+
+```id="g1p4ks"
+1. Run planner
+2. If failure:
+    → analyze nutrient deficits
+3. Prompt LLM to generate recipes targeting deficits
+4. Add recipes to pool
+5. Retry planner
+
+```
+
+## Example
+
+```id="p7k3dt"
+Deficit: iron
+
+LLM prompt:
+"Generate high-iron recipes under 600 kcal using simple ingredients"
+
+```
+
+## Safeguards
+
+```id="t8c5vr"
+• limit retries (3–5 attempts)
+• avoid duplicate recipe generation
+• validate all generated recipes via USDA
+
+```
+
+## Outcome
+
+```id="m4k8xn"
+• Planner becomes significantly more robust
+• Fewer “no solution” cases
+• System improves itself dynamically
+
+```
+
+---
+
+# Phase 4 — Natural Language → Planner Configuration
+
+## Goal
+
+Allow users to define meal plans using natural language.
+
+## Example
+
+User input:
+
+```id="c3v7qp"
+"I want a 3-day high-protein meal plan, cheap, mostly chicken, 2 meals per day"
+
+```
+
+LLM converts to:
+
+```json
+{
+  "days": 3,
+  "meals_per_day": 2,
+  "protein_target": 150,
+  "budget_mode": true,
+  "preferred_ingredients": ["chicken"]
+}
+
+```
+
+## Outcome
+
+```id="k6w1pf"
+• Reduced friction for users
+• More flexible plan creation
+• Easier onboarding
+```
+
+---
+
+# Phase 5 — Smart Recipe Filtering & Tagging
+
+## Goal
+
+Use LLM to enhance recipe metadata and filtering.
+
+## Features
+
+```id="d4y9sm"
+• auto-tag recipes (cuisine, prep time, cost level)
+• filter recipes based on user preferences
+• support queries like:
+    "quick meals"
+    "spicy food"
+    "low cost"
+
+```
+
+## Outcome
+
+```id="f1n8zt"
+• Improved recipe discovery
+• Better planner inputs
+• More personalized plans
+
+```
+
+---
+
+# Future Enhancements
+
+## Constraint-Aware Recipe Generation
+
+Generate recipes that directly target planner needs:
+
+```id="b2j6rn"
+• high iron
+• low calorie
+• high protein
+• specific cuisine
+
+```
+
+---
+
+## Hybrid Search (Planner + Generation)
+
+Extend planner behavior:
+
+```id="r3k7wp"
+search existing recipes
++
+generate new recipes when search space is insufficient
+
+```
+
+---
+
+## Cost Optimization
+
+Introduce:
+
+```id="v6t9yx"
+• ingredient cost estimation
+• budget-aware planning
+
+```
+
+---
+
+# Risks & Safeguards
+
+## Hallucinated Ingredients
+
+```id="y5v8ak"
+• always validate via USDA API
+• reject unmatched ingredients
+
+```
+
+## Invalid Quantities
+
+```id="x3d7pl"
+• normalize units internally
+• convert to grams where possible
+
+```
+
+## Infinite Retry Loops
+
+```id="c9m4ks"
+• enforce retry limits
+• track generated recipes
+
+```
+
+---
+
+# Success Criteria
+
+```id="j7q2wx"
+• planner succeeds more often without manual intervention
+• recipe pool grows automatically
+• user input becomes more flexible and intuitive
+• system remains deterministic and reliable
+
+```
+
+---
+
+# Priority Order
+
+```id="w8z1dn"
+1. Recipe generation + validation loop
+2. Ingredient matching assistant
+3. Planner feedback loop
+4. Natural language configuration
+5. Recipe tagging & filtering
+
+```
+
+---
+
+# Summary
+
+This integration transforms the system from:
+
+```id="p5x9mt"
+a static planner with fixed inputs
+
+```
+
+into:
+
+```id="n2c7rk"
+a dynamic system that generates, adapts, and improves its own inputs
+
+```
+
+while keeping the planner as the **guarantee of correctness**.
+
+---
+
+
 
 # 3) Proposal: Improve Planner Branching Stability via Range-Based Feasibility (FC-1 Redesign)
 

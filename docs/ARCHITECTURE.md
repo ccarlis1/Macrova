@@ -11,6 +11,7 @@ The Nutrition Agent is a modular system that generates personalized meal recomme
 ## Core Architecture
 
 ### 1. Data Layer
+
 **Purpose**: Store and manage all data sources
 
 - **Ingredient Database**: Structured ingredient data with nutrition profiles
@@ -27,13 +28,15 @@ The Nutrition Agent is a modular system that generates personalized meal recomme
   - ULs are DAILY limits (not weekly) — enforced per-day, never averaged
 
 ### 2. Ingestion Layer
+
 **Purpose**: Parse and retrieve data from various sources
 
 - **Ingredient Parser**: Extract and normalize ingredients from recipes/user input (simple parsing: quantity, unit, name)
 - **Recipe Retriever**: Fetch recipes from local JSON database using keyword-based search (MVP: no embeddings)
-- **Nutrition Fetcher**: Retrieve nutrition data from local JSON database (MVP: manual entry, USDA API later)
+- **Nutrition Fetcher**: Retrieve nutrition data from local JSON database
 
 ### 3. Nutrition Calculation Layer
+
 **Purpose**: Compute and aggregate nutrition values
 
 - **Nutrition Calculator**: Calculate macros/micros for recipes and meal combinations
@@ -42,6 +45,7 @@ The Nutrition Agent is a modular system that generates personalized meal recomme
 - **Macro Allocator**: Distribute macros based on user goals (protein/fat/carb logic)
 
 ### 4. Scoring & Reasoning Layer
+
 **Purpose**: Evaluate and rank recipes using rule-based scoring (MVP: no LLM)
 
 - **Recipe Scorer**: Score recipes based on nutrition goals, schedule, preferences (rule-based for MVP)
@@ -54,6 +58,7 @@ The Nutrition Agent is a modular system that generates personalized meal recomme
   - Enforced per-day (not averaged over week) — exceeding any daily UL marks plan invalid
 
 ### 5. Planning Layer
+
 **Purpose**: Generate meal plans considering all constraints
 
 - **Unified planner engine (phases 0–7)**: Canonical search engine for meal plan generation. Deterministic backtracking search over `(day, slot)` assignments; validates layered constraints (macros, micronutrient RDIs, daily ULs, cooking time, exclusions, calorie ceilings) and returns a single result type.
@@ -66,6 +71,7 @@ The Nutrition Agent is a modular system that generates personalized meal recomme
 - **Meal Prep Integrator**: Factor in pre-planned meals (Phase 5.4: post-MVP, not yet implemented in code)
 
 ### 6. Output Layer
+
 **Purpose**: Format and structure final recommendations
 
 - **Meal Formatter**: Format individual meals with ingredients, instructions, nutrition
@@ -95,6 +101,7 @@ JSON or Markdown output
 ```
 
 **Post-MVP Flow** (adds):
+
 - Weekly Tracker (running totals)
 - LLM Reasoner (enhanced scoring and natural language understanding)
 - Embedding-based retrieval (semantic search)
@@ -106,6 +113,7 @@ JSON or Markdown output
 ## Key Design Decisions (Based on User Requirements)
 
 ### MVP Foundation Principles
+
 1. **Modular Components**: Each layer is independent and testable
 2. **Nutrition Accuracy First**: Prioritize accurate nutrition calculations over creative features
 3. **Rule-Based MVP**: Use rule-based scoring for MVP, add LLM reasoning in Phase 5.1
@@ -119,10 +127,11 @@ JSON or Markdown output
 11. **Unit Tests First**: Comprehensive unit tests for MVP, integration tests later
 
 ### End Game Architecture Principles
-12. **LLM Integration**: Combine AI creativity with technical nutrition precision
-13. **Cultural Recipe Diversity**: Support recipes from multiple cultures while maintaining nutrition goals
-14. **Natural Language Processing**: Accept complex meal planning queries in natural language
-15. **Advanced Customization**: Support meal prep integration, flexible scheduling, and complex constraints
-16. **Specialized Training**: Train agent on comprehensive recipe databases and nutrition science
-17. **Interface Flexibility**: Support both structured inputs (GUI) and natural language prompts
+
+1. **LLM Integration**: Combine AI creativity with technical nutrition precision
+2. **Cultural Recipe Diversity**: Support recipes from multiple cultures while maintaining nutrition goals
+3. **Natural Language Processing**: Accept complex meal planning queries in natural language
+4. **Advanced Customization**: Support meal prep integration, flexible scheduling, and complex constraints
+5. **Specialized Training**: Train agent on comprehensive recipe databases and nutrition science
+6. **Interface Flexibility**: Support both structured inputs (GUI) and natural language prompts
 

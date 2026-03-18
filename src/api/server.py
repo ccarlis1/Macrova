@@ -202,8 +202,12 @@ def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
             result = plan_meals(planning_profile, recipe_pool, request.days)
 
         return format_result_json(result, recipe_by_id, planning_profile, request.days)
+    except HTTPException:
+        raise
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        status_code, payload = map_exception_to_api_error(exc)
+        # Per contract: structured error payload (never raw exception details).
+        return JSONResponse(status_code=status_code, content=payload)
 
 
 @app.post("/api/plan-from-text")

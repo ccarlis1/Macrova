@@ -367,6 +367,30 @@ class TestUSDAClient:
             "egg",
             include_branded=False,
             page_size=8,
+            page_number=1,
+            data_types="all",
+        )
+        assert foods == mock_response["foods"]
+
+    def test_search_candidates_sr_legacy_only_threads_data_types(self, client):
+        mock_response = {"foods": [{"fdcId": 1, "description": "Egg", "dataType": "SR Legacy"}]}
+        with patch.object(
+            client,
+            "_make_candidates_request",
+            return_value=mock_response,
+        ) as mock_make_candidates:
+            foods = client.search_candidates(
+                "Egg",
+                page_size=5,
+                include_branded=True,
+                data_types="sr_legacy_only",
+            )
+        mock_make_candidates.assert_called_once_with(
+            "egg",
+            include_branded=True,
+            page_size=5,
+            page_number=1,
+            data_types="sr_legacy_only",
         )
         assert foods == mock_response["foods"]
 

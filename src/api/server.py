@@ -5,11 +5,16 @@ import sys
 from typing import Any, Dict, List, Literal, Optional
 
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field, constr
+from pydantic import BaseModel, Field, constr, model_validator
+from dataclasses import fields as dc_fields
+
+from src.ingestion.nutrient_mapper import MappedNutrition, NutrientMapper
+from src.ingestion.ingredient_cache import CachedIngredientLookup
+from src.ingestion.usda_client import DataType, USDAClient, USDALookupError
 
 from src.data_layer.models import UserProfile
 from src.data_layer.recipe_db import RecipeDB
@@ -20,8 +25,6 @@ from src.planning.converters import convert_recipes, convert_profile, extract_in
 from src.planning.planner import plan_meals
 from src.planning.orchestrator import LLMPlanningModeError, plan_with_llm_feedback
 from src.output.formatters import format_result_json
-from src.ingestion.usda_client import USDAClient
-from src.ingestion.ingredient_cache import CachedIngredientLookup
 from src.providers.api_provider import APIIngredientProvider
 from src.config.llm_settings import load_llm_settings
 from src.api.error_mapping import map_exception_to_api_error
@@ -96,6 +99,9 @@ class PlanRequest(BaseModel):
     planning_mode: Optional[
         Literal["deterministic", "assisted", "assisted_cached", "assisted_live"]
     ] = None
+
+    # When set, restrict the in-memory recipe pool to this id subset (Planner parity).
+    recipe_ids: Optional[List[str]] = None
 
 
 class PlanFromTextRequest(BaseModel):
@@ -218,6 +224,92 @@ def _apply_recipe_tag_filter_pre_convert(
     return filtered_recipes, log_payload
 
 
+def _filter_recipes_by_ids(
+    recipes: List[Any],
+    recipe_ids: Optional[List[str]],
+) -> List[Any]:
+    if recipe_ids is None:
+        return recipes
+    by_id = {getattr(r, "id", None): r for r in recipes}
+    out: List[Any] = []
+    for rid in recipe_ids:
+        r = by_id.get(rid)
+        if r is not None:
+            out.append(r)
+    return out
+
+
+def _mapped_nutrition_to_resolve_payload(
+    *,
+    source: Literal["usda", "local"],
+    fdc_id: Optional[int],
+    name: str,
+    description: Optional[str],
+    nutrition: MappedNutrition,
+) -> Dict[str, Any]:
+    micro = nutrition.micronutrients
+    micronutrients: Dict[str, float] = {}
+    for f in dc_fields(micro):
+        val = float(getattr(micro, f.name))
+        if val != 0.0:
+            micronutrients[f.name] = val
+    per_100g: Dict[str, float] = {
+        "calories": float(nutrition.calories),
+        "protein_g": float(nutrition.protein_g),
+        "fat_g": float(nutrition.fat_g),
+        "carbs_g": float(nutrition.carbs_g),
+    }
+    return {
+        "source": source,
+        "fdc_id": str(fdc_id) if fdc_id is not None else None,
+        "name": name,
+        "description": description,
+        "per_100g": per_100g,
+        "micronutrients": micronutrients,
+        "nutrition_by_unit": None,
+    }
+
+
+def _local_ingredient_to_resolve_payload(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Serialize a NutritionDB ingredient dict into a resolve DTO."""
+    by_unit: Dict[str, Dict[str, float]] = {}
+    primary_per_100g: Optional[Dict[str, float]] = None
+    primary_micros: Dict[str, float] = {}
+    macro_keys = {"calories", "protein_g", "fat_g", "carbs_g"}
+
+    for k, v in data.items():
+        if k.startswith("per_") and isinstance(v, dict):
+            block: Dict[str, float] = {}
+            for kk, vv in v.items():
+                if isinstance(vv, (int, float)):
+                    block[kk] = float(vv)
+            if block:
+                by_unit[k] = block
+                if k == "per_100g":
+                    primary_per_100g = {
+                        kk: vv for kk, vv in block.items() if kk in macro_keys
+                    }
+                    primary_micros = {
+                        kk: vv for kk, vv in block.items() if kk not in macro_keys
+                    }
+
+    meta = {
+        mk: float(data[mk])
+        for mk in ("scoop_size_g", "large_size_g")
+        if mk in data and isinstance(data[mk], (int, float))
+    }
+    return {
+        "source": "local",
+        "fdc_id": None,
+        "name": str(data.get("name", "")),
+        "description": None,
+        "per_100g": primary_per_100g,
+        "micronutrients": primary_micros,
+        "nutrition_by_unit": by_unit or None,
+        "metadata": meta or None,
+    }
+
+
 def _build_user_profile(request: PlanRequest) -> UserProfile:
     daily_fat_g = (request.daily_fat_g_min, request.daily_fat_g_max)
     median_fat_g = (daily_fat_g[0] + daily_fat_g[1]) / 2
@@ -292,6 +384,36 @@ class IngredientMatchResponse(BaseModel):
     rejected: List[IngredientMatchRejectedItem]
 
 
+class IngredientSearchResultItem(BaseModel):
+    fdc_id: str
+    description: str
+    score: float
+
+
+class IngredientSearchResponse(BaseModel):
+    results: List[IngredientSearchResultItem]
+
+
+class IngredientResolveRequest(BaseModel):
+    """Resolve by USDA id or by canonical name (+ ingredient source)."""
+
+    fdc_id: Optional[int] = Field(default=None, gt=0)
+    name: Optional[str] = None
+    ingredient_source: Optional[str] = Field(default=None, pattern="^(local|api)$")
+
+    @model_validator(mode="after")
+    def _fdc_or_name(self) -> "IngredientResolveRequest":
+        if self.fdc_id is not None:
+            return self
+        raw = (self.name or "").strip()
+        if not raw:
+            raise ValueError("Provide fdc_id or a non-empty name")
+        if self.ingredient_source is None:
+            raise ValueError("ingredient_source is required when resolving by name")
+        return self
+
+
+@app.post("/api/v1/plan")
 @app.post("/api/plan")
 def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
     try:
@@ -299,6 +421,7 @@ def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
 
         recipe_db = RecipeDB(recipes_path)
         all_recipes = recipe_db.get_all_recipes()
+        all_recipes = _filter_recipes_by_ids(all_recipes, request.recipe_ids)
 
         tag_path = getattr(request, "recipe_tags_path", None) or DEFAULT_TAG_PATH
         all_recipes, filter_log = _apply_recipe_tag_filter_pre_convert(
@@ -400,6 +523,7 @@ def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
         return JSONResponse(status_code=status_code, content=payload)
 
 
+@app.post("/api/v1/plan-from-text")
 @app.post("/api/plan-from-text")
 def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
     try:
@@ -573,6 +697,7 @@ class RecipeTagGenerationResponse(BaseModel):
     tagged_recipe_count: int
 
 
+@app.post("/api/v1/recipes/tags/generate", response_model=RecipeTagGenerationResponse)
 @app.post("/api/recipes/tags/generate", response_model=RecipeTagGenerationResponse)
 def generate_recipe_tags_endpoint(
     request: RecipeTagGenerationRequest,
@@ -603,6 +728,7 @@ def generate_recipe_tags_endpoint(
         return JSONResponse(status_code=status_code, content=payload)
 
 
+@app.post("/api/v1/recipes/generate-validated", response_model=RecipeGenerationResponse)
 @app.post("/api/recipes/generate-validated", response_model=RecipeGenerationResponse)
 def generate_validated_recipes_endpoint(
     request: RecipeGenerationRequest,
@@ -652,6 +778,7 @@ def _extract_original_query_from_field_errors(
     return ""
 
 
+@app.post("/api/v1/ingredients/match", response_model=IngredientMatchResponse)
 @app.post("/api/ingredients/match", response_model=IngredientMatchResponse)
 def ingredient_match_endpoint(request: IngredientMatchRequest) -> IngredientMatchResponse:
     try:
@@ -694,6 +821,136 @@ def ingredient_match_endpoint(request: IngredientMatchRequest) -> IngredientMatc
         return JSONResponse(status_code=status_code, content=payload)
 
 
+@app.get("/api/v1/ingredients/search", response_model=IngredientSearchResponse)
+def ingredient_search_endpoint(
+    q: str = Query(..., min_length=1, description="USDA FoodData Central search query"),
+    page: int = Query(1, ge=1, description="1-based page number (USDA pageNumber)"),
+    page_size: int = Query(25, ge=1, le=50),
+    data_types: Literal["all", "sr_legacy_only"] = Query(
+        "all",
+        description=(
+            "FDC dataType filter: 'all' searches SR Legacy, Foundation, Survey, and "
+            "Branded; 'sr_legacy_only' restricts to SR Legacy (typical whole ingredients)."
+        ),
+    ),
+) -> Any:
+    """Deterministic USDA search suggestions (no LLM)."""
+    try:
+        client = USDAClient.from_env()
+        foods = client.search_candidates(
+            q,
+            page_size=page_size,
+            page_number=page,
+            include_branded=True,
+            data_types=data_types,
+        )
+        results: List[IngredientSearchResultItem] = []
+        base_rank = (page - 1) * page_size
+        for i, food in enumerate(foods):
+            fdc = food.get("fdcId")
+            desc = str(food.get("description") or "")
+            if fdc is None:
+                continue
+            dt = DataType.from_string(str(food.get("dataType", "")))
+            type_rank = DataType.priority(dt) if dt is not None else 999
+            score = float(type_rank * 1000 + base_rank + i)
+            results.append(
+                IngredientSearchResultItem(
+                    fdc_id=str(int(fdc)),
+                    description=desc,
+                    score=score,
+                )
+            )
+        return IngredientSearchResponse(results=results)
+    except HTTPException:
+        raise
+    except USDALookupError as exc:
+        status = 400 if exc.error_code == "INVALID_QUERY" else 502
+        return JSONResponse(
+            status_code=status,
+            content={"error": {"code": exc.error_code, "message": exc.message}},
+        )
+    except Exception as exc:
+        status_code, payload = map_exception_to_api_error(exc)
+        return JSONResponse(status_code=status_code, content=payload)
+
+
+@app.post("/api/v1/ingredients/resolve")
+def ingredient_resolve_endpoint(request: IngredientResolveRequest) -> Any:
+    """Resolve a USDA FDC id or a canonical ingredient name to nutrition facts."""
+    try:
+        if request.fdc_id is not None:
+            usda = USDAClient.from_env()
+            details = usda.get_food_details(int(request.fdc_id))
+            if not details.success:
+                return JSONResponse(
+                    status_code=404,
+                    content={
+                        "error": {
+                            "code": details.error_code or "NOT_FOUND",
+                            "message": details.error_message or "FDC lookup failed",
+                        }
+                    },
+                )
+            mapper = NutrientMapper()
+            nutrition = mapper.map_nutrients(details.raw_payload)
+            raw_desc = details.raw_payload.get("description")
+            desc = str(raw_desc) if raw_desc else None
+            name = desc or f"fdc_{request.fdc_id}"
+            return _mapped_nutrition_to_resolve_payload(
+                source="usda",
+                fdc_id=int(request.fdc_id),
+                name=name,
+                description=desc,
+                nutrition=nutrition,
+            )
+
+        raw_name = (request.name or "").strip()
+        assert request.ingredient_source is not None
+
+        if request.ingredient_source == "local":
+            nutrition_db = NutritionDB(ingredients_path)
+            info = nutrition_db.get_ingredient_info(raw_name)
+            if info is None:
+                return JSONResponse(
+                    status_code=404,
+                    content={
+                        "error": {
+                            "code": "NOT_FOUND",
+                            "message": f"No local ingredient match for {raw_name!r}",
+                        }
+                    },
+                )
+            return _local_ingredient_to_resolve_payload(info)
+
+        usda = USDAClient.from_env()
+        lookup = CachedIngredientLookup(usda_client=usda)
+        entry = lookup.lookup(raw_name.lower())
+        if entry is None:
+            return JSONResponse(
+                status_code=404,
+                content={
+                    "error": {
+                        "code": "NOT_FOUND",
+                        "message": f"No USDA-backed match for {raw_name!r}",
+                    }
+                },
+            )
+        return _mapped_nutrition_to_resolve_payload(
+            source="usda",
+            fdc_id=entry.fdc_id,
+            name=entry.canonical_name,
+            description=entry.description or None,
+            nutrition=entry.nutrition,
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        status_code, payload = map_exception_to_api_error(exc)
+        return JSONResponse(status_code=status_code, content=payload)
+
+
+@app.get("/api/v1/recipes")
 @app.get("/api/recipes")
 def list_recipes() -> List[Dict[str, str]]:
     try:

@@ -284,6 +284,96 @@ class TestUSDAClient:
         assert "query" in result.source_metadata
         assert result.source_metadata["query"] == "chicken"
 
+    def test_lookup_normalizes_query_before_search_by_default(self, client):
+        """Test that lookup lowercases query before calling the search helper by default."""
+        mock_response = {
+            "foods": [
+                {
+                    "fdcId": 171705,
+                    "description": "Chicken, breast",
+                    "dataType": "SR Legacy",
+                    "foodNutrients": [],
+                }
+            ],
+            "totalHits": 1,
+        }
+        with patch.object(client, "_make_request", return_value=mock_response) as mock_make_request:
+            result = client.lookup("Chicken Breast")  # not lowercase input
+
+        mock_make_request.assert_called_once_with("chicken breast", include_branded=True)
+        assert result.success is True
+        assert result.fdc_id == 171705
+
+    def test_lookup_can_exclude_branded_via_include_branded_flag(self, client):
+        """Test that include_branded is threaded through to the search helper."""
+        mock_response = {
+            "foods": [
+                {
+                    "fdcId": 888888,
+                    "description": "Egg, whole, raw",
+                    "dataType": "Foundation",
+                    "foodNutrients": [],
+                }
+            ],
+            "totalHits": 1,
+        }
+        with patch.object(client, "_make_request", return_value=mock_response) as mock_make_request:
+            result = client.lookup("egg", include_branded=False)
+
+        mock_make_request.assert_called_once_with("egg", include_branded=False)
+        assert result.success is True
+        assert result.data_type == DataType.FOUNDATION
+
+    def test_lookup_normalize_false_preserves_case_for_search(self, client):
+        """Test that lookup respects normalize=False and does not lowercase the query."""
+        mock_response = {
+            "foods": [
+                {
+                    "fdcId": 999999,
+                    "description": "Egg, whole, raw",
+                    "dataType": "Foundation",
+                    "foodNutrients": [],
+                }
+            ],
+            "totalHits": 1,
+        }
+        with patch.object(client, "_make_request", return_value=mock_response) as mock_make_request:
+            result = client.lookup("EGG", normalize=False)
+
+        mock_make_request.assert_called_once_with("EGG", include_branded=True)
+        assert result.success is True
+        assert result.fdc_id == 999999
+
+    # === Candidate Search (top-N) API Tests ===
+
+    def test_search_candidates_returns_foods_and_threads_page_size(self, client):
+        """Test that search_candidates returns the raw foods list and threads page_size."""
+        mock_response = {
+            "foods": [
+                {"fdcId": 1, "description": "Egg, raw", "dataType": "SR Legacy"},
+                {"fdcId": 2, "description": "Egg, whole, cooked", "dataType": "Foundation"},
+            ],
+            "totalHits": 2,
+        }
+
+        with patch.object(
+            client,
+            "_make_candidates_request",
+            return_value=mock_response,
+        ) as mock_make_candidates:
+            foods = client.search_candidates("Egg", page_size=8, include_branded=False)
+
+        mock_make_candidates.assert_called_once_with(
+            "egg",
+            include_branded=False,
+            page_size=8,
+        )
+        assert foods == mock_response["foods"]
+
+    def test_search_candidates_invalid_query_raises(self, client):
+        with pytest.raises(USDALookupError):
+            client.search_candidates("   ", page_size=5, include_branded=True)
+
     # === No Results Tests ===
 
     def test_lookup_no_results_returns_structured_failure(self, client):

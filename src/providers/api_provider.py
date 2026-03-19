@@ -46,9 +46,27 @@ class APIIngredientProvider(IngredientDataProvider):
     # Contract marker for USDA-backed validation.
     usda_capable: bool = True
 
-    def __init__(self, cached_lookup: CachedIngredientLookup) -> None:
+    def __init__(
+        self,
+        cached_lookup: CachedIngredientLookup,
+        *,
+        resolution_mode: str = "deterministic",
+        confidence_threshold: float = 0.75,
+    ) -> None:
         self._lookup = cached_lookup
         self._resolved: Dict[str, Dict[str, Any]] = {}
+        self._resolution_mode = resolution_mode
+        self._confidence_threshold = confidence_threshold
+
+        # Propagate mode configuration to the underlying lookup service.
+        # (Keeping resolve_all() call sites stable for backwards compatibility.)
+        try:
+            self._lookup.resolution_mode = resolution_mode
+            self._lookup.confidence_threshold = confidence_threshold
+        except Exception:
+            # If the lookup object does not expose these attributes (e.g. a
+            # mock in unit tests), we still keep resolve_all behavior intact.
+            pass
 
     # ------------------------------------------------------------------
     # IngredientDataProvider interface

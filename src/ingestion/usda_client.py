@@ -312,6 +312,47 @@ class USDAClient:
             }
         )
     
+    def search_candidates(
+        self,
+        query: str,
+        *,
+        page_size: int,
+        include_branded: bool,
+    ) -> List[Dict[str, Any]]:
+        """Search for USDA candidate foods (top-N raw candidates).
+
+        This method returns the raw candidate list from the USDA
+        search endpoint without applying any ranking/selection logic.
+
+        Args:
+            query: Ingredient search query.
+            page_size: Max number of candidates to request from USDA.
+            include_branded: Whether to include Branded results.
+
+        Returns:
+            List of raw USDA `foods` candidate objects.
+
+        Raises:
+            USDALookupError: On invalid query or request failures.
+        """
+        q = query.strip() if query else ""
+        if not q:
+            raise USDALookupError(
+                "INVALID_QUERY",
+                "Ingredient name cannot be empty",
+            )
+
+        # Keep deterministic behavior by lowercasing query for the search request.
+        q = q.lower()
+
+        if page_size <= 0:
+            raise USDALookupError("INVALID_PAGE_SIZE", "page_size must be positive")
+
+        response = self._make_candidates_request(
+            q, include_branded=include_branded, page_size=page_size
+        )
+        return response.get("foods", [])
+
     def _make_request(
         self, query: str, include_branded: bool = True
     ) -> Dict[str, Any]:
@@ -364,6 +405,59 @@ class USDAClient:
             raise USDALookupError("TIMEOUT", "USDA API request timed out")
         except requests.exceptions.ConnectionError:
             raise USDALookupError("CONNECTION_ERROR", "Failed to connect to USDA API")
+        except requests.exceptions.RequestException as e:
+            raise USDALookupError("API_ERROR", f"Request failed: {str(e)}")
+
+    def _make_candidates_request(
+        self,
+        query: str,
+        *,
+        page_size: int,
+        include_branded: bool,
+    ) -> Dict[str, Any]:
+        """Make API request to USDA search endpoint for candidate foods.
+
+        Unlike `_make_request` (which is fixed at pageSize=25), this helper
+        allows varying `page_size` for top-N candidate retrieval.
+        """
+        url = f"{self.BASE_URL}/foods/search"
+        data_type = (
+            "SR Legacy,Foundation,Survey (FNDDS),Branded"
+            if include_branded
+            else "SR Legacy,Foundation,Survey (FNDDS)"
+        )
+        params = {
+            "api_key": self.api_key,
+            "query": query,
+            "pageSize": page_size,
+            "dataType": data_type,
+        }
+
+        try:
+            response = requests.get(url, params=params, timeout=10)
+
+            # Handle rate limiting
+            if response.status_code == 429:
+                raise USDALookupError(
+                    "RATE_LIMITED",
+                    "Too many requests. Please wait before trying again.",
+                )
+
+            # Handle other HTTP errors
+            if response.status_code != 200:
+                raise USDALookupError(
+                    "API_ERROR",
+                    f"USDA API returned status {response.status_code}",
+                )
+
+            return response.json()
+
+        except requests.exceptions.Timeout:
+            raise USDALookupError("TIMEOUT", "USDA API request timed out")
+        except requests.exceptions.ConnectionError:
+            raise USDALookupError(
+                "CONNECTION_ERROR", "Failed to connect to USDA API"
+            )
         except requests.exceptions.RequestException as e:
             raise USDALookupError("API_ERROR", f"Request failed: {str(e)}")
     

@@ -320,7 +320,7 @@ class TestCachedIngredientLookup:
         result = cached_lookup.lookup("chicken breast")
         
         # API should NOT have been called
-        mock_client.lookup.assert_not_called()
+        mock_client.search_candidates.assert_not_called()
         mock_client.get_food_details.assert_not_called()
         
         # Should return cached data
@@ -359,15 +359,13 @@ class TestCachedIngredientLookup:
 
     def test_cache_miss_calls_api(self, cached_lookup, mock_client):
         """Test that cache miss calls USDA API."""
-        # Configure mock responses with proper data_type
-        from src.ingestion.usda_client import DataType
-        
-        mock_client.lookup.return_value = Mock(
-            success=True,
-            fdc_id=171705,
-            description="Chicken, breast",
-            data_type=DataType.SR_LEGACY
-        )
+        mock_client.search_candidates.return_value = [
+            {
+                "fdcId": 171705,
+                "description": "chicken breast",
+                "dataType": "SR Legacy",
+            }
+        ]
         mock_client.get_food_details.return_value = Mock(
             success=True,
             raw_payload={
@@ -386,7 +384,9 @@ class TestCachedIngredientLookup:
         result = cached_lookup.lookup("chicken breast")
         
         # API should have been called
-        mock_client.lookup.assert_called_once()
+        mock_client.search_candidates.assert_called_once_with(
+            "chicken breast", page_size=8, include_branded=True
+        )
         mock_client.get_food_details.assert_called_once_with(171705)
         
         # Should return nutrition data
@@ -394,13 +394,13 @@ class TestCachedIngredientLookup:
 
     def test_cache_miss_writes_to_cache(self, cached_lookup, mock_client, temp_cache_dir):
         """Test that cache miss writes result to cache."""
-        # Configure mock responses
-        mock_client.lookup.return_value = Mock(
-            success=True,
-            fdc_id=171705,
-            description="Chicken, breast",
-            data_type=Mock(value="SR Legacy")
-        )
+        mock_client.search_candidates.return_value = [
+            {
+                "fdcId": 171705,
+                "description": "chicken breast",
+                "dataType": "SR Legacy",
+            }
+        ]
         mock_client.get_food_details.return_value = Mock(
             success=True,
             raw_payload={
@@ -425,13 +425,13 @@ class TestCachedIngredientLookup:
 
     def test_subsequent_lookup_uses_cache(self, cached_lookup, mock_client):
         """Test that subsequent lookups use cache, not API."""
-        # Configure mock responses
-        mock_client.lookup.return_value = Mock(
-            success=True,
-            fdc_id=171705,
-            description="Chicken, breast",
-            data_type=Mock(value="SR Legacy")
-        )
+        mock_client.search_candidates.return_value = [
+            {
+                "fdcId": 171705,
+                "description": "chicken breast",
+                "dataType": "SR Legacy",
+            }
+        ]
         mock_client.get_food_details.return_value = Mock(
             success=True,
             raw_payload={
@@ -451,14 +451,14 @@ class TestCachedIngredientLookup:
         cached_lookup.lookup("chicken breast")
         
         # Reset mock call counts
-        mock_client.lookup.reset_mock()
+        mock_client.search_candidates.reset_mock()
         mock_client.get_food_details.reset_mock()
         
         # Second lookup - should hit cache
         result = cached_lookup.lookup("chicken breast")
         
         # API should NOT have been called again
-        mock_client.lookup.assert_not_called()
+        mock_client.search_candidates.assert_not_called()
         mock_client.get_food_details.assert_not_called()
         
         # Should still return correct data
@@ -469,10 +469,7 @@ class TestCachedIngredientLookup:
     def test_lookup_failure_not_cached(self, cached_lookup, mock_client, temp_cache_dir):
         """Test that failed lookups are NOT cached."""
         # Configure mock to fail
-        mock_client.lookup.return_value = Mock(
-            success=False,
-            error_code="NOT_FOUND"
-        )
+        mock_client.search_candidates.return_value = []
         
         # Lookup should return None or error
         result = cached_lookup.lookup("nonexistent food xyz")

@@ -52,6 +52,7 @@ config/model_config.yaml
 
 # Data files (keep examples, ignore actual data)
 docs/rules/*.md
+docs/wireframes/
 
 # Ingredients
 data/ingredients/usda_ingredients.json

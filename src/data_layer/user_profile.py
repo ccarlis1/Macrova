@@ -7,6 +7,7 @@ from typing import Dict, List
 from src.llm.schemas import BudgetLevel, PlannerConfigJson
 
 from src.data_layer.models import MicronutrientProfile, UserProfile
+from src.planning.micronutrient_policy import validate_micronutrient_weekly_min_fraction
 
 
 class UserProfileLoader:
@@ -62,6 +63,14 @@ class UserProfileLoader:
         if max_daily_calories is not None:
             max_daily_calories = int(max_daily_calories)
 
+        tau_raw = nutrition_goals.get("micronutrient_weekly_min_fraction", 1.0)
+        micronutrient_weekly_min_fraction = validate_micronutrient_weekly_min_fraction(float(tau_raw))
+        if micronutrient_weekly_min_fraction < 0.85:
+            print(
+                "Warning: micronutrient_weekly_min_fraction (τ) below 0.85 relaxes weekly micronutrient floors substantially.",
+                file=sys.stderr,
+            )
+
         # Extract micronutrient_goals (daily RDIs); validate keys against MicronutrientProfile
         micro_goals = data.get("micronutrient_goals", {})
         valid_fields = set(MicronutrientProfile.__dataclass_fields__.keys())
@@ -86,6 +95,7 @@ class UserProfileLoader:
             allergies=allergies,
             max_daily_calories=max_daily_calories,
             daily_micronutrient_targets=daily_micro or None,
+            micronutrient_weekly_min_fraction=micronutrient_weekly_min_fraction,
         )
 
 
@@ -201,5 +211,6 @@ def user_profile_from_planner_config(cfg: PlannerConfigJson) -> UserProfile:
         allergies=[],
         max_daily_calories=None,
         daily_micronutrient_targets=None,
+        micronutrient_weekly_min_fraction=1.0,
     )
 

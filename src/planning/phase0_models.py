@@ -89,6 +89,7 @@ class PlanningUserProfile:
     upper_limits_overrides: Optional[Dict[str, float]] = None
     pinned_assignments: Dict[Tuple[int, int], str] = field(default_factory=dict)  # (day, slot_index) -> recipe_id
     micronutrient_targets: Dict[str, float] = field(default_factory=dict)
+    micronutrient_weekly_min_fraction: float = 1.0
     activity_schedule: Dict[str, str] = field(default_factory=dict)
     enable_primary_carb_downscaling: bool = False
     max_scaling_steps: int = 4

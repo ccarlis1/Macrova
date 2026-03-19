@@ -3,6 +3,7 @@ import pytest
 from src.llm.recipe_validator import validate_recipe_draft, validate_recipe_drafts
 from src.llm.schemas import RecipeDraft
 from src.llm.usda_contract import USDAProviderRequiredError
+from src.providers.api_provider import IngredientResolutionError
 from src.providers.ingredient_provider import IngredientDataProvider
 
 
@@ -68,7 +69,7 @@ def test_validate_recipe_draft_ingredient_not_found_rejects():
 
     ok, res = validate_recipe_draft(draft, provider)
     assert ok is False
-    assert res.error_code == "INGREDIENT_NOT_FOUND"
+    assert res.error_code == "EMPTY_RECIPE"
 
 
 def test_validate_recipe_draft_nutrition_computation_failed_rejects():
@@ -122,7 +123,125 @@ def test_validate_recipe_drafts_partial_acceptance_returns_both_sets():
 
     accepted, rejected = validate_recipe_drafts([ok_1, bad], provider)
     assert [w.recipe.name for w in accepted] == ["Accept"]
-    assert [f.error_code for f in rejected] == ["INGREDIENT_NOT_FOUND"]
+    assert [f.error_code for f in rejected] == ["EMPTY_RECIPE"]
+
+
+def test_validate_recipe_draft_to_taste_fallback_after_resolve_all_failure():
+    class ResolveFailProvider(IngredientDataProvider):
+        usda_capable = True
+
+        def __init__(self, *, ingredient_info_by_name, failing_name: str):
+            self.ingredient_info_by_name = ingredient_info_by_name
+            self.failing_name = failing_name.lower().strip()
+            self.resolve_calls = []
+
+        def get_ingredient_info(self, name: str):
+            return self.ingredient_info_by_name.get(name.lower())
+
+        def resolve_all(self, ingredient_names):
+            self.resolve_calls.append(list(ingredient_names))
+            for n in ingredient_names:
+                if str(n).lower().strip() == self.failing_name:
+                    raise IngredientResolutionError(
+                        f"Failed to resolve ingredient '{n}': no result from API."
+                    )
+
+    provider = ResolveFailProvider(
+        ingredient_info_by_name={
+            "chicken breast": _nutrition_dict(),
+        },
+        failing_name="cherry tomatoes",
+    )
+
+    draft = RecipeDraft(
+        name="Rollback Test",
+        ingredients=[
+            {"name": "chicken breast", "quantity": 200.0, "unit": "g"},
+            {"name": "cherry tomatoes", "quantity": 100.0, "unit": "g"},
+        ],
+        instructions=["Cook."],
+    )
+
+    ok, res = validate_recipe_draft(draft, provider)
+    assert ok is True
+    recipe = res
+
+    cherry = next(i for i in recipe.ingredients if i.name == "cherry tomatoes")
+    assert cherry.is_to_taste is True
+    assert cherry.unit == "to taste"
+    assert cherry.quantity == 0.0
+
+
+def test_validate_recipe_draft_to_taste_fallback_after_get_ingredient_info_none():
+    class MissingInfoProvider(IngredientDataProvider):
+        usda_capable = True
+
+        def __init__(self, *, ingredient_info_by_name, missing_name: str):
+            self.ingredient_info_by_name = ingredient_info_by_name
+            self.missing_name = missing_name.lower().strip()
+            self.resolve_calls = []
+
+        def get_ingredient_info(self, name: str):
+            if str(name).lower().strip() == self.missing_name:
+                return None
+            return self.ingredient_info_by_name.get(name.lower())
+
+        def resolve_all(self, ingredient_names):
+            self.resolve_calls.append(list(ingredient_names))
+
+    provider = MissingInfoProvider(
+        ingredient_info_by_name={
+            "chicken breast": _nutrition_dict(),
+        },
+        missing_name="cherry tomatoes",
+    )
+
+    draft = RecipeDraft(
+        name="Rollback Test 2",
+        ingredients=[
+            {"name": "chicken breast", "quantity": 200.0, "unit": "g"},
+            {"name": "cherry tomatoes", "quantity": 100.0, "unit": "g"},
+        ],
+        instructions=["Cook."],
+    )
+
+    ok, res = validate_recipe_draft(draft, provider)
+    assert ok is True
+    recipe = res
+
+    cherry = next(i for i in recipe.ingredients if i.name == "cherry tomatoes")
+    assert cherry.is_to_taste is True
+    assert cherry.unit == "to taste"
+    assert cherry.quantity == 0.0
+
+
+def test_validate_recipe_draft_to_taste_fallback_rejects_if_measurable_empty():
+    class ResolveFailProvider(IngredientDataProvider):
+        usda_capable = True
+
+        def get_ingredient_info(self, name: str):
+            return None
+
+        def resolve_all(self, ingredient_names):
+            for n in ingredient_names:
+                if str(n).lower().strip() == "cherry tomatoes":
+                    raise IngredientResolutionError(
+                        f"Failed to resolve ingredient '{n}': no result from API."
+                    )
+
+    provider = ResolveFailProvider()
+
+    draft = RecipeDraft(
+        name="Rollback Reject",
+        ingredients=[
+            {"name": "cherry tomatoes", "quantity": 100.0, "unit": "g"},
+        ],
+        instructions=["Cook."],
+    )
+
+    ok, res = validate_recipe_draft(draft, provider)
+    assert ok is False
+    assert res.error_code == "EMPTY_RECIPE"
 
 
 def test_validate_recipe_draft_rejects_non_usda_provider():

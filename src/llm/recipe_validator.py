@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-import json
+import re
 from typing import Any, Dict, List, Tuple
 
 from src.data_layer.exceptions import IngredientNotFoundError
 from src.data_layer.models import Ingredient, IngredientInput, Recipe
 from src.ingestion.ingredient_validator import IngredientValidator
 from src.nutrition.calculator import NutritionCalculator
+from src.providers.api_provider import IngredientResolutionError
 from src.providers.ingredient_provider import IngredientDataProvider
 from src.llm.schemas import RecipeDraft, ValidationFailure, parse_llm_json
 from src.llm.types import ValidatedRecipeForPersistence
@@ -66,8 +67,21 @@ def validate_recipe_draft(
 
     ingredient_validator = IngredientValidator()
 
-    resolved_canonical_names: List[str] = []
     validated_ingredients: List[Ingredient] = []
+
+    def _set_ingredient_to_taste(ing: Ingredient) -> None:
+        ing.is_to_taste = True
+        ing.unit = "to taste"
+        ing.quantity = 0.0
+        ing.normalized_unit = "to taste"
+        ing.normalized_quantity = 0.0
+
+    def _current_measurable() -> List[Ingredient]:
+        return [i for i in validated_ingredients if not i.is_to_taste]
+
+    def _current_measurable_names() -> List[str]:
+        # Provider resolution is keyed by canonical name; keep deterministic order.
+        return sorted({i.name for i in validated_ingredients if not i.is_to_taste})
 
     # 1) Validate ingredient fields and canonicalize names.
     for ing_idx, draft_ing in enumerate(draft.ingredients):
@@ -118,12 +132,8 @@ def validate_recipe_draft(
         )
         validated_ingredients.append(ing)
 
-        if not ing.is_to_taste:
-            resolved_canonical_names.append(ing.name)
-
     # Recipe-level guard.
-    measurable = [ing for ing in validated_ingredients if not ing.is_to_taste]
-    if not measurable:
+    if not _current_measurable():
         return (
             False,
             _validation_failure(
@@ -134,8 +144,42 @@ def validate_recipe_draft(
 
     # 2) Provider resolution and existence check (authoritative).
     # For API providers, resolve_all is required before get_ingredient_info().
-    provider.resolve_all(sorted(set(resolved_canonical_names)))
+    # Roll back to "to taste" on failures so planning can proceed.
+    while True:
+        measurable = _current_measurable()
+        if not measurable:
+            return (
+                False,
+                _validation_failure(
+                    error_code="EMPTY_RECIPE",
+                    message="Recipe contains no measurable ingredients.",
+                ),
+            )
 
+        try:
+            provider.resolve_all(_current_measurable_names())
+            break
+        except IngredientResolutionError as e:
+            # Expected format:
+            #   "Failed to resolve ingredient '<canonical_name>': <details>"
+            match = re.search(r"Failed to resolve ingredient '([^']+)'", str(e))
+            if match is None:
+                raise
+
+            failed_canonical_name = match.group(1).lower().strip()
+            converted_any = False
+            for ing in validated_ingredients:
+                if not ing.is_to_taste and ing.name == failed_canonical_name:
+                    _set_ingredient_to_taste(ing)
+                    converted_any = True
+
+            # If we can't map the failure back to the recipe, fail fast instead
+            # of risking an infinite retry loop.
+            if not converted_any:
+                raise
+
+    # Existence check loop: if the provider returns None (or raises) we
+    # convert that ingredient to "to taste" rather than failing the draft.
     for ing_idx, ing in enumerate(validated_ingredients):
         if ing.is_to_taste:
             continue
@@ -144,20 +188,23 @@ def validate_recipe_draft(
         except Exception:
             info = None
         if info is None:
-            return (
-                False,
-                _validation_failure(
-                    error_code="INGREDIENT_NOT_FOUND",
-                    message=f"Ingredient not found in provider: {ing.name}",
-                    field_errors=[f"ingredient_index={ing_idx}"],
-                ),
-            )
+            _set_ingredient_to_taste(ing)
+            if not _current_measurable():
+                return (
+                    False,
+                    _validation_failure(
+                        error_code="EMPTY_RECIPE",
+                        message="Recipe contains no measurable ingredients.",
+                        field_errors=[f"ingredient_index={ing_idx}"],
+                    ),
+                )
 
     # 3) Nutrition recomputation: ignore any LLM-provided nutrition fields.
     # Since our RecipeDraft schema has no nutrition fields, the key guard is
     # that nutrition computation succeeds for every measurable ingredient.
     calculator = NutritionCalculator(provider)
     nutrition_computation_cache: Dict[Tuple[str, float, str], bool] = {}
+    measurable = _current_measurable()
     for ing in measurable:
         cache_key = (ing.name, float(ing.quantity), str(ing.unit).lower().strip())
         if cache_key in nutrition_computation_cache:

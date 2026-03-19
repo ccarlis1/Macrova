@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.data_layer.models import Ingredient, MicronutrientProfile, NutritionProfile
+from src.data_layer.models import Ingredient, MicronutrientProfile, NutritionProfile, UpperLimits
 from src.planning.phase0_models import MealSlot, PlanningRecipe, PlanningUserProfile
 from src.planning.phase0_models import Assignment
 from src.planning.phase10_reporting import MealPlanResult
@@ -58,6 +58,7 @@ def _make_profile(
     excluded_ingredients: list | None = None,
     micronutrient_targets: dict | None = None,
     max_daily_calories: int | None = None,
+    micronutrient_weekly_min_fraction: float = 1.0,
 ) -> PlanningUserProfile:
     return PlanningUserProfile(
         daily_calories=daily_calories,
@@ -69,6 +70,7 @@ def _make_profile(
         excluded_ingredients=excluded_ingredients or [],
         micronutrient_targets=micronutrient_targets or {},
         max_daily_calories=max_daily_calories,
+        micronutrient_weekly_min_fraction=micronutrient_weekly_min_fraction,
     )
 
 
@@ -324,6 +326,101 @@ class TestFailureModes:
         assert isinstance(result, MealPlanResult)
         assert result.failure_mode in ("FM-1", "FM-2", "FM-4")
         assert result.stats is not None and "attempts" in result.stats
+
+
+class TestWeeklyMicronutrientTau:
+    """τ scales weekly floor; UL and structural checks stay independent of 'relaxing' RDI floor."""
+
+    def test_tau_one_explicit_matches_default(self):
+        schedule = _make_schedule(ndays=1, slots_per_day=2)
+        micro = MicronutrientProfile(iron_mg=4.5)
+        pool = [
+            _make_recipe("r1", 1000.0, 50.0, 32.0, 125.0, micronutrients=micro),
+            _make_recipe("r2", 1000.0, 50.0, 32.0, 125.0, micronutrients=micro),
+        ]
+        p_default = _make_profile(schedule, micronutrient_targets={"iron_mg": 10.0})
+        p_explicit = _make_profile(
+            schedule,
+            micronutrient_targets={"iron_mg": 10.0},
+            micronutrient_weekly_min_fraction=1.0,
+        )
+        r_a = run_meal_plan_search(p_default, pool, 1, None)
+        r_b = run_meal_plan_search(p_explicit, pool, 1, None)
+        assert r_a.success is False and r_b.success is False
+        assert r_a.failure_mode == r_b.failure_mode == "FM-4"
+        assert r_a.termination_code == r_b.termination_code == "TC-2"
+
+    def test_relaxed_tau_allows_plan_strict_fm4_fails(self):
+        schedule = _make_schedule(ndays=1, slots_per_day=2)
+        micro = MicronutrientProfile(iron_mg=4.5)
+        pool = [
+            _make_recipe("r1", 1000.0, 50.0, 32.0, 125.0, micronutrients=micro),
+            _make_recipe("r2", 1000.0, 50.0, 32.0, 125.0, micronutrients=micro),
+        ]
+        profile_lo = _make_profile(
+            schedule,
+            micronutrient_targets={"iron_mg": 10.0},
+            micronutrient_weekly_min_fraction=0.9,
+        )
+        profile_hi = _make_profile(
+            schedule,
+            micronutrient_targets={"iron_mg": 10.0},
+            micronutrient_weekly_min_fraction=1.0,
+        )
+        r_lo = run_meal_plan_search(profile_lo, pool, 1, None)
+        r_hi = run_meal_plan_search(profile_hi, pool, 1, None)
+        assert r_lo.success is True
+        assert r_hi.success is False
+        assert r_hi.failure_mode == "FM-4"
+        assert r_lo.warning is not None
+        assert "micronutrient_soft_deficit" in r_lo.warning
+        soft = r_lo.warning["micronutrient_soft_deficit"]
+        assert any(e["nutrient"] == "iron_mg" for e in soft)
+
+    def test_ul_still_blocks_when_tau_relaxed(self):
+        schedule = _make_schedule(ndays=1, slots_per_day=1)
+        ul = UpperLimits(vitamin_c_mg=100.0)
+        pool = [
+            _make_recipe(
+                "r1",
+                2000.0,
+                100.0,
+                65.0,
+                253.75,
+                micronutrients=MicronutrientProfile(vitamin_c_mg=150.0),
+            ),
+        ]
+        profile = _make_profile(
+            schedule,
+            micronutrient_targets={"vitamin_c_mg": 1.0},
+            micronutrient_weekly_min_fraction=0.9,
+        )
+        result = run_meal_plan_search(profile, pool, 1, ul)
+        assert result.success is False
+
+
+class TestTauStrictGoldenSnapshot:
+    """Frozen expected outputs for τ=1.0 (default vs explicit); catches ordering/termination regressions."""
+
+    def test_golden_d1_two_slots_default_vs_explicit_tau_one(self):
+        schedule = _make_schedule(ndays=1, slots_per_day=2)
+        pool = [
+            _make_recipe("r1", 1000.0, 50.0, 32.0, 125.0),
+            _make_recipe("r2", 1000.0, 50.0, 32.0, 125.0),
+        ]
+        expected_assignments = [
+            Assignment(0, 0, "r1", 0),
+            Assignment(0, 1, "r2", 0),
+        ]
+        p_default = _make_profile(schedule)
+        p_explicit = _make_profile(schedule, micronutrient_weekly_min_fraction=1.0)
+        r_def = run_meal_plan_search(p_default, pool, 1, None)
+        r_exp = run_meal_plan_search(p_explicit, pool, 1, None)
+        for label, r in ("default", r_def), ("explicit_tau_1", r_exp):
+            assert r.success is True, label
+            assert r.termination_code == "TC-4", label
+            assert r.plan == expected_assignments, label
+            assert r.warning is None, label
 
 
 # --- Determinism ---

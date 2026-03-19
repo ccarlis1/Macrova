@@ -270,6 +270,9 @@ class UserProfile:
     # Daily micronutrient RDI targets (optional); keys = MicronutrientProfile field names
     daily_micronutrient_targets: Optional[Dict[str, float]] = None
 
+    # τ: minimum fraction of prorated weekly RDI (daily × D) required per tracked nutrient (default strict)
+    micronutrient_weekly_min_fraction: float = 1.0
+
     # Future (post-MVP)
     # meal_prep_meals: List[Meal]
 

@@ -20,6 +20,7 @@ from src.planning.phase0_models import (
     WeeklyTracker,
     micronutrient_profile_to_dict,
 )
+from src.planning.micronutrient_policy import tau_from_profile, weekly_deficit_to_minimum, weekly_minimum_total
 
 # Section 6.5: ±10% daily tolerance for calories, protein, carbs
 DAILY_TOLERANCE_FRACTION = 0.10
@@ -320,16 +321,17 @@ def check_structural_feasibility(
 ) -> bool:
     """Return False if horizon is structurally impossible for any tracked micronutrient.
 
-    For each tracked nutrient n: if sum_over_days(max_daily_achievable(n, slot_count(day))) < daily_rdi * D,
-    the plan cannot meet weekly RDI (hard FM-4 pre-fail).
+    For each tracked nutrient n: if sum_over_days(max_daily_achievable(n, slot_count(day)))
+    is below τ × daily_rdi × D, the plan cannot meet the weekly micronutrient floor (FM-4 pre-fail).
     """
     tracked = profile.micronutrient_targets
     if not tracked:
         return True
+    tau = tau_from_profile(profile)
     for n, daily_rdi in tracked.items():
         if daily_rdi <= 0:
             continue
-        total_needed = daily_rdi * D
+        total_needed = weekly_minimum_total(daily_rdi, D, tau)
         max_over_horizon = 0.0
         for day_index in range(D):
             slot_count = len(schedule[day_index])
@@ -368,13 +370,13 @@ def check_fc4_cross_day_rdi(
         return True
     slot_count = len(state.schedule[day_index])
     mda = max_daily_achievable
+    tau = tau_from_profile(user_profile)
 
     for n, daily_rdi in tracked.items():
         if daily_rdi <= 0:
             continue
-        total_needed = daily_rdi * D
         consumed = cumulative.get(n, 0.0)
-        deficit = total_needed - consumed
+        deficit = weekly_deficit_to_minimum(consumed, daily_rdi, D, tau)
         if deficit <= 0:
             continue
         max_achievable = mda.get(n, {}).get(slot_count, 0.0)

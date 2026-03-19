@@ -289,6 +289,7 @@ class TestUserProfile:
         assert "salmon" in profile.liked_foods
         assert "brussels sprouts" in profile.disliked_foods
         assert "shellfish" in profile.allergies
+        assert profile.micronutrient_weekly_min_fraction == 1.0
 
     def test_user_profile_with_daily_micronutrient_targets(self):
         """Test user profile with daily micronutrient RDI targets."""

@@ -130,6 +130,7 @@ def convert_profile(
         upper_limits_overrides=None,
         pinned_assignments={},
         micronutrient_targets=micronutrient_targets,
+        micronutrient_weekly_min_fraction=user_profile.micronutrient_weekly_min_fraction,
         activity_schedule={},
         enable_primary_carb_downscaling=False,
     )

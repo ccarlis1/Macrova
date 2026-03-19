@@ -96,12 +96,9 @@ def test_api_plan_feature_flag_routes(monkeypatch, llm_enabled):
     assert resp.status_code == 200
     assert resp.json()["success"] is True
 
-    if llm_enabled:
-        assert called["orchestrator"] == 1
-        assert called["plan_meals"] == 0
-    else:
-        assert called["orchestrator"] == 0
-        assert called["plan_meals"] == 1
+    # Omitted planning_mode is always deterministic; LLM config does not change routing.
+    assert called["orchestrator"] == 0
+    assert called["plan_meals"] == 1
 
 
 def test_cli_feature_flag_routes_to_orchestrator_when_enabled(monkeypatch, tmp_path):
@@ -162,6 +159,8 @@ def test_cli_feature_flag_routes_to_orchestrator_when_enabled(monkeypatch, tmp_p
             "local",
             "--days",
             "1",
+            "--planning-mode",
+            "assisted",
         ],
     )
 

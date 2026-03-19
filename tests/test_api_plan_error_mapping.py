@@ -62,7 +62,9 @@ def test_api_plan_maps_usda_provider_required_to_422(monkeypatch):
     monkeypatch.setattr("src.api.server.plan_with_llm_feedback", _raise_usda)
 
     client = TestClient(app)
-    resp = client.post("/api/plan", json=_base_plan_request())
+    payload = _base_plan_request()
+    payload["planning_mode"] = "assisted"
+    resp = client.post("/api/plan", json=payload)
 
     assert resp.status_code == 422
     assert resp.json()["error"]["code"] == "INGREDIENT_VALIDATION_ERROR"

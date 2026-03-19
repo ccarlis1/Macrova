@@ -81,6 +81,7 @@ def test_api_plan_strict_deterministic_cache_miss_is_mapped(monkeypatch, tmp_pat
             "days": 1,
             "ingredient_source": "local",
             "micronutrient_goals": None,
+            "planning_mode": "assisted_cached",
         },
     )
 

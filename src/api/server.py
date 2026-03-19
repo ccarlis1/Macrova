@@ -331,10 +331,8 @@ def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
         planning_mode_provided = request.planning_mode is not None
         effective_mode = request.planning_mode
         if effective_mode is None:
-            # Backward compatible default:
-            # - when LLM is enabled by config => use assisted (cache-enabled) mode
-            # - otherwise => deterministic planning
-            effective_mode = "assisted" if llm_settings.enabled else "deterministic"
+            # Omitted => deterministic regardless of LLM env (assisted modes are explicit-only).
+            effective_mode = "deterministic"
 
         if effective_mode == "deterministic":
             result = plan_meals(planning_profile, recipe_pool, request.days)
@@ -409,10 +407,8 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
         planning_mode_provided = request.planning_mode is not None
         effective_mode = request.planning_mode
         if effective_mode is None:
-            # Backward compatible default:
-            # - when LLM is enabled by config => use assisted (cache-enabled) mode
-            # - otherwise => deterministic planning
-            effective_mode = "assisted" if llm_settings.enabled else "deterministic"
+            # Omitted => deterministic regardless of LLM env (assisted modes are explicit-only).
+            effective_mode = "deterministic"
 
         if effective_mode == "deterministic":
             # Deterministic mode MUST not invoke any LLM logic.

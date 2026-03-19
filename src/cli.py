@@ -189,8 +189,8 @@ def main():
         choices=["deterministic", "assisted", "assisted_cached", "assisted_live"],
         default=None,
         help=(
-            "Planner behavior selection. If omitted, falls back to legacy "
-            "behavior based on LLM_ENABLED (LLM config)."
+            "Planner behavior selection. If omitted, uses deterministic planning "
+            "(assisted modes require an explicit value)."
         ),
     )
 
@@ -399,7 +399,7 @@ def main():
         effective_mode = (
             args.planning_mode
             if args.planning_mode is not None
-            else ("assisted" if llm_settings.enabled else "deterministic")
+            else "deterministic"
         )
 
         if effective_mode == "deterministic":

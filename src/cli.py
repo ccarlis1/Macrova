@@ -444,13 +444,19 @@ def main():
             )
 
             # Formatter must see any recipes persisted by the feedback loop.
+            # Only resolve NEW recipes via USDA; original recipes use the local
+            # provider which already populated recipe_by_id above.
             recipe_db_updated = RecipeDB(str(recipes_path))
             all_recipes_updated = recipe_db_updated.get_all_recipes()
-            ingredient_names_updated = extract_ingredient_names(all_recipes_updated)
-            validation_provider.resolve_all(ingredient_names_updated)
-            calculator_updated = NutritionCalculator(validation_provider)
-            recipe_pool_updated = convert_recipes(all_recipes_updated, calculator_updated)
-            recipe_by_id = {r.id: r for r in recipe_pool_updated}
+            original_ids = {r.id for r in recipe_pool}
+            new_recipes = [r for r in all_recipes_updated if r.id not in original_ids]
+            if new_recipes:
+                new_ingredient_names = extract_ingredient_names(new_recipes)
+                validation_provider.resolve_all(new_ingredient_names)
+                calculator_updated = NutritionCalculator(validation_provider)
+                new_pool = convert_recipes(new_recipes, calculator_updated)
+                for r in new_pool:
+                    recipe_by_id[r.id] = r
 
         # Format output
         if args.output in ["markdown", "both"]:

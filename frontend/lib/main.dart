@@ -8,25 +8,59 @@ import 'providers/recipe_provider.dart';
 import 'theme.dart';
 import 'widgets/app_shell.dart';
 
-void main() => runApp(const MacrovaApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final profile = ProfileProvider();
+  final ingredients = IngredientProvider();
+  final recipes = RecipeProvider();
+  final mealPlan = MealPlanProvider();
+
+  await profile.load();
+  await mealPlan.load();
+  await ingredients.load();
+  await ingredients.mergeBundledCachedIngredientsIfEnabled();
+
+  await recipes.load();
+  await recipes.hydrateBundledServerRecipesFromAsset();
+  await recipes.mergeBundledServerRecipesIfEnabled();
+  await recipes.applyIngredientNutritionFromSavedIngredients(
+    ingredients.ingredients,
+  );
+  await recipes.syncSummariesFromApi();
+
+  runApp(
+    MacrovaApp(
+      profile: profile,
+      ingredients: ingredients,
+      recipes: recipes,
+      mealPlan: mealPlan,
+    ),
+  );
+}
 
 class MacrovaApp extends StatelessWidget {
-  const MacrovaApp({super.key});
+  const MacrovaApp({
+    super.key,
+    required this.profile,
+    required this.ingredients,
+    required this.recipes,
+    required this.mealPlan,
+  });
+
+  final ProfileProvider profile;
+  final IngredientProvider ingredients;
+  final RecipeProvider recipes;
+  final MealPlanProvider mealPlan;
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ProfileProvider()..load()),
-        ChangeNotifierProvider(create: (_) => IngredientProvider()..load()),
-        ChangeNotifierProvider(
-          create: (_) {
-            final recipes = RecipeProvider();
-            recipes.load().then((_) => recipes.syncSummariesFromApi());
-            return recipes;
-          },
-        ),
-        ChangeNotifierProvider(create: (_) => MealPlanProvider()),
+        ChangeNotifierProvider.value(value: profile),
+        ChangeNotifierProvider.value(value: ingredients),
+        ChangeNotifierProvider.value(value: recipes),
+        ChangeNotifierProvider.value(value: mealPlan),
       ],
       child: MaterialApp(
         title: 'Macrova',

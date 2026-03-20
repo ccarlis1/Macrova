@@ -97,8 +97,16 @@ class ApiService {
     );
 
     if (res.statusCode == 200) {
-      final decoded = jsonDecode(res.body) as Map<String, dynamic>;
-      final raw = decoded['synced_ids'];
+      final decoded = jsonDecode(res.body);
+      if (decoded is! Map) {
+        throw const ApiException(
+          statusCode: 200,
+          code: 'INVALID_RESPONSE',
+          message: 'Sync response was not a JSON object',
+        );
+      }
+      final body = Map<String, dynamic>.from(decoded);
+      final raw = body['synced_ids'];
       if (raw is! List) {
         throw const ApiException(
           statusCode: 200,
@@ -121,8 +129,16 @@ class ApiService {
     );
 
     if (res.statusCode == 200) {
-      return MealPlan.fromJson(
-        jsonDecode(res.body) as Map<String, dynamic>,
+      final decoded = jsonDecode(res.body);
+      if (decoded is! Map) {
+        throw const ApiException(
+          statusCode: 200,
+          code: 'INVALID_RESPONSE',
+          message: 'Plan response was not a JSON object',
+        );
+      }
+      return MealPlan.fromPlanApiV1Response(
+        Map<String, dynamic>.from(decoded),
       );
     }
 

@@ -1,10 +1,21 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/ingredient.dart';
 import '../services/storage_service.dart';
 
 const _uuid = Uuid();
+
+/// Dev: `flutter run --dart-define=BUNDLE_CACHED_INGREDIENTS=true`
+const _bundleCachedIngredients = bool.fromEnvironment(
+  'BUNDLE_CACHED_INGREDIENTS',
+  defaultValue: false,
+);
+
+const _bundledCachedIngredientsAsset = 'assets/dev/cached_ingredients.json';
 
 class IngredientProvider extends ChangeNotifier {
   List<Ingredient> _ingredients = [];
@@ -17,6 +28,28 @@ class IngredientProvider extends ChangeNotifier {
     _ingredients = await StorageService.loadIngredients();
     _loaded = true;
     notifyListeners();
+  }
+
+  /// Merges [assets/dev/cached_ingredients.json] (from
+  /// `scripts/export_flutter_cached_ingredients_bundle.py`) into local storage.
+  /// Same [Ingredient.id] (fdc_id string) → replaced. [IngredientSource.saved].
+  Future<void> mergeBundledCachedIngredientsIfEnabled() async {
+    if (!_bundleCachedIngredients) return;
+    try {
+      final raw = await rootBundle.loadString(_bundledCachedIngredientsAsset);
+      final bundled = Ingredient.fromCachedIngredientsBundleRoot(
+        jsonDecode(raw) as Map<String, dynamic>,
+      );
+      final byId = {for (final i in _ingredients) i.id: i};
+      for (final i in bundled) {
+        byId[i.id] = i;
+      }
+      _ingredients = byId.values.toList();
+      await StorageService.saveIngredients(_ingredients);
+      notifyListeners();
+    } catch (e, st) {
+      debugPrint('mergeBundledCachedIngredientsIfEnabled failed: $e\n$st');
+    }
   }
 
   List<Ingredient> search(String query, {IngredientSource? sourceFilter}) {

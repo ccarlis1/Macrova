@@ -393,6 +393,7 @@ class PlannerConfigScreen extends StatelessWidget {
         recipesToSync: toSync,
         request: request,
       );
+      await recipeProvider.syncSummariesFromApi();
     } else {
       await planProvider.generatePlan(request);
     }

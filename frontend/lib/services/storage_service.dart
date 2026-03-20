@@ -8,6 +8,7 @@ import '../models/user_profile.dart';
 
 class StorageService {
   static const _profileKey = 'user_profile';
+  static const _plannerConfigKey = 'planner_config';
   static const _ingredientsKey = 'ingredients';
   static const _recipesKey = 'recipes';
 
@@ -21,6 +22,19 @@ class StorageService {
     final json = prefs.getString(_profileKey);
     if (json == null) return null;
     return UserProfile.fromJson(jsonDecode(json) as Map<String, dynamic>);
+  }
+
+  /// Meal planner UI state (days, recipe pool selection, etc.) — not the generated plan.
+  static Future<void> savePlannerConfig(Map<String, dynamic> json) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_plannerConfigKey, jsonEncode(json));
+  }
+
+  static Future<Map<String, dynamic>?> loadPlannerConfig() async {
+    final prefs = await SharedPreferences.getInstance();
+    final json = prefs.getString(_plannerConfigKey);
+    if (json == null) return null;
+    return jsonDecode(json) as Map<String, dynamic>;
   }
 
   static Future<void> saveIngredients(List<Ingredient> ingredients) async {

@@ -155,6 +155,48 @@ class Meal {
       busynessLevel: json['busyness_level'] as int,
     );
   }
+
+  /// One meal object from `POST /api/v1/plan` [`daily_plans[].meals`].
+  factory Meal.fromPlanApiV1(Map<String, dynamic> m) {
+    if (m['error'] != null) {
+      return Meal(
+        mealType: m['meal_type'] as String? ?? 'meal',
+        recipe: {
+          'name': 'Missing recipe ${m['recipe_id'] ?? ''}',
+          'cooking_time_minutes': 0,
+          'ingredients': <dynamic>[],
+          'instructions': <dynamic>[],
+        },
+        nutrition: const NutritionProfile(
+          calories: 0,
+          proteinG: 0,
+          fatG: 0,
+          carbsG: 0,
+        ),
+        busynessLevel: 3,
+      );
+    }
+
+    final nutritionMap =
+        Map<String, dynamic>.from(m['nutrition'] as Map);
+    final ingredientsRaw = m['ingredients'] as List<dynamic>? ?? const [];
+    final ingredients = <Map<String, dynamic>>[
+      for (final line in ingredientsRaw)
+        {'display': line.toString()},
+    ];
+
+    return Meal(
+      mealType: m['meal_type'] as String? ?? 'meal',
+      recipe: {
+        'name': m['name']?.toString() ?? 'Recipe',
+        'cooking_time_minutes': m['cooking_time_minutes'],
+        'ingredients': ingredients,
+        'instructions': const <dynamic>[],
+      },
+      nutrition: NutritionProfile.fromJson(nutritionMap),
+      busynessLevel: m['busyness_level'] as int? ?? 3,
+    );
+  }
 }
 
 class NutritionGoals {
@@ -179,6 +221,17 @@ class NutritionGoals {
       fatGMin: (json['fat_g_min'] as num).toDouble(),
       fatGMax: (json['fat_g_max'] as num).toDouble(),
       carbsG: (json['carbs_g'] as num).toDouble(),
+    );
+  }
+
+  /// Shaped like [format_result_json] `goals` on `/api/v1/plan`.
+  factory NutritionGoals.fromPlanApi(Map<String, dynamic> g) {
+    return NutritionGoals(
+      calories: (g['daily_calories'] as num).round(),
+      proteinG: (g['daily_protein_g'] as num).toDouble(),
+      fatGMin: (g['daily_fat_g_min'] as num).toDouble(),
+      fatGMax: (g['daily_fat_g_max'] as num).toDouble(),
+      carbsG: (g['daily_carbs_g'] as num).toDouble(),
     );
   }
 }
@@ -224,6 +277,129 @@ class MealPlan {
         (key, value) => MapEntry(key, (value as num).toDouble()),
       ),
       warnings: List<String>.from(json['warnings'] ?? const []),
+    );
+  }
+
+  static NutritionProfile _sumMealNutrition(List<Meal> meals) {
+    double c = 0, p = 0, f = 0, cb = 0;
+    for (final m in meals) {
+      c += m.nutrition.calories;
+      p += m.nutrition.proteinG;
+      f += m.nutrition.fatG;
+      cb += m.nutrition.carbsG;
+    }
+    return NutritionProfile(
+      calories: c,
+      proteinG: p,
+      fatG: f,
+      carbsG: cb,
+    );
+  }
+
+  static Map<String, double> _adherence(
+    NutritionProfile actual,
+    NutritionGoals goals,
+  ) {
+    double pct(double a, double t) {
+      if (t <= 0) return 100;
+      return (100 * a / t).clamp(0, 200).toDouble();
+    }
+
+    final fatMid = (goals.fatGMin + goals.fatGMax) / 2;
+    return {
+      'calories': pct(actual.calories, goals.calories.toDouble()),
+      'protein': pct(actual.proteinG, goals.proteinG),
+      'carbs': pct(actual.carbsG, goals.carbsG),
+      'fat': pct(actual.fatG, fatMid),
+    };
+  }
+
+  /// `/api/v1/plan` JSON from [format_result_json] (`daily_plans`, `goals`, …).
+  factory MealPlan.fromPlanApiV1Response(Map<String, dynamic> json) {
+    final success = json['success'] as bool? ?? false;
+    final dailyPlans = json['daily_plans'] as List<dynamic>? ?? const [];
+    final days = json['days'] as int? ?? 1;
+
+    final meals = <Meal>[];
+    for (final day in dailyPlans) {
+      if (day is! Map) continue;
+      final dayMap = Map<String, dynamic>.from(day);
+      final mealList = dayMap['meals'] as List<dynamic>? ?? const [];
+      for (final raw in mealList) {
+        if (raw is Map) {
+          meals.add(Meal.fromPlanApiV1(Map<String, dynamic>.from(raw)));
+        }
+      }
+    }
+
+    NutritionProfile totalNutrition;
+    if (days == 1 && dailyPlans.isNotEmpty) {
+      final first = dailyPlans.first;
+      final totals = first is Map ? first['totals'] : null;
+      if (totals is Map &&
+          totals['calories'] != null &&
+          totals['protein_g'] != null) {
+        final tm = Map<String, dynamic>.from(totals);
+        totalNutrition = NutritionProfile(
+          calories: (tm['calories'] as num).toDouble(),
+          proteinG: (tm['protein_g'] as num).toDouble(),
+          fatG: (tm['fat_g'] as num).toDouble(),
+          carbsG: (tm['carbs_g'] as num).toDouble(),
+        );
+      } else if (meals.isNotEmpty) {
+        totalNutrition = _sumMealNutrition(meals);
+      } else {
+        totalNutrition = const NutritionProfile(
+          calories: 0,
+          proteinG: 0,
+          fatG: 0,
+          carbsG: 0,
+        );
+      }
+    } else {
+      totalNutrition = meals.isEmpty
+          ? const NutritionProfile(
+              calories: 0,
+              proteinG: 0,
+              fatG: 0,
+              carbsG: 0,
+            )
+          : _sumMealNutrition(meals);
+    }
+
+    final goalsRaw = json['goals'];
+    if (goalsRaw is! Map) {
+      throw const FormatException('Plan response missing goals');
+    }
+    final goals = NutritionGoals.fromPlanApi(
+      Map<String, dynamic>.from(goalsRaw),
+    );
+
+    final warnings = <String>[];
+    final w = json['warnings'];
+    if (w is List) {
+      warnings.addAll(w.map((e) => e.toString()));
+    } else if (w is Map && w.isNotEmpty) {
+      w.forEach((k, v) => warnings.add('$k: $v'));
+    }
+
+    final termination = json['termination_code'] as String?;
+    if (!success &&
+        termination != null &&
+        termination.isNotEmpty &&
+        !warnings.any((s) => s.contains(termination))) {
+      warnings.add('Planner ended with $termination');
+    }
+
+    return MealPlan(
+      success: success,
+      meetsGoals: success,
+      date: '',
+      meals: meals,
+      totalNutrition: totalNutrition,
+      goals: goals,
+      targetAdherence: _adherence(totalNutrition, goals),
+      warnings: warnings,
     );
   }
 }

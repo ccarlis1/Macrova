@@ -1,5 +1,10 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
 
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../providers/ingredient_provider.dart';
+import '../providers/recipe_provider.dart';
 import '../screens/ingredient_hub_screen.dart';
 import '../screens/meal_plan_view_screen.dart';
 import '../screens/planner_config_screen.dart';
@@ -17,6 +22,34 @@ class AppShell extends StatefulWidget {
 
 class AppShellState extends State<AppShell> {
   int _selectedIndex = 0;
+  IngredientProvider? _ingredientProvider;
+  void _onIngredientsChanged() {
+    if (!mounted || _ingredientProvider == null) return;
+    unawaited(
+      context.read<RecipeProvider>().applyIngredientNutritionFromSavedIngredients(
+            _ingredientProvider!.ingredients,
+          ),
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final ing = context.read<IngredientProvider>();
+      final rec = context.read<RecipeProvider>();
+      _ingredientProvider = ing;
+      ing.addListener(_onIngredientsChanged);
+      unawaited(rec.applyIngredientNutritionFromSavedIngredients(ing.ingredients));
+    });
+  }
+
+  @override
+  void dispose() {
+    _ingredientProvider?.removeListener(_onIngredientsChanged);
+    super.dispose();
+  }
 
   void navigateTo(int index) {
     setState(() => _selectedIndex = index);

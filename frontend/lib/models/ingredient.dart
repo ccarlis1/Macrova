@@ -128,4 +128,42 @@ class Ingredient {
       source: IngredientSource.api,
     );
   }
+
+  /// One USDA-backed row from `.cache/ingredients/*.json` (Python [CacheEntry] dump).
+  factory Ingredient.fromPythonCacheFile(Map<String, dynamic> json) {
+    final nut = json['nutrition'] as Map<String, dynamic>? ?? {};
+    final microRaw = nut['micronutrients'] as Map<String, dynamic>? ?? {};
+    final fdc = json['fdc_id'];
+    final id = fdc != null ? fdc.toString() : _resolveIdUuid.v4();
+    final canonical = (json['canonical_name'] as String?)?.trim();
+    final desc = (json['description'] as String?)?.trim();
+    final name = (canonical != null && canonical.isNotEmpty)
+        ? canonical
+        : (desc != null && desc.isNotEmpty)
+            ? desc
+            : 'Ingredient';
+    return Ingredient(
+      id: id,
+      name: name,
+      caloriesPer100g: (nut['calories'] as num?)?.toDouble() ?? 0,
+      proteinPer100g: (nut['protein_g'] as num?)?.toDouble() ?? 0,
+      carbsPer100g: (nut['carbs_g'] as num?)?.toDouble() ?? 0,
+      fatPer100g: (nut['fat_g'] as num?)?.toDouble() ?? 0,
+      micronutrientsPer100g: microRaw.map(
+        (k, v) => MapEntry(k, (v as num).toDouble()),
+      ),
+      unitConversions: const {},
+      source: IngredientSource.saved,
+    );
+  }
+
+  /// Bundle root `{"ingredients": [ ... ]}` from [cached_ingredients.json].
+  static List<Ingredient> fromCachedIngredientsBundleRoot(
+    Map<String, dynamic> root,
+  ) {
+    final arr = root['ingredients'] as List<dynamic>? ?? const [];
+    return arr
+        .map((e) => Ingredient.fromPythonCacheFile(e as Map<String, dynamic>))
+        .toList();
+  }
 }

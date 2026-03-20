@@ -164,6 +164,60 @@ class Recipe {
     );
   }
 
+  /// Backend `data/recipes/recipes.json` entry → in-app [Recipe] (ingredient macros unknown).
+  factory Recipe.fromServerRecipeMap(Map<String, dynamic> json) {
+    final rawIngs = json['ingredients'] as List<dynamic>? ?? const [];
+    final ingredients = <RecipeIngredientEntry>[];
+    for (var i = 0; i < rawIngs.length; i++) {
+      final item = rawIngs[i];
+      if (item is! Map) continue;
+      ingredients.add(
+        _serverIngredientLine(Map<String, dynamic>.from(item), i),
+      );
+    }
+    return Recipe(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      ingredients: ingredients,
+      servings: 1,
+    );
+  }
+
+  static RecipeIngredientEntry _serverIngredientLine(
+    Map<String, dynamic> m,
+    int index,
+  ) {
+    final rawName = m['name'];
+    final name = rawName == null
+        ? ''
+        : rawName is String
+            ? rawName.trim()
+            : rawName.toString().trim();
+    final safeId = name.isEmpty
+        ? 'line_$index'
+        : 'srv_${name.toLowerCase().replaceAll(RegExp(r'\s+'), '_')}';
+    final rawUnit = m['unit'];
+    final unitStr = rawUnit == null
+        ? 'g'
+        : rawUnit is String
+            ? rawUnit.trim()
+            : rawUnit.toString();
+    return RecipeIngredientEntry(
+      ingredientId: safeId,
+      ingredientName: name.isEmpty ? 'ingredient' : name,
+      quantity: (m['quantity'] as num?)?.toDouble() ?? 0,
+      unit: unitStr.isNotEmpty ? unitStr : 'g',
+    );
+  }
+
+  /// Root object `{"recipes": [ ... ]}` as in `data/recipes/recipes.json`.
+  static List<Recipe> fromServerRecipesJsonRoot(Map<String, dynamic> root) {
+    final arr = root['recipes'] as List<dynamic>? ?? const [];
+    return arr
+        .map((e) => Recipe.fromServerRecipeMap(e as Map<String, dynamic>))
+        .toList();
+  }
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'name': name,

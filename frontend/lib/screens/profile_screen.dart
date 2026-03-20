@@ -203,7 +203,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Fix the highlighted fields before saving.'),
+          ),
+        );
+      }
+      return;
+    }
     final profile = _buildProfile();
     await context.read<ProfileProvider>().saveProfile(profile);
     if (mounted) {

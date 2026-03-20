@@ -16,7 +16,12 @@ from src.ingestion.nutrient_mapper import MappedNutrition, NutrientMapper
 from src.ingestion.ingredient_cache import CachedIngredientLookup
 from src.ingestion.usda_client import DataType, USDAClient, USDALookupError
 
-from src.data_layer.models import UserProfile
+from src.data_layer.models import (
+    UserProfile,
+    Recipe as DataRecipe,
+    Ingredient as DataIngredient,
+    MicronutrientProfile,
+)
 from src.data_layer.recipe_db import RecipeDB
 from src.data_layer.nutrition_db import NutritionDB
 from src.providers.local_provider import LocalIngredientProvider
@@ -28,6 +33,11 @@ from src.output.formatters import format_result_json
 from src.providers.api_provider import APIIngredientProvider
 from src.config.llm_settings import load_llm_settings
 from src.api.error_mapping import map_exception_to_api_error
+from src.api.recipe_sync import (
+    RecipeSyncRequest,
+    RecipeSyncResponse,
+    atomic_upsert_recipes_by_id,
+)
 from src.llm.client import LLMClient
 from src.llm.constraint_parser import PlannerConfigParsingError, parse_nl_config
 from src.llm.pipeline import generate_validate_persist_recipes
@@ -270,6 +280,84 @@ def _mapped_nutrition_to_resolve_payload(
     }
 
 
+def _flutter_ingredient_entries(
+    recipe: DataRecipe,
+    calculator: NutritionCalculator,
+) -> List[Dict[str, Any]]:
+    """Map data-layer recipe lines to Flutter `RecipeIngredientEntry` JSON."""
+    out: List[Dict[str, Any]] = []
+    for idx, ing in enumerate(recipe.ingredients):
+        iid = f"{recipe.id}:line:{idx}"
+        if ing.is_to_taste:
+            out.append(
+                {
+                    "ingredient_id": iid,
+                    "ingredient_name": ing.name,
+                    "quantity": float(ing.quantity),
+                    "unit": ing.unit,
+                    "calories_per_100g": 0.0,
+                    "protein_per_100g": 0.0,
+                    "carbs_per_100g": 0.0,
+                    "fat_per_100g": 0.0,
+                    "micronutrients_per_100g": {},
+                    "unit_conversions": {},
+                }
+            )
+            continue
+        try:
+            prof = calculator.calculate_ingredient_nutrition(ing)
+            grams = calculator._convert_quantity_to_grams(ing)  # noqa: SLF001
+            if grams <= 0:
+                raise ValueError("nonpositive grams")
+            factor = 100.0 / grams
+            micro_per_100g: Dict[str, float] = {}
+            if prof.micronutrients is not None:
+                for field in NutritionCalculator.MICRONUTRIENT_FIELDS:
+                    total = float(getattr(prof.micronutrients, field, 0.0))
+                    scaled = total * factor
+                    if scaled != 0.0:
+                        micro_per_100g[field] = scaled
+            out.append(
+                {
+                    "ingredient_id": iid,
+                    "ingredient_name": ing.name,
+                    "quantity": float(ing.quantity),
+                    "unit": ing.unit,
+                    "calories_per_100g": float(prof.calories) * factor,
+                    "protein_per_100g": float(prof.protein_g) * factor,
+                    "carbs_per_100g": float(prof.carbs_g) * factor,
+                    "fat_per_100g": float(prof.fat_g) * factor,
+                    "micronutrients_per_100g": micro_per_100g,
+                    "unit_conversions": {},
+                }
+            )
+        except Exception:
+            out.append(
+                {
+                    "ingredient_id": iid,
+                    "ingredient_name": ing.name,
+                    "quantity": float(ing.quantity),
+                    "unit": ing.unit,
+                    "calories_per_100g": 0.0,
+                    "protein_per_100g": 0.0,
+                    "carbs_per_100g": 0.0,
+                    "fat_per_100g": 0.0,
+                    "micronutrients_per_100g": {},
+                    "unit_conversions": {},
+                }
+            )
+    return out
+
+
+def _micronutrient_totals_dict(profile: MicronutrientProfile) -> Dict[str, float]:
+    d: Dict[str, float] = {}
+    for field in NutritionCalculator.MICRONUTRIENT_FIELDS:
+        v = float(getattr(profile, field, 0.0))
+        if v != 0.0:
+            d[field] = v
+    return d
+
+
 def _local_ingredient_to_resolve_payload(data: Dict[str, Any]) -> Dict[str, Any]:
     """Serialize a NutritionDB ingredient dict into a resolve DTO."""
     by_unit: Dict[str, Dict[str, float]] = {}
@@ -411,6 +499,32 @@ class IngredientResolveRequest(BaseModel):
         if self.ingredient_source is None:
             raise ValueError("ingredient_source is required when resolving by name")
         return self
+
+
+class NutritionIngredientLine(BaseModel):
+    name: constr(strip_whitespace=True, min_length=1)  # type: ignore[valid-type]
+    quantity: float = Field(..., ge=0)
+    unit: str = Field(..., min_length=1)
+
+
+class NutritionSummaryRequest(BaseModel):
+    servings: int = Field(1, ge=1)
+    ingredients: List[NutritionIngredientLine] = Field(..., min_length=1)
+
+
+def _nutrition_line_to_data_ingredient(line: NutritionIngredientLine) -> DataIngredient:
+    unit = line.unit.strip()
+    lowered = unit.lower()
+    is_tt = lowered == "to taste" or "to taste" in lowered
+    qty = 0.0 if is_tt else float(line.quantity)
+    return DataIngredient(
+        name=line.name.strip(),
+        quantity=qty,
+        unit=unit,
+        is_to_taste=is_tt,
+        normalized_unit=unit,
+        normalized_quantity=qty,
+    )
 
 
 @app.post("/api/v1/plan")
@@ -950,12 +1064,103 @@ def ingredient_resolve_endpoint(request: IngredientResolveRequest) -> Any:
         return JSONResponse(status_code=status_code, content=payload)
 
 
+@app.post("/api/v1/recipes/sync", response_model=RecipeSyncResponse)
+@app.post("/api/recipes/sync", response_model=RecipeSyncResponse)
+def sync_recipes_endpoint(body: RecipeSyncRequest) -> Any:
+    """Upsert client-owned recipes into the server's file-backed pool by id."""
+    try:
+        if not body.recipes:
+            return RecipeSyncResponse(synced_ids=[])
+        synced_ids = atomic_upsert_recipes_by_id(
+            path=recipes_path,
+            items=body.recipes,
+        )
+        return RecipeSyncResponse(synced_ids=synced_ids)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        status_code, payload = map_exception_to_api_error(exc)
+        return JSONResponse(status_code=status_code, content=payload)
+
+
 @app.get("/api/v1/recipes")
 @app.get("/api/recipes")
 def list_recipes() -> List[Dict[str, str]]:
     try:
         recipe_db = RecipeDB(recipes_path)
         return [{"id": r.id, "name": r.name} for r in recipe_db.get_all_recipes()]
+    except Exception as exc:
+        status_code, payload = map_exception_to_api_error(exc)
+        return JSONResponse(status_code=status_code, content=payload)
+
+
+@app.get("/api/v1/recipes/{recipe_id}")
+def get_recipe_detail(recipe_id: str) -> Any:
+    """Full recipe with ingredient lines enriched for the Flutter client."""
+    try:
+        recipe_db = RecipeDB(recipes_path)
+        recipe = recipe_db.get_recipe_by_id(recipe_id)
+        if recipe is None:
+            return JSONResponse(
+                status_code=404,
+                content={
+                    "error": {
+                        "code": "NOT_FOUND",
+                        "message": f"No recipe with id {recipe_id!r}",
+                    }
+                },
+            )
+        nutrition_db = NutritionDB(ingredients_path)
+        calculator = NutritionCalculator(LocalIngredientProvider(nutrition_db))
+        ingredients_json = _flutter_ingredient_entries(recipe, calculator)
+        return {
+            "id": recipe.id,
+            "name": recipe.name,
+            "servings": 1,
+            "cooking_time_minutes": recipe.cooking_time_minutes,
+            "instructions": recipe.instructions,
+            "ingredients": ingredients_json,
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        status_code, payload = map_exception_to_api_error(exc)
+        return JSONResponse(status_code=status_code, content=payload)
+
+
+@app.post("/api/v1/nutrition/summary")
+def nutrition_summary_endpoint(request: NutritionSummaryRequest) -> Any:
+    """Server-authoritative macro and micro totals for a draft ingredient list."""
+    try:
+        nutrition_db = NutritionDB(ingredients_path)
+        calculator = NutritionCalculator(LocalIngredientProvider(nutrition_db))
+        ingredients = [_nutrition_line_to_data_ingredient(l) for l in request.ingredients]
+        draft = DataRecipe(
+            id="_draft",
+            name="_draft",
+            ingredients=ingredients,
+            cooking_time_minutes=0,
+            instructions=[],
+        )
+        prof = calculator.calculate_recipe_nutrition(draft)
+        servings = max(1, int(request.servings))
+        micro: Dict[str, float] = {}
+        if prof.micronutrients is not None:
+            micro = _micronutrient_totals_dict(prof.micronutrients)
+        return {
+            "calories": float(prof.calories),
+            "protein_g": float(prof.protein_g),
+            "carbs_g": float(prof.carbs_g),
+            "fat_g": float(prof.fat_g),
+            "per_serving_calories": float(prof.calories) / servings,
+            "per_serving_protein_g": float(prof.protein_g) / servings,
+            "per_serving_carbs_g": float(prof.carbs_g) / servings,
+            "per_serving_fat_g": float(prof.fat_g) / servings,
+            "micronutrients": micro,
+            "servings": servings,
+        }
+    except HTTPException:
+        raise
     except Exception as exc:
         status_code, payload = map_exception_to_api_error(exc)
         return JSONResponse(status_code=status_code, content=payload)

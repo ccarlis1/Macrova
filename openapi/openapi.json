@@ -202,6 +202,55 @@
         "title": "IngredientSearchResultItem",
         "type": "object"
       },
+      "NutritionIngredientLine": {
+        "properties": {
+          "name": {
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "quantity": {
+            "minimum": 0.0,
+            "title": "Quantity",
+            "type": "number"
+          },
+          "unit": {
+            "minLength": 1,
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "quantity",
+          "unit"
+        ],
+        "title": "NutritionIngredientLine",
+        "type": "object"
+      },
+      "NutritionSummaryRequest": {
+        "properties": {
+          "ingredients": {
+            "items": {
+              "$ref": "#/components/schemas/NutritionIngredientLine"
+            },
+            "minItems": 1,
+            "title": "Ingredients",
+            "type": "array"
+          },
+          "servings": {
+            "default": 1,
+            "minimum": 1.0,
+            "title": "Servings",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ingredients"
+        ],
+        "title": "NutritionSummaryRequest",
+        "type": "object"
+      },
       "PlanFromTextRequest": {
         "properties": {
           "cost_level": {
@@ -562,6 +611,114 @@
         "title": "RecipeGenerationResponse",
         "type": "object"
       },
+      "RecipeSyncIngredientLine": {
+        "description": "One ingredient line as sent by the client.",
+        "properties": {
+          "name": {
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "quantity": {
+            "minimum": 0.0,
+            "title": "Quantity",
+            "type": "number"
+          },
+          "unit": {
+            "minLength": 1,
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "quantity",
+          "unit"
+        ],
+        "title": "RecipeSyncIngredientLine",
+        "type": "object"
+      },
+      "RecipeSyncItem": {
+        "properties": {
+          "cooking_time_minutes": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Cooking Time Minutes",
+            "type": "integer"
+          },
+          "id": {
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "ingredients": {
+            "items": {
+              "$ref": "#/components/schemas/RecipeSyncIngredientLine"
+            },
+            "minItems": 1,
+            "title": "Ingredients",
+            "type": "array"
+          },
+          "instructions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Instructions",
+            "type": "array"
+          },
+          "name": {
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "ingredients"
+        ],
+        "title": "RecipeSyncItem",
+        "type": "object"
+      },
+      "RecipeSyncRequest": {
+        "properties": {
+          "recipes": {
+            "items": {
+              "$ref": "#/components/schemas/RecipeSyncItem"
+            },
+            "title": "Recipes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "recipes"
+        ],
+        "title": "RecipeSyncRequest",
+        "type": "object"
+      },
+      "RecipeSyncResponse": {
+        "properties": {
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "synced_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Synced Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "synced_ids"
+        ],
+        "title": "RecipeSyncResponse",
+        "type": "object"
+      },
       "RecipeTagGenerationRequest": {
         "properties": {
           "llm_enabled": {
@@ -837,6 +994,45 @@
         "summary": "Generate Validated Recipes Endpoint"
       }
     },
+    "/api/recipes/sync": {
+      "post": {
+        "description": "Upsert client-owned recipes into the server's file-backed pool by id.",
+        "operationId": "sync_recipes_endpoint_api_recipes_sync_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeSyncRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeSyncResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sync Recipes Endpoint"
+      }
+    },
     "/api/recipes/tags/generate": {
       "post": {
         "operationId": "generate_recipe_tags_endpoint_api_recipes_tags_generate_post",
@@ -1036,6 +1232,45 @@
         "summary": "Ingredient Search Endpoint"
       }
     },
+    "/api/v1/nutrition/summary": {
+      "post": {
+        "description": "Server-authoritative macro and micro totals for a draft ingredient list.",
+        "operationId": "nutrition_summary_endpoint_api_v1_nutrition_summary_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NutritionSummaryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Nutrition Summary Endpoint Api V1 Nutrition Summary Post"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Nutrition Summary Endpoint"
+      }
+    },
     "/api/v1/plan": {
       "post": {
         "operationId": "plan_meals_endpoint_api_v1_plan_post",
@@ -1179,6 +1414,45 @@
         "summary": "Generate Validated Recipes Endpoint"
       }
     },
+    "/api/v1/recipes/sync": {
+      "post": {
+        "description": "Upsert client-owned recipes into the server's file-backed pool by id.",
+        "operationId": "sync_recipes_endpoint_api_v1_recipes_sync_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeSyncRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeSyncResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sync Recipes Endpoint"
+      }
+    },
     "/api/v1/recipes/tags/generate": {
       "post": {
         "operationId": "generate_recipe_tags_endpoint_api_v1_recipes_tags_generate_post",
@@ -1215,6 +1489,46 @@
           }
         },
         "summary": "Generate Recipe Tags Endpoint"
+      }
+    },
+    "/api/v1/recipes/{recipe_id}": {
+      "get": {
+        "description": "Full recipe with ingredient lines enriched for the Flutter client.",
+        "operationId": "get_recipe_detail_api_v1_recipes__recipe_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recipe_id",
+            "required": true,
+            "schema": {
+              "title": "Recipe Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Recipe Detail Api V1 Recipes  Recipe Id  Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Recipe Detail"
       }
     }
   }

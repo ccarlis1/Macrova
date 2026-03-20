@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/models.dart';
+import '../models/recipe.dart';
 import '../providers/meal_plan_provider.dart';
 import '../providers/profile_provider.dart';
 import '../providers/recipe_provider.dart';
+import '../services/api_service.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/macro_display.dart';
 import '../widgets/section_header.dart';
@@ -261,10 +263,10 @@ class PlannerConfigScreen extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
-                  onPressed: planProvider.loading
+                  onPressed: planProvider.loading || planProvider.syncing
                       ? null
                       : () => _generate(context),
-                  icon: planProvider.loading
+                  icon: planProvider.loading || planProvider.syncing
                       ? const SizedBox(
                           width: 16,
                           height: 16,
@@ -273,9 +275,13 @@ class PlannerConfigScreen extends StatelessWidget {
                           ),
                         )
                       : const Icon(Icons.arrow_forward),
-                  label: Text(planProvider.loading
-                      ? 'Generating...'
-                      : 'Generate Meal Plan'),
+                  label: Text(
+                    planProvider.syncing
+                        ? 'Syncing recipes…'
+                        : planProvider.loading
+                            ? 'Generating...'
+                            : 'Generate Meal Plan',
+                  ),
                 ),
               ),
               if (planProvider.error != null) ...[
@@ -302,13 +308,23 @@ class PlannerConfigScreen extends StatelessWidget {
     );
   }
 
-  void _generate(BuildContext context) {
+  Future<void> _generate(BuildContext context) async {
     final profile = context.read<ProfileProvider>().profile;
     final planProvider = context.read<MealPlanProvider>();
+    final recipeProvider = context.read<RecipeProvider>();
 
     // Build schedule from meals per day
     final schedule = <String, int>{};
-    final mealTimes = ['08:00', '12:00', '15:00', '18:00', '20:00', '22:00', '07:00', '10:00'];
+    final mealTimes = [
+      '08:00',
+      '12:00',
+      '15:00',
+      '18:00',
+      '20:00',
+      '22:00',
+      '07:00',
+      '10:00',
+    ];
     for (int i = 0; i < planProvider.mealsPerDay && i < mealTimes.length; i++) {
       schedule[mealTimes[i]] = 3; // default busyness
     }
@@ -333,11 +349,58 @@ class PlannerConfigScreen extends StatelessWidget {
     );
 
     final shell = context.findAncestorStateOfType<AppShellState>();
-    planProvider.generatePlan(request).then((_) {
-      if (planProvider.mealPlan != null) {
-        shell?.navigateTo(5);
+
+    if (recipeIds != null && recipeIds.isNotEmpty) {
+      final toSync = <Recipe>[];
+      for (final id in recipeIds) {
+        var recipe = recipeProvider.getById(id);
+        if (recipe == null) {
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Recipe not found: $id')),
+          );
+          return;
+        }
+        if (recipe.ingredients.isEmpty) {
+          try {
+            recipe = await recipeProvider.fetchRecipeDetail(id);
+          } catch (e) {
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  e is ApiException ? e.message : e.toString(),
+                ),
+              ),
+            );
+            return;
+          }
+        }
+        if (recipe.ingredients.isEmpty) {
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Recipe "${recipe.name}" has no ingredients to sync.',
+              ),
+            ),
+          );
+          return;
+        }
+        toSync.add(recipe);
       }
-    });
+      await planProvider.generatePlanWithRecipeSync(
+        recipesToSync: toSync,
+        request: request,
+      );
+    } else {
+      await planProvider.generatePlan(request);
+    }
+
+    if (!context.mounted) return;
+    if (planProvider.mealPlan != null) {
+      shell?.navigateTo(5);
+    }
   }
 }
 

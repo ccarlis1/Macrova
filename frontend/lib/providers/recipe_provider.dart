@@ -48,8 +48,22 @@ class RecipeProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Loads full recipe JSON from [ApiService.getRecipe] and merges into local storage.
+  Future<Recipe> fetchRecipeDetail(String id) async {
+    final recipe = await ApiService.getRecipe(id);
+    final idx = _localRecipes.indexWhere((r) => r.id == id);
+    if (idx >= 0) {
+      _localRecipes[idx] = recipe;
+    } else {
+      _localRecipes.add(recipe);
+    }
+    await StorageService.saveRecipes(_localRecipes);
+    notifyListeners();
+    return recipe;
+  }
+
   /// Fetches recipe id+name list from the API and merges into [recipes].
-  /// Full nutrition and ingredients still come from local storage until a detail endpoint exists.
+  /// Full nutrition for known server ids can be loaded via [fetchRecipeDetail].
   Future<void> syncSummariesFromApi() async {
     _syncLoading = true;
     _syncError = null;

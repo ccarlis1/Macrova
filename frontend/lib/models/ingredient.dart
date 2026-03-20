@@ -1,4 +1,9 @@
+import 'package:uuid/uuid.dart';
+
 enum IngredientSource { saved, api, custom }
+
+// ignore: prefer_const_constructors
+final _resolveIdUuid = Uuid();
 
 class Ingredient {
   final String id;
@@ -96,6 +101,31 @@ class Ingredient {
         (e) => e.name == json['source'],
         orElse: () => IngredientSource.custom,
       ),
+    );
+  }
+
+  /// Maps `POST /api/v1/ingredients/resolve` JSON to a saved [Ingredient] row.
+  factory Ingredient.fromResolveResponse(Map<String, dynamic> json) {
+    final per = json['per_100g'] as Map<String, dynamic>? ?? {};
+    final microRaw = json['micronutrients'] as Map<String, dynamic>? ?? {};
+    final fdc = json['fdc_id'];
+    final id = (fdc is String && fdc.isNotEmpty)
+        ? fdc
+        : _resolveIdUuid.v4();
+    return Ingredient(
+      id: id,
+      name: (json['name'] as String?)?.trim().isNotEmpty == true
+          ? json['name'] as String
+          : 'Ingredient',
+      caloriesPer100g: (per['calories'] as num?)?.toDouble() ?? 0,
+      proteinPer100g: (per['protein_g'] as num?)?.toDouble() ?? 0,
+      carbsPer100g: (per['carbs_g'] as num?)?.toDouble() ?? 0,
+      fatPer100g: (per['fat_g'] as num?)?.toDouble() ?? 0,
+      micronutrientsPer100g: microRaw.map(
+        (k, v) => MapEntry(k, (v as num).toDouble()),
+      ),
+      unitConversions: const {},
+      source: IngredientSource.api,
     );
   }
 }

@@ -1,11 +1,13 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/models.dart';
+import '../models/recipe.dart';
 import '../services/api_service.dart';
 
 class MealPlanProvider extends ChangeNotifier {
   MealPlan? _mealPlan;
   bool _loading = false;
+  bool _syncing = false;
   String? _error;
 
   // Planner config state
@@ -20,6 +22,7 @@ class MealPlanProvider extends ChangeNotifier {
 
   MealPlan? get mealPlan => _mealPlan;
   bool get loading => _loading;
+  bool get syncing => _syncing;
   String? get error => _error;
   int get days => _days;
   int get mealsPerDay => _mealsPerDay;
@@ -79,6 +82,28 @@ class MealPlanProvider extends ChangeNotifier {
       _loading = false;
       notifyListeners();
     }
+  }
+
+  /// Uploads [recipesToSync] then runs [generatePlan]. On sync failure, plan is not called.
+  Future<void> generatePlanWithRecipeSync({
+    required List<Recipe> recipesToSync,
+    required PlanRequest request,
+  }) async {
+    _syncing = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await ApiService.syncRecipes(recipesToSync);
+    } catch (e) {
+      _error = e is ApiException ? e.message : e.toString();
+      return;
+    } finally {
+      _syncing = false;
+      notifyListeners();
+    }
+
+    await generatePlan(request);
   }
 
   void clearPlan() {

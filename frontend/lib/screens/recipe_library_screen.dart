@@ -129,13 +129,18 @@ class RecipeLibraryScreen extends StatelessWidget {
                             onView: () {
                               final shell = context
                                   .findAncestorStateOfType<AppShellState>();
+                              final recipeProvider =
+                                  context.read<RecipeProvider>();
                               shell?.navigateTo(2);
                               WidgetsBinding.instance
                                   .addPostFrameCallback((_) {
                                 final builderState = context
                                     .findAncestorStateOfType<
                                         RecipeBuilderScreenState>();
-                                builderState?.loadRecipe(recipe);
+                                builderState?.loadRecipeWithHydration(
+                                  recipe,
+                                  recipeProvider,
+                                );
                               });
                             },
                           );

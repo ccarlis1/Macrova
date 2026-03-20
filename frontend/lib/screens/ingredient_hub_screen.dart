@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/ingredient.dart';
+import '../models/ingredient_search.dart';
 import '../providers/ingredient_provider.dart';
+import '../services/api_service.dart';
 import '../widgets/ingredient_card.dart';
 import '../widgets/macro_display.dart';
 import '../widgets/micronutrient_bar.dart';
@@ -62,11 +66,149 @@ class _IngredientHubScreenState extends State<IngredientHubScreen> {
   final _searchCtrl = TextEditingController();
   IngredientSource? _sourceFilter;
   String? _selectedId;
+  bool _remoteUsdaMode = false;
+  /// When true, remote search uses `data_types=sr_legacy_only` on the API.
+  bool _remoteSrLegacyOnly = false;
+  Timer? _remoteDebounce;
+  List<IngredientSearchResultItem> _remoteResults = [];
+  bool _remoteLoading = false;
+  String? _remoteError;
+  String? _resolvingFdcId;
 
   @override
   void dispose() {
+    _remoteDebounce?.cancel();
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  void _onSearchTextChanged(String _) {
+    if (_remoteUsdaMode) {
+      _remoteDebounce?.cancel();
+      _remoteDebounce = Timer(const Duration(milliseconds: 420), () {
+        final q = _searchCtrl.text.trim();
+        if (!mounted) return;
+        _runRemoteSearch(q);
+      });
+    } else {
+      setState(() {});
+    }
+  }
+
+  Future<void> _runRemoteSearch(String query) async {
+    if (query.isEmpty) {
+      setState(() {
+        _remoteResults = [];
+        _remoteLoading = false;
+        _remoteError = null;
+      });
+      return;
+    }
+    setState(() {
+      _remoteLoading = true;
+      _remoteError = null;
+    });
+    try {
+      final res = await ApiService.searchIngredients(
+        q: query,
+        dataTypes: _remoteSrLegacyOnly ? 'sr_legacy_only' : 'all',
+      );
+      if (!mounted) return;
+      setState(() {
+        _remoteResults = res.results;
+        _remoteLoading = false;
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _remoteResults = [];
+        _remoteLoading = false;
+        _remoteError = '${e.code}: ${e.message}';
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _remoteResults = [];
+        _remoteLoading = false;
+        _remoteError = e.toString();
+      });
+    }
+  }
+
+  void _enterRemoteMode() {
+    setState(() {
+      _remoteUsdaMode = true;
+      _sourceFilter = null;
+      _selectedId = null;
+    });
+    final q = _searchCtrl.text.trim();
+    if (q.isNotEmpty) {
+      _remoteDebounce?.cancel();
+      _runRemoteSearch(q);
+    } else {
+      setState(() {
+        _remoteResults = [];
+        _remoteError = null;
+      });
+    }
+  }
+
+  void _leaveRemoteMode() {
+    _remoteDebounce?.cancel();
+    setState(() {
+      _remoteUsdaMode = false;
+      _remoteSrLegacyOnly = false;
+      _remoteResults = [];
+      _remoteLoading = false;
+      _remoteError = null;
+      _resolvingFdcId = null;
+    });
+  }
+
+  void _setRemoteSrLegacyOnly(bool value) {
+    setState(() => _remoteSrLegacyOnly = value);
+    if (!_remoteUsdaMode) return;
+    final q = _searchCtrl.text.trim();
+    if (q.isEmpty) return;
+    _remoteDebounce?.cancel();
+    _runRemoteSearch(q);
+  }
+
+  Future<void> _resolveAndAdd(IngredientSearchResultItem item) async {
+    final fdc = int.tryParse(item.fdcId);
+    if (fdc == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid FDC id')),
+        );
+      }
+      return;
+    }
+    final ingredients = context.read<IngredientProvider>();
+    setState(() => _resolvingFdcId = item.fdcId);
+    try {
+      final payload = await ApiService.resolveIngredientJson(fdcId: fdc);
+      final ing = Ingredient.fromResolveResponse(payload);
+      await ingredients.addIngredient(ing);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Added "${ing.name}" to saved ingredients')),
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _resolvingFdcId = null);
+      }
+    }
   }
 
   void _showCreateDialog() {
@@ -83,10 +225,12 @@ class _IngredientHubScreenState extends State<IngredientHubScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<IngredientProvider>();
-    final results = provider.search(
-      _searchCtrl.text,
-      sourceFilter: _sourceFilter,
-    );
+    final results = _remoteUsdaMode
+        ? const <Ingredient>[]
+        : provider.search(
+            _searchCtrl.text,
+            sourceFilter: _sourceFilter,
+          );
     final selected =
         _selectedId != null ? provider.getById(_selectedId!) : null;
 
@@ -104,44 +248,123 @@ class _IngredientHubScreenState extends State<IngredientHubScreen> {
                 children: [
                   TextField(
                     controller: _searchCtrl,
-                    decoration: const InputDecoration(
-                      hintText: 'Search for ingredients...',
-                      prefixIcon: Icon(Icons.search),
+                    decoration: InputDecoration(
+                      hintText: _remoteUsdaMode
+                          ? 'Search USDA FoodData Central…'
+                          : 'Search for ingredients...',
+                      prefixIcon: const Icon(Icons.search),
                     ),
-                    onChanged: (_) => setState(() {}),
+                    onChanged: _onSearchTextChanged,
                   ),
                   const SizedBox(height: 12),
                   _buildFilterTabs(),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-            Expanded(
-              child: results.isEmpty
-                  ? Center(
+                  if (_remoteUsdaMode) ...[
+                    const SizedBox(height: 8),
+                    FilterChip(
+                      label: const Text('SR Legacy only'),
+                      selected: _remoteSrLegacyOnly,
+                      avatar: Icon(
+                        _remoteSrLegacyOnly
+                            ? Icons.check_circle
+                            : Icons.filter_list_outlined,
+                        size: 18,
+                      ),
+                      onSelected: (selected) =>
+                          _setRemoteSrLegacyOnly(selected),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
                       child: Text(
-                        'No ingredients found',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        _remoteSrLegacyOnly
+                            ? 'USDA search is limited to SR Legacy (typical whole foods).'
+                            : 'All FDC types: SR Legacy, Foundation, Survey, Branded.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Theme.of(context)
                                   .colorScheme
                                   .onSurfaceVariant,
                             ),
                       ),
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: results.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 8),
-                      itemBuilder: (_, i) {
-                        final ing = results[i];
-                        return IngredientCard(
-                          ingredient: ing,
-                          selected: ing.id == _selectedId,
-                          onTap: () =>
-                              setState(() => _selectedId = ing.id),
-                        );
-                      },
                     ),
+                  ],
+                  if (_remoteUsdaMode && _remoteLoading)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 12),
+                      child: LinearProgressIndicator(minHeight: 2),
+                    ),
+                  if (_remoteUsdaMode &&
+                      _remoteError != null &&
+                      !_remoteLoading)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Material(
+                        color:
+                            Theme.of(context).colorScheme.errorContainer,
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.warning_amber_rounded,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onErrorContainer,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  _remoteError!,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onErrorContainer,
+                                      ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: _remoteUsdaMode
+                  ? _buildRemoteResultsList(context)
+                  : results.isEmpty
+                      ? Center(
+                          child: Text(
+                            'No ingredients found',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
+                          ),
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: results.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 8),
+                          itemBuilder: (_, i) {
+                            final ing = results[i];
+                            return IngredientCard(
+                              ingredient: ing,
+                              selected: ing.id == _selectedId,
+                              onTap: () =>
+                                  setState(() => _selectedId = ing.id),
+                            );
+                          },
+                        ),
             ),
             Padding(
               padding: const EdgeInsets.all(16),
@@ -198,32 +421,95 @@ class _IngredientHubScreenState extends State<IngredientHubScreen> {
     );
   }
 
+  Widget _buildRemoteResultsList(BuildContext context) {
+    if (_remoteResults.isEmpty && !_remoteLoading) {
+      return Center(
+        child: Text(
+          _searchCtrl.text.trim().isEmpty
+              ? 'Type a food name to search USDA'
+              : 'No matches — try different keywords',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: _remoteResults.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 4),
+      itemBuilder: (_, i) {
+        final item = _remoteResults[i];
+        final busy = _resolvingFdcId == item.fdcId;
+        return Card(
+          margin: EdgeInsets.zero,
+          child: ListTile(
+            leading: const Icon(Icons.cloud_download_outlined),
+            title: Text(item.description),
+            subtitle: Text('FDC ${item.fdcId} · tap to resolve & save'),
+            trailing: busy
+                ? const SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.add_circle_outline),
+            onTap: busy ? null : () => _resolveAndAdd(item),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildFilterTabs() {
     return Wrap(
       spacing: 8,
+      runSpacing: 8,
       children: [
         FilterChip(
+          label: const Text('Remote (USDA)'),
+          selected: _remoteUsdaMode,
+          onSelected: (_) {
+            if (_remoteUsdaMode) {
+              _leaveRemoteMode();
+              setState(() {});
+            } else {
+              _enterRemoteMode();
+            }
+          },
+        ),
+        FilterChip(
           label: const Text('All'),
-          selected: _sourceFilter == null,
-          onSelected: (_) => setState(() => _sourceFilter = null),
+          selected: !_remoteUsdaMode && _sourceFilter == null,
+          onSelected: (_) {
+            _leaveRemoteMode();
+            setState(() => _sourceFilter = null);
+          },
         ),
         FilterChip(
           label: const Text('Saved'),
-          selected: _sourceFilter == IngredientSource.saved,
-          onSelected: (_) =>
-              setState(() => _sourceFilter = IngredientSource.saved),
+          selected: !_remoteUsdaMode && _sourceFilter == IngredientSource.saved,
+          onSelected: (_) {
+            _leaveRemoteMode();
+            setState(() => _sourceFilter = IngredientSource.saved);
+          },
         ),
         FilterChip(
           label: const Text('API'),
-          selected: _sourceFilter == IngredientSource.api,
-          onSelected: (_) =>
-              setState(() => _sourceFilter = IngredientSource.api),
+          selected: !_remoteUsdaMode && _sourceFilter == IngredientSource.api,
+          onSelected: (_) {
+            _leaveRemoteMode();
+            setState(() => _sourceFilter = IngredientSource.api);
+          },
         ),
         FilterChip(
           label: const Text('Custom'),
-          selected: _sourceFilter == IngredientSource.custom,
-          onSelected: (_) =>
-              setState(() => _sourceFilter = IngredientSource.custom),
+          selected: !_remoteUsdaMode && _sourceFilter == IngredientSource.custom,
+          onSelected: (_) {
+            _leaveRemoteMode();
+            setState(() => _sourceFilter = IngredientSource.custom);
+          },
         ),
       ],
     );

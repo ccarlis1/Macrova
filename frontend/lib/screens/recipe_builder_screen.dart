@@ -1,12 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/ingredient.dart';
+import '../models/nutrition_summary.dart';
 import '../models/recipe.dart';
 import '../providers/ingredient_provider.dart';
 import '../providers/profile_provider.dart';
 import '../providers/recipe_provider.dart';
+import '../services/api_service.dart';
 import '../widgets/nutrition_totals_panel.dart';
 import '../widgets/section_header.dart';
 
@@ -24,12 +28,77 @@ class RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
   final _servingsCtrl = TextEditingController(text: '1');
   List<RecipeIngredientEntry> _ingredients = [];
   String? _editingRecipeId;
+  Timer? _summaryDebounce;
+  NutritionSummary? _serverSummary;
+  bool _summaryLoading = false;
+  String? _summaryError;
+  bool _hydratingRecipe = false;
 
   @override
   void dispose() {
+    _summaryDebounce?.cancel();
     _nameCtrl.dispose();
     _servingsCtrl.dispose();
     super.dispose();
+  }
+
+  void _scheduleNutritionSummary() {
+    _summaryDebounce?.cancel();
+    _summaryDebounce = Timer(const Duration(milliseconds: 450), () {
+      if (!mounted) return;
+      _runNutritionSummary();
+    });
+  }
+
+  Future<void> _runNutritionSummary() async {
+    final draft = _buildRecipe();
+    if (draft.ingredients.isEmpty) {
+      if (!mounted) return;
+      setState(() {
+        _serverSummary = null;
+        _summaryLoading = false;
+        _summaryError = null;
+      });
+      return;
+    }
+    setState(() {
+      _summaryLoading = true;
+      _summaryError = null;
+    });
+    try {
+      final lines = draft.ingredients
+          .map(
+            (e) => {
+              'name': e.ingredientName,
+              'quantity': e.quantity,
+              'unit': e.unit,
+            },
+          )
+          .toList();
+      final summary = await ApiService.nutritionSummary(
+        servings: draft.servings,
+        ingredientLines: lines,
+      );
+      if (!mounted) return;
+      setState(() {
+        _serverSummary = summary;
+        _summaryLoading = false;
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _serverSummary = null;
+        _summaryLoading = false;
+        _summaryError = e.message;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _serverSummary = null;
+        _summaryLoading = false;
+        _summaryError = e.toString();
+      });
+    }
   }
 
   void loadRecipe(Recipe recipe) {
@@ -39,6 +108,40 @@ class RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
       _servingsCtrl.text = recipe.servings.toString();
       _ingredients = List.from(recipe.ingredients);
     });
+    _scheduleNutritionSummary();
+  }
+
+  /// Fetches full recipe from the API when [recipe] is id/name-only (no lines).
+  Future<void> loadRecipeWithHydration(
+    Recipe recipe,
+    RecipeProvider recipeProvider,
+  ) async {
+    if (recipe.ingredients.isNotEmpty) {
+      loadRecipe(recipe);
+      return;
+    }
+    setState(() => _hydratingRecipe = true);
+    try {
+      final full = await recipeProvider.fetchRecipeDetail(recipe.id);
+      if (!mounted) return;
+      loadRecipe(full);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+      loadRecipe(recipe);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+      loadRecipe(recipe);
+    } finally {
+      if (mounted) {
+        setState(() => _hydratingRecipe = false);
+      }
+    }
   }
 
   void _clear() {
@@ -47,7 +150,10 @@ class RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
       _nameCtrl.clear();
       _servingsCtrl.text = '1';
       _ingredients = [];
+      _serverSummary = null;
+      _summaryError = null;
     });
+    _summaryDebounce?.cancel();
   }
 
   void _addIngredient(Ingredient ing) {
@@ -65,22 +171,26 @@ class RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
         unitConversions: ing.unitConversions,
       ));
     });
+    _scheduleNutritionSummary();
   }
 
   void _removeIngredient(int index) {
     setState(() => _ingredients.removeAt(index));
+    _scheduleNutritionSummary();
   }
 
   void _updateQuantity(int index, double quantity) {
     setState(() {
       _ingredients[index] = _ingredients[index].copyWith(quantity: quantity);
     });
+    _scheduleNutritionSummary();
   }
 
   void _updateUnit(int index, String unit) {
     setState(() {
       _ingredients[index] = _ingredients[index].copyWith(unit: unit);
     });
+    _scheduleNutritionSummary();
   }
 
   Recipe _buildRecipe() {
@@ -197,6 +307,9 @@ class RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
     final microTargets = profile.micronutrientGoals.toJson().map(
           (k, v) => MapEntry(k, (v as num).toDouble()),
         );
+    final server = _serverSummary;
+    final useServerTotals =
+        server != null && !_summaryLoading && recipe.ingredients.isNotEmpty;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -208,10 +321,33 @@ class RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SectionHeader(title: 'Recipe Builder'),
+              if (_hydratingRecipe)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Row(
+                    children: [
+                      const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Loading recipe from server…',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               TextField(
                 controller: _nameCtrl,
                 decoration: const InputDecoration(labelText: 'Recipe Name'),
-                onChanged: (_) => setState(() {}),
+                onChanged: (_) {
+                  setState(() {});
+                  _scheduleNutritionSummary();
+                },
               ),
               const SizedBox(height: 16),
               Text('Recipe Ingredients',
@@ -319,7 +455,10 @@ class RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
                   labelText: 'Number of Servings',
                 ),
                 keyboardType: TextInputType.number,
-                onChanged: (_) => setState(() {}),
+                onChanged: (_) {
+                  setState(() {});
+                  _scheduleNutritionSummary();
+                },
               ),
               const SizedBox(height: 24),
               Row(
@@ -341,19 +480,56 @@ class RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
 
         final totalsPanel = SingleChildScrollView(
           padding: const EdgeInsets.all(24),
-          child: NutritionTotalsPanel(
-            title: 'Live Nutrition Totals',
-            calories: recipe.totalCalories,
-            proteinG: recipe.totalProteinG,
-            carbsG: recipe.totalCarbsG,
-            fatG: recipe.totalFatG,
-            perServingCalories: recipe.perServingCalories,
-            perServingProteinG: recipe.perServingProteinG,
-            perServingCarbsG: recipe.perServingCarbsG,
-            perServingFatG: recipe.perServingFatG,
-            servings: recipe.servings,
-            micronutrients: recipe.totalMicronutrients,
-            micronutrientTargets: microTargets,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (_summaryLoading && recipe.ingredients.isNotEmpty)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: LinearProgressIndicator(minHeight: 2),
+                ),
+              if (_summaryError != null &&
+                  !useServerTotals &&
+                  recipe.ingredients.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    'Server nutrition unavailable — showing client estimate. '
+                    '($_summaryError)',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                  ),
+                ),
+              NutritionTotalsPanel(
+                title: useServerTotals
+                    ? 'Nutrition (server)'
+                    : 'Live Nutrition Totals',
+                calories:
+                    useServerTotals ? server.calories : recipe.totalCalories,
+                proteinG:
+                    useServerTotals ? server.proteinG : recipe.totalProteinG,
+                carbsG: useServerTotals ? server.carbsG : recipe.totalCarbsG,
+                fatG: useServerTotals ? server.fatG : recipe.totalFatG,
+                perServingCalories: useServerTotals
+                    ? server.perServingCalories
+                    : recipe.perServingCalories,
+                perServingProteinG: useServerTotals
+                    ? server.perServingProteinG
+                    : recipe.perServingProteinG,
+                perServingCarbsG: useServerTotals
+                    ? server.perServingCarbsG
+                    : recipe.perServingCarbsG,
+                perServingFatG: useServerTotals
+                    ? server.perServingFatG
+                    : recipe.perServingFatG,
+                servings: recipe.servings,
+                micronutrients: useServerTotals
+                    ? server.micronutrients
+                    : recipe.totalMicronutrients,
+                micronutrientTargets: microTargets,
+              ),
+            ],
           ),
         );
 

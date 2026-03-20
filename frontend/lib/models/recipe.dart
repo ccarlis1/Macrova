@@ -171,6 +171,23 @@ class Recipe {
         'servings': servings,
       };
 
+  /// Body fragment for `POST /api/v1/recipes/sync` (server `RecipeSyncItem` shape).
+  Map<String, dynamic> toSyncPayload() => {
+        'id': id,
+        'name': name,
+        'cooking_time_minutes': 0,
+        'instructions': <String>[],
+        'ingredients': ingredients
+            .map(
+              (e) => {
+                'name': e.ingredientName,
+                'quantity': e.quantity,
+                'unit': e.unit,
+              },
+            )
+            .toList(),
+      };
+
   factory Recipe.fromJson(Map<String, dynamic> json) {
     return Recipe(
       id: json['id'] as String,

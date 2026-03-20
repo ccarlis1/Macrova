@@ -331,8 +331,21 @@ def result_from_failure(
     st = dict(stats) if stats else {}
     st["attempts"] = attempt_count
     st["backtracks"] = backtrack_count
-    plan = best_effort_plan if best_effort_plan is not None else None
-    daily_trackers = best_effort_daily_trackers if best_effort_daily_trackers is not None else None
+    # Prefer explicit best-effort kwargs (e.g. FM-4 weekly incomplete); otherwise use the
+    # positional closest-plan snapshots — those were incorrectly dropped before, which made
+    # format_result_json emit empty daily_plans for almost all failure terminations.
+    if best_effort_plan is not None:
+        plan: Optional[List[Assignment]] = list(best_effort_plan)
+    elif best_assignments:
+        plan = list(best_assignments)
+    else:
+        plan = None
+    if best_effort_daily_trackers is not None:
+        daily_trackers: Optional[Dict[int, DailyTracker]] = dict(best_effort_daily_trackers)
+    elif best_daily_trackers:
+        daily_trackers = dict(best_daily_trackers)
+    else:
+        daily_trackers = None
     weekly_tracker = best_effort_weekly_tracker if best_effort_weekly_tracker is not None else None
     return MealPlanResult(
         success=False,

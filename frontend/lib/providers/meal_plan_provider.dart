@@ -169,4 +169,11 @@ class MealPlanProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
   }
+
+  /// Used by agent NL planner after a successful `plan-from-text` response.
+  void applyPlanResult(MealPlan plan) {
+    _mealPlan = plan;
+    _error = null;
+    notifyListeners();
+  }
 }

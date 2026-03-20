@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../features/agent/agent_pane_screen.dart';
+import '../features/agent/agent_setup_screen.dart';
+import '../features/agent/llm_config_provider.dart';
 import '../providers/ingredient_provider.dart';
 import '../providers/recipe_provider.dart';
 import '../screens/ingredient_hub_screen.dart';
@@ -63,27 +66,31 @@ class AppShellState extends State<AppShell> {
           SidebarNav(
             selectedIndex: _selectedIndex,
             onDestinationSelected: (index) {
-              if (index == 6) {
-                // Agent Pane placeholder
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Agent Pane coming soon')),
-                );
-                return;
-              }
               setState(() => _selectedIndex = index);
             },
           ),
           const VerticalDivider(thickness: 1, width: 1),
           Expanded(
             child: IndexedStack(
-              index: _selectedIndex.clamp(0, 5),
-              children: const [
-                ProfileScreen(),
-                IngredientHubScreen(),
-                RecipeBuilderScreen(),
-                RecipeLibraryScreen(),
-                PlannerConfigScreen(),
-                MealPlanViewScreen(),
+              index: _selectedIndex.clamp(0, 6),
+              children: [
+                const ProfileScreen(),
+                const IngredientHubScreen(),
+                const RecipeBuilderScreen(),
+                const RecipeLibraryScreen(),
+                const PlannerConfigScreen(),
+                const MealPlanViewScreen(),
+                ListenableBuilder(
+                  listenable: context.read<LlmConfigProvider>(),
+                  builder: (context, _) {
+                    final ready =
+                        context.read<LlmConfigProvider>().llmReady;
+                    if (ready) return const AgentPaneScreen();
+                    return AgentSetupScreen(
+                      onOpenProfile: () => navigateTo(0),
+                    );
+                  },
+                ),
               ],
             ),
           ),

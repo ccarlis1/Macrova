@@ -120,6 +120,23 @@ class ApiService {
     throw ApiException.fromResponse(res);
   }
 
+  /// GET /api/v1/llm/status — [enabled] matches server `load_llm_settings().enabled`.
+  static Future<bool> fetchLlmServerEnabled() async {
+    final res = await http.get(Uri.parse('$baseUrl/api/v1/llm/status'));
+    if (res.statusCode == 200) {
+      final decoded = jsonDecode(res.body);
+      if (decoded is Map<String, dynamic>) {
+        return decoded['enabled'] == true;
+      }
+      throw const ApiException(
+        statusCode: 200,
+        code: 'INVALID_RESPONSE',
+        message: 'LLM status response was not a JSON object',
+      );
+    }
+    throw ApiException.fromResponse(res);
+  }
+
   /// POST /api/v1/plan
   static Future<MealPlan> plan(PlanRequest body) async {
     final res = await http.post(

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../models/micronutrient_metadata.dart';
 import '../models/user_profile.dart';
+import '../features/agent/llm_config_provider.dart';
 import '../providers/profile_provider.dart';
 import '../widgets/section_header.dart';
 
@@ -43,6 +44,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _calorieDeficitMode = false;
   String _demographicGroup = '';
   List<String> _allergies = [];
+  String _llmProvider = 'openai_compatible';
 
   bool _initialized = false;
 
@@ -112,6 +114,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _formatDecimal(profile.micronutrientWeeklyMinFraction);
     _ingredientApiKeyCtrl.text = profile.ingredientApiKey;
     _llmApiKeyCtrl.text = profile.llmApiKey;
+    final prov = profile.llmProvider.trim().toLowerCase();
+    _llmProvider = LlmConfigProvider.supportedProviderIds.contains(prov)
+        ? prov
+        : 'openai_compatible';
     _calorieDeficitMode = profile.calorieDeficitMode;
     _demographicGroup = profile.demographicGroup;
     _allergies = List.from(profile.allergies);
@@ -199,6 +205,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       micronutrientWeeklyMinFraction: tau.clamp(1e-6, 1.0),
       ingredientApiKey: _ingredientApiKeyCtrl.text.trim(),
       llmApiKey: _llmApiKeyCtrl.text.trim(),
+      llmProvider: _llmProvider,
     );
   }
 
@@ -213,13 +220,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
       return;
     }
+    final profileProv = context.read<ProfileProvider>();
+    final llmGate = context.read<LlmConfigProvider>();
+    final previous = profileProv.profile;
     final profile = _buildProfile();
-    await context.read<ProfileProvider>().saveProfile(profile);
+    await profileProv.saveProfile(profile);
+    if (previous.llmApiKey != profile.llmApiKey ||
+        previous.llmProvider != profile.llmProvider) {
+      llmGate.onCredentialsChanged();
+    }
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Profile saved')),
       );
     }
+  }
+
+  Future<void> _validateLlm() async {
+    if (!_formKey.currentState!.validate()) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Fix the highlighted fields before validating.'),
+          ),
+        );
+      }
+      return;
+    }
+    final profile = _buildProfile();
+    final profileProv = context.read<ProfileProvider>();
+    final gate = context.read<LlmConfigProvider>();
+    await profileProv.saveProfile(profile);
+    await gate.validate();
+    if (!mounted) return;
+    final msg = gate.llmReady
+        ? 'LLM credentials validated for this device.'
+        : (gate.lastValidationError ?? 'Validation did not complete.');
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   void _cancel() {
@@ -548,9 +585,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     TextFormField(
                       controller: _llmApiKeyCtrl,
                       decoration: const InputDecoration(
-                        labelText: 'LLM API Key',
+                        labelText: 'LLM API Key (reference only)',
+                        helperText:
+                            'Not sent to the API. Validate checks GET /api/v1/llm/status — '
+                            'configure LLM_API_KEY + LLM_MODEL in the server .env.',
                       ),
                       obscureText: true,
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: _llmProvider,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'LLM provider',
+                      ),
+                      items: [
+                        for (final e in LlmConfigProvider.supportedProviders)
+                          DropdownMenuItem(
+                            value: e.$1,
+                            child: Text(e.$2),
+                          ),
+                      ],
+                      onChanged: (v) =>
+                          setState(() => _llmProvider = v ?? 'openai_compatible'),
+                    ),
+                    const SizedBox(height: 12),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: FilledButton.tonalIcon(
+                        onPressed: context.watch<LlmConfigProvider>().validating
+                            ? null
+                            : _validateLlm,
+                        icon: context.watch<LlmConfigProvider>().validating
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.verified_outlined),
+                        label: Text(
+                          context.watch<LlmConfigProvider>().validating
+                              ? 'Validating…'
+                              : 'Validate LLM setup',
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 32),
 

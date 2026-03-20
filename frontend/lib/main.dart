@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'features/agent/llm_config_provider.dart';
 import 'providers/ingredient_provider.dart';
 import 'providers/meal_plan_provider.dart';
 import 'providers/profile_provider.dart';
@@ -12,12 +13,19 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final profile = ProfileProvider();
+  final llmGate = LlmConfigProvider(profile);
   final ingredients = IngredientProvider();
   final recipes = RecipeProvider();
   final mealPlan = MealPlanProvider();
 
   await profile.load();
+  profile.addListener(llmGate.syncCredentialsFromProfile);
   await mealPlan.load();
+  await llmGate.loadFromProfile();
+  if (!llmGate.llmReady &&
+      LlmConfigProvider.isAssistedPlanningMode(mealPlan.planningMode)) {
+    mealPlan.setPlanningMode('deterministic');
+  }
   await ingredients.load();
   await ingredients.mergeBundledCachedIngredientsIfEnabled();
 
@@ -32,6 +40,7 @@ Future<void> main() async {
   runApp(
     MacrovaApp(
       profile: profile,
+      llmGate: llmGate,
       ingredients: ingredients,
       recipes: recipes,
       mealPlan: mealPlan,
@@ -43,12 +52,14 @@ class MacrovaApp extends StatelessWidget {
   const MacrovaApp({
     super.key,
     required this.profile,
+    required this.llmGate,
     required this.ingredients,
     required this.recipes,
     required this.mealPlan,
   });
 
   final ProfileProvider profile;
+  final LlmConfigProvider llmGate;
   final IngredientProvider ingredients;
   final RecipeProvider recipes;
   final MealPlanProvider mealPlan;
@@ -58,6 +69,7 @@ class MacrovaApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: profile),
+        ChangeNotifierProvider.value(value: llmGate),
         ChangeNotifierProvider.value(value: ingredients),
         ChangeNotifierProvider.value(value: recipes),
         ChangeNotifierProvider.value(value: mealPlan),

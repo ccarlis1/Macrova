@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
+import '../features/agent/agent_api.dart';
+import '../features/agent/llm_config_provider.dart';
 import '../models/ingredient.dart';
 import '../models/nutrition_summary.dart';
 import '../models/recipe.dart';
@@ -200,6 +203,122 @@ class RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
       ingredients: List.from(_ingredients),
       servings: int.tryParse(_servingsCtrl.text.trim()) ?? 1,
     );
+  }
+
+  Future<void> _showLlmGenerateDialog() async {
+    final gate = context.read<LlmConfigProvider>();
+    if (!gate.llmReady) return;
+    final themeHint = _nameCtrl.text.trim().isEmpty
+        ? 'balanced dinners'
+        : _nameCtrl.text.trim();
+    final countCtrl = TextEditingController(text: '2');
+    final ctxCtrl = TextEditingController(
+      text: jsonEncode({'theme': themeHint}),
+    );
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        var busy = false;
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            return AlertDialog(
+              title: const Text('Generate recipes (LLM)'),
+              content: SizedBox(
+                width: 420,
+                height: 320,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextField(
+                      controller: countCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Count (1–20)',
+                      ),
+                      keyboardType: TextInputType.number,
+                      enabled: !busy,
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: ctxCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Context JSON',
+                          alignLabelWithHint: true,
+                          border: OutlineInputBorder(),
+                        ),
+                        maxLines: 8,
+                        enabled: !busy,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: busy ? null : () => Navigator.of(ctx).pop(),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: busy
+                      ? null
+                      : () async {
+                          final hostContext = context;
+                          final n = int.tryParse(countCtrl.text.trim());
+                          if (n == null || n < 1 || n > 20) return;
+                          Map<String, dynamic> genContext;
+                          try {
+                            final dec = jsonDecode(ctxCtrl.text.trim());
+                            if (dec is! Map) return;
+                            genContext = Map<String, dynamic>.from(dec);
+                          } catch (_) {
+                            return;
+                          }
+                          setDialogState(() => busy = true);
+                          try {
+                            await AgentApi.generateValidatedRecipes(
+                              count: n,
+                              context: genContext,
+                            );
+                            if (!hostContext.mounted) return;
+                            Navigator.of(ctx).pop();
+                            if (!hostContext.mounted) return;
+                            await hostContext.read<RecipeProvider>().syncSummariesFromApi();
+                            if (!hostContext.mounted) return;
+                            ScaffoldMessenger.of(hostContext).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Recipes generated on server. Check Library.',
+                                ),
+                              ),
+                            );
+                          } on ApiException catch (e) {
+                            if (!hostContext.mounted) return;
+                            gate.revokeReady(e.message);
+                            Navigator.of(ctx).pop();
+                            if (!hostContext.mounted) return;
+                            ScaffoldMessenger.of(hostContext).showSnackBar(
+                              SnackBar(content: Text(e.message)),
+                            );
+                          } catch (e) {
+                            if (!hostContext.mounted) return;
+                            gate.revokeReady(e.toString());
+                            Navigator.of(ctx).pop();
+                            if (!hostContext.mounted) return;
+                            ScaffoldMessenger.of(hostContext).showSnackBar(
+                              SnackBar(content: Text(e.toString())),
+                            );
+                          }
+                        },
+                  child: Text(busy ? 'Running…' : 'Generate'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+    countCtrl.dispose();
+    ctxCtrl.dispose();
   }
 
   Future<void> _save() async {
@@ -474,6 +593,17 @@ class RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
                   ),
                 ],
               ),
+              if (context.watch<LlmConfigProvider>().llmReady) ...[
+                const SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: OutlinedButton.icon(
+                    onPressed: _showLlmGenerateDialog,
+                    icon: const Icon(Icons.auto_awesome),
+                    label: const Text('Generate on server (LLM)'),
+                  ),
+                ),
+              ],
             ],
           ),
         );

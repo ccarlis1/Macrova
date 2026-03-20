@@ -38,6 +38,7 @@ def test_openapi_includes_v1_contract_paths():
         "/api/v1/ingredients/search",
         "/api/v1/ingredients/resolve",
         "/api/v1/nutrition/summary",
+        "/api/v1/llm/status",
     ]
     missing = [p for p in required if p not in paths]
     assert not missing, f"missing paths: {missing}"
@@ -239,3 +240,19 @@ def test_recipe_sync_writes_json_and_plan_sees_recipe(tmp_path, monkeypatch):
     day0 = body["daily_plans"][0]
     names = {m.get("name") for m in day0.get("meals", [])}
     assert "Sync Test Bowl" in names
+
+
+def test_llm_status_endpoint_reports_enabled(monkeypatch):
+    monkeypatch.delenv("LLM_ENABLED", raising=False)
+    monkeypatch.delenv("LLM_API_KEY", raising=False)
+    monkeypatch.delenv("LLM_MODEL", raising=False)
+    client = TestClient(app)
+    res = client.get("/api/v1/llm/status")
+    assert res.status_code == 200
+    assert res.json() == {"enabled": False}
+
+    monkeypatch.setenv("LLM_API_KEY", "sk-test-key-for-status-endpoint")
+    monkeypatch.setenv("LLM_MODEL", "gpt-4o-mini")
+    res_on = client.get("/api/v1/llm/status")
+    assert res_on.status_code == 200
+    assert res_on.json() == {"enabled": True}

@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/ingredient.dart';
+import '../features/agent/agent_api.dart';
+import '../features/agent/llm_config_provider.dart';
 import '../models/ingredient_search.dart';
 import '../providers/ingredient_provider.dart';
 import '../services/api_service.dart';
@@ -211,6 +213,129 @@ class _IngredientHubScreenState extends State<IngredientHubScreen> {
     }
   }
 
+  Future<void> _showAiMatchDialog() async {
+    final gate = context.read<LlmConfigProvider>();
+    if (!gate.llmReady) return;
+    final ctrl = TextEditingController();
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        var busy = false;
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            return AlertDialog(
+              title: const Text('AI ingredient match'),
+              content: SizedBox(
+                width: 420,
+                height: 300,
+                child: TextField(
+                  controller: ctrl,
+                  decoration: const InputDecoration(
+                    hintText: 'One ingredient name per line',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 12,
+                  enabled: !busy,
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: busy ? null : () => Navigator.of(ctx).pop(),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: busy
+                      ? null
+                      : () async {
+                          final hostContext = context;
+                          final lines = ctrl.text
+                              .split(RegExp(r'\r?\n'))
+                              .map((s) => s.trim())
+                              .where((s) => s.isNotEmpty)
+                              .toList();
+                          if (lines.isEmpty) return;
+                          setDialogState(() => busy = true);
+                          try {
+                            final result =
+                                await AgentApi.matchIngredients(lines);
+                            if (!hostContext.mounted) return;
+                            Navigator.of(ctx).pop();
+                            if (!hostContext.mounted) return;
+                            await showDialog<void>(
+                              context: hostContext,
+                              builder: (ctx2) => AlertDialog(
+                                title: const Text('Match results'),
+                                content: SizedBox(
+                                  width: 420,
+                                  height: 360,
+                                  child: SingleChildScrollView(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Text('Accepted'),
+                                        ...result.accepted.map(
+                                          (a) => ListTile(
+                                            dense: true,
+                                            title: Text(a.normalizedName),
+                                            subtitle: Text(
+                                              '${a.originalQuery} · ${(a.confidence * 100).toStringAsFixed(0)}%',
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        const Text('Rejected'),
+                                        ...result.rejected.map(
+                                          (r) => ListTile(
+                                            dense: true,
+                                            title: Text(r.originalQuery),
+                                            subtitle: Text(
+                                              '${r.code}: ${r.message}',
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.of(ctx2).pop(),
+                                    child: const Text('Close'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          } on ApiException catch (e) {
+                            if (!hostContext.mounted) return;
+                            gate.revokeReady(e.message);
+                            Navigator.of(ctx).pop();
+                            if (!hostContext.mounted) return;
+                            ScaffoldMessenger.of(hostContext).showSnackBar(
+                              SnackBar(content: Text(e.message)),
+                            );
+                          } catch (e) {
+                            if (!hostContext.mounted) return;
+                            gate.revokeReady(e.toString());
+                            Navigator.of(ctx).pop();
+                            if (!hostContext.mounted) return;
+                            ScaffoldMessenger.of(hostContext).showSnackBar(
+                              SnackBar(content: Text(e.toString())),
+                            );
+                          }
+                        },
+                  child: Text(busy ? 'Running…' : 'Run'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+    ctrl.dispose();
+  }
+
   void _showCreateDialog() {
     showDialog<void>(
       context: context,
@@ -377,6 +502,18 @@ class _IngredientHubScreenState extends State<IngredientHubScreen> {
                 ),
               ),
             ),
+            if (context.watch<LlmConfigProvider>().llmReady)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.tonalIcon(
+                    onPressed: _showAiMatchDialog,
+                    icon: const Icon(Icons.join_inner),
+                    label: const Text('AI match ingredient names'),
+                  ),
+                ),
+              ),
           ],
         );
 

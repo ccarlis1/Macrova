@@ -1,8 +1,21 @@
 """FastAPI server for the Nutrition Agent meal planning pipeline."""
 
 import json
+import os
 import sys
+from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
+
+# Load repo-root `.env` when present (same behavior as `src.cli`). Uvicorn does not do this
+# automatically, so without this block only the CLI would see LLM_API_KEY / USDA_API_KEY.
+_ROOT = Path(__file__).resolve().parent.parent.parent
+_env_file = _ROOT / ".env"
+if _env_file.exists():
+    for line in _env_file.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            k, _, v = line.partition("=")
+            os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, Query
@@ -525,6 +538,15 @@ def _nutrition_line_to_data_ingredient(line: NutritionIngredientLine) -> DataIng
         normalized_unit=unit,
         normalized_quantity=qty,
     )
+
+
+@app.get("/api/v1/llm/status")
+@app.get("/api/llm/status")
+def llm_status_endpoint() -> Dict[str, Any]:
+    """Whether LLM is enabled in this API process's environment (no secrets exposed)."""
+
+    settings = load_llm_settings()
+    return {"enabled": bool(settings.enabled)}
 
 
 @app.post("/api/v1/plan")

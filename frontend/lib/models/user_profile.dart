@@ -257,6 +257,8 @@ class UserProfile {
   final double micronutrientWeeklyMinFraction;
   final String ingredientApiKey;
   final String llmApiKey;
+  /// Backend uses OpenAI-compatible `LLM_BASE_URL` by default; must match [LlmConfigProvider] allow-list.
+  final String llmProvider;
 
   const UserProfile({
     this.calories = 2000,
@@ -273,6 +275,7 @@ class UserProfile {
     this.micronutrientWeeklyMinFraction = 1.0,
     this.ingredientApiKey = '',
     this.llmApiKey = '',
+    this.llmProvider = 'openai_compatible',
   });
 
   UserProfile copyWith({
@@ -290,6 +293,7 @@ class UserProfile {
     double? micronutrientWeeklyMinFraction,
     String? ingredientApiKey,
     String? llmApiKey,
+    String? llmProvider,
   }) {
     return UserProfile(
       calories: calories ?? this.calories,
@@ -308,6 +312,7 @@ class UserProfile {
               this.micronutrientWeeklyMinFraction,
       ingredientApiKey: ingredientApiKey ?? this.ingredientApiKey,
       llmApiKey: llmApiKey ?? this.llmApiKey,
+      llmProvider: llmProvider ?? this.llmProvider,
     );
   }
 
@@ -336,6 +341,7 @@ class UserProfile {
         'micronutrient_weekly_min_fraction': micronutrientWeeklyMinFraction,
         'ingredient_api_key': ingredientApiKey,
         'llm_api_key': llmApiKey,
+        'llm_provider': llmProvider,
       };
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -359,6 +365,7 @@ class UserProfile {
               1.0,
       ingredientApiKey: json['ingredient_api_key'] as String? ?? '',
       llmApiKey: json['llm_api_key'] as String? ?? '',
+      llmProvider: json['llm_provider'] as String? ?? 'openai_compatible',
     );
   }
 }

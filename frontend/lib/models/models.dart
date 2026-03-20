@@ -1,3 +1,73 @@
+import 'micronutrient_metadata.dart';
+
+/// Turn `/api/v1/plan` [warnings] (object or list) into user-facing lines.
+List<String> formatPlanApiWarnings(dynamic w) {
+  if (w == null) return [];
+  if (w is List) {
+    return w.map((e) => e.toString()).toList();
+  }
+  if (w is! Map) {
+    return [w.toString()];
+  }
+  final m = Map<String, dynamic>.from(w);
+  final out = <String>[];
+
+  String fmtNum(dynamic n) {
+    if (n == null) return '?';
+    if (n is num) {
+      final d = n.toDouble();
+      if ((d - d.round()).abs() < 1e-6) return d.round().toString();
+      return d.toStringAsFixed(1);
+    }
+    return n.toString();
+  }
+
+  String fmtPct(dynamic n) {
+    if (n is num) return '${(100 * n.toDouble()).toStringAsFixed(0)}%';
+    return n?.toString() ?? '?';
+  }
+
+  final t = m['type']?.toString();
+  if (t == 'sodium_advisory') {
+    out.add(
+      'Sodium advisory: weekly total about ${fmtNum(m['weekly_sodium_mg'])} mg '
+      'vs recommended max ${fmtNum(m['recommended_max_mg'])} mg '
+      '(${fmtNum(m['ratio'])}×).',
+    );
+  } else if (t == 'sodium_advisory_text') {
+    final msg = m['message']?.toString();
+    if (msg != null && msg.isNotEmpty) out.add(msg);
+  }
+
+  final soft = m['micronutrient_soft_deficit'];
+  if (soft is List && soft.isNotEmpty) {
+    out.add(
+      'Micronutrients between τ-floor and full weekly RDI (for transparency):',
+    );
+    for (final raw in soft) {
+      if (raw is Map) {
+        final item = Map<String, dynamic>.from(raw);
+        final key = item['nutrient']?.toString() ?? '?';
+        final label = micronutrientLabelForKey(key);
+        final unit = micronutrientUnitForKey(key);
+        final um = unit.isNotEmpty ? ' $unit' : '';
+        out.add(
+          '  • $label: ${fmtNum(item['achieved'])}$um / ${fmtNum(item['full_req'])}$um '
+          '(${fmtPct(item['fraction_of_full'])} of full weekly target)',
+        );
+      }
+    }
+  }
+
+  if (out.isEmpty && m.isNotEmpty) {
+    m.forEach((k, v) {
+      if (k == 'micronutrient_soft_deficit') return;
+      out.add('$k: $v');
+    });
+  }
+  return out;
+}
+
 class PlanRequest {
   final int dailyCalories;
   final double dailyProteinG;
@@ -375,13 +445,8 @@ class MealPlan {
       Map<String, dynamic>.from(goalsRaw),
     );
 
-    final warnings = <String>[];
     final w = json['warnings'];
-    if (w is List) {
-      warnings.addAll(w.map((e) => e.toString()));
-    } else if (w is Map && w.isNotEmpty) {
-      w.forEach((k, v) => warnings.add('$k: $v'));
-    }
+    final warnings = formatPlanApiWarnings(w);
 
     final termination = json['termination_code'] as String?;
     if (!success &&

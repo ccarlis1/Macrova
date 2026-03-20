@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../features/agent/llm_config_provider.dart';
 import '../models/models.dart';
 import '../models/recipe.dart';
 import '../providers/meal_plan_provider.dart';
@@ -17,10 +18,19 @@ class PlannerConfigScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final planProvider = context.watch<MealPlanProvider>();
+    final llmGate = context.watch<LlmConfigProvider>();
     final profile = context.watch<ProfileProvider>().profile;
     final recipeProvider = context.watch<RecipeProvider>();
     final recipes = recipeProvider.recipes;
     final remoteIds = recipeProvider.remoteRecipeIds;
+
+    if (!llmGate.llmReady &&
+        LlmConfigProvider.isAssistedPlanningMode(planProvider.planningMode)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        context.read<MealPlanProvider>().setPlanningMode('deterministic');
+      });
+    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -52,6 +62,91 @@ class PlannerConfigScreen extends StatelessWidget {
                 min: 1,
                 max: 7,
                 onChanged: planProvider.setDays,
+              ),
+              const SizedBox(height: 24),
+
+              // Planning mode (assisted requires validated LLM)
+              const SectionHeader(title: 'Planner mode'),
+              if (llmGate.llmReady) ...[
+                Text(
+                  'Planning mode',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Assisted modes use the server LLM; deterministic does not.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                DropdownButton<String>(
+                  value: planProvider.planningMode,
+                  isExpanded: true,
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'deterministic',
+                      child: Text('Deterministic'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'assisted',
+                      child: Text('Assisted'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'assisted_cached',
+                      child: Text('Assisted (cache strict)'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'assisted_live',
+                      child: Text('Assisted (live)'),
+                    ),
+                  ],
+                  onChanged: (v) {
+                    if (v != null) {
+                      planProvider.setPlanningMode(v);
+                    }
+                  },
+                ),
+              ]
+              else
+                Text(
+                  'LLM-assisted planning appears here after you validate credentials '
+                  'on Profile. Using deterministic only.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+              const SizedBox(height: 24),
+
+              // Ingredient source (matches POST /api/v1/plan `ingredient_source`)
+              const SectionHeader(title: 'Ingredient nutrition source'),
+              Text(
+                'How the server resolves recipe ingredient nutrition. '
+                'Use USDA (API) when your local ingredients file is incomplete — '
+                'same as CLI `--ingredient-source api`. Requires USDA_API_KEY on the API server.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              DropdownButton<String>(
+                value: planProvider.ingredientSource,
+                isExpanded: true,
+                items: const [
+                  DropdownMenuItem(
+                    value: 'local',
+                    child: Text('Local JSON (custom_ingredients.json on server)'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'api',
+                    child: Text('USDA FoodData Central (API)'),
+                  ),
+                ],
+                onChanged: (v) {
+                  if (v != null) {
+                    planProvider.setIngredientSource(v);
+                  }
+                },
               ),
               const SizedBox(height: 24),
 
@@ -399,6 +494,10 @@ class PlannerConfigScreen extends StatelessWidget {
     }
 
     if (!context.mounted) return;
+    if (LlmConfigProvider.isAssistedPlanningMode(request.planningMode) &&
+        planProvider.error != null) {
+      context.read<LlmConfigProvider>().revokeReady(planProvider.error!);
+    }
     if (planProvider.mealPlan != null) {
       shell?.navigateTo(5);
     }

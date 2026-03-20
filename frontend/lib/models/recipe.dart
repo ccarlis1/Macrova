@@ -183,4 +183,9 @@ class Recipe {
       servings: json['servings'] as int? ?? 1,
     );
   }
+
+  /// Placeholder from `GET /api/v1/recipes` (id + name only) until a full recipe exists locally.
+  factory Recipe.apiSummary({required String id, required String name}) {
+    return Recipe(id: id, name: name, ingredients: const [], servings: 1);
+  }
 }

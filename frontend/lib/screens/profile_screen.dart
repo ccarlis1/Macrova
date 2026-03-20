@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/micronutrient_metadata.dart';
 import '../models/user_profile.dart';
 import '../providers/profile_provider.dart';
 import '../widgets/section_header.dart';
@@ -27,13 +28,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _carbsGCtrl = TextEditingController();
   final _fatGCtrl = TextEditingController();
 
-  // Micronutrient goals
-  final _vitaminACtrl = TextEditingController();
-  final _vitaminCCtrl = TextEditingController();
-  final _ironCtrl = TextEditingController();
-  final _calciumCtrl = TextEditingController();
-  final _fiberCtrl = TextEditingController();
-  final _sodiumCtrl = TextEditingController();
+  /// Keys match `MicronutrientProfile` / YAML `micronutrient_goals`.
+  late final Map<String, TextEditingController> _microCtrls;
+
+  final _micronutrientTauCtrl = TextEditingController();
 
   // API keys
   final _ingredientApiKeyCtrl = TextEditingController();
@@ -74,6 +72,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     'elderly_female': 'Elderly Female (51+)',
   };
 
+  static const int _vitaminCount = 12;
+  static const int _mineralCount = 10;
+
+  @override
+  void initState() {
+    super.initState();
+    _microCtrls = {
+      for (final e in kMicronutrientsInDisplayOrder)
+        e.key: TextEditingController(),
+    };
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -93,12 +103,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _proteinGCtrl.text = profile.proteinG.toStringAsFixed(0);
     _carbsGCtrl.text = profile.carbsG.toStringAsFixed(0);
     _fatGCtrl.text = profile.fatG.toStringAsFixed(0);
-    _vitaminACtrl.text = _nonZero(profile.micronutrientGoals.vitaminAUg);
-    _vitaminCCtrl.text = _nonZero(profile.micronutrientGoals.vitaminCMg);
-    _ironCtrl.text = _nonZero(profile.micronutrientGoals.ironMg);
-    _calciumCtrl.text = _nonZero(profile.micronutrientGoals.calciumMg);
-    _fiberCtrl.text = _nonZero(profile.micronutrientGoals.fiberG);
-    _sodiumCtrl.text = _nonZero(profile.micronutrientGoals.sodiumMg);
+    final microJson = profile.micronutrientGoals.toJson();
+    for (final e in kMicronutrientsInDisplayOrder) {
+      final v = (microJson[e.key] as num?)?.toDouble() ?? 0;
+      _microCtrls[e.key]!.text = _nonZeroNum(v);
+    }
+    _micronutrientTauCtrl.text =
+        _formatDecimal(profile.micronutrientWeeklyMinFraction);
     _ingredientApiKeyCtrl.text = profile.ingredientApiKey;
     _llmApiKeyCtrl.text = profile.llmApiKey;
     _calorieDeficitMode = profile.calorieDeficitMode;
@@ -106,7 +117,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _allergies = List.from(profile.allergies);
   }
 
-  String _nonZero(double v) => v > 0 ? v.toStringAsFixed(0) : '';
+  String _nonZeroNum(double v) {
+    if (v <= 0) return '';
+    if (v == v.roundToDouble()) return v.round().toString();
+    return _formatDecimal(v);
+  }
+
+  String _formatDecimal(double v) {
+    final s = v.toStringAsFixed(4).replaceFirst(RegExp(r'\.?0+$'), '');
+    return s.isEmpty ? '0' : s;
+  }
 
   @override
   void dispose() {
@@ -118,12 +138,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _proteinGCtrl.dispose();
     _carbsGCtrl.dispose();
     _fatGCtrl.dispose();
-    _vitaminACtrl.dispose();
-    _vitaminCCtrl.dispose();
-    _ironCtrl.dispose();
-    _calciumCtrl.dispose();
-    _fiberCtrl.dispose();
-    _sodiumCtrl.dispose();
+    for (final c in _microCtrls.values) {
+      c.dispose();
+    }
+    _micronutrientTauCtrl.dispose();
     _ingredientApiKeyCtrl.dispose();
     _llmApiKeyCtrl.dispose();
     _allergyCtrl.dispose();
@@ -158,7 +176,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _allergies.remove(allergy));
   }
 
+  Map<String, String> _microRawFromControllers() => {
+        for (final e in kMicronutrientsInDisplayOrder)
+          e.key: _microCtrls[e.key]!.text,
+      };
+
   UserProfile _buildProfile() {
+    final tau =
+        double.tryParse(_micronutrientTauCtrl.text.trim()) ?? 1.0;
     return UserProfile(
       calories: double.tryParse(_caloriesCtrl.text.trim()) ?? 2000,
       proteinG: double.tryParse(_proteinGCtrl.text.trim()) ?? 150,
@@ -170,14 +195,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       calorieDeficitMode: _calorieDeficitMode,
       demographicGroup: _demographicGroup,
       allergies: List.from(_allergies),
-      micronutrientGoals: MicronutrientGoals(
-        vitaminAUg: double.tryParse(_vitaminACtrl.text.trim()) ?? 0,
-        vitaminCMg: double.tryParse(_vitaminCCtrl.text.trim()) ?? 0,
-        ironMg: double.tryParse(_ironCtrl.text.trim()) ?? 0,
-        calciumMg: double.tryParse(_calciumCtrl.text.trim()) ?? 0,
-        fiberG: double.tryParse(_fiberCtrl.text.trim()) ?? 0,
-        sodiumMg: double.tryParse(_sodiumCtrl.text.trim()) ?? 0,
-      ),
+      micronutrientGoals: MicronutrientGoals.fromStringMap(_microRawFromControllers()),
+      micronutrientWeeklyMinFraction: tau.clamp(1e-6, 1.0),
       ingredientApiKey: _ingredientApiKeyCtrl.text.trim(),
       llmApiKey: _llmApiKeyCtrl.text.trim(),
     );
@@ -210,11 +229,72 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return null;
   }
 
+  String? _tauValidator(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Required';
+    final v = double.tryParse(value.trim());
+    if (v == null) return 'Enter a valid number';
+    if (v <= 0 || v > 1) return 'Use a value between 0 and 1 (exclusive of 0)';
+    return null;
+  }
+
+  Widget _microRow(List<MicronutrientFieldDisplay> fields) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: _microField(fields[0])),
+        const SizedBox(width: 12),
+        Expanded(
+          child: fields.length > 1
+              ? _microField(fields[1])
+              : const SizedBox(),
+        ),
+      ],
+    );
+  }
+
+  Widget _microField(MicronutrientFieldDisplay m) {
+    return TextFormField(
+      controller: _microCtrls[m.key],
+      decoration: InputDecoration(
+        labelText: m.label,
+        suffixText: m.unit,
+      ),
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+    );
+  }
+
+  Widget _microSection(String title, List<MicronutrientFieldDisplay> items) {
+    final rows = <Widget>[];
+    for (var i = 0; i < items.length; i += 2) {
+      rows.add(
+        _microRow(items.sublist(i, i + 2 > items.length ? items.length : i + 2)),
+      );
+      if (i + 2 < items.length) rows.add(const SizedBox(height: 12));
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(title: title),
+        const SizedBox(height: 8),
+        ...rows,
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final maxWidth = constraints.maxWidth > 600 ? 560.0 : double.infinity;
+
+        final vitamins = kMicronutrientsInDisplayOrder.sublist(0, _vitaminCount);
+        final minerals = kMicronutrientsInDisplayOrder.sublist(
+          _vitaminCount,
+          _vitaminCount + _mineralCount,
+        );
+        final other = kMicronutrientsInDisplayOrder.sublist(
+          _vitaminCount + _mineralCount,
+        );
 
         return SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -417,84 +497,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     const SizedBox(height: 24),
 
-                    // Micronutrient Goals
-                    const SectionHeader(title: 'Micronutrient Goals'),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _vitaminACtrl,
-                            decoration: const InputDecoration(
-                              labelText: 'Vitamin A',
-                              suffixText: 'mcg',
-                            ),
-                            keyboardType: TextInputType.number,
+                    // Micronutrient Goals (parity with config/user_profile.yaml)
+                    const SectionHeader(title: 'Micronutrient Goals (daily)'),
+                    Text(
+                      'Matches backend / YAML `micronutrient_goals`. Leave blank to skip a nutrient.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _vitaminCCtrl,
-                            decoration: const InputDecoration(
-                              labelText: 'Vitamin C',
-                              suffixText: 'mg',
-                            ),
-                            keyboardType: TextInputType.number,
-                          ),
-                        ),
-                      ],
                     ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _ironCtrl,
-                            decoration: const InputDecoration(
-                              labelText: 'Iron',
-                              suffixText: 'mg',
-                            ),
-                            keyboardType: TextInputType.number,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _calciumCtrl,
-                            decoration: const InputDecoration(
-                              labelText: 'Calcium',
-                              suffixText: 'mg',
-                            ),
-                            keyboardType: TextInputType.number,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _fiberCtrl,
-                            decoration: const InputDecoration(
-                              labelText: 'Fiber',
-                              suffixText: 'g',
-                            ),
-                            keyboardType: TextInputType.number,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _sodiumCtrl,
-                            decoration: const InputDecoration(
-                              labelText: 'Sodium',
-                              suffixText: 'mg',
-                            ),
-                            keyboardType: TextInputType.number,
-                          ),
-                        ),
-                      ],
+                    const SizedBox(height: 16),
+                    _microSection('Vitamins', vitamins),
+                    const SizedBox(height: 20),
+                    _microSection('Minerals', minerals),
+                    const SizedBox(height: 20),
+                    _microSection('Other', other),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _micronutrientTauCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Micronutrient weekly min fraction (τ)',
+                        helperText:
+                            '1.0 = strict weekly floor vs RDI; lower relaxes (YAML: nutrition_goals.micronutrient_weekly_min_fraction)',
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      validator: _tauValidator,
                     ),
                     const SizedBox(height: 24),
 

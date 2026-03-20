@@ -13,6 +13,10 @@ class MealPlanProvider extends ChangeNotifier {
   int _mealsPerDay = 3;
   final Map<int, String> _workoutSchedule = {}; // day index -> timing ('morning', 'afternoon', 'evening') or absent = rest
   final Set<String> _selectedRecipeIds = {};
+  /// Matches backend `planning_mode`; keep `deterministic` until assisted UX is gated.
+  String _planningMode = 'deterministic';
+  /// `local` | `api` per OpenAPI / server PlanRequest.
+  String _ingredientSource = 'local';
 
   MealPlan? get mealPlan => _mealPlan;
   bool get loading => _loading;
@@ -21,6 +25,18 @@ class MealPlanProvider extends ChangeNotifier {
   int get mealsPerDay => _mealsPerDay;
   Map<int, String> get workoutSchedule => Map.unmodifiable(_workoutSchedule);
   Set<String> get selectedRecipeIds => Set.unmodifiable(_selectedRecipeIds);
+  String get planningMode => _planningMode;
+  String get ingredientSource => _ingredientSource;
+
+  void setPlanningMode(String mode) {
+    _planningMode = mode;
+    notifyListeners();
+  }
+
+  void setIngredientSource(String source) {
+    _ingredientSource = source;
+    notifyListeners();
+  }
 
   void setDays(int days) {
     _days = days.clamp(1, 7);
@@ -56,9 +72,9 @@ class MealPlanProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _mealPlan = await ApiService.generatePlan(request);
+      _mealPlan = await ApiService.plan(request);
     } catch (e) {
-      _error = e.toString();
+      _error = e is ApiException ? e.message : e.toString();
     } finally {
       _loading = false;
       notifyListeners();

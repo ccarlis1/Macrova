@@ -54,19 +54,29 @@ class RecipeCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${recipe.servings} servings \u2022 ${recipe.totalCalories.round()} kcal total',
+                  recipe.ingredients.isEmpty
+                      ? 'No local nutrition data — add ingredients in the builder'
+                      : '${recipe.servings} servings \u2022 ${recipe.totalCalories.round()} kcal total',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
                 ),
                 const SizedBox(height: 8),
-                MacroDisplay(
-                  calories: recipe.perServingCalories,
-                  proteinG: recipe.perServingProteinG,
-                  carbsG: recipe.perServingCarbsG,
-                  fatG: recipe.perServingFatG,
-                  compact: true,
-                ),
+                if (recipe.ingredients.isEmpty)
+                  Text(
+                    'Server or draft recipe',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: colorScheme.outline,
+                        ),
+                  )
+                else
+                  MacroDisplay(
+                    calories: recipe.perServingCalories,
+                    proteinG: recipe.perServingProteinG,
+                    carbsG: recipe.perServingCarbsG,
+                    fatG: recipe.perServingFatG,
+                    compact: true,
+                  ),
                 const SizedBox(height: 8),
                 SizedBox(
                   width: double.infinity,

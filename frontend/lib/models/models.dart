@@ -7,6 +7,12 @@ class PlanRequest {
   final List<String> likedFoods;
   final List<String> dislikedFoods;
   final List<String> allergies;
+  final int days;
+  final String ingredientSource;
+  final Map<String, double>? micronutrientGoals;
+  final double micronutrientWeeklyMinFraction;
+  final String? planningMode;
+  final List<String>? recipeIds;
 
   const PlanRequest({
     required this.dailyCalories,
@@ -17,6 +23,12 @@ class PlanRequest {
     this.likedFoods = const [],
     this.dislikedFoods = const [],
     this.allergies = const [],
+    this.days = 1,
+    this.ingredientSource = 'local',
+    this.micronutrientGoals,
+    this.micronutrientWeeklyMinFraction = 1.0,
+    this.planningMode,
+    this.recipeIds,
   });
 
   factory PlanRequest.fromJson(Map<String, dynamic> json) {
@@ -29,11 +41,22 @@ class PlanRequest {
       likedFoods: List<String>.from(json['liked_foods'] ?? const []),
       dislikedFoods: List<String>.from(json['disliked_foods'] ?? const []),
       allergies: List<String>.from(json['allergies'] ?? const []),
+      days: json['days'] as int? ?? 1,
+      ingredientSource: json['ingredient_source'] as String? ?? 'local',
+      micronutrientGoals: (json['micronutrient_goals'] as Map<String, dynamic>?)
+          ?.map((k, v) => MapEntry(k, (v as num).toDouble())),
+      micronutrientWeeklyMinFraction:
+          (json['micronutrient_weekly_min_fraction'] as num?)?.toDouble() ??
+              1.0,
+      planningMode: json['planning_mode'] as String?,
+      recipeIds: (json['recipe_ids'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
+    final map = <String, dynamic>{
       'daily_calories': dailyCalories,
       'daily_protein_g': dailyProteinG,
       'daily_fat_g_min': dailyFatGMin,
@@ -42,7 +65,22 @@ class PlanRequest {
       'liked_foods': likedFoods,
       'disliked_foods': dislikedFoods,
       'allergies': allergies,
+      'days': days,
+      'ingredient_source': ingredientSource,
+      'micronutrient_weekly_min_fraction': micronutrientWeeklyMinFraction,
     };
+    final micros = micronutrientGoals;
+    if (micros != null && micros.isNotEmpty) {
+      map['micronutrient_goals'] = micros;
+    }
+    if (planningMode != null && planningMode!.isNotEmpty) {
+      map['planning_mode'] = planningMode;
+    }
+    final ids = recipeIds;
+    if (ids != null && ids.isNotEmpty) {
+      map['recipe_ids'] = ids;
+    }
+    return map;
   }
 }
 

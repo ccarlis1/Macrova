@@ -16,7 +16,9 @@ class PlannerConfigScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final planProvider = context.watch<MealPlanProvider>();
     final profile = context.watch<ProfileProvider>().profile;
-    final recipes = context.watch<RecipeProvider>().recipes;
+    final recipeProvider = context.watch<RecipeProvider>();
+    final recipes = recipeProvider.recipes;
+    final remoteIds = recipeProvider.remoteRecipeIds;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -167,6 +169,52 @@ class PlannerConfigScreen extends StatelessWidget {
                             Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                 ),
+                if (remoteIds.isNotEmpty) ...[
+                  Builder(
+                    builder: (context) {
+                      final notOnServer = planProvider.selectedRecipeIds
+                          .where((id) => !remoteIds.contains(id))
+                          .toList();
+                      if (notOnServer.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: Material(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .errorContainer
+                              .withValues(alpha: 0.35),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  Icons.warning_amber_rounded,
+                                  color: Theme.of(context).colorScheme.error,
+                                  size: 22,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'Some selected recipes are not on the server '
+                                    '(${notOnServer.length}). The planner only uses '
+                                    'server recipe ids — those entries may be ignored '
+                                    'until the recipe exists in the API pool.',
+                                    style:
+                                        Theme.of(context).textTheme.bodySmall,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ],
               const SizedBox(height: 24),
 
@@ -265,6 +313,10 @@ class PlannerConfigScreen extends StatelessWidget {
       schedule[mealTimes[i]] = 3; // default busyness
     }
 
+    final recipeIds = planProvider.selectedRecipeIds.isEmpty
+        ? null
+        : planProvider.selectedRecipeIds.toList();
+
     final request = PlanRequest(
       dailyCalories: profile.calories.round(),
       dailyProteinG: profile.proteinG,
@@ -272,6 +324,12 @@ class PlannerConfigScreen extends StatelessWidget {
       dailyFatGMax: profile.fatG * 1.1,
       schedule: schedule,
       allergies: profile.allergies,
+      days: planProvider.days,
+      ingredientSource: planProvider.ingredientSource,
+      micronutrientGoals: profile.micronutrientGoals.toPlanMicronutrientGoals(),
+      micronutrientWeeklyMinFraction: profile.micronutrientWeeklyMinFraction,
+      planningMode: planProvider.planningMode,
+      recipeIds: recipeIds,
     );
 
     final shell = context.findAncestorStateOfType<AppShellState>();

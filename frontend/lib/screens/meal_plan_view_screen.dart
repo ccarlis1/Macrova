@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/micronutrient_metadata.dart';
+import '../models/user_profile.dart';
 import '../providers/meal_plan_provider.dart';
 import '../providers/profile_provider.dart';
 import '../widgets/macro_display.dart';
@@ -162,14 +164,12 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
   }
 
   Widget _buildWeeklyMicronutrients(
-      BuildContext context, dynamic profile) {
+    BuildContext context,
+    UserProfile profile,
+  ) {
     final goals = profile.micronutrientGoals;
-    final hasGoals = goals.vitaminAUg > 0 ||
-        goals.vitaminCMg > 0 ||
-        goals.ironMg > 0 ||
-        goals.calciumMg > 0 ||
-        goals.fiberG > 0 ||
-        goals.sodiumMg > 0;
+    final microJson = goals.toJson();
+    final hasGoals = microJson.values.any((v) => (v as num) > 0);
 
     if (!hasGoals) return const SizedBox.shrink();
 
@@ -195,49 +195,19 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
                   ),
             ),
             const SizedBox(height: 12),
-            if (goals.fiberG > 0)
-              MicronutrientBar(
-                label: 'Fiber',
-                value: 0,
-                target: goals.fiberG,
-                unit: 'g',
-              ),
-            if (goals.vitaminAUg > 0)
-              MicronutrientBar(
-                label: 'Vitamin A',
-                value: 0,
-                target: goals.vitaminAUg,
-                unit: 'mcg',
-              ),
-            if (goals.vitaminCMg > 0)
-              MicronutrientBar(
-                label: 'Vitamin C',
-                value: 0,
-                target: goals.vitaminCMg,
-                unit: 'mg',
-              ),
-            if (goals.ironMg > 0)
-              MicronutrientBar(
-                label: 'Iron',
-                value: 0,
-                target: goals.ironMg,
-                unit: 'mg',
-              ),
-            if (goals.calciumMg > 0)
-              MicronutrientBar(
-                label: 'Calcium',
-                value: 0,
-                target: goals.calciumMg,
-                unit: 'mg',
-              ),
-            if (goals.sodiumMg > 0)
-              MicronutrientBar(
-                label: 'Sodium',
-                value: 0,
-                target: goals.sodiumMg,
-                unit: 'mg',
-                isLimit: true,
-              ),
+            for (final meta in kMicronutrientsInDisplayOrder) ...[
+              if (((microJson[meta.key] as num?)?.toDouble() ?? 0) > 0)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: MicronutrientBar(
+                    label: meta.label,
+                    value: 0,
+                    target: (microJson[meta.key] as num).toDouble(),
+                    unit: meta.unit,
+                    isLimit: meta.isLimit,
+                  ),
+                ),
+            ],
           ],
         ),
       ),

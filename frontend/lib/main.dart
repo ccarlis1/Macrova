@@ -19,7 +19,13 @@ class MacrovaApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => ProfileProvider()..load()),
         ChangeNotifierProvider(create: (_) => IngredientProvider()..load()),
-        ChangeNotifierProvider(create: (_) => RecipeProvider()..load()),
+        ChangeNotifierProvider(
+          create: (_) {
+            final recipes = RecipeProvider();
+            recipes.load().then((_) => recipes.syncSummariesFromApi());
+            return recipes;
+          },
+        ),
         ChangeNotifierProvider(create: (_) => MealPlanProvider()),
       ],
       child: MaterialApp(

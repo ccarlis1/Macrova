@@ -102,6 +102,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       likedFoods: _csvToList(_likedFoodsController.text),
       dislikedFoods: _csvToList(_dislikedFoodsController.text),
       allergies: _csvToList(_allergiesController.text),
+      days: 1,
+      ingredientSource: 'local',
+      planningMode: 'deterministic',
     );
 
     showDialog<void>(

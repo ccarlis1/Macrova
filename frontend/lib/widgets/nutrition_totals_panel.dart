@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/micronutrient_metadata.dart';
 import 'macro_display.dart';
 import 'micronutrient_bar.dart';
 
@@ -32,24 +33,6 @@ class NutritionTotalsPanel extends StatelessWidget {
     this.micronutrients = const {},
     this.micronutrientTargets = const {},
   });
-
-  static const _micronutrientUnits = {
-    'vitamin_a_ug': 'mcg',
-    'vitamin_c_mg': 'mg',
-    'iron_mg': 'mg',
-    'calcium_mg': 'mg',
-    'fiber_g': 'g',
-    'sodium_mg': 'mg',
-  };
-
-  static const _micronutrientLabels = {
-    'vitamin_a_ug': 'Vitamin A',
-    'vitamin_c_mg': 'Vitamin C',
-    'iron_mg': 'Iron',
-    'calcium_mg': 'Calcium',
-    'fiber_g': 'Fiber',
-    'sodium_mg': 'Sodium',
-  };
 
   @override
   Widget build(BuildContext context) {
@@ -94,9 +77,9 @@ class NutritionTotalsPanel extends StatelessWidget {
               const SizedBox(height: 8),
               ...micronutrients.entries.map((e) {
                 final target = micronutrientTargets[e.key] ?? 0;
-                final unit = _micronutrientUnits[e.key] ?? '';
-                final label = _micronutrientLabels[e.key] ?? e.key;
-                final isLimit = e.key == 'sodium_mg';
+                final unit = micronutrientUnitForKey(e.key);
+                final label = micronutrientLabelForKey(e.key);
+                final isLimit = micronutrientIsLimitKey(e.key);
                 return MicronutrientBar(
                   label: label,
                   value: e.value,

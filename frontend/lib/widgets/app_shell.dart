@@ -7,6 +7,7 @@ import '../features/agent/agent_pane_screen.dart';
 import '../features/agent/agent_setup_screen.dart';
 import '../features/agent/llm_config_provider.dart';
 import '../providers/ingredient_provider.dart';
+import '../providers/recipe_builder_coordinator.dart';
 import '../providers/recipe_provider.dart';
 import '../screens/ingredient_hub_screen.dart';
 import '../screens/meal_plan_view_screen.dart';
@@ -66,6 +67,9 @@ class AppShellState extends State<AppShell> {
           SidebarNav(
             selectedIndex: _selectedIndex,
             onDestinationSelected: (index) {
+              if (index == 2) {
+                context.read<RecipeBuilderCoordinator>().startCreate();
+              }
               setState(() => _selectedIndex = index);
             },
           ),

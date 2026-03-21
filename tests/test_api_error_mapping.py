@@ -13,6 +13,7 @@ from src.llm.client import (
 from src.llm.recipe_generator import RecipeGenerationError
 from src.llm.usda_contract import USDAProviderRequiredError
 from src.llm.feedback_cache import DeterministicCacheMissError
+from src.llm.constraint_parser import PlannerConfigParsingError
 from src.planning.orchestrator import LLMFeedbackOrchestratorError
 
 
@@ -61,6 +62,20 @@ def test_map_exception_to_api_error_unit_mapping():
     )
     assert status == 422
     assert payload["error"]["code"] == "SCHEMA_VALIDATION_ERROR"
+
+    # Planner NL parse: message + optional details for debugging
+    status, payload = map_exception_to_api_error(
+        PlannerConfigParsingError(
+            error_code="LLM_SCHEMA_VALIDATION_ERROR",
+            message="LLM JSON did not match the expected schema.",
+            details={"field_errors": ["targets.calories: not an int"]},
+        )
+    )
+    assert status == 422
+    assert payload["error"]["code"] == "SCHEMA_VALIDATION_ERROR"
+    assert payload["error"]["details"]["field_errors"] == [
+        "targets.calories: not an int"
+    ]
 
     # Ingredient validation error
     status, payload = map_exception_to_api_error(

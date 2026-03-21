@@ -103,7 +103,8 @@ class IngredientMatchResult(BaseModel):
 
 
 class PlannerTargets(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    # strict=False: LLMs often emit JSON numbers as floats (e.g. 2000.0); coerce to int.
+    model_config = ConfigDict(extra="forbid", strict=False)
 
     calories: int = Field(ge=0)
     protein: float = Field(ge=0)
@@ -119,7 +120,8 @@ class PlannerPreferences(BaseModel):
 
 
 class PlannerConfigJson(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    # strict=False: allow float JSON numbers for int fields (e.g. days: 3.0).
+    model_config = ConfigDict(extra="forbid", strict=False)
 
     days: int = Field(ge=1, le=7)
     meals_per_day: int = Field(ge=1, le=8)

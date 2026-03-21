@@ -340,6 +340,16 @@ class PlannerConfigScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
+                        'Fat goal: ${profile.fatGMin.round()}–${profile.fatGMax.round()} g',
+                        style:
+                            Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
                         'From your Profile settings',
                         style:
                             Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -431,8 +441,8 @@ class PlannerConfigScreen extends StatelessWidget {
     final request = PlanRequest(
       dailyCalories: profile.calories.round(),
       dailyProteinG: profile.proteinG,
-      dailyFatGMin: profile.fatG * 0.9,
-      dailyFatGMax: profile.fatG * 1.1,
+      dailyFatGMin: profile.fatGMin,
+      dailyFatGMax: profile.fatGMax,
       schedule: schedule,
       allergies: profile.allergies,
       days: planProvider.days,
@@ -446,7 +456,6 @@ class PlannerConfigScreen extends StatelessWidget {
     final shell = context.findAncestorStateOfType<AppShellState>();
 
     if (recipeIds != null && recipeIds.isNotEmpty) {
-      final toSync = <Recipe>[];
       for (final id in recipeIds) {
         var recipe = recipeProvider.getById(id);
         if (recipe == null) {
@@ -482,16 +491,16 @@ class PlannerConfigScreen extends StatelessWidget {
           );
           return;
         }
-        toSync.add(recipe);
       }
-      await planProvider.generatePlanWithRecipeSync(
-        recipesToSync: toSync,
-        request: request,
-      );
-      await recipeProvider.syncSummariesFromApi();
-    } else {
-      await planProvider.generatePlan(request);
     }
+
+    // Push every locally stored full recipe to the server before planning so
+    // `POST /plan` reads updated lines (not only the selected subset).
+    await planProvider.generatePlanWithRecipeSync(
+      recipesToSync: recipeProvider.localFullRecipesForSync,
+      request: request,
+    );
+    await recipeProvider.syncSummariesFromApi();
 
     if (!context.mounted) return;
     if (LlmConfigProvider.isAssistedPlanningMode(request.planningMode) &&

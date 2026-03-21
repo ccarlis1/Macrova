@@ -8,7 +8,9 @@ import '../models/ingredient.dart';
 import '../features/agent/agent_api.dart';
 import '../features/agent/llm_config_provider.dart';
 import '../models/ingredient_search.dart';
+import '../models/micronutrient_metadata.dart';
 import '../providers/ingredient_provider.dart';
+import '../providers/profile_provider.dart';
 import '../services/api_service.dart';
 import '../widgets/ingredient_card.dart';
 import '../widgets/macro_display.dart';
@@ -17,45 +19,22 @@ import '../widgets/section_header.dart';
 
 const _uuid = Uuid();
 
-// Default RDA targets for micronutrient bars
-const _defaultRda = {
-  'vitamin_b6_mg': 1.3,
-  'niacin_mg': 16.0,
-  'selenium_ug': 55.0,
-  'phosphorus_mg': 700.0,
-  'vitamin_a_ug': 900.0,
-  'vitamin_c_mg': 90.0,
-  'iron_mg': 18.0,
-  'calcium_mg': 1300.0,
-  'fiber_g': 30.0,
-  'sodium_mg': 2300.0,
-};
-
-const _microLabels = {
-  'vitamin_a_ug': 'Vitamin A',
-  'vitamin_c_mg': 'Vitamin C',
-  'vitamin_b6_mg': 'Vitamin B6',
-  'niacin_mg': 'Niacin',
-  'iron_mg': 'Iron',
-  'calcium_mg': 'Calcium',
-  'fiber_g': 'Fiber',
-  'sodium_mg': 'Sodium',
-  'selenium_ug': 'Selenium',
-  'phosphorus_mg': 'Phosphorus',
-};
-
-const _microUnits = {
-  'vitamin_a_ug': 'mcg',
-  'vitamin_c_mg': 'mg',
-  'vitamin_b6_mg': 'mg',
-  'niacin_mg': 'mg',
-  'iron_mg': 'mg',
-  'calcium_mg': 'mg',
-  'fiber_g': 'g',
-  'sodium_mg': 'mg',
-  'selenium_ug': 'mcg',
-  'phosphorus_mg': 'mg',
-};
+/// Keys present on [Ingredient.micronutrientsPer100g], ordered like profile / plan UI.
+List<MapEntry<String, double>> _micronutrientEntriesInDisplayOrder(
+  Map<String, double> micros,
+) {
+  final rank = {
+    for (var i = 0; i < kMicronutrientsInDisplayOrder.length; i++)
+      kMicronutrientsInDisplayOrder[i].key: i,
+  };
+  return micros.entries.toList()
+    ..sort((a, b) {
+      final ra = rank[a.key] ?? 1000;
+      final rb = rank[b.key] ?? 1000;
+      if (ra != rb) return ra.compareTo(rb);
+      return a.key.compareTo(b.key);
+    });
+}
 
 class IngredientHubScreen extends StatefulWidget {
   const IngredientHubScreen({super.key});
@@ -653,6 +632,9 @@ class _IngredientHubScreenState extends State<IngredientHubScreen> {
   }
 
   Widget _buildDetailPanel(BuildContext context, Ingredient ing) {
+    final goalsJson =
+        context.watch<ProfileProvider>().profile.micronutrientGoals.toJson();
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -679,16 +661,15 @@ class _IngredientHubScreenState extends State<IngredientHubScreen> {
               style: Theme.of(context).textTheme.titleSmall,
             ),
             const SizedBox(height: 8),
-            ...ing.micronutrientsPer100g.entries.map((e) {
-              final target = _defaultRda[e.key] ?? 0;
-              final unit = _microUnits[e.key] ?? '';
-              final label = _microLabels[e.key] ?? e.key;
+            ..._micronutrientEntriesInDisplayOrder(ing.micronutrientsPer100g)
+                .map((e) {
+              final target = (goalsJson[e.key] as num?)?.toDouble() ?? 0;
               return MicronutrientBar(
-                label: label,
+                label: micronutrientLabelForKey(e.key),
                 value: e.value,
                 target: target,
-                unit: unit,
-                isLimit: e.key == 'sodium_mg',
+                unit: micronutrientUnitForKey(e.key),
+                isLimit: micronutrientIsLimitKey(e.key),
               );
             }),
           ],

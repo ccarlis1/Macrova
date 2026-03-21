@@ -38,6 +38,7 @@ from src.data_layer.models import (
 from src.data_layer.recipe_db import RecipeDB
 from src.data_layer.nutrition_db import NutritionDB
 from src.providers.local_provider import LocalIngredientProvider
+from src.providers.summary_hybrid_provider import SummaryHybridIngredientProvider
 from src.nutrition.calculator import NutritionCalculator
 from src.planning.converters import convert_recipes, convert_profile, extract_ingredient_names
 from src.planning.planner import plan_meals
@@ -47,6 +48,7 @@ from src.providers.api_provider import APIIngredientProvider
 from src.config.llm_settings import load_llm_settings
 from src.api.error_mapping import map_exception_to_api_error
 from src.api.recipe_sync import (
+    RecipeSyncItem,
     RecipeSyncRequest,
     RecipeSyncResponse,
     atomic_upsert_recipes_by_id,
@@ -1105,6 +1107,50 @@ def sync_recipes_endpoint(body: RecipeSyncRequest) -> Any:
         return JSONResponse(status_code=status_code, content=payload)
 
 
+@app.post("/api/v1/recipes", response_model=RecipeSyncResponse)
+@app.post("/api/recipes", response_model=RecipeSyncResponse)
+def create_recipe_endpoint(item: RecipeSyncItem) -> Any:
+    """Upsert a single recipe (same semantics as sync)."""
+    try:
+        synced_ids = atomic_upsert_recipes_by_id(
+            path=recipes_path,
+            items=[item],
+        )
+        return RecipeSyncResponse(synced_ids=synced_ids)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        status_code, payload = map_exception_to_api_error(exc)
+        return JSONResponse(status_code=status_code, content=payload)
+
+
+@app.put("/api/v1/recipes/{recipe_id}", response_model=RecipeSyncResponse)
+@app.put("/api/recipes/{recipe_id}", response_model=RecipeSyncResponse)
+def put_recipe_endpoint(recipe_id: str, item: RecipeSyncItem) -> Any:
+    """Upsert by path id; body [id] must match the path."""
+    try:
+        if item.id != recipe_id:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "error": {
+                        "code": "ID_MISMATCH",
+                        "message": "Recipe id in body must match path recipe_id.",
+                    }
+                },
+            )
+        synced_ids = atomic_upsert_recipes_by_id(
+            path=recipes_path,
+            items=[item],
+        )
+        return RecipeSyncResponse(synced_ids=synced_ids)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        status_code, payload = map_exception_to_api_error(exc)
+        return JSONResponse(status_code=status_code, content=payload)
+
+
 @app.get("/api/v1/recipes")
 @app.get("/api/recipes")
 def list_recipes() -> List[Dict[str, str]]:
@@ -1155,7 +1201,13 @@ def nutrition_summary_endpoint(request: NutritionSummaryRequest) -> Any:
     """Server-authoritative macro and micro totals for a draft ingredient list."""
     try:
         nutrition_db = NutritionDB(ingredients_path)
-        calculator = NutritionCalculator(LocalIngredientProvider(nutrition_db))
+        try:
+            usda_client = USDAClient.from_env()
+        except ValueError:
+            usda_client = None
+        cached_lookup = CachedIngredientLookup(usda_client=usda_client)
+        hybrid = SummaryHybridIngredientProvider(nutrition_db, cached_lookup)
+        calculator = NutritionCalculator(hybrid)
         ingredients = [_nutrition_line_to_data_ingredient(l) for l in request.ingredients]
         draft = DataRecipe(
             id="_draft",

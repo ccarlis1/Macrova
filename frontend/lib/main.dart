@@ -5,6 +5,7 @@ import 'features/agent/llm_config_provider.dart';
 import 'providers/ingredient_provider.dart';
 import 'providers/meal_plan_provider.dart';
 import 'providers/profile_provider.dart';
+import 'providers/recipe_builder_coordinator.dart';
 import 'providers/recipe_provider.dart';
 import 'theme.dart';
 import 'widgets/app_shell.dart';
@@ -16,9 +17,11 @@ Future<void> main() async {
   final llmGate = LlmConfigProvider(profile);
   final ingredients = IngredientProvider();
   final recipes = RecipeProvider();
+  final recipeBuilderCoordinator = RecipeBuilderCoordinator();
   final mealPlan = MealPlanProvider();
 
   await profile.load();
+  await profile.mergeBundledUserProfileIfEnabled();
   profile.addListener(llmGate.syncCredentialsFromProfile);
   await mealPlan.load();
   await llmGate.loadFromProfile();
@@ -43,6 +46,7 @@ Future<void> main() async {
       llmGate: llmGate,
       ingredients: ingredients,
       recipes: recipes,
+      recipeBuilderCoordinator: recipeBuilderCoordinator,
       mealPlan: mealPlan,
     ),
   );
@@ -55,6 +59,7 @@ class MacrovaApp extends StatelessWidget {
     required this.llmGate,
     required this.ingredients,
     required this.recipes,
+    required this.recipeBuilderCoordinator,
     required this.mealPlan,
   });
 
@@ -62,6 +67,7 @@ class MacrovaApp extends StatelessWidget {
   final LlmConfigProvider llmGate;
   final IngredientProvider ingredients;
   final RecipeProvider recipes;
+  final RecipeBuilderCoordinator recipeBuilderCoordinator;
   final MealPlanProvider mealPlan;
 
   @override
@@ -72,6 +78,7 @@ class MacrovaApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: llmGate),
         ChangeNotifierProvider.value(value: ingredients),
         ChangeNotifierProvider.value(value: recipes),
+        ChangeNotifierProvider.value(value: recipeBuilderCoordinator),
         ChangeNotifierProvider.value(value: mealPlan),
       ],
       child: MaterialApp(

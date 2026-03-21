@@ -129,7 +129,9 @@ def test_plan_from_text_parse_failure_returns_schema_validation_error(monkeypatc
         json={"prompt": "bad nl config", "planning_mode": "assisted"},
     )
     assert resp.status_code == 422
-    assert resp.json()["error"]["code"] == "SCHEMA_VALIDATION_ERROR"
+    body = resp.json()["error"]
+    assert body["code"] == "SCHEMA_VALIDATION_ERROR"
+    assert body["details"]["field_errors"] == ["x"]
 
 
 @pytest.mark.parametrize("ingredient_source", ["local", "api"])

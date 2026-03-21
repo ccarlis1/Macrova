@@ -4,6 +4,7 @@ import 'package:macrova/main.dart';
 import 'package:macrova/providers/ingredient_provider.dart';
 import 'package:macrova/providers/meal_plan_provider.dart';
 import 'package:macrova/providers/profile_provider.dart';
+import 'package:macrova/providers/recipe_builder_coordinator.dart';
 import 'package:macrova/providers/recipe_provider.dart';
 
 void main() {
@@ -15,6 +16,7 @@ void main() {
         llmGate: LlmConfigProvider(profile),
         ingredients: IngredientProvider(),
         recipes: RecipeProvider(),
+        recipeBuilderCoordinator: RecipeBuilderCoordinator(),
         mealPlan: MealPlanProvider(),
       ),
     );

@@ -27,7 +27,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _caloriesCtrl = TextEditingController();
   final _proteinGCtrl = TextEditingController();
   final _carbsGCtrl = TextEditingController();
-  final _fatGCtrl = TextEditingController();
+  final _fatGMinCtrl = TextEditingController();
+  final _fatGMaxCtrl = TextEditingController();
 
   /// Keys match `MicronutrientProfile` / YAML `micronutrient_goals`.
   late final Map<String, TextEditingController> _microCtrls;
@@ -104,7 +105,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _caloriesCtrl.text = profile.calories.toStringAsFixed(0);
     _proteinGCtrl.text = profile.proteinG.toStringAsFixed(0);
     _carbsGCtrl.text = profile.carbsG.toStringAsFixed(0);
-    _fatGCtrl.text = profile.fatG.toStringAsFixed(0);
+    _fatGMinCtrl.text = profile.fatGMin.toStringAsFixed(0);
+    _fatGMaxCtrl.text = profile.fatGMax.toStringAsFixed(0);
     final microJson = profile.micronutrientGoals.toJson();
     for (final e in kMicronutrientsInDisplayOrder) {
       final v = (microJson[e.key] as num?)?.toDouble() ?? 0;
@@ -143,7 +145,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _caloriesCtrl.dispose();
     _proteinGCtrl.dispose();
     _carbsGCtrl.dispose();
-    _fatGCtrl.dispose();
+    _fatGMinCtrl.dispose();
+    _fatGMaxCtrl.dispose();
     for (final c in _microCtrls.values) {
       c.dispose();
     }
@@ -164,7 +167,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _caloriesCtrl.text = calories.toStringAsFixed(0);
       _proteinGCtrl.text = (calories * pPct / 100 / 4).toStringAsFixed(0);
       _carbsGCtrl.text = (calories * cPct / 100 / 4).toStringAsFixed(0);
-      _fatGCtrl.text = (calories * fPct / 100 / 9).toStringAsFixed(0);
+      final fatMid = (calories * fPct / 100 / 9);
+      final fatMidStr = fatMid.toStringAsFixed(0);
+      _fatGMinCtrl.text = fatMidStr;
+      _fatGMaxCtrl.text = fatMidStr;
     });
   }
 
@@ -190,11 +196,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
   UserProfile _buildProfile() {
     final tau =
         double.tryParse(_micronutrientTauCtrl.text.trim()) ?? 1.0;
+    var fatMin = double.tryParse(_fatGMinCtrl.text.trim()) ?? 60;
+    var fatMax = double.tryParse(_fatGMaxCtrl.text.trim()) ?? 74;
+    if (fatMax < fatMin) {
+      final t = fatMin;
+      fatMin = fatMax;
+      fatMax = t;
+    }
     return UserProfile(
       calories: double.tryParse(_caloriesCtrl.text.trim()) ?? 2000,
       proteinG: double.tryParse(_proteinGCtrl.text.trim()) ?? 150,
       carbsG: double.tryParse(_carbsGCtrl.text.trim()) ?? 200,
-      fatG: double.tryParse(_fatGCtrl.text.trim()) ?? 67,
+      fatGMin: fatMin,
+      fatGMax: fatMax,
       proteinPct: double.tryParse(_proteinPctCtrl.text.trim()) ?? 30,
       carbsPct: double.tryParse(_carbsPctCtrl.text.trim()) ?? 40,
       fatPct: double.tryParse(_fatPctCtrl.text.trim()) ?? 30,
@@ -460,14 +474,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       validator: _requiredNumber,
                     ),
                     const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _fatGCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Fats',
-                        suffixText: 'g',
-                      ),
-                      keyboardType: TextInputType.number,
-                      validator: _requiredNumber,
+                    Text(
+                      'Daily fat range',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _fatGMinCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'Fat min',
+                              suffixText: 'g',
+                            ),
+                            keyboardType: TextInputType.number,
+                            validator: _requiredNumber,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _fatGMaxCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'Fat max',
+                              suffixText: 'g',
+                            ),
+                            keyboardType: TextInputType.number,
+                            validator: _requiredNumber,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 24),
 
@@ -545,12 +587,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     // Micronutrient Goals (parity with config/user_profile.yaml)
                     const SectionHeader(title: 'Micronutrient Goals (daily)'),
-                    Text(
-                      'Matches backend / YAML `micronutrient_goals`. Leave blank to skip a nutrient.',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                    ),
                     const SizedBox(height: 16),
                     _microSection('Vitamins', vitamins),
                     const SizedBox(height: 20),
@@ -562,8 +598,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       controller: _micronutrientTauCtrl,
                       decoration: const InputDecoration(
                         labelText: 'Micronutrient weekly min fraction (τ)',
-                        helperText:
-                            '1.0 = strict weekly floor vs RDI; lower relaxes (YAML: nutrition_goals.micronutrient_weekly_min_fraction)',
                       ),
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
@@ -586,9 +620,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       controller: _llmApiKeyCtrl,
                       decoration: const InputDecoration(
                         labelText: 'LLM API Key (reference only)',
-                        helperText:
-                            'Not sent to the API. Validate checks GET /api/v1/llm/status — '
-                            'configure LLM_API_KEY + LLM_MODEL in the server .env.',
                       ),
                       obscureText: true,
                     ),

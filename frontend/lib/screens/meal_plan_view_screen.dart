@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/micronutrient_metadata.dart';
+import '../models/models.dart';
 import '../models/user_profile.dart';
 import '../providers/meal_plan_provider.dart';
 import '../providers/profile_provider.dart';
@@ -49,7 +50,6 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
     }
 
     final totalNutrition = mealPlan.totalNutrition;
-    final meals = mealPlan.meals;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -98,16 +98,16 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
                   ),
                 ),
               ] else ...[
-                // Weekly Totals
-                _buildWeeklyTotals(context, totalNutrition),
+                // Plan-wide macro totals (whole horizon; multi-day = sum or weekly_totals)
+                _buildWeeklyTotals(context, mealPlan.days, totalNutrition),
                 const SizedBox(height: 16),
 
-                // Weekly Micronutrient Totals
-                _buildWeeklyMicronutrients(context, profile),
+                // Plan micronutrients vs profile targets (daily × plan length)
+                _buildWeeklyMicronutrients(context, profile, mealPlan),
                 const SizedBox(height: 24),
 
-                // Daily Breakdown
-                _buildDailyBreakdown(context, meals, totalNutrition),
+                // Per-day breakdown from API daily_plans
+                _buildDailyBreakdown(context, mealPlan),
               ],
 
               if (mealPlan.warnings.isNotEmpty) ...[
@@ -135,7 +135,8 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
   }
 
   Widget _buildWeeklyTotals(
-      BuildContext context, dynamic totalNutrition) {
+      BuildContext context, int planDays, dynamic totalNutrition) {
+    final title = planDays > 1 ? 'Plan totals' : 'Daily totals';
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -148,8 +149,7 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Daily Totals',
-                style: Theme.of(context).textTheme.titleMedium),
+            Text(title, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
             MacroDisplay(
               calories: totalNutrition.calories,
@@ -166,12 +166,16 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
   Widget _buildWeeklyMicronutrients(
     BuildContext context,
     UserProfile profile,
+    MealPlan mealPlan,
   ) {
     final goals = profile.micronutrientGoals;
     final microJson = goals.toJson();
     final hasGoals = microJson.values.any((v) => (v as num) > 0);
 
     if (!hasGoals) return const SizedBox.shrink();
+
+    final actual = mealPlan.totalNutrition.micronutrients;
+    final periodDays = mealPlan.days.clamp(1, 7);
 
     return Card(
       shape: RoundedRectangleBorder(
@@ -189,7 +193,7 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
                 style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             Text(
-              'Based on your profile goals',
+              'Plan totals vs daily profile goals × $periodDays day(s)',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -201,8 +205,9 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
                   padding: const EdgeInsets.only(bottom: 8),
                   child: MicronutrientBar(
                     label: meta.label,
-                    value: 0,
-                    target: (microJson[meta.key] as num).toDouble(),
+                    value: actual[meta.key] ?? 0,
+                    target:
+                        (microJson[meta.key] as num).toDouble() * periodDays,
                     unit: meta.unit,
                     isLimit: meta.isLimit,
                   ),
@@ -214,9 +219,10 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
     );
   }
 
-  Widget _buildDailyBreakdown(
-      BuildContext context, List meals, dynamic totalNutrition) {
-    if (meals.isEmpty) {
+  Widget _buildDailyBreakdown(BuildContext context, MealPlan mealPlan) {
+    final days = mealPlan.dailyPlans;
+    if (days.isEmpty ||
+        days.every((d) => d.meals.isEmpty)) {
       return Center(
         child: Text(
           'No meals in this plan',
@@ -225,23 +231,26 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+    final blocks = <Widget>[];
+    for (final d in days) {
+      if (d.meals.isEmpty) continue;
+      blocks.add(
         SectionHeader(
-          title: 'Day 1',
+          title: 'Day ${d.day}',
           action: Text(
-            '${totalNutrition.calories.round()} kcal \u2022 '
-            '${totalNutrition.proteinG.round()}g P \u2022 '
-            '${totalNutrition.carbsG.round()}g C \u2022 '
-            '${totalNutrition.fatG.round()}g F',
+            '${d.dayTotals.calories.round()} kcal \u2022 '
+            '${d.dayTotals.proteinG.round()}g P \u2022 '
+            '${d.dayTotals.carbsG.round()}g C \u2022 '
+            '${d.dayTotals.fatG.round()}g F',
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ),
-        ...meals.map((meal) {
-          final recipeName =
-              meal.recipe['name'] as String? ?? 'Unknown Recipe';
-          return Padding(
+      );
+      for (final meal in d.meals) {
+        final recipeName =
+            meal.recipe['name'] as String? ?? 'Unknown Recipe';
+        blocks.add(
+          Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: MealCard(
               mealType: meal.mealType,
@@ -251,9 +260,18 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
               carbsG: meal.nutrition.carbsG,
               fatG: meal.nutrition.fatG,
             ),
-          );
-        }),
-      ],
+          ),
+        );
+      }
+      blocks.add(const SizedBox(height: 16));
+    }
+    if (blocks.isNotEmpty) {
+      blocks.removeLast();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: blocks,
     );
   }
 }

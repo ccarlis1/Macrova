@@ -41,8 +41,22 @@ class RecipeIngredientEntry {
         .map((key, value) => MapEntry(key, value * g / 100));
   }
 
+  /// Units offered in the UI: [g], keys from [unitConversions], and [unit] if
+  /// missing (server lines may use e.g. `tbsp` without a conversion entry).
   List<String> get availableUnits {
-    return ['g', ...unitConversions.keys];
+    final seen = <String>{};
+    final out = <String>[];
+    void add(String u) {
+      if (u.isEmpty) return;
+      if (seen.add(u)) out.add(u);
+    }
+
+    add('g');
+    for (final k in unitConversions.keys) {
+      add(k);
+    }
+    add(unit);
+    return out;
   }
 
   RecipeIngredientEntry copyWith({
@@ -114,12 +128,16 @@ class Recipe {
   final String name;
   final List<RecipeIngredientEntry> ingredients;
   final int servings;
+  final int cookingTimeMinutes;
+  final List<String> instructions;
 
   const Recipe({
     required this.id,
     required this.name,
     this.ingredients = const [],
     this.servings = 1,
+    this.cookingTimeMinutes = 0,
+    this.instructions = const [],
   });
 
   double get totalCalories =>
@@ -155,13 +173,31 @@ class Recipe {
     String? name,
     List<RecipeIngredientEntry>? ingredients,
     int? servings,
+    int? cookingTimeMinutes,
+    List<String>? instructions,
   }) {
     return Recipe(
       id: id ?? this.id,
       name: name ?? this.name,
       ingredients: ingredients ?? this.ingredients,
       servings: servings ?? this.servings,
+      cookingTimeMinutes: cookingTimeMinutes ?? this.cookingTimeMinutes,
+      instructions: instructions ?? this.instructions,
     );
+  }
+
+  static List<String> _instructionsFromJson(dynamic raw) {
+    if (raw is! List) return const [];
+    return [
+      for (final x in raw) x?.toString() ?? '',
+    ];
+  }
+
+  static int _cookingMinutesFromJson(Map<String, dynamic> json) {
+    final v = json['cooking_time_minutes'];
+    if (v is! num) return 0;
+    final n = v.round();
+    return n < 0 ? 0 : n;
   }
 
   /// Backend `data/recipes/recipes.json` entry → in-app [Recipe] (ingredient macros unknown).
@@ -180,6 +216,8 @@ class Recipe {
       name: json['name'] as String,
       ingredients: ingredients,
       servings: 1,
+      cookingTimeMinutes: _cookingMinutesFromJson(json),
+      instructions: _instructionsFromJson(json['instructions']),
     );
   }
 
@@ -223,14 +261,16 @@ class Recipe {
         'name': name,
         'ingredients': ingredients.map((e) => e.toJson()).toList(),
         'servings': servings,
+        'cooking_time_minutes': cookingTimeMinutes,
+        'instructions': instructions,
       };
 
   /// Body fragment for `POST /api/v1/recipes/sync` (server `RecipeSyncItem` shape).
   Map<String, dynamic> toSyncPayload() => {
         'id': id,
         'name': name,
-        'cooking_time_minutes': 0,
-        'instructions': <String>[],
+        'cooking_time_minutes': cookingTimeMinutes,
+        'instructions': instructions,
         'ingredients': ingredients
             .map(
               (e) => {
@@ -252,11 +292,20 @@ class Recipe {
               .toList() ??
           const [],
       servings: json['servings'] as int? ?? 1,
+      cookingTimeMinutes: _cookingMinutesFromJson(json),
+      instructions: _instructionsFromJson(json['instructions']),
     );
   }
 
   /// Placeholder from `GET /api/v1/recipes` (id + name only) until a full recipe exists locally.
   factory Recipe.apiSummary({required String id, required String name}) {
-    return Recipe(id: id, name: name, ingredients: const [], servings: 1);
+    return Recipe(
+      id: id,
+      name: name,
+      ingredients: const [],
+      servings: 1,
+      cookingTimeMinutes: 0,
+      instructions: const [],
+    );
   }
 }

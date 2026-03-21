@@ -63,6 +63,10 @@ class LLMClient:
         )
         self._session = session or requests.Session()
 
+        # Last assistant `message.content` string from the provider (debug / diagnostics).
+        # Set on each successful completion parse path; not part of the public contract.
+        self._last_model_content_text: Optional[str] = None
+
         # Simple deterministic rate limiter (min interval between calls).
         self._rate_lock = Lock()
         self._min_interval_seconds = 1.0 / self._settings.rate_limit_qps
@@ -225,6 +229,7 @@ class LLMClient:
                 ) from e
 
             content_text = self._extract_model_text(response_json)
+            self._last_model_content_text = content_text
             return self._parse_content_json_object(content_text)
 
         # Should be unreachable due to the for-loop exhaustion logic.

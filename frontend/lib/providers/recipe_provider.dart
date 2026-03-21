@@ -12,6 +12,8 @@ import '../services/storage_service.dart';
 
 const _uuid = Uuid();
 
+typedef RecipeListSyncFn = Future<List<String>> Function(List<Recipe> recipes);
+
 /// Dev: `flutter run --dart-define=BUNDLE_SERVER_RECIPES=true`
 const _bundleServerRecipes = bool.fromEnvironment(
   'BUNDLE_SERVER_RECIPES',
@@ -86,6 +88,11 @@ Ingredient? _matchSavedIngredient(
 }
 
 class RecipeProvider extends ChangeNotifier {
+  RecipeProvider({RecipeListSyncFn? recipeSyncFn})
+      : _recipeSyncFn = recipeSyncFn ?? ApiService.syncRecipes;
+
+  final RecipeListSyncFn _recipeSyncFn;
+
   List<Recipe> _localRecipes = [];
   List<RecipeSummary> _remoteSummaries = [];
   bool _loaded = false;
@@ -104,6 +111,11 @@ class RecipeProvider extends ChangeNotifier {
     if (full != null && full.ingredients.isNotEmpty) return full;
     return r;
   }
+
+  /// Stored recipes with at least one ingredient line (for `/recipes/sync` before planning).
+  List<Recipe> get localFullRecipesForSync => List.unmodifiable(
+        _localRecipes.where((r) => r.ingredients.isNotEmpty),
+      );
 
   /// Union of local full recipes and API id+name rows (see README recipe hybrid section).
   List<Recipe> get recipes {
@@ -297,15 +309,21 @@ class RecipeProvider extends ChangeNotifier {
     _localRecipes.add(withId);
     await StorageService.saveRecipes(_localRecipes);
     notifyListeners();
+    await _recipeSyncFn([withId]);
+    await syncSummariesFromApi();
   }
 
   Future<void> updateRecipe(Recipe recipe) async {
     final index = _localRecipes.indexWhere((r) => r.id == recipe.id);
     if (index != -1) {
       _localRecipes[index] = recipe;
-      await StorageService.saveRecipes(_localRecipes);
-      notifyListeners();
+    } else {
+      _localRecipes.add(recipe);
     }
+    await StorageService.saveRecipes(_localRecipes);
+    notifyListeners();
+    await _recipeSyncFn([recipe]);
+    await syncSummariesFromApi();
   }
 
   Future<void> deleteRecipe(String id) async {
@@ -313,6 +331,9 @@ class RecipeProvider extends ChangeNotifier {
     await StorageService.saveRecipes(_localRecipes);
     notifyListeners();
   }
+
+  /// Alias for [getById] (library / builder call sites).
+  Recipe? getRecipeById(String id) => getById(id);
 
   Recipe? getById(String id) {
     Recipe? r;

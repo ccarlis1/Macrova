@@ -28,14 +28,22 @@ class ApiException implements Exception {
       if (decoded is Map<String, dynamic>) {
         final err = decoded['error'];
         if (err is Map<String, dynamic>) {
+          var message = (err['message'] as String?)?.trim().isNotEmpty == true
+              ? err['message'] as String
+              : 'Request failed';
+          final details = err['details'];
+          if (details is Map<String, dynamic>) {
+            final fe = details['field_errors'];
+            if (fe is List && fe.isNotEmpty) {
+              message = '$message: ${fe.map((e) => e.toString()).join('; ')}';
+            }
+          }
           return ApiException(
             statusCode: status,
             code: (err['code'] as String?)?.trim().isNotEmpty == true
                 ? err['code'] as String
                 : 'HTTP_ERROR',
-            message: (err['message'] as String?)?.trim().isNotEmpty == true
-                ? err['message'] as String
-                : 'Request failed',
+            message: message,
           );
         }
         final detail = decoded['detail'];

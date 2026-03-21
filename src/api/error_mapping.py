@@ -52,6 +52,16 @@ def map_exception_to_api_error(exc: Exception) -> Tuple[int, Dict[str, Any]]:
         # Covers remaining client-side transport/server errors.
         return 502, _payload("LLM_API_ERROR", str(exc))
 
+    # NL planner: include structured details so clients can show field-level errors.
+    if isinstance(exc, PlannerConfigParsingError):
+        err: Dict[str, Any] = {
+            "code": "SCHEMA_VALIDATION_ERROR",
+            "message": str(exc),
+        }
+        if exc.details:
+            err["details"] = exc.details
+        return 422, {API_ERROR: err}
+
     # Schema/contract errors surfaced as deterministic internal exceptions.
     if isinstance(
         exc,
@@ -59,7 +69,6 @@ def map_exception_to_api_error(exc: Exception) -> Tuple[int, Dict[str, Any]]:
             RecipeGenerationError,
             RecipeValidationError,
             IngredientMatchingError,
-            PlannerConfigParsingError,
             PlannerConfigMappingError,
         ),
     ):

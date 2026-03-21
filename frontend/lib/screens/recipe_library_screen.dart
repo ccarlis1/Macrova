@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../providers/recipe_builder_coordinator.dart';
 import '../providers/recipe_provider.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/recipe_card.dart';
-import 'recipe_builder_screen.dart';
 
 class RecipeLibraryScreen extends StatelessWidget {
   const RecipeLibraryScreen({super.key});
@@ -90,6 +90,9 @@ class RecipeLibraryScreen extends StatelessWidget {
                               const SizedBox(height: 16),
                               FilledButton.icon(
                                 onPressed: () {
+                                  context
+                                      .read<RecipeBuilderCoordinator>()
+                                      .startCreate();
                                   final shell = context
                                       .findAncestorStateOfType<AppShellState>();
                                   shell?.navigateTo(2);
@@ -127,21 +130,12 @@ class RecipeLibraryScreen extends StatelessWidget {
                           return RecipeCard(
                             recipe: recipe,
                             onView: () {
+                              context
+                                  .read<RecipeBuilderCoordinator>()
+                                  .openForEdit(recipe);
                               final shell = context
                                   .findAncestorStateOfType<AppShellState>();
-                              final recipeProvider =
-                                  context.read<RecipeProvider>();
                               shell?.navigateTo(2);
-                              WidgetsBinding.instance
-                                  .addPostFrameCallback((_) {
-                                final builderState = context
-                                    .findAncestorStateOfType<
-                                        RecipeBuilderScreenState>();
-                                builderState?.loadRecipeWithHydration(
-                                  recipe,
-                                  recipeProvider,
-                                );
-                              });
                             },
                           );
                         },

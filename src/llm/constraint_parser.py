@@ -1,10 +1,21 @@
 from __future__ import annotations
 
+import json
+import logging
 from dataclasses import dataclass
 from typing import Any, Dict
 
 from src.llm.client import LLMClient
 from src.llm.schemas import PlannerConfigJson, ValidationFailure, parse_llm_json
+
+logger = logging.getLogger(__name__)
+
+# Embedded so the model cannot invent alternate keys (e.g. numberOfMeals).
+_PLANNER_CONFIG_JSON_SCHEMA_COMPACT = json.dumps(
+    PlannerConfigJson.model_json_schema(),
+    separators=(",", ":"),
+    ensure_ascii=True,
+)
 
 
 @dataclass(frozen=True)
@@ -37,15 +48,22 @@ def parse_nl_config(client: LLMClient, text: str) -> PlannerConfigJson:
 
     system_prompt = (
         "You are a nutrition-agent planning assistant. "
-        "Convert user natural language into a STRICT JSON object that matches "
-        "the PlannerConfigJson schema exactly. "
-        "Return ONLY JSON. Do not include commentary. "
-        "No extra keys are allowed."
+        "Convert user natural language into a JSON object that matches the "
+        "PlannerConfigJson schema below exactly. "
+        "Return ONLY JSON (no markdown, no prose). "
+        "Use ONLY the property names from the schema — for example map "
+        "'N meals per day' to integer field meals_per_day (not numberOfMeals "
+        "or total_meals). "
+        "If the user does not specify days, calories, protein, cuisine, or "
+        "budget, choose sensible defaults: days=1, targets suitable for a "
+        "typical adult (e.g. 2000 calories, 120g protein), cuisine=[], "
+        "budget=standard."
     )
     user_prompt = (
         "User request (natural language):\n"
         f"{text}\n\n"
-        "Return a JSON object matching PlannerConfigJson."
+        "PlannerConfigJson JSON Schema (additionalProperties false at each "
+        f"object; obey exactly):\n{_PLANNER_CONFIG_JSON_SCHEMA_COMPACT}\n"
     )
 
     raw = client.generate_json(
@@ -57,6 +75,15 @@ def parse_nl_config(client: LLMClient, text: str) -> PlannerConfigJson:
 
     parsed_or_failure = parse_llm_json(PlannerConfigJson, raw)
     if isinstance(parsed_or_failure, ValidationFailure):
+        raw_text = getattr(client, "_last_model_content_text", None)
+        logger.warning(
+            "planner_config_json_validation_failed prompt_len=%d field_errors=%s "
+            "parsed_object=%s raw_model_content=%s",
+            len(text),
+            parsed_or_failure.field_errors,
+            json.dumps(raw, sort_keys=True, ensure_ascii=True),
+            raw_text if raw_text is None else repr(raw_text),
+        )
         raise PlannerConfigParsingError(
             error_code=parsed_or_failure.error_code,
             message=parsed_or_failure.message,

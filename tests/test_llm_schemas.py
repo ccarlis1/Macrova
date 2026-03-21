@@ -82,3 +82,18 @@ def test_parse_llm_json_rejects_planner_days_out_of_range():
     result = parse_llm_json(PlannerConfigJson, raw)
     assert isinstance(result, ValidationFailure)
 
+
+def test_parse_llm_json_accepts_planner_numeric_floats_from_llm():
+    """Models often emit JSON numbers as floats; strict int fields would reject them."""
+    raw = {
+        "days": 3.0,
+        "meals_per_day": 2.0,
+        "targets": {"calories": 2000.0, "protein": 150.0},
+        "preferences": {"cuisine": ["chicken"], "budget": "cheap"},
+    }
+    result = parse_llm_json(PlannerConfigJson, raw)
+    assert isinstance(result, PlannerConfigJson)
+    assert result.days == 3
+    assert result.meals_per_day == 2
+    assert result.targets.calories == 2000
+

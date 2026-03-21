@@ -46,6 +46,32 @@ You can combine both dev bundles:
 
 Imports are keyed by **`fdc_id`** (string) as **`Ingredient.id`**; existing rows with the same id are replaced.
 
+### Bundled user profile (repo `config/user_profile.yaml` shape)
+
+1. Asset path: **`assets/dev/user_profile.yaml`** — keep in sync with the repo when goals change:
+
+   `cp ../config/user_profile.yaml assets/dev/user_profile.yaml`
+
+2. Run with:
+
+   `flutter run -d chrome --dart-define=BUNDLE_USER_PROFILE=true`
+
+On startup (after loading saved prefs), the app **replaces** the profile with the bundled YAML, **writes it to** `SharedPreferences`, and clears API key fields in that snapshot (set keys in the Profile UI if needed). Macros match the Python loader: carbs are derived from calories, protein, and the fat range; `preferences.allergies` and `micronutrient_goals` are applied; `demographic` maps to demographic group.
+
+Combine with recipe/ingredient bundles as needed, e.g.:
+
+`flutter run -d chrome --dart-define=BUNDLE_USER_PROFILE=true --dart-define=BUNDLE_SERVER_RECIPES=true --dart-define=BUNDLE_CACHED_INGREDIENTS=true`
+
+### Web: `LateInitializationError: _handledContextLostEvent` after hot restart
+
+If the browser console shows:
+
+`LateInitializationError: Field '_handledContextLostEvent' has not been initialized`
+
+with a stack under `lib/_engine/engine/canvaskit/surface.dart`, that comes from **Flutter’s CanvasKit / WebGL layer**, not from this repo. It usually appears when the **WebGL context is lost** (hot restart, tab sleep, GPU reset) while the engine’s `onContextLost` handler runs **before** internal `late` fields are set—a known class of races in Flutter web.
+
+**What to do:** Prefer a **full page refresh** (or stop and `flutter run` again) instead of relying on hot restart for web when you see this. If it keeps happening, `flutter upgrade` may pick up an engine fix. You can track related issues under [flutter/flutter](https://github.com/flutter/flutter/issues?q=is%3Aissue+canvaskit+context+lost) (CanvasKit / WebGL context loss).
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.

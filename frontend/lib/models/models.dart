@@ -159,20 +159,36 @@ class NutritionProfile {
   final double proteinG;
   final double fatG;
   final double carbsG;
+  /// Keys match backend `MicronutrientProfile` (e.g. `vitamin_a_ug`).
+  final Map<String, double>? _micronutrients;
+
+  /// Never null (avoids web / hot-reload edge cases where storage was omitted).
+  Map<String, double> get micronutrients => _micronutrients ?? const {};
 
   const NutritionProfile({
     required this.calories,
     required this.proteinG,
     required this.fatG,
     required this.carbsG,
-  });
+    Map<String, double>? micronutrients,
+  }) : _micronutrients = micronutrients;
 
   factory NutritionProfile.fromJson(Map<String, dynamic> json) {
+    final microRaw = json['micronutrients'];
+    Map<String, double>? micros;
+    if (microRaw is Map) {
+      micros = {
+        for (final e in microRaw.entries)
+          if (e.value != null && e.value is num)
+            e.key.toString(): (e.value as num).toDouble(),
+      };
+    }
     return NutritionProfile(
       calories: (json['calories'] as num).toDouble(),
       proteinG: (json['protein_g'] as num).toDouble(),
       fatG: (json['fat_g'] as num).toDouble(),
       carbsG: (json['carbs_g'] as num).toDouble(),
+      micronutrients: micros,
     );
   }
 }
@@ -306,40 +322,67 @@ class NutritionGoals {
   }
 }
 
+/// One calendar day from `POST /api/v1/plan` [`daily_plans[]`].
+class MealPlanDay {
+  /// 1-based index from API `day` field.
+  final int day;
+  final List<Meal> meals;
+  /// Daily tracker totals when present; otherwise summed from [meals].
+  final NutritionProfile dayTotals;
+
+  const MealPlanDay({
+    required this.day,
+    required this.meals,
+    required this.dayTotals,
+  });
+}
+
 class MealPlan {
   final bool success;
   final bool meetsGoals;
   final String date;
-  final List<Meal> meals;
+  /// Per-day schedule from the API (order preserved).
+  final List<MealPlanDay> dailyPlans;
   final NutritionProfile totalNutrition;
   final NutritionGoals goals;
   final Map<String, double> targetAdherence;
   final List<String> warnings;
+  /// Plan horizon from API `days` (used to scale daily profile targets for multi-day totals).
+  final int days;
+
+  /// All meals in plan order (flattened). Legacy / simple UIs.
+  List<Meal> get meals =>
+      dailyPlans.expand((d) => d.meals).toList(growable: false);
 
   const MealPlan({
     required this.success,
     required this.meetsGoals,
     required this.date,
-    required this.meals,
+    required this.dailyPlans,
     required this.totalNutrition,
     required this.goals,
     required this.targetAdherence,
     required this.warnings,
+    this.days = 1,
   });
 
   factory MealPlan.fromJson(Map<String, dynamic> json) {
     final adherenceRaw =
         Map<String, dynamic>.from(json['target_adherence'] as Map);
+    final meals = (json['meals'] as List<dynamic>)
+        .map((e) => Meal.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+    final totalNutrition = NutritionProfile.fromJson(
+      Map<String, dynamic>.from(json['total_nutrition'] as Map),
+    );
     return MealPlan(
       success: json['success'] as bool,
       meetsGoals: json['meets_goals'] as bool,
       date: json['date'] as String? ?? '',
-      meals: (json['meals'] as List<dynamic>)
-          .map((e) => Meal.fromJson(Map<String, dynamic>.from(e as Map)))
-          .toList(),
-      totalNutrition: NutritionProfile.fromJson(
-        Map<String, dynamic>.from(json['total_nutrition'] as Map),
-      ),
+      dailyPlans: [
+        MealPlanDay(day: 1, meals: meals, dayTotals: totalNutrition),
+      ],
+      totalNutrition: totalNutrition,
       goals: NutritionGoals.fromJson(
         Map<String, dynamic>.from(json['goals'] as Map),
       ),
@@ -347,22 +390,127 @@ class MealPlan {
         (key, value) => MapEntry(key, (value as num).toDouble()),
       ),
       warnings: List<String>.from(json['warnings'] ?? const []),
+      days: (json['days'] as num?)?.toInt() ?? 1,
     );
+  }
+
+  static Map<String, double> _microMapFromJson(dynamic raw) {
+    if (raw is! Map) return const {};
+    return raw.map(
+      (k, v) => MapEntry(k.toString(), (v as num).toDouble()),
+    );
+  }
+
+  /// Resolves plan-level micronutrient totals from `weekly_totals`, day `totals`, or summed meals.
+  static Map<String, double> _planMicronutrientTotals(
+    Map<String, dynamic> json,
+    List<dynamic> dailyPlans,
+    int days,
+    List<Meal> meals,
+  ) {
+    if (days > 1) {
+      final wt = json['weekly_totals'];
+      if (wt is Map) {
+        final wmap = Map<String, dynamic>.from(wt);
+        final m = _microMapFromJson(wmap['micronutrients']);
+        if (m.isNotEmpty) return m;
+      }
+      final acc = <String, double>{};
+      for (final day in dailyPlans) {
+        if (day is! Map) continue;
+        final t = day['totals'];
+        if (t is Map) {
+          final tm = Map<String, dynamic>.from(t);
+          for (final e in _microMapFromJson(tm['micronutrients']).entries) {
+            acc[e.key] = (acc[e.key] ?? 0) + e.value;
+          }
+        }
+      }
+      if (acc.isNotEmpty) return acc;
+    } else if (dailyPlans.isNotEmpty) {
+      final first = dailyPlans.first;
+      if (first is Map) {
+        final t = first['totals'];
+        if (t is Map) {
+          final tm = Map<String, dynamic>.from(t);
+          final m = _microMapFromJson(tm['micronutrients']);
+          if (m.isNotEmpty) return m;
+        }
+      }
+    }
+    final microAcc = <String, double>{};
+    for (final m in meals) {
+      for (final e in m.nutrition.micronutrients.entries) {
+        microAcc[e.key] = (microAcc[e.key] ?? 0) + e.value;
+      }
+    }
+    return microAcc;
   }
 
   static NutritionProfile _sumMealNutrition(List<Meal> meals) {
     double c = 0, p = 0, f = 0, cb = 0;
+    final microAcc = <String, double>{};
     for (final m in meals) {
       c += m.nutrition.calories;
       p += m.nutrition.proteinG;
       f += m.nutrition.fatG;
       cb += m.nutrition.carbsG;
+      for (final e in m.nutrition.micronutrients.entries) {
+        microAcc[e.key] = (microAcc[e.key] ?? 0) + e.value;
+      }
     }
     return NutritionProfile(
       calories: c,
       proteinG: p,
       fatG: f,
       carbsG: cb,
+      micronutrients: microAcc,
+    );
+  }
+
+  static NutritionProfile _nutritionProfileFromDayTotalsMap(
+      Map<String, dynamic> tm) {
+    return NutritionProfile(
+      calories: (tm['calories'] as num).toDouble(),
+      proteinG: (tm['protein_g'] as num).toDouble(),
+      fatG: (tm['fat_g'] as num).toDouble(),
+      carbsG: (tm['carbs_g'] as num).toDouble(),
+      micronutrients: _microMapFromJson(tm['micronutrients']),
+    );
+  }
+
+  static NutritionProfile _dayTotalsFromApi(
+    dynamic totals,
+    List<Meal> dayMeals,
+  ) {
+    if (totals is Map &&
+        totals['calories'] != null &&
+        totals['protein_g'] != null) {
+      return _nutritionProfileFromDayTotalsMap(
+        Map<String, dynamic>.from(totals),
+      );
+    }
+    return _sumMealNutrition(dayMeals);
+  }
+
+  static NutritionProfile _sumDayNutritionProfiles(List<MealPlanDay> days) {
+    double c = 0, p = 0, f = 0, cb = 0;
+    final microAcc = <String, double>{};
+    for (final d in days) {
+      c += d.dayTotals.calories;
+      p += d.dayTotals.proteinG;
+      f += d.dayTotals.fatG;
+      cb += d.dayTotals.carbsG;
+      for (final e in d.dayTotals.micronutrients.entries) {
+        microAcc[e.key] = (microAcc[e.key] ?? 0) + e.value;
+      }
+    }
+    return NutritionProfile(
+      calories: c,
+      proteinG: p,
+      fatG: f,
+      carbsG: cb,
+      micronutrients: microAcc,
     );
   }
 
@@ -387,55 +535,67 @@ class MealPlan {
   /// `/api/v1/plan` JSON from [format_result_json] (`daily_plans`, `goals`, …).
   factory MealPlan.fromPlanApiV1Response(Map<String, dynamic> json) {
     final success = json['success'] as bool? ?? false;
-    final dailyPlans = json['daily_plans'] as List<dynamic>? ?? const [];
+    final dailyPlansRaw = json['daily_plans'] as List<dynamic>? ?? const [];
     final days = json['days'] as int? ?? 1;
 
-    final meals = <Meal>[];
-    for (final day in dailyPlans) {
+    final schedule = <MealPlanDay>[];
+    for (var i = 0; i < dailyPlansRaw.length; i++) {
+      final day = dailyPlansRaw[i];
       if (day is! Map) continue;
       final dayMap = Map<String, dynamic>.from(day);
+      final dayNum = (dayMap['day'] as num?)?.toInt() ?? i + 1;
       final mealList = dayMap['meals'] as List<dynamic>? ?? const [];
+      final dayMeals = <Meal>[];
       for (final raw in mealList) {
         if (raw is Map) {
-          meals.add(Meal.fromPlanApiV1(Map<String, dynamic>.from(raw)));
+          dayMeals.add(Meal.fromPlanApiV1(Map<String, dynamic>.from(raw)));
         }
       }
+      final dayTot = _dayTotalsFromApi(dayMap['totals'], dayMeals);
+      schedule.add(
+        MealPlanDay(day: dayNum, meals: dayMeals, dayTotals: dayTot),
+      );
     }
 
-    NutritionProfile totalNutrition;
-    if (days == 1 && dailyPlans.isNotEmpty) {
-      final first = dailyPlans.first;
-      final totals = first is Map ? first['totals'] : null;
-      if (totals is Map &&
-          totals['calories'] != null &&
-          totals['protein_g'] != null) {
-        final tm = Map<String, dynamic>.from(totals);
-        totalNutrition = NutritionProfile(
-          calories: (tm['calories'] as num).toDouble(),
-          proteinG: (tm['protein_g'] as num).toDouble(),
-          fatG: (tm['fat_g'] as num).toDouble(),
-          carbsG: (tm['carbs_g'] as num).toDouble(),
-        );
-      } else if (meals.isNotEmpty) {
-        totalNutrition = _sumMealNutrition(meals);
+    final allMeals = schedule.expand((d) => d.meals).toList();
+
+    NutritionProfile macroTotals;
+    if (days > 1 && json['weekly_totals'] is Map) {
+      final wt = Map<String, dynamic>.from(json['weekly_totals'] as Map);
+      if (wt['calories'] != null && wt['protein_g'] != null) {
+        macroTotals = _nutritionProfileFromDayTotalsMap(wt);
+      } else if (schedule.isNotEmpty) {
+        macroTotals = _sumDayNutritionProfiles(schedule);
       } else {
-        totalNutrition = const NutritionProfile(
+        macroTotals = const NutritionProfile(
           calories: 0,
           proteinG: 0,
           fatG: 0,
           carbsG: 0,
         );
       }
+    } else if (schedule.length == 1) {
+      macroTotals = schedule.first.dayTotals;
+    } else if (schedule.isNotEmpty) {
+      macroTotals = _sumDayNutritionProfiles(schedule);
     } else {
-      totalNutrition = meals.isEmpty
-          ? const NutritionProfile(
-              calories: 0,
-              proteinG: 0,
-              fatG: 0,
-              carbsG: 0,
-            )
-          : _sumMealNutrition(meals);
+      macroTotals = const NutritionProfile(
+        calories: 0,
+        proteinG: 0,
+        fatG: 0,
+        carbsG: 0,
+      );
     }
+
+    final micros =
+        _planMicronutrientTotals(json, dailyPlansRaw, days, allMeals);
+    final totalNutrition = NutritionProfile(
+      calories: macroTotals.calories,
+      proteinG: macroTotals.proteinG,
+      fatG: macroTotals.fatG,
+      carbsG: macroTotals.carbsG,
+      micronutrients: micros,
+    );
 
     final goalsRaw = json['goals'];
     if (goalsRaw is! Map) {
@@ -460,11 +620,12 @@ class MealPlan {
       success: success,
       meetsGoals: success,
       date: '',
-      meals: meals,
+      dailyPlans: schedule,
       totalNutrition: totalNutrition,
       goals: goals,
       targetAdherence: _adherence(totalNutrition, goals),
       warnings: warnings,
+      days: days,
     );
   }
 }

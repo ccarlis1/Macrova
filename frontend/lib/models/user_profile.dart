@@ -1,3 +1,5 @@
+import 'package:yaml/yaml.dart';
+
 /// Daily RDI-style targets; field names match `config/user_profile.yaml` `micronutrient_goals`
 /// and Python `MicronutrientProfile` (snake_case in JSON).
 class MicronutrientGoals {
@@ -245,10 +247,16 @@ class UserProfile {
   final double calories;
   final double proteinG;
   final double carbsG;
-  final double fatG;
+  /// Daily fat lower bound (grams); matches YAML `nutrition_goals.daily_fat_g.min`.
+  final double fatGMin;
+  /// Daily fat upper bound (grams); matches YAML `nutrition_goals.daily_fat_g.max`.
+  final double fatGMax;
   final double proteinPct;
   final double carbsPct;
   final double fatPct;
+
+  /// Midpoint of [fatGMin]–[fatGMax] (e.g. for single-value macro displays).
+  double get fatG => (fatGMin + fatGMax) / 2;
   final bool calorieDeficitMode;
   final String demographicGroup;
   final List<String> allergies;
@@ -264,7 +272,8 @@ class UserProfile {
     this.calories = 2000,
     this.proteinG = 150,
     this.carbsG = 200,
-    this.fatG = 67,
+    this.fatGMin = 60,
+    this.fatGMax = 74,
     this.proteinPct = 30,
     this.carbsPct = 40,
     this.fatPct = 30,
@@ -282,7 +291,8 @@ class UserProfile {
     double? calories,
     double? proteinG,
     double? carbsG,
-    double? fatG,
+    double? fatGMin,
+    double? fatGMax,
     double? proteinPct,
     double? carbsPct,
     double? fatPct,
@@ -299,7 +309,8 @@ class UserProfile {
       calories: calories ?? this.calories,
       proteinG: proteinG ?? this.proteinG,
       carbsG: carbsG ?? this.carbsG,
-      fatG: fatG ?? this.fatG,
+      fatGMin: fatGMin ?? this.fatGMin,
+      fatGMax: fatGMax ?? this.fatGMax,
       proteinPct: proteinPct ?? this.proteinPct,
       carbsPct: carbsPct ?? this.carbsPct,
       fatPct: fatPct ?? this.fatPct,
@@ -319,10 +330,12 @@ class UserProfile {
   /// Calculate macro grams from calorie total and percentage ratios.
   /// Protein & carbs = 4 kcal/g, fat = 9 kcal/g.
   UserProfile calculateMacrosFromRatios() {
+    final fatMid = (calories * fatPct / 100) / 9;
     return copyWith(
       proteinG: (calories * proteinPct / 100) / 4,
       carbsG: (calories * carbsPct / 100) / 4,
-      fatG: (calories * fatPct / 100) / 9,
+      fatGMin: fatMid,
+      fatGMax: fatMid,
     );
   }
 
@@ -330,6 +343,8 @@ class UserProfile {
         'calories': calories,
         'protein_g': proteinG,
         'carbs_g': carbsG,
+        'fat_g_min': fatGMin,
+        'fat_g_max': fatGMax,
         'fat_g': fatG,
         'protein_pct': proteinPct,
         'carbs_pct': carbsPct,
@@ -345,11 +360,32 @@ class UserProfile {
       };
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
+    final minN = (json['fat_g_min'] as num?)?.toDouble();
+    final maxN = (json['fat_g_max'] as num?)?.toDouble();
+    final legacyFat = (json['fat_g'] as num?)?.toDouble();
+    double fatGMin;
+    double fatGMax;
+    if (minN != null && maxN != null) {
+      fatGMin = minN;
+      fatGMax = maxN;
+    } else if (legacyFat != null) {
+      fatGMin = legacyFat * 0.9;
+      fatGMax = legacyFat * 1.1;
+    } else {
+      fatGMin = 60;
+      fatGMax = 74;
+    }
+    if (fatGMax < fatGMin) {
+      final t = fatGMin;
+      fatGMin = fatGMax;
+      fatGMax = t;
+    }
     return UserProfile(
       calories: (json['calories'] as num?)?.toDouble() ?? 2000,
       proteinG: (json['protein_g'] as num?)?.toDouble() ?? 150,
       carbsG: (json['carbs_g'] as num?)?.toDouble() ?? 200,
-      fatG: (json['fat_g'] as num?)?.toDouble() ?? 67,
+      fatGMin: fatGMin,
+      fatGMax: fatGMax,
       proteinPct: (json['protein_pct'] as num?)?.toDouble() ?? 30,
       carbsPct: (json['carbs_pct'] as num?)?.toDouble() ?? 40,
       fatPct: (json['fat_pct'] as num?)?.toDouble() ?? 30,
@@ -368,4 +404,121 @@ class UserProfile {
       llmProvider: json['llm_provider'] as String? ?? 'openai_compatible',
     );
   }
+
+  /// Same shape as [config/user_profile.yaml] / Python [UserProfileLoader].
+  factory UserProfile.fromRepoYaml(String yamlText) {
+    final root = loadYaml(yamlText);
+    final json = _yamlNodeToJson(root);
+    if (json is! Map) {
+      throw const FormatException('User profile YAML root must be a map');
+    }
+    return UserProfile.fromRepoYamlMap(
+      Map<String, dynamic>.from(json),
+    );
+  }
+
+  factory UserProfile.fromRepoYamlMap(Map<String, dynamic> data) {
+    final ngRaw = data['nutrition_goals'];
+    if (ngRaw is! Map) {
+      throw const FormatException('nutrition_goals missing or not a map');
+    }
+    final ng = Map<String, dynamic>.from(ngRaw);
+
+    final calories = (ng['daily_calories'] as num).toDouble();
+    final proteinG = (ng['daily_protein_g'] as num).toDouble();
+
+    final fatRange = ng['daily_fat_g'];
+    double fatGMin;
+    double fatGMax;
+    if (fatRange is Map) {
+      final fr = Map<String, dynamic>.from(fatRange);
+      fatGMin = (fr['min'] as num).toDouble();
+      fatGMax = (fr['max'] as num).toDouble();
+    } else {
+      fatGMin = 60;
+      fatGMax = 74;
+    }
+    if (fatGMax < fatGMin) {
+      final t = fatGMin;
+      fatGMin = fatGMax;
+      fatGMax = t;
+    }
+
+    final medianFatG = (fatGMin + fatGMax) / 2;
+    var carbsG =
+        (calories - proteinG * 4 - medianFatG * 9) / 4;
+    if (carbsG.isNaN || carbsG < 0) {
+      carbsG = 0;
+    }
+
+    final maxDaily = ng['max_daily_calories'];
+    final calorieDeficitMode = maxDaily != null;
+
+    final tauRaw = ng['micronutrient_weekly_min_fraction'];
+    final tau = tauRaw is num
+        ? tauRaw.toDouble().clamp(1e-6, 1.0)
+        : 1.0;
+
+    final prefsRaw = data['preferences'];
+    List<String> allergies = const [];
+    if (prefsRaw is Map) {
+      final prefs = Map<String, dynamic>.from(prefsRaw);
+      final a = prefs['allergies'];
+      if (a is List) {
+        allergies = [
+          for (final x in a) x.toString(),
+        ];
+      }
+    }
+
+    MicronutrientGoals microGoals = const MicronutrientGoals();
+    final microRaw = data['micronutrient_goals'];
+    if (microRaw is Map) {
+      microGoals = MicronutrientGoals.fromJson(
+        Map<String, dynamic>.from(microRaw),
+      );
+    }
+
+    final demographic = data['demographic']?.toString() ?? '';
+
+    final proteinPct =
+        calories > 0 ? (proteinG * 4 / calories * 100).clamp(0.0, 100.0) : 30.0;
+    final fatPct =
+        calories > 0 ? (medianFatG * 9 / calories * 100).clamp(0.0, 100.0) : 30.0;
+    final carbsPct =
+        calories > 0 ? (carbsG * 4 / calories * 100).clamp(0.0, 100.0) : 40.0;
+
+    return UserProfile(
+      calories: calories,
+      proteinG: proteinG,
+      carbsG: carbsG,
+      fatGMin: fatGMin,
+      fatGMax: fatGMax,
+      proteinPct: proteinPct,
+      carbsPct: carbsPct,
+      fatPct: fatPct,
+      calorieDeficitMode: calorieDeficitMode,
+      demographicGroup: demographic,
+      allergies: allergies,
+      micronutrientGoals: microGoals,
+      micronutrientWeeklyMinFraction: tau,
+      ingredientApiKey: '',
+      llmApiKey: '',
+      llmProvider: 'openai_compatible',
+    );
+  }
+}
+
+dynamic _yamlNodeToJson(dynamic node) {
+  if (node == null) return null;
+  if (node is YamlMap) {
+    return {
+      for (final e in node.entries)
+        e.key.toString(): _yamlNodeToJson(e.value),
+    };
+  }
+  if (node is YamlList) {
+    return node.map(_yamlNodeToJson).toList();
+  }
+  return node;
 }

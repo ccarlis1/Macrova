@@ -1,4 +1,4 @@
-# TinyFish Use Cases — Meal Plan Generator App
+# TinyFish Use Cases 
 
 ## Core Concept: Recipe Browsing for Meal Plan Candidates
 
@@ -13,10 +13,8 @@ This ensures users get real recipes from verified sources (e.g. AllRecipes, BBC 
 ## Other Integration Ideas
 
 - **Live Grocery Pricing** — Scrape prices from local stores to generate a cost-optimized shopping list based on what's actually on sale that week.
-- **Ingredient Availability** — Check if ingredients are in stock at a retailer before including a recipe in the plan.
 - **Seasonal Ingredients** — Browse grocery sites to see what's in season locally, then bias the meal plan toward those ingredients.
 - **User-Submitted Recipes** — If a user pastes a recipe URL, TinyFish can extract the ingredients and nutrition info automatically.
-- **Competitor Meal Plan Sites** — Scrape inspiration from places like Eat This Much to understand what good meal plans look like.
 
 ---
 
@@ -27,6 +25,3 @@ This ensures users get real recipes from verified sources (e.g. AllRecipes, BBC 
 
 ---
 
-## Future Roadmap
-
-TinyFish integrations are planned as a future addition once the core algorithm and AI integration are stable.

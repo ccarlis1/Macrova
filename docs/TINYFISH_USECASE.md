@@ -1,4 +1,4 @@
-# TinyFish Use Cases 
+# TinyFish Use Cases - APPLICATION PENDING
 
 ## Core Concept: Recipe Browsing for Meal Plan Candidates
 

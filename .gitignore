@@ -45,6 +45,9 @@ htmlcov/
 .env
 .env.local
 
+# MCP / local tool secrets (copy from .mcp.json.example)
+.mcp.json
+
 # Config files (keep examples, ignore actual config)
 config/user_profile.yaml
 config/nutrition_goals.yaml

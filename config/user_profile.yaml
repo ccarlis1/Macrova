@@ -57,10 +57,10 @@ schedule:
   #
   # The first three time slots (by time order) are treated as breakfast, lunch, dinner.
   # Schedule is replicated for each day when using --days 2 to 7.
-  # "07:00": 4   # Breakfast: quick meal
-  # "12:00": 4   # Lunch: weeknight meal
-  # "18:00": 4   # Dinner: weeknight meal
-  # "08:00": 0   # Workout (optional)
+  "07:00": 4   # Breakfast: quick meal
+  "12:00": 4   # Lunch: weeknight meal
+  "18:00": 4   # Dinner: weeknight meal
+  "08:00": 0   # Workout (optional)
 
 preferences:
   liked_foods:

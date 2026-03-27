@@ -1,32 +1,29 @@
-from __future__ import annotations
-
+import pytest
 from pathlib import Path
 import shutil
+import yaml
 
-import pytest
 
+@pytest.fixture(scope="session", autouse=True)
+def setup_test_config():
+    """Ensure test configuration files exist."""
+    config_dir = Path("config")
+    config_dir.mkdir(exist_ok=True)
 
-@pytest.fixture(autouse=True, scope="session")
-def ensure_default_user_profile_yaml() -> None:
-    """Ensure tests have a default CLI profile path available.
+    profile_file = config_dir / "user_profile.yaml"
+    example_file = config_dir / "user_profile.yaml.example"
 
-    CI environments won't have `config/user_profile.yaml` because it's gitignored.
-    Some CLI/API integration tests pass this path explicitly, so copy from the
-    checked-in example when needed.
-    """
+    needs_copy = not profile_file.exists()
+    if not needs_copy and profile_file.exists():
+        try:
+            data = yaml.safe_load(profile_file.read_text(encoding="utf-8")) or {}
+            schedule_days = data.get("schedule_days")
+            schedule = data.get("schedule")
+            has_valid_schedule_days = isinstance(schedule_days, list) and len(schedule_days) > 0
+            has_valid_legacy_schedule = isinstance(schedule, dict) and len(schedule) > 0
+            needs_copy = not (has_valid_schedule_days or has_valid_legacy_schedule)
+        except Exception:
+            needs_copy = True
 
-    repo_root = Path(__file__).resolve().parent.parent
-    profile_path = repo_root / "config" / "user_profile.yaml"
-    example_path = repo_root / "config" / "user_profile.yaml.example"
-
-    created = False
-    if not profile_path.exists() and example_path.exists():
-        profile_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(example_path, profile_path)
-        created = True
-
-    try:
-        yield
-    finally:
-        if created and profile_path.exists():
-            profile_path.unlink()
+    if needs_copy and example_file.exists():
+        shutil.copy(example_file, profile_file)

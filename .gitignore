@@ -46,7 +46,7 @@ htmlcov/
 .env.local
 
 # Config files (keep examples, ignore actual config)
-# config/user_profile.yaml
+config/user_profile.yaml
 config/nutrition_goals.yaml
 config/model_config.yaml
 

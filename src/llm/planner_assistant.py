@@ -116,12 +116,20 @@ def build_feedback_context(
 
     # Keep the context as "prompt-ready JSON": only numbers/strings/arrays/dicts.
     # Copy defensively so callers can't mutate internal structures.
+    busyness_by_day = [
+        [int(slot.busyness_level) for slot in day] for day in (profile.schedule or [])
+    ]
+    workout_gaps = profile.workout_after_meal_indices_by_day
     ctx: Dict[str, Any] = {
         "failure_type": failure_type,
         "nutrient_deficits": deficient_nutrients,
         "macro_violations": macro_violations_out,
         "days": int(days),
         "meals_per_day": int(meals_per_day),
+        "busyness_by_day": busyness_by_day,
+        "workout_gaps_by_day": (
+            [list(g) for g in workout_gaps] if workout_gaps is not None else None
+        ),
     }
     return copy.deepcopy(ctx)
 

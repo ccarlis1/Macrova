@@ -64,7 +64,7 @@ from src.planning.phase10_reporting import (
     result_from_failure,
     result_from_success,
 )
-from src.planning.slot_attributes import activity_context, is_workout_slot
+from src.planning.slot_attributes import activity_context_for_profile, is_workout_slot
 
 from src.data_layer.models import UpperLimits
 
@@ -675,7 +675,9 @@ def run_meal_plan_search(
             recipe = recipe_by_id[recipe_id]
             day_slots = schedule[day_index]
             next_first = schedule[day_index + 1][0] if day_index + 1 < D else None
-            act_ctx = activity_context(day_slots[slot_index], slot_index, day_slots, next_first, profile.activity_schedule or {})
+            act_ctx = activity_context_for_profile(
+                profile, day_index, day_slots[slot_index], slot_index, day_slots, next_first
+            )
             is_w = is_workout_slot(act_ctx)
             _apply_assignment(daily_trackers, assignments, day_index, slot_index, recipe_id, recipe, is_w, schedule, variant_index=0)
             _validate_planner_state(daily_trackers, weekly_tracker, completed_days, D, schedule)
@@ -766,7 +768,9 @@ def run_meal_plan_search(
         variant_nutrition = entry.variant_nutritions.get((recipe_id, variant_index)) if variant_index > 0 else None
         day_slots = schedule[day_index]
         next_first = schedule[day_index + 1][0] if day_index + 1 < D else None
-        act_ctx = activity_context(day_slots[slot_index], slot_index, day_slots, next_first, profile.activity_schedule or {})
+        act_ctx = activity_context_for_profile(
+            profile, day_index, day_slots[slot_index], slot_index, day_slots, next_first
+        )
         is_w = is_workout_slot(act_ctx)
         _apply_assignment(
             daily_trackers, assignments, day_index, slot_index, recipe_id, recipe, is_w, schedule,
@@ -978,7 +982,9 @@ def _unwind_to(
             continue
         day_slots = schedule[a.day_index]
         next_first = schedule[a.day_index + 1][0] if a.day_index + 1 < len(schedule) else None
-        act_ctx = activity_context(day_slots[a.slot_index], a.slot_index, day_slots, next_first, profile.activity_schedule or {})
+        act_ctx = activity_context_for_profile(
+            profile, a.day_index, day_slots[a.slot_index], a.slot_index, day_slots, next_first
+        )
         is_w = is_workout_slot(act_ctx)
         _remove_assignment(
             daily_trackers, weekly_tracker, assignments, a, recipe, is_w, schedule, profile, completed_days

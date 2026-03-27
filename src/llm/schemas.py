@@ -5,6 +5,8 @@ from typing import Any, Dict, List, Literal, Optional, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, StrictStr, ValidationError, model_validator
 
+from src.models.schedule import DaySchedule
+
 
 SUPPORTED_UNITS: List[str] = [
     "g",
@@ -127,6 +129,17 @@ class PlannerConfigJson(BaseModel):
     meals_per_day: int = Field(ge=1, le=8)
     targets: PlannerTargets
     preferences: PlannerPreferences
+    #: Optional canonical per-day meals + workouts (same contract as API ``schedule_days``).
+    #: When set, ``user_profile_from_planner_config`` expands to the planning horizon
+    #: and sets ``UserProfile.schedule_days``; ``meals_per_day`` should match each
+    #: day's meal count when using a single template (or use one day and replicate).
+    schedule_days: Optional[List[DaySchedule]] = None
+
+    @model_validator(mode="after")
+    def _schedule_days_non_empty_when_present(self) -> "PlannerConfigJson":
+        if self.schedule_days is not None and len(self.schedule_days) == 0:
+            raise ValueError("schedule_days must be omitted or contain at least one day")
+        return self
 
 
 class ValidationFailure(BaseModel):

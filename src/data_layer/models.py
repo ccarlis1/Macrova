@@ -1,6 +1,10 @@
 """Data models for the nutrition agent."""
+from __future__ import annotations
+
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple, Dict
+from typing import Dict, List, Optional, Tuple
+
+from src.models.schedule import DaySchedule
 
 
 @dataclass
@@ -272,6 +276,10 @@ class UserProfile:
 
     # τ: minimum fraction of prorated weekly RDI (daily × D) required per tracked nutrient (default strict)
     micronutrient_weekly_min_fraction: float = 1.0
+
+    # Canonical per-day schedule (meals + workouts). When set, ``schedule`` is
+    # derived meal-only (1–4) for legacy planner paths.
+    schedule_days: Optional[List[DaySchedule]] = None
 
     # Future (post-MVP)
     # meal_prep_meals: List[Meal]

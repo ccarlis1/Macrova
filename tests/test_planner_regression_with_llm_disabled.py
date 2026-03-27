@@ -77,6 +77,7 @@ def test_planner_regression_llm_disabled_golden_json(monkeypatch):
                             "fat_g": 20.0,
                             "carbs_g": 100.0,
                         },
+                        "busyness_level": 2,
                     },
                     {
                         "recipe_id": "r1",
@@ -90,6 +91,7 @@ def test_planner_regression_llm_disabled_golden_json(monkeypatch):
                             "fat_g": 20.0,
                             "carbs_g": 100.0,
                         },
+                        "busyness_level": 3,
                     },
                 ],
                 "totals": {
@@ -100,7 +102,15 @@ def test_planner_regression_llm_disabled_golden_json(monkeypatch):
                 },
             }
         ],
-        "warnings": {},
+        "warnings": {
+            "schedule_migration": {
+                "deprecated": True,
+                "message": (
+                    "Legacy flat schedule (HH:MM -> int) is deprecated; use "
+                    "schedule_days with MealSlot and WorkoutSlot."
+                ),
+            },
+        },
         "goals": {
             "daily_calories": 2400,
             "daily_protein_g": 150.0,

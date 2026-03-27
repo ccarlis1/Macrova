@@ -97,3 +97,15 @@ def test_parse_llm_json_accepts_planner_numeric_floats_from_llm():
     assert result.meals_per_day == 2
     assert result.targets.calories == 2000
 
+
+def test_parse_llm_json_rejects_empty_schedule_days():
+    raw = {
+        "days": 1,
+        "meals_per_day": 2,
+        "targets": {"calories": 2000, "protein": 150.0},
+        "preferences": {"cuisine": [], "budget": "cheap"},
+        "schedule_days": [],
+    }
+    result = parse_llm_json(PlannerConfigJson, raw)
+    assert isinstance(result, ValidationFailure)
+

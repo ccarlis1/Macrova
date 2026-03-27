@@ -24,7 +24,7 @@ def test_build_user_profile_passes_tau_to_data_layer():
         schedule={"12:00": 2},
         micronutrient_weekly_min_fraction=0.9,
     )
-    profile = _build_user_profile(req)
+    profile, _ = _build_user_profile(req)
     assert profile.micronutrient_weekly_min_fraction == 0.9
     planning = convert_profile(profile, days=3)
     assert planning.micronutrient_weekly_min_fraction == 0.9

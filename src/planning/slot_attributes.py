@@ -6,7 +6,7 @@ No constraint or scoring logic. Deterministic.
 
 from typing import FrozenSet, List, Optional, Set
 
-from src.planning.phase0_models import MealSlot
+from src.planning.phase0_models import MealSlot, PlanningUserProfile
 
 
 def _time_to_minutes(hhmm: str) -> int:
@@ -33,7 +33,26 @@ def cooking_time_max(busyness_level: int) -> Optional[int]:
         return 30
     if busyness_level == 4:
         return None
-    return 30  # fallback for invalid level
+    return 30  # defensive fallback; validated inputs use 1–4 only
+
+
+def explicit_workout_gaps_for_day(
+    profile: PlanningUserProfile,
+    day_index: int,
+) -> Optional[Set[int]]:
+    """Explicit workout gaps for ``day_index`` (0-based).
+
+    Returns:
+        ``None`` — use legacy ``activity_schedule`` time windows only.
+        ``set()`` — explicit schedule with no workouts that day.
+        non-empty — 1-based ``after_meal_index`` values (canonical workout gaps).
+    """
+    raw = profile.workout_after_meal_indices_by_day
+    if raw is None:
+        return None
+    if day_index < 0 or day_index >= len(raw):
+        return set()
+    return set(raw[day_index])
 
 
 def time_until_next_meal(
@@ -65,43 +84,60 @@ def activity_context(
     day_slots: List[MealSlot],
     next_day_first_slot: Optional[MealSlot],
     activity_schedule: dict,
+    *,
+    workout_after_meal_indices: Optional[Set[int]] = None,
 ) -> FrozenSet[str]:
     """Derive activity_context set for the slot. Spec Section 2.1.2.
 
     Returns a frozenset of zero or more of: pre_workout, post_workout,
-    sedentary, overnight_fast_ahead.
+    sedentary, overnight_fast_ahead, overnight_fast_break.
+
+    When ``workout_after_meal_indices`` is not ``None``, workout placement
+    comes from explicit canonical gaps (``after_meal_index``); legacy
+    ``activity_schedule`` times are not used for pre/post tagging.
     """
     out: Set[str] = set()
     slot_min = _time_to_minutes(slot.time)
 
-    # Workout window: activity_schedule may have "workout_start", "workout_end", or "workout"
-    workout_start_min: Optional[int] = None
-    workout_end_min: Optional[int] = None
-    if activity_schedule:
-        ws = activity_schedule.get("workout_start") or activity_schedule.get("workout")
-        we = activity_schedule.get("workout_end")
-        if ws:
-            workout_start_min = _time_to_minutes(ws)
-            workout_end_min = _time_to_minutes(we) if we else workout_start_min + 60
-        elif we:
-            workout_end_min = _time_to_minutes(we)
-            workout_start_min = workout_end_min - 60
-
-    if workout_start_min is not None and workout_end_min is not None:
-        # pre_workout: a workout begins within 2 hours after this slot's time
-        two_hours = 120
-        delta_start = (workout_start_min - slot_min + 24 * 60) % (24 * 60)
-        if 0 < delta_start <= two_hours:
+    if workout_after_meal_indices is not None:
+        # Explicit topology: workout after meal w means meal w is pre_workout,
+        # meal w+1 is post_workout (1-based meal indices).
+        w = slot_index + 1
+        if w in workout_after_meal_indices:
             out.add("pre_workout")
-
-        # post_workout: a workout ended within 3 hours before this slot's time
-        three_hours = 180
-        delta_end = (slot_min - workout_end_min + 24 * 60) % (24 * 60)
-        if 0 <= delta_end < three_hours:
+        if slot_index in workout_after_meal_indices:
             out.add("post_workout")
+    else:
+        # Legacy: infer from workout time window strings.
+        workout_start_min: Optional[int] = None
+        workout_end_min: Optional[int] = None
+        if activity_schedule:
+            ws = activity_schedule.get("workout_start") or activity_schedule.get("workout")
+            we = activity_schedule.get("workout_end")
+            if ws:
+                workout_start_min = _time_to_minutes(ws)
+                workout_end_min = _time_to_minutes(we) if we else workout_start_min + 60
+            elif we:
+                workout_end_min = _time_to_minutes(we)
+                workout_start_min = workout_end_min - 60
+
+        if workout_start_min is not None and workout_end_min is not None:
+            two_hours = 120
+            delta_start = (workout_start_min - slot_min + 24 * 60) % (24 * 60)
+            if 0 < delta_start <= two_hours:
+                out.add("pre_workout")
+
+            three_hours = 180
+            delta_end = (slot_min - workout_end_min + 24 * 60) % (24 * 60)
+            if 0 <= delta_end < three_hours:
+                out.add("post_workout")
 
     if "pre_workout" not in out and "post_workout" not in out:
         out.add("sedentary")
+
+    # First meal of the day: long gap since prior meal (overnight).
+    if slot_index == 0:
+        out.add("overnight_fast_break")
 
     # overnight_fast_ahead: time until next meal > 4h OR (last slot and overnight fast >= 12h)
     hours_until_next = time_until_next_meal(slot, slot_index, day_slots, next_day_first_slot)
@@ -112,6 +148,25 @@ def activity_context(
             out.add("overnight_fast_ahead")
 
     return frozenset(out)
+
+
+def activity_context_for_profile(
+    profile: PlanningUserProfile,
+    day_index: int,
+    slot: MealSlot,
+    slot_index: int,
+    day_slots: List[MealSlot],
+    next_day_first_slot: Optional[MealSlot],
+) -> FrozenSet[str]:
+    """Derive activity context using explicit per-day gaps when configured."""
+    return activity_context(
+        slot,
+        slot_index,
+        day_slots,
+        next_day_first_slot,
+        profile.activity_schedule or {},
+        workout_after_meal_indices=explicit_workout_gaps_for_day(profile, day_index),
+    )
 
 
 def is_workout_slot(activity_context_set: FrozenSet[str]) -> bool:

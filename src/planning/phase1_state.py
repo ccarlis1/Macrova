@@ -22,7 +22,7 @@ from src.planning.phase0_models import (
     micronutrient_profile_to_dict,
 )
 from src.planning.slot_attributes import (
-    activity_context,
+    activity_context_for_profile,
     is_workout_slot,
     cooking_time_max,
     time_until_next_meal,
@@ -125,7 +125,6 @@ def validate_pinned_assignments(
 
     # HC-8: consecutive-day non-workout repetition among pinned
     # For each consecutive day pair, collect non-workout pinned recipe_ids per day
-    activity_schedule = profile.activity_schedule or {}
     non_workout_pinned_by_day: Dict[int, set] = {}
     for day_1based in range(1, D + 1):
         day_index = day_1based - 1
@@ -136,7 +135,9 @@ def validate_pinned_assignments(
             if d != day_1based:
                 continue
             slot = day_slots[s]
-            ctx = activity_context(slot, s, day_slots, next_first, activity_schedule)
+            ctx = activity_context_for_profile(
+                profile, day_index, slot, s, day_slots, next_first
+            )
             if not is_workout_slot(ctx):
                 ids_this_day.add(recipe_id)
         non_workout_pinned_by_day[day_1based] = ids_this_day
@@ -202,8 +203,6 @@ def build_initial_state(
 
     schedule = profile.schedule
     pinned = profile.pinned_assignments
-    activity_schedule = profile.activity_schedule or {}
-
     # Decision order: (day_index, slot_index) for d in 0..D-1, s in 0..len(schedule[d])-1
     assignments: List[Assignment] = []
     daily_trackers: Dict[int, DailyTracker] = {}
@@ -238,7 +237,9 @@ def build_initial_state(
             micro_d = _dict_sum(micro_d, micronutrient_profile_to_dict(nut.micronutrients))
             used_ids.add(recipe_id)
             slot = day_slots[slot_index]
-            ctx = activity_context(slot, slot_index, day_slots, next_day_first, activity_schedule)
+            ctx = activity_context_for_profile(
+                profile, day_index, slot, slot_index, day_slots, next_day_first
+            )
             if not is_workout_slot(ctx):
                 non_workout_ids.add(recipe_id)
             slots_assigned_d += 1

@@ -34,7 +34,7 @@ from src.planning.phase3_feasibility import (
     check_fc2_daily_macros,
     check_fc3_incremental_ul,
 )
-from src.planning.slot_attributes import activity_context, is_workout_slot
+from src.planning.slot_attributes import activity_context_for_profile, is_workout_slot
 from src.planning.phase9_carb_scaling import generate_scaled_variants
 
 
@@ -198,8 +198,8 @@ def _future_slot_has_zero_eligible(
         if slot_s is None:
             continue
         next_first = schedule[day_index + 1][0] if day_index + 1 < len(schedule) else None
-        act_ctx = activity_context(
-            slot_s, s_prime, day_slots, next_first, profile.activity_schedule or {}
+        act_ctx = activity_context_for_profile(
+            profile, day_index, slot_s, s_prime, day_slots, next_first
         )
         is_wk = is_workout_slot(act_ctx)
         cands = _filter_hard_constraints_only(
@@ -249,7 +249,9 @@ def generate_candidates(
     )
     day_slots = schedule[day_index]
     next_first = schedule[day_index + 1][0] if day_index + 1 < len(schedule) else None
-    act_ctx = activity_context(slot, slot_index, day_slots, next_first, profile.activity_schedule or {})
+    act_ctx = activity_context_for_profile(
+        profile, day_index, slot, slot_index, day_slots, next_first
+    )
     is_workout = is_workout_slot(act_ctx)
 
     base_candidate_ids, calorie_excess_rejections = _filter_step_1_through_7(

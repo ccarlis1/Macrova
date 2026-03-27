@@ -7,6 +7,14 @@ from typing import Dict, List
 from src.llm.schemas import BudgetLevel, PlannerConfigJson
 
 from src.data_layer.models import MicronutrientProfile, UserProfile
+from src.models.legacy_schedule_migration import (
+    canonical_day_to_meal_only_legacy_dict,
+    legacy_schedule_dict_to_day_schedule,
+    log_legacy_schedule_deprecation,
+    schedule_days_to_meal_only_legacy_dict,
+)
+from src.models.schedule import DaySchedule
+from src.planning.converters import _expand_schedule_days
 from src.planning.micronutrient_policy import validate_micronutrient_weekly_min_fraction
 
 
@@ -35,7 +43,6 @@ class UserProfileLoader:
             data = yaml.safe_load(f)
 
         nutrition_goals = data["nutrition_goals"]
-        schedule = data["schedule"]
         preferences = data["preferences"]
 
         # Extract nutrition goals
@@ -50,8 +57,27 @@ class UserProfileLoader:
         # Carbs = (calories - protein*4 - fat*9) / 4
         daily_carbs_g = (daily_calories - daily_protein_g * 4 - median_fat_g * 9) / 4
 
-        # Convert schedule times to integers
-        schedule_dict = {str(k): int(v) for k, v in schedule.items()}
+        schedule_days: list[DaySchedule] | None = None
+        schedule_dict: dict[str, int]
+        if data.get("schedule_days") is not None:
+            raw_days = data["schedule_days"]
+            if not isinstance(raw_days, list):
+                raise ValueError("schedule_days must be a list")
+            schedule_days = [DaySchedule.model_validate(d) for d in raw_days]
+            schedule_dict, cw = schedule_days_to_meal_only_legacy_dict(schedule_days)
+            for msg in cw:
+                print(f"Warning: {msg}", file=sys.stderr)
+        elif "schedule" in data:
+            log_legacy_schedule_deprecation("yaml")
+            schedule = data["schedule"]
+            legacy_dict = {str(k): int(v) for k, v in schedule.items()}
+            day, mw = legacy_schedule_dict_to_day_schedule(legacy_dict, day_index=1)
+            for msg in mw:
+                print(f"Warning: {msg}", file=sys.stderr)
+            schedule_days = [day]
+            schedule_dict = canonical_day_to_meal_only_legacy_dict(day)
+        else:
+            raise KeyError("Provide 'schedule' (legacy) or 'schedule_days' in profile YAML")
 
         # Extract preferences
         liked_foods = [str(food) for food in preferences.get("liked_foods", [])]
@@ -96,6 +122,7 @@ class UserProfileLoader:
             max_daily_calories=max_daily_calories,
             daily_micronutrient_targets=daily_micro or None,
             micronutrient_weekly_min_fraction=micronutrient_weekly_min_fraction,
+            schedule_days=schedule_days,
         )
 
 
@@ -159,7 +186,9 @@ def user_profile_from_planner_config(cfg: PlannerConfigJson) -> UserProfile:
     """Map strict PlannerConfigJson into a UserProfile usable by `convert_profile()`.
 
     Deterministic mapping:
-    - meals_per_day -> schedule dict (times + busyness_level=4)
+    - If ``schedule_days`` is set: expand to ``cfg.days`` (single-day templates replicate),
+      populate ``UserProfile.schedule_days`` and derived legacy ``schedule`` dict.
+    - Else: ``meals_per_day`` -> schedule dict (times + busyness_level=4)
     - preferences.cuisine -> liked_foods
     - targets.calories + targets.protein -> daily_calories/daily_protein_g
     - derived fat range + carbs computed from deterministic budget-based fat ratio bounds
@@ -200,17 +229,26 @@ def user_profile_from_planner_config(cfg: PlannerConfigJson) -> UserProfile:
         )
 
     cuisine = [str(c).strip() for c in cfg.preferences.cuisine or [] if str(c).strip()]
+
+    if cfg.schedule_days is not None:
+        expanded = _expand_schedule_days(list(cfg.schedule_days), cfg.days)
+        schedule_dict, _ = schedule_days_to_meal_only_legacy_dict(expanded)
+    else:
+        expanded = None
+        schedule_dict = _schedule_dict_from_meals_per_day(cfg.meals_per_day)
+
     return UserProfile(
         daily_calories=daily_calories,
         daily_protein_g=daily_protein_g,
         daily_fat_g=(float(fat_g_min), float(fat_g_max)),
         daily_carbs_g=float(daily_carbs_g),
-        schedule=_schedule_dict_from_meals_per_day(cfg.meals_per_day),
+        schedule={str(k): int(v) for k, v in schedule_dict.items()},
         liked_foods=cuisine,
         disliked_foods=[],
         allergies=[],
         max_daily_calories=None,
         daily_micronutrient_targets=None,
         micronutrient_weekly_min_fraction=1.0,
+        schedule_days=expanded,
     )
 

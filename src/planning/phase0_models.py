@@ -91,6 +91,10 @@ class PlanningUserProfile:
     micronutrient_targets: Dict[str, float] = field(default_factory=dict)
     micronutrient_weekly_min_fraction: float = 1.0
     activity_schedule: Dict[str, str] = field(default_factory=dict)
+    #: Per planning day (0-based index), list of 1-based ``after_meal_index`` values
+    #: (canonical ``WorkoutSlot`` gap ids). ``None`` = derive workout context only from
+    #: ``activity_schedule`` (legacy). When set, length must match horizon ``D``.
+    workout_after_meal_indices_by_day: Optional[List[List[int]]] = None
     enable_primary_carb_downscaling: bool = False
     max_scaling_steps: int = 4
     scaling_step_fraction: float = 0.10

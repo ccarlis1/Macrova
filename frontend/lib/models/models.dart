@@ -68,12 +68,115 @@ List<String> formatPlanApiWarnings(dynamic w) {
   return out;
 }
 
+// --- Canonical schedule contract (mirrors `src/models/schedule.py`) ---
+//
+// Invariants:
+// - Workouts are never meals; they use [WorkoutSlot] only.
+// - Meal `index` values are contiguous 1..N per day.
+// - `after_meal_index` satisfies 1 <= i < meal_count (gap after meal i).
+// - At most two workouts per day; no duplicate gap.
+
+/// One assignable meal slot (JSON keys match backend `MealSlot`).
+class MealSlot {
+  final int index;
+  final int busynessLevel;
+  final List<String>? tags;
+  final String? preferredTime;
+
+  const MealSlot({
+    required this.index,
+    required this.busynessLevel,
+    this.tags,
+    this.preferredTime,
+  });
+
+  factory MealSlot.fromJson(Map<String, dynamic> json) {
+    return MealSlot(
+      index: json['index'] as int,
+      busynessLevel: json['busyness_level'] as int,
+      tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList(),
+      preferredTime: json['preferred_time'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'index': index,
+        'busyness_level': busynessLevel,
+        if (tags != null) 'tags': tags,
+        if (preferredTime != null) 'preferred_time': preferredTime,
+      };
+}
+
+/// Workout in a gap after [afterMealIndex] (JSON keys match backend `WorkoutSlot`).
+class WorkoutSlot {
+  final int afterMealIndex;
+  final String type;
+  final String? intensity;
+
+  const WorkoutSlot({
+    required this.afterMealIndex,
+    required this.type,
+    this.intensity,
+  });
+
+  factory WorkoutSlot.fromJson(Map<String, dynamic> json) {
+    return WorkoutSlot(
+      afterMealIndex: json['after_meal_index'] as int,
+      type: json['type'] as String,
+      intensity: json['intensity'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'after_meal_index': afterMealIndex,
+        'type': type,
+        if (intensity != null) 'intensity': intensity,
+      };
+}
+
+/// One day: meals + workouts (JSON keys match backend `DaySchedule`).
+class DaySchedule {
+  final int dayIndex;
+  final List<MealSlot> meals;
+  final List<WorkoutSlot> workouts;
+
+  const DaySchedule({
+    required this.dayIndex,
+    required this.meals,
+    this.workouts = const [],
+  });
+
+  factory DaySchedule.fromJson(Map<String, dynamic> json) {
+    final mealsRaw = json['meals'] as List<dynamic>? ?? const [];
+    final workoutsRaw = json['workouts'] as List<dynamic>? ?? const [];
+    return DaySchedule(
+      dayIndex: json['day_index'] as int,
+      meals: mealsRaw
+          .map((e) => MealSlot.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList(),
+      workouts: workoutsRaw
+          .map((e) => WorkoutSlot.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'day_index': dayIndex,
+        'meals': meals.map((m) => m.toJson()).toList(),
+        'workouts': workouts.map((w) => w.toJson()).toList(),
+      };
+}
+
 class PlanRequest {
   final int dailyCalories;
   final double dailyProteinG;
   final double dailyFatGMin;
   final double dailyFatGMax;
-  final Map<String, int> schedule;
+  /// Deprecated legacy map: `"HH:MM"` -> busyness 1–4 or 0 for workout time.
+  /// Prefer [scheduleDays].
+  final Map<String, int>? schedule;
+  /// Canonical schedule (preferred). When set, length must equal [days].
+  final List<DaySchedule>? scheduleDays;
   final List<String> likedFoods;
   final List<String> dislikedFoods;
   final List<String> allergies;
@@ -89,7 +192,8 @@ class PlanRequest {
     required this.dailyProteinG,
     required this.dailyFatGMin,
     required this.dailyFatGMax,
-    required this.schedule,
+    this.schedule,
+    this.scheduleDays,
     this.likedFoods = const [],
     this.dislikedFoods = const [],
     this.allergies = const [],
@@ -102,12 +206,24 @@ class PlanRequest {
   });
 
   factory PlanRequest.fromJson(Map<String, dynamic> json) {
+    final schedRaw = json['schedule'];
+    Map<String, int>? sched;
+    if (schedRaw is Map) {
+      sched = {
+        for (final e in schedRaw.entries)
+          e.key.toString(): (e.value as num).toInt(),
+      };
+    }
+    final sdRaw = json['schedule_days'] as List<dynamic>?;
     return PlanRequest(
       dailyCalories: json['daily_calories'] as int,
       dailyProteinG: (json['daily_protein_g'] as num).toDouble(),
       dailyFatGMin: (json['daily_fat_g_min'] as num).toDouble(),
       dailyFatGMax: (json['daily_fat_g_max'] as num).toDouble(),
-      schedule: Map<String, int>.from(json['schedule'] as Map),
+      schedule: sched,
+      scheduleDays: sdRaw
+          ?.map((e) => DaySchedule.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList(),
       likedFoods: List<String>.from(json['liked_foods'] ?? const []),
       dislikedFoods: List<String>.from(json['disliked_foods'] ?? const []),
       allergies: List<String>.from(json['allergies'] ?? const []),
@@ -131,7 +247,6 @@ class PlanRequest {
       'daily_protein_g': dailyProteinG,
       'daily_fat_g_min': dailyFatGMin,
       'daily_fat_g_max': dailyFatGMax,
-      'schedule': schedule,
       'liked_foods': likedFoods,
       'disliked_foods': dislikedFoods,
       'allergies': allergies,
@@ -139,6 +254,14 @@ class PlanRequest {
       'ingredient_source': ingredientSource,
       'micronutrient_weekly_min_fraction': micronutrientWeeklyMinFraction,
     };
+    final s = schedule;
+    if (s != null) {
+      map['schedule'] = s;
+    }
+    final sd = scheduleDays;
+    if (sd != null) {
+      map['schedule_days'] = sd.map((d) => d.toJson()).toList();
+    }
     final micros = micronutrientGoals;
     if (micros != null && micros.isNotEmpty) {
       map['micronutrient_goals'] = micros;

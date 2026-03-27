@@ -18,7 +18,7 @@ if _env_file.exists():
             os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -63,6 +63,13 @@ from src.llm.ingredient_matcher import (
 )
 from src.llm.schemas import BudgetLevel, DietaryFlag, PrepTimeBucket, PlannerConfigJson
 from src.data_layer.user_profile import user_profile_from_planner_config
+from src.models.legacy_schedule_migration import (
+    canonical_day_to_meal_only_legacy_dict,
+    legacy_schedule_dict_to_schedule_days,
+    merge_schedule_warnings_into_result,
+    schedule_days_to_meal_only_legacy_dict,
+)
+from src.models.schedule import DaySchedule, validate_day_schedule
 from src.llm.tag_filtering_service import apply_tag_filtering
 from src.llm.recipe_tagger import tag_recipes
 from src.llm.tag_repository import load_recipe_tags
@@ -86,7 +93,7 @@ app.add_middleware(
 
 @app.exception_handler(RequestValidationError)
 async def _request_validation_exception_handler(
-    request, exc: RequestValidationError
+    request: Request, exc: RequestValidationError
 ) -> JSONResponse:
     # Per contract: structured 400 instead of FastAPI's default 422.
     return JSONResponse(
@@ -100,7 +107,12 @@ class PlanRequest(BaseModel):
     daily_protein_g: float
     daily_fat_g_min: float
     daily_fat_g_max: float
-    schedule: Dict[str, int]
+    # Canonical per-day schedule (preferred). When set, must have length == ``days``.
+    schedule_days: Optional[List[DaySchedule]] = None
+    # Deprecated: ``"HH:MM"`` -> busyness (1–4) or 0 for workout time; use ``schedule_days``.
+    schedule: Optional[Dict[str, int]] = None
+    # Deprecated alias for ``schedule`` (same semantics).
+    legacy_schedule: Optional[Dict[str, int]] = None
     liked_foods: List[str] = Field(default_factory=list)
     disliked_foods: List[str] = Field(default_factory=list)
     allergies: List[str] = Field(default_factory=list)
@@ -127,6 +139,41 @@ class PlanRequest(BaseModel):
 
     # When set, restrict the in-memory recipe pool to this id subset (Planner parity).
     recipe_ids: Optional[List[str]] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _merge_legacy_schedule(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        if data.get("schedule_days") is not None:
+            return data
+        leg = data.get("legacy_schedule")
+        sch = data.get("schedule")
+        if leg is not None and sch is not None:
+            raise ValueError("Provide only one of schedule and legacy_schedule")
+        if leg is not None:
+            out = {**data, "schedule": leg}
+            out.pop("legacy_schedule", None)
+            return out
+        return data
+
+    @model_validator(mode="after")
+    def _schedule_contract(self) -> "PlanRequest":
+        if self.schedule_days is not None:
+            if len(self.schedule_days) != self.days:
+                raise ValueError(
+                    f"schedule_days length ({len(self.schedule_days)}) must equal days ({self.days})"
+                )
+            for i, d in enumerate(self.schedule_days):
+                if d.day_index != i + 1:
+                    raise ValueError(
+                        f"schedule_days[{i}].day_index must be {i + 1}, got {d.day_index}"
+                    )
+                validate_day_schedule(d)
+            return self
+        if self.schedule is None:
+            raise ValueError("Provide schedule_days or schedule (legacy)")
+        return self
 
 
 class PlanFromTextRequest(BaseModel):
@@ -413,25 +460,47 @@ def _local_ingredient_to_resolve_payload(data: Dict[str, Any]) -> Dict[str, Any]
     }
 
 
-def _build_user_profile(request: PlanRequest) -> UserProfile:
+def _build_user_profile(request: PlanRequest) -> tuple[UserProfile, List[str]]:
     daily_fat_g = (request.daily_fat_g_min, request.daily_fat_g_max)
     median_fat_g = (daily_fat_g[0] + daily_fat_g[1]) / 2
     daily_carbs_g = (
         request.daily_calories - request.daily_protein_g * 4 - median_fat_g * 9
     ) / 4
 
-    return UserProfile(
+    warnings: List[str] = []
+    schedule_days: Optional[List[DaySchedule]] = None
+    schedule_dict: Dict[str, int]
+
+    if request.schedule_days is not None:
+        schedule_days = list(request.schedule_days)
+        if request.schedule is not None:
+            warnings.append(
+                "Both schedule_days and legacy schedule were provided; using schedule_days."
+            )
+        schedule_dict, sw = schedule_days_to_meal_only_legacy_dict(schedule_days)
+        warnings.extend(sw)
+    else:
+        assert request.schedule is not None
+        schedule_days, mw = legacy_schedule_dict_to_schedule_days(
+            request.schedule, days=request.days
+        )
+        warnings.extend(mw)
+        schedule_dict = canonical_day_to_meal_only_legacy_dict(schedule_days[0])
+
+    profile = UserProfile(
         daily_calories=request.daily_calories,
         daily_protein_g=request.daily_protein_g,
         daily_fat_g=daily_fat_g,
         daily_carbs_g=daily_carbs_g,
-        schedule={str(k): int(v) for k, v in request.schedule.items()},
+        schedule={str(k): int(v) for k, v in schedule_dict.items()},
         liked_foods=[str(food) for food in request.liked_foods],
         disliked_foods=[str(food) for food in request.disliked_foods],
         allergies=[str(allergen) for allergen in request.allergies],
         daily_micronutrient_targets=request.micronutrient_goals,
         micronutrient_weekly_min_fraction=request.micronutrient_weekly_min_fraction,
+        schedule_days=schedule_days,
     )
+    return profile, warnings
 
 
 def build_llm_client() -> LLMClient:
@@ -555,7 +624,7 @@ def llm_status_endpoint() -> Dict[str, Any]:
 @app.post("/api/plan")
 def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
     try:
-        user_profile = _build_user_profile(request)
+        user_profile, sched_warnings = _build_user_profile(request)
 
         recipe_db = RecipeDB(recipes_path)
         all_recipes = recipe_db.get_all_recipes()
@@ -652,7 +721,13 @@ def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
             recipe_pool_updated = convert_recipes(all_recipes_updated, calculator_updated)
             recipe_by_id = {r.id: r for r in recipe_pool_updated}
 
-        return format_result_json(result, recipe_by_id, planning_profile, request.days)
+        out = format_result_json(result, recipe_by_id, planning_profile, request.days)
+        merge_schedule_warnings_into_result(
+            out,
+            sched_warnings,
+            deprecated_legacy=request.schedule_days is None and request.schedule is not None,
+        )
+        return out
     except HTTPException:
         raise
     except Exception as exc:

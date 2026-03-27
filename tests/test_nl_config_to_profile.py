@@ -4,6 +4,7 @@ from src.data_layer.user_profile import (
     PlannerConfigMappingError,
     user_profile_from_planner_config,
 )
+from src.models.schedule import DaySchedule, MealSlot as CanonMeal, WorkoutSlot
 from src.llm.schemas import BudgetLevel, PlannerConfigJson, PlannerPreferences, PlannerTargets
 
 
@@ -70,4 +71,35 @@ def test_user_profile_from_planner_config_rejects_negative_derived_carbs():
         "NEGATIVE_REMAINING_AFTER_PROTEIN",
         "NEGATIVE_CARBS_DERIVED",
     )
+
+
+def test_user_profile_from_planner_config_with_schedule_days_sets_canonical_schedule():
+    """LLM-facing config can carry per-meal busyness + workout gaps."""
+    cfg = PlannerConfigJson(
+        days=1,
+        meals_per_day=2,
+        targets=PlannerTargets(calories=2200, protein=140.0),
+        preferences=PlannerPreferences(cuisine=[], budget=BudgetLevel.standard),
+        schedule_days=[
+            DaySchedule(
+                day_index=1,
+                meals=[
+                    CanonMeal(index=1, busyness_level=2, tags=["breakfast"]),
+                    CanonMeal(index=2, busyness_level=4, tags=["dinner"]),
+                ],
+                workouts=[
+                    WorkoutSlot(
+                        after_meal_index=1, type="PM", intensity="moderate"
+                    )
+                ],
+            )
+        ],
+    )
+    profile = user_profile_from_planner_config(cfg)
+    assert profile.schedule_days is not None
+    assert len(profile.schedule_days) == 1
+    assert len(profile.schedule_days[0].meals) == 2
+    assert profile.schedule_days[0].meals[0].busyness_level == 2
+    assert profile.schedule_days[0].workouts[0].after_meal_index == 1
+    assert len(profile.schedule) == 2
 

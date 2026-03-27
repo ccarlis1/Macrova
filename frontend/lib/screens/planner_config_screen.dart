@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 
 import '../features/agent/llm_config_provider.dart';
 import '../models/models.dart';
-import '../models/recipe.dart';
 import '../providers/meal_plan_provider.dart';
 import '../providers/profile_provider.dart';
 import '../providers/recipe_provider.dart';
@@ -150,76 +149,27 @@ class PlannerConfigScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // Meals Per Day
-              const SectionHeader(title: 'Meals Per Day'),
-              Text('Number of Meals: ${planProvider.mealsPerDay} meals/day'),
-              const SizedBox(height: 8),
-              _NumberSelector(
-                value: planProvider.mealsPerDay,
-                min: 1,
-                max: 8,
-                onChanged: planProvider.setMealsPerDay,
-              ),
-              const SizedBox(height: 4),
+              // Per-day schedule (canonical meals + workout gaps)
+              const SectionHeader(title: 'Schedule'),
               Text(
-                'Example: 3 meals = Breakfast, Lunch, Dinner',
+                'For each day: meal count, per-meal busyness (cooking-time band), '
+                'and up to two workouts placed between meals.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
               ),
-              const SizedBox(height: 24),
-
-              // Workout Schedule
-              const SectionHeader(title: 'Workout Schedule'),
-              Text(
-                'Select which days you\'ll workout and when during the day:',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: 8),
-              ...List.generate(planProvider.days, (i) {
-                final timing = planProvider.workoutSchedule[i];
-                final isWorkout = timing != null;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 80,
-                        child: Text('Day ${i + 1}'),
-                      ),
-                      Expanded(
-                        child: SegmentedButton<String?>(
-                          segments: const [
-                            ButtonSegment(
-                              value: null,
-                              label: Text('Rest day'),
-                            ),
-                            ButtonSegment(
-                              value: 'morning',
-                              label: Text('AM'),
-                            ),
-                            ButtonSegment(
-                              value: 'afternoon',
-                              label: Text('PM'),
-                            ),
-                          ],
-                          selected: {isWorkout ? timing : null},
-                          onSelectionChanged: (s) {
-                            planProvider.setWorkoutDay(i, s.first);
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
+              const SizedBox(height: 12),
+              ...List.generate(planProvider.days, (dayIndex) {
+                final day = planProvider.scheduleDays[dayIndex];
+                return _DayScheduleCard(
+                  dayIndex: dayIndex,
+                  day: day,
+                  onMealCount: planProvider.setMealCountForDay,
+                  onBusyness: planProvider.setMealBusyness,
+                  onAddWorkout: planProvider.addWorkoutInGap,
+                  onRemoveWorkout: planProvider.removeWorkoutAt,
                 );
               }),
-              const SizedBox(height: 4),
-              Text(
-                'Note: Workout timing affects calorie distribution in your meal plan',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-              ),
               const SizedBox(height: 24),
 
               // Recipe Pool
@@ -418,22 +368,6 @@ class PlannerConfigScreen extends StatelessWidget {
     final planProvider = context.read<MealPlanProvider>();
     final recipeProvider = context.read<RecipeProvider>();
 
-    // Build schedule from meals per day
-    final schedule = <String, int>{};
-    final mealTimes = [
-      '08:00',
-      '12:00',
-      '15:00',
-      '18:00',
-      '20:00',
-      '22:00',
-      '07:00',
-      '10:00',
-    ];
-    for (int i = 0; i < planProvider.mealsPerDay && i < mealTimes.length; i++) {
-      schedule[mealTimes[i]] = 3; // default busyness
-    }
-
     final recipeIds = planProvider.selectedRecipeIds.isEmpty
         ? null
         : planProvider.selectedRecipeIds.toList();
@@ -443,7 +377,7 @@ class PlannerConfigScreen extends StatelessWidget {
       dailyProteinG: profile.proteinG,
       dailyFatGMin: profile.fatGMin,
       dailyFatGMax: profile.fatGMax,
-      schedule: schedule,
+      scheduleDays: planProvider.scheduleDaysForApi(),
       allergies: profile.allergies,
       days: planProvider.days,
       ingredientSource: planProvider.ingredientSource,
@@ -510,6 +444,125 @@ class PlannerConfigScreen extends StatelessWidget {
     if (planProvider.mealPlan != null) {
       shell?.navigateTo(5);
     }
+  }
+}
+
+/// One planning day: meal count, per-meal busyness, optional workouts between meals.
+class _DayScheduleCard extends StatelessWidget {
+  final int dayIndex;
+  final DaySchedule day;
+  final void Function(int dayIndex0, int mealCount) onMealCount;
+  final void Function(int dayIndex0, int mealIndex0, int busyness) onBusyness;
+  final void Function(int dayIndex0, int afterMealIndex) onAddWorkout;
+  final void Function(int dayIndex0, int workoutListIndex) onRemoveWorkout;
+
+  const _DayScheduleCard({
+    required this.dayIndex,
+    required this.day,
+    required this.onMealCount,
+    required this.onBusyness,
+    required this.onAddWorkout,
+    required this.onRemoveWorkout,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final n = day.meals.length;
+    final gaps = n >= 2 ? List.generate(n - 1, (i) => i + 1) : <int>[];
+    final used = {for (final w in day.workouts) w.afterMealIndex};
+    final freeGaps = gaps.where((g) => !used.contains(g)).toList();
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Day ${day.dayIndex}',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 8),
+            Text('Meals per day', style: Theme.of(context).textTheme.labelSmall),
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 4,
+              children: List.generate(8, (i) {
+                final v = i + 1;
+                final sel = v == n;
+                return ChoiceChip(
+                  label: Text('$v'),
+                  selected: sel,
+                  onSelected: (_) => onMealCount(dayIndex, v),
+                );
+              }),
+            ),
+            const SizedBox(height: 8),
+            ...List.generate(n, (mi) {
+              final m = day.meals[mi];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 80,
+                      child: Text('Meal ${m.index}'),
+                    ),
+                    Expanded(
+                      child: SegmentedButton<int>(
+                        segments: const [
+                          ButtonSegment(value: 1, label: Text('1')),
+                          ButtonSegment(value: 2, label: Text('2')),
+                          ButtonSegment(value: 3, label: Text('3')),
+                          ButtonSegment(value: 4, label: Text('4')),
+                        ],
+                        emptySelectionAllowed: false,
+                        selected: {m.busynessLevel},
+                        onSelectionChanged: (s) {
+                          if (s.isEmpty) return;
+                          onBusyness(dayIndex, mi, s.first);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+            if (n >= 2) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Workouts (between meals)',
+                style: Theme.of(context).textTheme.labelSmall,
+              ),
+              const SizedBox(height: 4),
+              Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: [
+                  for (var wi = 0; wi < day.workouts.length; wi++)
+                    InputChip(
+                      label: Text('After meal ${day.workouts[wi].afterMealIndex}'),
+                      onDeleted: () => onRemoveWorkout(dayIndex, wi),
+                    ),
+                  if (day.workouts.length < 2 && freeGaps.isNotEmpty)
+                    ...freeGaps.map(
+                      (g) => TextButton(
+                        onPressed: () => onAddWorkout(dayIndex, g),
+                        child: Text('+ After meal $g'),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }
 

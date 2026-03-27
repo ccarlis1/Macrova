@@ -52,6 +52,8 @@ def test_build_feedback_context_fm4_extracts_deficient_nutrients():
     assert ctx["failure_type"] == "FM-4"
     assert ctx["days"] == 2
     assert ctx["meals_per_day"] == 2
+    assert ctx["busyness_by_day"] == [[2, 2], [2, 2]]
+    assert ctx["workout_gaps_by_day"] is None
     assert ctx["nutrient_deficits"] == [
         {
             "nutrient": "iron_mg",
@@ -62,6 +64,30 @@ def test_build_feedback_context_fm4_extracts_deficient_nutrients():
         }
     ]
     assert ctx["macro_violations"] == []
+
+
+def test_build_feedback_context_includes_workout_gaps_when_present():
+    profile = PlanningUserProfile(
+        daily_calories=2000,
+        daily_protein_g=100.0,
+        daily_fat_g=(50.0, 80.0),
+        daily_carbs_g=250.0,
+        schedule=_make_schedule(days=1, slots_per_day=3),
+        workout_after_meal_indices_by_day=[[1]],
+        pinned_assignments={},
+        excluded_ingredients=[],
+        liked_foods=[],
+        micronutrient_targets={},
+    )
+    result = MealPlanResult(
+        success=False,
+        termination_code="TC-2",
+        failure_mode="FM-1",
+        report={},
+        stats={"attempts": 0, "backtracks": 0},
+    )
+    ctx = build_feedback_context(result, profile)
+    assert ctx["workout_gaps_by_day"] == [[1]]
 
 
 def test_build_feedback_context_fm2_computes_macro_deficit_and_excess():
@@ -102,6 +128,7 @@ def test_build_feedback_context_fm2_computes_macro_deficit_and_excess():
 
     ctx = build_feedback_context(result, profile)
     assert ctx["failure_type"] == "FM-2"
+    assert ctx["busyness_by_day"] == [[2, 2], [2, 2]]
     assert len(ctx["macro_violations"]) == 1
     day_ctx = ctx["macro_violations"][0]
     assert day_ctx["day"] == 0

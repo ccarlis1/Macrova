@@ -1,0 +1,116 @@
+# User Profile Configuration
+# Copy this file to user_profile.yaml and customize for your needs.
+#
+# CLI usage:
+#   python3 -m src.cli --profile config/user_profile.yaml
+#   python3 -m src.cli --profile config/user_profile.yaml --days 3 --output json
+#
+# Sample data (ingredient names in recipes must exist in your ingredients file):
+#   config/recipes.example.json   — example recipes
+#   config/ingredients.example.json — example ingredients (use with --ingredients)
+# To try with samples:
+#   python3 -m src.cli --profile config/user_profile.yaml \
+#     --recipes config/recipes.example.json \
+#     --ingredients config/ingredients.example.json
+
+nutrition_goals:
+  # Daily calorie target (kcal)
+  daily_calories: 2400
+
+  # Protein target (grams per day). Typical: 0.7–0.8g per lb bodyweight
+  daily_protein_g: 150
+
+  # Fat target range (grams per day). Common range: 50–100g
+  daily_fat_g:
+    min: 50
+    max: 100
+
+  # Carbs are derived: (calories - protein*4 - fat*9) / 4
+  # using the median of the fat range
+
+  # OPTIONAL: Hard maximum daily calories (Calorie Deficit Mode)
+  # When set, plans exceeding this are rejected. Uncomment to enable:
+  # max_daily_calories: 2200
+
+  # τ: fraction of prorated weekly micronutrient RDI required (tracked nutrients only). 1.0 = strict; below relaxes the weekly floor.
+  micronutrient_weekly_min_fraction: 0.8
+
+# Optional canonical schedule (preferred). When set, legacy ``schedule`` below is ignored.
+# Example (single-day template; replicate or extend for multi-day as needed):
+# schedule_days:
+#   - day_index: 1
+#     meals:
+#       - { index: 1, busyness_level: 4, tags: ["breakfast"], preferred_time: "07:00" }
+#       - { index: 2, busyness_level: 4, tags: ["lunch"], preferred_time: "12:00" }
+#       - { index: 3, busyness_level: 4, tags: ["dinner"], preferred_time: "18:00" }
+#     workouts:
+#       - { after_meal_index: 1, type: general }
+
+schedule:
+  # Format: "HH:MM": busyness_level (integer)
+  # Busyness levels (max cooking time per slot):
+  #   1 = snack (≤ 5 min)
+  #   2 = quick meal (≤ 15 min)
+  #   3 = weeknight meal (≤ 30 min)
+  #   4 = weekend / meal prep (30+ min)
+  #   0 = workout time (not a meal slot; used for context)
+  #
+  # The first three time slots (by time order) are treated as breakfast, lunch, dinner.
+  # Schedule is replicated for each day when using --days 2 to 7.
+  # "07:00": 4   # Breakfast: quick meal
+  # "12:00": 4   # Lunch: weeknight meal
+  # "18:00": 4   # Dinner: weeknight meal
+  # "08:00": 0   # Workout (optional)
+
+preferences:
+  liked_foods:
+    - "salmon"
+    - "egg"
+    - "rice"
+    - "potatoes"
+    - "chicken"
+    - "broccoli"
+    - "blueberries"
+
+  disliked_foods:
+    - "brussels sprouts"
+    - "liver"
+
+  allergies:
+    - "shellfish"
+    - "peanuts"
+
+demographic: "adult_male"
+
+# Daily RDI targets (previously weekly_targets with values = daily × 7)
+micronutrient_goals:
+  # Vitamins
+  vitamin_a_ug: 900      # was 6300 weekly
+  vitamin_c_mg: 90       # was 630 weekly
+  vitamin_d_iu: 600      # was 4200 weekly
+  vitamin_e_mg: 15       # was 105 weekly
+  vitamin_k_ug: 120      # was 840 weekly
+  b1_thiamine_mg: 1.2    # was 8.4 weekly
+  b2_riboflavin_mg: 1.3 # was 9.1 weekly
+  b3_niacin_mg: 16      # was 112 weekly
+  b5_pantothenic_acid_mg: 5    # was 35 weekly
+  b6_pyridoxine_mg: 1.3 # was 9.1 weekly
+  b12_cobalamin_ug: 2.4 # was 16.8 weekly
+  folate_ug: 400        # was 2800 weekly
+
+  # Minerals
+  calcium_mg: 1000      # was 7000 weekly
+  copper_mg: 0.9       # was 6.3 weekly
+  iron_mg: 8           # was 56 weekly
+  magnesium_mg: 400    # was 2800 weekly
+  manganese_mg: 2.3    # was 16.1 weekly
+  phosphorus_mg: 700   # was 4900 weekly
+  potassium_mg: 3400   # was 23800 weekly
+  selenium_ug: 55      # was 385 weekly
+  sodium_mg: 1500      # was 10500 weekly
+  zinc_mg: 11          # was 77 weekly
+
+  # Other (MicronutrientProfile)
+  fiber_g: 38          # was 266 weekly
+  omega_3_g: 1.6       # was 11.2 weekly
+  omega_6_g: 17        # was 119 weekly

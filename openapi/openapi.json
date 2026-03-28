@@ -10,6 +10,37 @@
         "title": "BudgetLevel",
         "type": "string"
       },
+      "DaySchedule": {
+        "additionalProperties": false,
+        "description": "Canonical schedule for a single day: meals + optional workouts.",
+        "properties": {
+          "day_index": {
+            "description": "1-based day index in the horizon.",
+            "minimum": 1.0,
+            "title": "Day Index",
+            "type": "integer"
+          },
+          "meals": {
+            "items": {
+              "$ref": "#/components/schemas/MealSlot"
+            },
+            "title": "Meals",
+            "type": "array"
+          },
+          "workouts": {
+            "items": {
+              "$ref": "#/components/schemas/WorkoutSlot"
+            },
+            "title": "Workouts",
+            "type": "array"
+          }
+        },
+        "required": [
+          "day_index"
+        ],
+        "title": "DaySchedule",
+        "type": "object"
+      },
       "DietaryFlag": {
         "enum": [
           "vegetarian",
@@ -200,6 +231,58 @@
           "score"
         ],
         "title": "IngredientSearchResultItem",
+        "type": "object"
+      },
+      "MealSlot": {
+        "additionalProperties": false,
+        "description": "One assignable meal slot (not a workout).",
+        "properties": {
+          "busyness_level": {
+            "description": "Cooking-time band: 1=snack/quick \u2026 4=flexible/long.",
+            "maximum": 4.0,
+            "minimum": 1.0,
+            "title": "Busyness Level",
+            "type": "integer"
+          },
+          "index": {
+            "description": "1-based meal index within the day.",
+            "minimum": 1.0,
+            "title": "Index",
+            "type": "integer"
+          },
+          "preferred_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional \"HH:MM\" clock hint for that meal.",
+            "title": "Preferred Time"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional labels, e.g. breakfast, lunch, dinner, snack.",
+            "title": "Tags"
+          }
+        },
+        "required": [
+          "index",
+          "busyness_level"
+        ],
+        "title": "MealSlot",
         "type": "object"
       },
       "NutritionIngredientLine": {
@@ -430,6 +513,20 @@
             "title": "Ingredient Source",
             "type": "string"
           },
+          "legacy_schedule": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "integer"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legacy Schedule"
+          },
           "liked_foods": {
             "items": {
               "type": "string"
@@ -511,19 +608,39 @@
             "title": "Recipe Tags Path"
           },
           "schedule": {
-            "additionalProperties": {
-              "type": "integer"
-            },
-            "title": "Schedule",
-            "type": "object"
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "integer"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schedule"
+          },
+          "schedule_days": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DaySchedule"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schedule Days"
           }
         },
         "required": [
           "daily_calories",
           "daily_protein_g",
           "daily_fat_g_min",
-          "daily_fat_g_max",
-          "schedule"
+          "daily_fat_g_max"
         ],
         "title": "PlanRequest",
         "type": "object"
@@ -804,6 +921,48 @@
         ],
         "title": "ValidationError",
         "type": "object"
+      },
+      "WorkoutSlot": {
+        "additionalProperties": false,
+        "description": "Workout placed in the gap after meal ``after_meal_index``.",
+        "properties": {
+          "after_meal_index": {
+            "description": "1-based index of the meal immediately before this workout gap.",
+            "title": "After Meal Index",
+            "type": "integer"
+          },
+          "intensity": {
+            "anyOf": [
+              {
+                "enum": [
+                  "low",
+                  "moderate",
+                  "high"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intensity"
+          },
+          "type": {
+            "enum": [
+              "AM",
+              "PM",
+              "general"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "after_meal_index",
+          "type"
+        ],
+        "title": "WorkoutSlot",
+        "type": "object"
       }
     }
   },
@@ -849,6 +1008,27 @@
           }
         },
         "summary": "Ingredient Match Endpoint"
+      }
+    },
+    "/api/llm/status": {
+      "get": {
+        "description": "Whether LLM is enabled in this API process's environment (no secrets exposed).",
+        "operationId": "llm_status_endpoint_api_llm_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Llm Status Endpoint Api Llm Status Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Llm Status Endpoint"
       }
     },
     "/api/plan": {
@@ -954,6 +1134,43 @@
           }
         },
         "summary": "List Recipes"
+      },
+      "post": {
+        "description": "Upsert a single recipe (same semantics as sync).",
+        "operationId": "create_recipe_endpoint_api_recipes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeSyncItem"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeSyncResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Recipe Endpoint"
       }
     },
     "/api/recipes/generate-validated": {
@@ -1069,6 +1286,56 @@
           }
         },
         "summary": "Generate Recipe Tags Endpoint"
+      }
+    },
+    "/api/recipes/{recipe_id}": {
+      "put": {
+        "description": "Upsert by path id; body [id] must match the path.",
+        "operationId": "put_recipe_endpoint_api_recipes__recipe_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recipe_id",
+            "required": true,
+            "schema": {
+              "title": "Recipe Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeSyncItem"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeSyncResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Recipe Endpoint"
       }
     },
     "/api/v1/ingredients/match": {
@@ -1232,6 +1499,27 @@
         "summary": "Ingredient Search Endpoint"
       }
     },
+    "/api/v1/llm/status": {
+      "get": {
+        "description": "Whether LLM is enabled in this API process's environment (no secrets exposed).",
+        "operationId": "llm_status_endpoint_api_v1_llm_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Llm Status Endpoint Api V1 Llm Status Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Llm Status Endpoint"
+      }
+    },
     "/api/v1/nutrition/summary": {
       "post": {
         "description": "Server-authoritative macro and micro totals for a draft ingredient list.",
@@ -1269,34 +1557,6 @@
           }
         },
         "summary": "Nutrition Summary Endpoint"
-      }
-    },
-    "/api/v1/llm/status": {
-      "get": {
-        "summary": "Llm Status Endpoint",
-        "operationId": "llm_status_endpoint_api_v1_llm_status_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "enabled": {
-                      "type": "boolean",
-                      "title": "Enabled"
-                    }
-                  },
-                  "required": [
-                    "enabled"
-                  ],
-                  "title": "LlmStatusResponse"
-                }
-              }
-            }
-          }
-        }
       }
     },
     "/api/v1/plan": {
@@ -1402,6 +1662,43 @@
           }
         },
         "summary": "List Recipes"
+      },
+      "post": {
+        "description": "Upsert a single recipe (same semantics as sync).",
+        "operationId": "create_recipe_endpoint_api_v1_recipes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeSyncItem"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeSyncResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Recipe Endpoint"
       }
     },
     "/api/v1/recipes/generate-validated": {
@@ -1557,6 +1854,54 @@
           }
         },
         "summary": "Get Recipe Detail"
+      },
+      "put": {
+        "description": "Upsert by path id; body [id] must match the path.",
+        "operationId": "put_recipe_endpoint_api_v1_recipes__recipe_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recipe_id",
+            "required": true,
+            "schema": {
+              "title": "Recipe Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeSyncItem"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeSyncResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Recipe Endpoint"
       }
     }
   }

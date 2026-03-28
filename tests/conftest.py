@@ -1,14 +1,33 @@
-import pytest
-from pathlib import Path
+"""Shared pytest setup so CI and local runs behave like a clean checkout.
+
+GitHub Actions runs from the repo root with ``pip install -r requirements.txt`` and:
+
+- ``python -m pytest tests/ -q`` (needs ``httpx`` for FastAPI TestClient)
+- ``python scripts/export_openapi.py --check`` (OpenAPI snapshot must match the app)
+
+``config/user_profile.yaml`` is gitignored; CLI/API tests reference it by path.
+"""
+
 import shutil
+
+import pytest
 import yaml
+from pathlib import Path
+
+_REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_config():
-    """Ensure test configuration files exist."""
-    config_dir = Path("config")
-    config_dir.mkdir(exist_ok=True)
+    """Ensure ``config/user_profile.yaml`` exists and has a valid schedule.
+
+    Copies from ``user_profile.yaml.example`` when the file is missing or when
+    YAML has no usable ``schedule_days`` or legacy ``schedule`` (avoids CLI
+    crashes on empty/commented-out schedules). Paths are anchored to the repo
+    root so this works regardless of pytest's current working directory.
+    """
+    config_dir = _REPO_ROOT / "config"
+    config_dir.mkdir(parents=True, exist_ok=True)
 
     profile_file = config_dir / "user_profile.yaml"
     example_file = config_dir / "user_profile.yaml.example"

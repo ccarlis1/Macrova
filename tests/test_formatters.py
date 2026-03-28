@@ -309,6 +309,39 @@ class TestFormatResultMarkdownAndJson:
         assert data["success"] is False
         assert "sodium_advisory" in data["warnings"] or "sodium" in str(data["warnings"]).lower()
 
+    def test_result_from_failure_exports_closest_plan_to_json(
+        self, recipe_by_id, sample_planning_profile
+    ):
+        """Regression: FM-* results must expose assignments + trackers so API clients get meals."""
+        from src.planning.phase0_models import Assignment, DailyTracker
+        from src.planning.phase10_reporting import result_from_failure
+        from src.output.formatters import format_result_json
+
+        tracker = DailyTracker(
+            calories_consumed=350.0,
+            protein_consumed=25.0,
+            fat_consumed=15.0,
+            carbs_consumed=20.0,
+            slots_assigned=1,
+            slots_total=2,
+        )
+        result = result_from_failure(
+            "TC-2",
+            "FM-2",
+            {},
+            [Assignment(0, 0, "r1", 0)],
+            {0: tracker},
+            1,
+            0,
+        )
+        assert result.plan is not None and len(result.plan) == 1
+        assert result.daily_trackers is not None and 0 in result.daily_trackers
+        data = format_result_json(result, recipe_by_id, sample_planning_profile, D=1)
+        assert len(data["daily_plans"]) == 1
+        meal = data["daily_plans"][0]["meals"][0]
+        assert meal["nutrition"]["calories"] == 350.0
+        assert meal["busyness_level"] == 2
+
     def test_format_result_json_contains_micronutrients(self):
         """Verify JSON output includes micronutrients in recipe nutrition, day totals, and weekly totals."""
         from src.planning.phase0_models import (

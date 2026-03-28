@@ -23,7 +23,7 @@ from src.planning.phase1_state import (
     per_meal_target,
 )
 from src.planning.slot_attributes import (
-    activity_context,
+    activity_context_for_profile,
     cooking_time_max,
     satiety_requirement,
     time_until_next_meal,
@@ -290,8 +290,8 @@ def composite_score(
         return 50.0
     slot = day_slots[slot_index]
     next_first = state.schedule[day_index + 1][0] if day_index + 1 < len(state.schedule) else None
-    activity_context_set = activity_context(
-        slot, slot_index, day_slots, next_first, profile.activity_schedule or {}
+    activity_context_set = activity_context_for_profile(
+        profile, day_index, slot, slot_index, day_slots, next_first
     )
     hours_until = time_until_next_meal(slot, slot_index, day_slots, next_first)
     is_last = slot_index + 1 >= len(day_slots)

@@ -64,6 +64,7 @@ def _make_profile(
     max_daily_calories: int | None = 2500,
     schedule: list | None = None,
     micronutrient_targets: dict | None = None,
+    micronutrient_weekly_min_fraction: float = 1.0,
 ) -> PlanningUserProfile:
     kwargs = dict(
         daily_calories=daily_calories,
@@ -72,6 +73,7 @@ def _make_profile(
         daily_carbs_g=daily_carbs_g,
         max_daily_calories=max_daily_calories,
         micronutrient_targets=micronutrient_targets or {},
+        micronutrient_weekly_min_fraction=micronutrient_weekly_min_fraction,
     )
     if schedule is not None:
         kwargs["schedule"] = schedule
@@ -252,6 +254,23 @@ class TestStructuralFeasibility:
         profile = _make_profile(schedule=schedule, micronutrient_targets={})
         assert check_structural_feasibility(profile, schedule, 1, {}) is True
 
+    def test_relaxed_tau_structural_passes_strict_fails(self):
+        """Max horizon sum in [τ×RDI×D, RDI×D): feasible at τ<1, impossible at τ=1."""
+        schedule = [[_make_slot()], [_make_slot()]]
+        mda = {"iron_mg": {1: 95.0}}
+        profile_lo = _make_profile(
+            schedule=schedule,
+            micronutrient_targets={"iron_mg": 100.0},
+            micronutrient_weekly_min_fraction=0.9,
+        )
+        profile_hi = _make_profile(
+            schedule=schedule,
+            micronutrient_targets={"iron_mg": 100.0},
+            micronutrient_weekly_min_fraction=1.0,
+        )
+        assert check_structural_feasibility(profile_lo, schedule, 2, mda) is True
+        assert check_structural_feasibility(profile_hi, schedule, 2, mda) is False
+
 
 # --- FC-4: Precomputation and trigger ---
 
@@ -298,6 +317,30 @@ class TestFC4Precomputation:
         mda = {"vitamin_c_mg": {1: 150.0}}
         D = 2
         assert check_fc4_cross_day_rdi(1, state, profile, D, mda) is True
+
+    def test_fc4_tau_floor_aligns_with_final_gate(self):
+        """τ=0.9: still recoverable with 85 consumed and 100 max/day; τ=1.0: irrecoverable (same state)."""
+        D = 2
+        schedule = [[_make_slot()], [_make_slot()]]
+        mda = {"vitamin_c_mg": {1: 100.0}}
+        wt = WeeklyTracker(
+            weekly_totals=NutritionProfile(
+                0.0, 0.0, 0.0, 0.0,
+                micronutrients=MicronutrientProfile(vitamin_c_mg=85.0),
+            ),
+            days_remaining=1,
+        )
+        state = _make_state(weekly_tracker=wt, schedule=schedule)
+        profile_relaxed = _make_profile(
+            micronutrient_targets={"vitamin_c_mg": 100.0},
+            micronutrient_weekly_min_fraction=0.9,
+        )
+        profile_strict = _make_profile(
+            micronutrient_targets={"vitamin_c_mg": 100.0},
+            micronutrient_weekly_min_fraction=1.0,
+        )
+        assert check_fc4_cross_day_rdi(1, state, profile_relaxed, D, mda) is True
+        assert check_fc4_cross_day_rdi(1, state, profile_strict, D, mda) is False
 
 
 # --- FC-5: Candidate set and future slots ---

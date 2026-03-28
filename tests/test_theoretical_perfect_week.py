@@ -179,7 +179,8 @@ class TestVariantAIdenticalMeals:
         D = 2
         schedule = _schedule(D, 2)
         # Low sodium so we do NOT trigger 200% advisory
-        low_sodium = MicronutrientProfile(sodium_mg=200.0)
+        # Must still satisfy structural/weekly target (500 mg/day) while staying below advisory threshold.
+        low_sodium = MicronutrientProfile(sodium_mg=300.0)
         profile = _profile(schedule, micronutrient_targets={"sodium_mg": 500.0})
         pool = [
             _recipe(f"r{i}", 1000.0, 50.0, 32.0, 125.0, micronutrients=low_sodium)
@@ -187,7 +188,7 @@ class TestVariantAIdenticalMeals:
         ]
         result = run_meal_plan_search(profile, pool, D, None)
         assert result.success is True
-        # 4 slots * 200 = 800 mg; 2 * 500 * 2 = 2000 recommended max; 800 < 2000 → no advisory
+        # 4 slots * 300 = 1200 mg; 2 * 500 * 2 = 2000 advisory threshold; 1200 < 2000 → no advisory
         assert result.warning is None or result.warning.get("type") != "sodium_advisory"
 
 

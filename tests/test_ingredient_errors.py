@@ -419,7 +419,7 @@ class TestErrorInCachedLookup:
         from src.ingestion.ingredient_cache import CachedIngredientLookup
         
         mock_client = Mock()
-        mock_client.lookup.side_effect = APIFailureError(
+        mock_client.search_candidates.side_effect = APIFailureError(
             operation="search",
             status_code=500,
             response_body="Internal Error",
@@ -439,11 +439,7 @@ class TestErrorInCachedLookup:
         from src.ingestion.ingredient_cache import CachedIngredientLookup
         
         mock_client = Mock()
-        mock_client.lookup.return_value = Mock(
-            success=False,
-            error_code="NOT_FOUND",
-            error_message="No results found"
-        )
+        mock_client.search_candidates.return_value = []
         
         lookup = CachedIngredientLookup(
             cache_dir="/tmp/test_cache",

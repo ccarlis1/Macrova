@@ -9,6 +9,12 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 
 from src.planning.phase0_models import Assignment, DailyTracker, PlanningUserProfile, WeeklyTracker
+from src.planning.micronutrient_policy import (
+    MICRONUTRIENT_EPSILON,
+    sodium_weekly_advisory_max_mg,
+    tau_from_profile,
+    weekly_minimum_total,
+)
 
 
 # --- Canonical result schema ---
@@ -143,11 +149,13 @@ def _deficient_nutrients_list(
     if not tracked:
         return []
     micro = micronutrient_profile_to_dict(getattr(weekly_tracker.weekly_totals, "micronutrients", None))
+    tau = tau_from_profile(profile)
     out: List[Dict[str, Any]] = []
     for n, daily_rdi in tracked.items():
         if daily_rdi <= 0:
             continue
-        required = daily_rdi * D
+        required = weekly_minimum_total(daily_rdi, D, tau)
+        full_req = weekly_minimum_total(daily_rdi, D, 1.0)
         achieved = micro.get(n, 0.0)
         deficit = required - achieved
         if deficit <= 0:
@@ -160,6 +168,7 @@ def _deficient_nutrients_list(
             "nutrient": n,
             "achieved": achieved,
             "required": required,
+            "full_req": full_req,
             "deficit": deficit,
             "classification": classification,
         })
@@ -193,6 +202,43 @@ def build_report_fm5(
     }
 
 
+def build_micronutrient_soft_deficit_warning(
+    weekly_tracker: WeeklyTracker,
+    profile: PlanningUserProfile,
+    D: int,
+) -> List[Dict[str, Any]]:
+    """When τ < 1, list nutrients that meet τ-floor but sit below full prorated RDI (transparency)."""
+    tau = tau_from_profile(profile)
+    if tau >= 1.0 - MICRONUTRIENT_EPSILON:
+        return []
+    tracked = profile.micronutrient_targets
+    if not tracked:
+        return []
+    from src.planning.phase0_models import micronutrient_profile_to_dict
+
+    micro = micronutrient_profile_to_dict(getattr(weekly_tracker.weekly_totals, "micronutrients", None))
+    out: List[Dict[str, Any]] = []
+    for n, daily_rdi in tracked.items():
+        if daily_rdi <= 0:
+            continue
+        min_req = weekly_minimum_total(daily_rdi, D, tau)
+        full_req = weekly_minimum_total(daily_rdi, D, 1.0)
+        achieved = micro.get(n, 0.0)
+        if achieved < min_req - MICRONUTRIENT_EPSILON:
+            continue
+        if achieved >= full_req - MICRONUTRIENT_EPSILON:
+            continue
+        frac = achieved / full_req if full_req > MICRONUTRIENT_EPSILON else 0.0
+        out.append({
+            "nutrient": n,
+            "achieved": achieved,
+            "min_req": min_req,
+            "full_req": full_req,
+            "fraction_of_full": frac,
+        })
+    return out
+
+
 # --- Sodium advisory (success path only) ---
 
 
@@ -212,7 +258,7 @@ def build_sodium_warning(
     if micro is None:
         return None
     weekly_sodium = getattr(micro, "sodium_mg", 0.0)
-    recommended_max = 2.0 * daily_rdi * D
+    recommended_max = sodium_weekly_advisory_max_mg(daily_rdi, D)
     if weekly_sodium <= recommended_max:
         return None
     return {
@@ -236,7 +282,14 @@ def result_from_success(
     stats: Optional[Dict[str, Any]] = None,
 ) -> MealPlanResult:
     """Build MealPlanResult for TC-1 or TC-4 success."""
-    warning = build_sodium_warning(weekly_tracker, profile, D)
+    warning_parts: Dict[str, Any] = {}
+    sw = build_sodium_warning(weekly_tracker, profile, D)
+    if sw:
+        warning_parts.update(sw)
+    soft = build_micronutrient_soft_deficit_warning(weekly_tracker, profile, D)
+    if soft:
+        warning_parts["micronutrient_soft_deficit"] = soft
+    warning = warning_parts if warning_parts else None
     return MealPlanResult(
         success=True,
         termination_code=termination_code,
@@ -278,8 +331,21 @@ def result_from_failure(
     st = dict(stats) if stats else {}
     st["attempts"] = attempt_count
     st["backtracks"] = backtrack_count
-    plan = best_effort_plan if best_effort_plan is not None else None
-    daily_trackers = best_effort_daily_trackers if best_effort_daily_trackers is not None else None
+    # Prefer explicit best-effort kwargs (e.g. FM-4 weekly incomplete); otherwise use the
+    # positional closest-plan snapshots — those were incorrectly dropped before, which made
+    # format_result_json emit empty daily_plans for almost all failure terminations.
+    if best_effort_plan is not None:
+        plan: Optional[List[Assignment]] = list(best_effort_plan)
+    elif best_assignments:
+        plan = list(best_assignments)
+    else:
+        plan = None
+    if best_effort_daily_trackers is not None:
+        daily_trackers: Optional[Dict[int, DailyTracker]] = dict(best_effort_daily_trackers)
+    elif best_daily_trackers:
+        daily_trackers = dict(best_daily_trackers)
+    else:
+        daily_trackers = None
     weekly_tracker = best_effort_weekly_tracker if best_effort_weekly_tracker is not None else None
     return MealPlanResult(
         success=False,

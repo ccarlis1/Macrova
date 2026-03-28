@@ -1,0 +1,1908 @@
+{
+  "components": {
+    "schemas": {
+      "BudgetLevel": {
+        "enum": [
+          "cheap",
+          "standard",
+          "premium"
+        ],
+        "title": "BudgetLevel",
+        "type": "string"
+      },
+      "DaySchedule": {
+        "additionalProperties": false,
+        "description": "Canonical schedule for a single day: meals + optional workouts.",
+        "properties": {
+          "day_index": {
+            "description": "1-based day index in the horizon.",
+            "minimum": 1.0,
+            "title": "Day Index",
+            "type": "integer"
+          },
+          "meals": {
+            "items": {
+              "$ref": "#/components/schemas/MealSlot"
+            },
+            "title": "Meals",
+            "type": "array"
+          },
+          "workouts": {
+            "items": {
+              "$ref": "#/components/schemas/WorkoutSlot"
+            },
+            "title": "Workouts",
+            "type": "array"
+          }
+        },
+        "required": [
+          "day_index"
+        ],
+        "title": "DaySchedule",
+        "type": "object"
+      },
+      "DietaryFlag": {
+        "enum": [
+          "vegetarian",
+          "vegan",
+          "gluten_free",
+          "dairy_free"
+        ],
+        "title": "DietaryFlag",
+        "type": "string"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "IngredientMatchAcceptedItem": {
+        "properties": {
+          "confidence": {
+            "title": "Confidence",
+            "type": "number"
+          },
+          "normalized_name": {
+            "title": "Normalized Name",
+            "type": "string"
+          },
+          "original_query": {
+            "title": "Original Query",
+            "type": "string"
+          }
+        },
+        "required": [
+          "original_query",
+          "normalized_name",
+          "confidence"
+        ],
+        "title": "IngredientMatchAcceptedItem",
+        "type": "object"
+      },
+      "IngredientMatchRejectedItem": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "original_query": {
+            "title": "Original Query",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "original_query"
+        ],
+        "title": "IngredientMatchRejectedItem",
+        "type": "object"
+      },
+      "IngredientMatchRequest": {
+        "properties": {
+          "queries": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Queries",
+            "type": "array"
+          }
+        },
+        "required": [
+          "queries"
+        ],
+        "title": "IngredientMatchRequest",
+        "type": "object"
+      },
+      "IngredientMatchResponse": {
+        "properties": {
+          "accepted": {
+            "items": {
+              "$ref": "#/components/schemas/IngredientMatchAcceptedItem"
+            },
+            "title": "Accepted",
+            "type": "array"
+          },
+          "rejected": {
+            "items": {
+              "$ref": "#/components/schemas/IngredientMatchRejectedItem"
+            },
+            "title": "Rejected",
+            "type": "array"
+          }
+        },
+        "required": [
+          "accepted",
+          "rejected"
+        ],
+        "title": "IngredientMatchResponse",
+        "type": "object"
+      },
+      "IngredientResolveRequest": {
+        "description": "Resolve by USDA id or by canonical name (+ ingredient source).",
+        "properties": {
+          "fdc_id": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fdc Id"
+          },
+          "ingredient_source": {
+            "anyOf": [
+              {
+                "pattern": "^(local|api)$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ingredient Source"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "title": "IngredientResolveRequest",
+        "type": "object"
+      },
+      "IngredientSearchResponse": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/IngredientSearchResultItem"
+            },
+            "title": "Results",
+            "type": "array"
+          }
+        },
+        "required": [
+          "results"
+        ],
+        "title": "IngredientSearchResponse",
+        "type": "object"
+      },
+      "IngredientSearchResultItem": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "fdc_id": {
+            "title": "Fdc Id",
+            "type": "string"
+          },
+          "score": {
+            "title": "Score",
+            "type": "number"
+          }
+        },
+        "required": [
+          "fdc_id",
+          "description",
+          "score"
+        ],
+        "title": "IngredientSearchResultItem",
+        "type": "object"
+      },
+      "MealSlot": {
+        "additionalProperties": false,
+        "description": "One assignable meal slot (not a workout).",
+        "properties": {
+          "busyness_level": {
+            "description": "Cooking-time band: 1=snack/quick \u2026 4=flexible/long.",
+            "maximum": 4.0,
+            "minimum": 1.0,
+            "title": "Busyness Level",
+            "type": "integer"
+          },
+          "index": {
+            "description": "1-based meal index within the day.",
+            "minimum": 1.0,
+            "title": "Index",
+            "type": "integer"
+          },
+          "preferred_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional \"HH:MM\" clock hint for that meal.",
+            "title": "Preferred Time"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional labels, e.g. breakfast, lunch, dinner, snack.",
+            "title": "Tags"
+          }
+        },
+        "required": [
+          "index",
+          "busyness_level"
+        ],
+        "title": "MealSlot",
+        "type": "object"
+      },
+      "NutritionIngredientLine": {
+        "properties": {
+          "name": {
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "quantity": {
+            "minimum": 0.0,
+            "title": "Quantity",
+            "type": "number"
+          },
+          "unit": {
+            "minLength": 1,
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "quantity",
+          "unit"
+        ],
+        "title": "NutritionIngredientLine",
+        "type": "object"
+      },
+      "NutritionSummaryRequest": {
+        "properties": {
+          "ingredients": {
+            "items": {
+              "$ref": "#/components/schemas/NutritionIngredientLine"
+            },
+            "minItems": 1,
+            "title": "Ingredients",
+            "type": "array"
+          },
+          "servings": {
+            "default": 1,
+            "minimum": 1.0,
+            "title": "Servings",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ingredients"
+        ],
+        "title": "NutritionSummaryRequest",
+        "type": "object"
+      },
+      "PlanFromTextRequest": {
+        "properties": {
+          "cost_level": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BudgetLevel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cuisine": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cuisine"
+          },
+          "dietary_flags": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DietaryFlag"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dietary Flags"
+          },
+          "ingredient_source": {
+            "default": "local",
+            "pattern": "^(local|api)$",
+            "title": "Ingredient Source",
+            "type": "string"
+          },
+          "planning_mode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "deterministic",
+                  "assisted",
+                  "assisted_cached",
+                  "assisted_live"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planning Mode"
+          },
+          "prep_time_bucket": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PrepTimeBucket"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "prompt": {
+            "minLength": 1,
+            "title": "Prompt",
+            "type": "string"
+          },
+          "recipe_tags_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipe Tags Path"
+          }
+        },
+        "required": [
+          "prompt"
+        ],
+        "title": "PlanFromTextRequest",
+        "type": "object"
+      },
+      "PlanRequest": {
+        "properties": {
+          "allergies": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Allergies",
+            "type": "array"
+          },
+          "cost_level": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BudgetLevel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cuisine": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cuisine"
+          },
+          "daily_calories": {
+            "title": "Daily Calories",
+            "type": "integer"
+          },
+          "daily_fat_g_max": {
+            "title": "Daily Fat G Max",
+            "type": "number"
+          },
+          "daily_fat_g_min": {
+            "title": "Daily Fat G Min",
+            "type": "number"
+          },
+          "daily_protein_g": {
+            "title": "Daily Protein G",
+            "type": "number"
+          },
+          "days": {
+            "default": 1,
+            "maximum": 7.0,
+            "minimum": 1.0,
+            "title": "Days",
+            "type": "integer"
+          },
+          "dietary_flags": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DietaryFlag"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dietary Flags"
+          },
+          "disliked_foods": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Disliked Foods",
+            "type": "array"
+          },
+          "ingredient_source": {
+            "default": "local",
+            "pattern": "^(local|api)$",
+            "title": "Ingredient Source",
+            "type": "string"
+          },
+          "legacy_schedule": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "integer"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legacy Schedule"
+          },
+          "liked_foods": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Liked Foods",
+            "type": "array"
+          },
+          "micronutrient_goals": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "number"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Micronutrient Goals"
+          },
+          "micronutrient_weekly_min_fraction": {
+            "default": 1.0,
+            "exclusiveMinimum": 0.0,
+            "maximum": 1.0,
+            "title": "Micronutrient Weekly Min Fraction",
+            "type": "number"
+          },
+          "planning_mode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "deterministic",
+                  "assisted",
+                  "assisted_cached",
+                  "assisted_live"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planning Mode"
+          },
+          "prep_time_bucket": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PrepTimeBucket"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "recipe_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipe Ids"
+          },
+          "recipe_tags_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipe Tags Path"
+          },
+          "schedule": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "integer"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schedule"
+          },
+          "schedule_days": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DaySchedule"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schedule Days"
+          }
+        },
+        "required": [
+          "daily_calories",
+          "daily_protein_g",
+          "daily_fat_g_min",
+          "daily_fat_g_max"
+        ],
+        "title": "PlanRequest",
+        "type": "object"
+      },
+      "PrepTimeBucket": {
+        "enum": [
+          "snack",
+          "quick_meal",
+          "weeknight_meal",
+          "meal_prep"
+        ],
+        "title": "PrepTimeBucket",
+        "type": "string"
+      },
+      "RecipeGenerationFailure": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "RecipeGenerationFailure",
+        "type": "object"
+      },
+      "RecipeGenerationRequest": {
+        "properties": {
+          "context": {
+            "additionalProperties": true,
+            "title": "Context",
+            "type": "object"
+          },
+          "count": {
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "context",
+          "count"
+        ],
+        "title": "RecipeGenerationRequest",
+        "type": "object"
+      },
+      "RecipeGenerationResponse": {
+        "properties": {
+          "accepted_count": {
+            "title": "Accepted Count",
+            "type": "integer"
+          },
+          "failures": {
+            "items": {
+              "$ref": "#/components/schemas/RecipeGenerationFailure"
+            },
+            "title": "Failures",
+            "type": "array"
+          },
+          "recipe_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Recipe Ids",
+            "type": "array"
+          },
+          "rejected_count": {
+            "title": "Rejected Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "accepted_count",
+          "rejected_count",
+          "recipe_ids",
+          "failures"
+        ],
+        "title": "RecipeGenerationResponse",
+        "type": "object"
+      },
+      "RecipeSyncIngredientLine": {
+        "description": "One ingredient line as sent by the client.",
+        "properties": {
+          "name": {
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "quantity": {
+            "minimum": 0.0,
+            "title": "Quantity",
+            "type": "number"
+          },
+          "unit": {
+            "minLength": 1,
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "quantity",
+          "unit"
+        ],
+        "title": "RecipeSyncIngredientLine",
+        "type": "object"
+      },
+      "RecipeSyncItem": {
+        "properties": {
+          "cooking_time_minutes": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Cooking Time Minutes",
+            "type": "integer"
+          },
+          "id": {
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "ingredients": {
+            "items": {
+              "$ref": "#/components/schemas/RecipeSyncIngredientLine"
+            },
+            "minItems": 1,
+            "title": "Ingredients",
+            "type": "array"
+          },
+          "instructions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Instructions",
+            "type": "array"
+          },
+          "name": {
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "ingredients"
+        ],
+        "title": "RecipeSyncItem",
+        "type": "object"
+      },
+      "RecipeSyncRequest": {
+        "properties": {
+          "recipes": {
+            "items": {
+              "$ref": "#/components/schemas/RecipeSyncItem"
+            },
+            "title": "Recipes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "recipes"
+        ],
+        "title": "RecipeSyncRequest",
+        "type": "object"
+      },
+      "RecipeSyncResponse": {
+        "properties": {
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "synced_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Synced Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "synced_ids"
+        ],
+        "title": "RecipeSyncResponse",
+        "type": "object"
+      },
+      "RecipeTagGenerationRequest": {
+        "properties": {
+          "llm_enabled": {
+            "default": false,
+            "title": "Llm Enabled",
+            "type": "boolean"
+          },
+          "recipe_tags_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipe Tags Path"
+          },
+          "recipes_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipes Path"
+          }
+        },
+        "title": "RecipeTagGenerationRequest",
+        "type": "object"
+      },
+      "RecipeTagGenerationResponse": {
+        "properties": {
+          "tagged_recipe_count": {
+            "title": "Tagged Recipe Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "tagged_recipe_count"
+        ],
+        "title": "RecipeTagGenerationResponse",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "WorkoutSlot": {
+        "additionalProperties": false,
+        "description": "Workout placed in the gap after meal ``after_meal_index``.",
+        "properties": {
+          "after_meal_index": {
+            "description": "1-based index of the meal immediately before this workout gap.",
+            "title": "After Meal Index",
+            "type": "integer"
+          },
+          "intensity": {
+            "anyOf": [
+              {
+                "enum": [
+                  "low",
+                  "moderate",
+                  "high"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intensity"
+          },
+          "type": {
+            "enum": [
+              "AM",
+              "PM",
+              "general"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "after_meal_index",
+          "type"
+        ],
+        "title": "WorkoutSlot",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "Nutrition Agent API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/ingredients/match": {
+      "post": {
+        "operationId": "ingredient_match_endpoint_api_ingredients_match_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngredientMatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngredientMatchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ingredient Match Endpoint"
+      }
+    },
+    "/api/llm/status": {
+      "get": {
+        "description": "Whether LLM is enabled in this API process's environment (no secrets exposed).",
+        "operationId": "llm_status_endpoint_api_llm_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Llm Status Endpoint Api Llm Status Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Llm Status Endpoint"
+      }
+    },
+    "/api/plan": {
+      "post": {
+        "operationId": "plan_meals_endpoint_api_plan_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Plan Meals Endpoint Api Plan Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Plan Meals Endpoint"
+      }
+    },
+    "/api/plan-from-text": {
+      "post": {
+        "operationId": "plan_from_text_endpoint_api_plan_from_text_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanFromTextRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Plan From Text Endpoint Api Plan From Text Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Plan From Text Endpoint"
+      }
+    },
+    "/api/recipes": {
+      "get": {
+        "operationId": "list_recipes_api_recipes_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "type": "object"
+                  },
+                  "title": "Response List Recipes Api Recipes Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Recipes"
+      },
+      "post": {
+        "description": "Upsert a single recipe (same semantics as sync).",
+        "operationId": "create_recipe_endpoint_api_recipes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeSyncItem"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeSyncResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Recipe Endpoint"
+      }
+    },
+    "/api/recipes/generate-validated": {
+      "post": {
+        "operationId": "generate_validated_recipes_endpoint_api_recipes_generate_validated_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeGenerationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeGenerationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Generate Validated Recipes Endpoint"
+      }
+    },
+    "/api/recipes/sync": {
+      "post": {
+        "description": "Upsert client-owned recipes into the server's file-backed pool by id.",
+        "operationId": "sync_recipes_endpoint_api_recipes_sync_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeSyncRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeSyncResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sync Recipes Endpoint"
+      }
+    },
+    "/api/recipes/tags/generate": {
+      "post": {
+        "operationId": "generate_recipe_tags_endpoint_api_recipes_tags_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeTagGenerationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeTagGenerationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Generate Recipe Tags Endpoint"
+      }
+    },
+    "/api/recipes/{recipe_id}": {
+      "put": {
+        "description": "Upsert by path id; body [id] must match the path.",
+        "operationId": "put_recipe_endpoint_api_recipes__recipe_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recipe_id",
+            "required": true,
+            "schema": {
+              "title": "Recipe Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeSyncItem"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeSyncResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Recipe Endpoint"
+      }
+    },
+    "/api/v1/ingredients/match": {
+      "post": {
+        "operationId": "ingredient_match_endpoint_api_v1_ingredients_match_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngredientMatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngredientMatchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ingredient Match Endpoint"
+      }
+    },
+    "/api/v1/ingredients/resolve": {
+      "post": {
+        "description": "Resolve a USDA FDC id or a canonical ingredient name to nutrition facts.",
+        "operationId": "ingredient_resolve_endpoint_api_v1_ingredients_resolve_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngredientResolveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Ingredient Resolve Endpoint Api V1 Ingredients Resolve Post"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ingredient Resolve Endpoint"
+      }
+    },
+    "/api/v1/ingredients/search": {
+      "get": {
+        "description": "Deterministic USDA search suggestions (no LLM).",
+        "operationId": "ingredient_search_endpoint_api_v1_ingredients_search_get",
+        "parameters": [
+          {
+            "description": "USDA FoodData Central search query",
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "description": "USDA FoodData Central search query",
+              "minLength": 1,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "description": "1-based page number (USDA pageNumber)",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "description": "1-based page number (USDA pageNumber)",
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "FDC dataType filter: 'all' searches SR Legacy, Foundation, Survey, and Branded; 'sr_legacy_only' restricts to SR Legacy (typical whole ingredients).",
+            "in": "query",
+            "name": "data_types",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "description": "FDC dataType filter: 'all' searches SR Legacy, Foundation, Survey, and Branded; 'sr_legacy_only' restricts to SR Legacy (typical whole ingredients).",
+              "enum": [
+                "all",
+                "sr_legacy_only"
+              ],
+              "title": "Data Types",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngredientSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ingredient Search Endpoint"
+      }
+    },
+    "/api/v1/llm/status": {
+      "get": {
+        "description": "Whether LLM is enabled in this API process's environment (no secrets exposed).",
+        "operationId": "llm_status_endpoint_api_v1_llm_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Llm Status Endpoint Api V1 Llm Status Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Llm Status Endpoint"
+      }
+    },
+    "/api/v1/nutrition/summary": {
+      "post": {
+        "description": "Server-authoritative macro and micro totals for a draft ingredient list.",
+        "operationId": "nutrition_summary_endpoint_api_v1_nutrition_summary_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NutritionSummaryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Nutrition Summary Endpoint Api V1 Nutrition Summary Post"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Nutrition Summary Endpoint"
+      }
+    },
+    "/api/v1/plan": {
+      "post": {
+        "operationId": "plan_meals_endpoint_api_v1_plan_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Plan Meals Endpoint Api V1 Plan Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Plan Meals Endpoint"
+      }
+    },
+    "/api/v1/plan-from-text": {
+      "post": {
+        "operationId": "plan_from_text_endpoint_api_v1_plan_from_text_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanFromTextRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Plan From Text Endpoint Api V1 Plan From Text Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Plan From Text Endpoint"
+      }
+    },
+    "/api/v1/recipes": {
+      "get": {
+        "operationId": "list_recipes_api_v1_recipes_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "type": "object"
+                  },
+                  "title": "Response List Recipes Api V1 Recipes Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Recipes"
+      },
+      "post": {
+        "description": "Upsert a single recipe (same semantics as sync).",
+        "operationId": "create_recipe_endpoint_api_v1_recipes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeSyncItem"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeSyncResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Recipe Endpoint"
+      }
+    },
+    "/api/v1/recipes/generate-validated": {
+      "post": {
+        "operationId": "generate_validated_recipes_endpoint_api_v1_recipes_generate_validated_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeGenerationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeGenerationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Generate Validated Recipes Endpoint"
+      }
+    },
+    "/api/v1/recipes/sync": {
+      "post": {
+        "description": "Upsert client-owned recipes into the server's file-backed pool by id.",
+        "operationId": "sync_recipes_endpoint_api_v1_recipes_sync_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeSyncRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeSyncResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sync Recipes Endpoint"
+      }
+    },
+    "/api/v1/recipes/tags/generate": {
+      "post": {
+        "operationId": "generate_recipe_tags_endpoint_api_v1_recipes_tags_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeTagGenerationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeTagGenerationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Generate Recipe Tags Endpoint"
+      }
+    },
+    "/api/v1/recipes/{recipe_id}": {
+      "get": {
+        "description": "Full recipe with ingredient lines enriched for the Flutter client.",
+        "operationId": "get_recipe_detail_api_v1_recipes__recipe_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recipe_id",
+            "required": true,
+            "schema": {
+              "title": "Recipe Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Recipe Detail Api V1 Recipes  Recipe Id  Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Recipe Detail"
+      },
+      "put": {
+        "description": "Upsert by path id; body [id] must match the path.",
+        "operationId": "put_recipe_endpoint_api_v1_recipes__recipe_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recipe_id",
+            "required": true,
+            "schema": {
+              "title": "Recipe Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeSyncItem"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeSyncResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Recipe Endpoint"
+      }
+    }
+  }
+}

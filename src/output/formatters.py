@@ -213,7 +213,10 @@ def format_result_json(
 ) -> Dict[str, Any]:
     """Format a MealPlanResult as a JSON-serializable dict. Top-level: success, termination_code, days, daily_plans, weekly_totals (if D>1), warnings, goals."""
     daily_plans = []
-    if result.plan and result.daily_trackers:
+    # Include partial / failure plans whenever assignments exist. Do not require
+    # daily_trackers: it may be missing in edge cases, and `{}` is falsy in Python.
+    if result.plan:
+        trackers = result.daily_trackers or {}
         by_day: Dict[int, List[Assignment]] = {}
         for a in result.plan:
             by_day.setdefault(a.day_index, []).append(a)
@@ -244,8 +247,9 @@ def format_result_json(
                     "cooking_time_minutes": recipe.cooking_time_minutes,
                     "ingredients": [format_ingredient_string(ing) for ing in recipe.ingredients],
                     "nutrition": nutrition_json,
+                    "busyness_level": slot.busyness_level if slot else 3,
                 })
-            t = result.daily_trackers.get(day_index)
+            t = trackers.get(day_index)
             day_totals = None
             if t is not None:
                 day_totals = {

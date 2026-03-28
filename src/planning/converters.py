@@ -3,6 +3,8 @@
 Pure functions only. No I/O, no provider access. Deterministic.
 """
 
+import json
+import logging
 from typing import List, Optional
 
 from src.data_layer.models import (
@@ -11,8 +13,108 @@ from src.data_layer.models import (
     NutritionProfile,
     Ingredient,
 )
+from src.models.schedule import DaySchedule as CanonicalDaySchedule
 from src.planning.phase0_models import PlanningRecipe, PlanningUserProfile, MealSlot
 from src.nutrition.calculator import NutritionCalculator
+
+logger = logging.getLogger(__name__)
+
+# Synthetic meal clock anchors when ``preferred_time`` is absent (aligned with legacy migration).
+_DEFAULT_MEAL_CLOCKS: tuple[str, ...] = (
+    "07:00",
+    "08:30",
+    "12:00",
+    "15:00",
+    "18:00",
+    "19:00",
+    "20:00",
+    "21:00",
+)
+
+
+def _expand_schedule_days(
+    schedule_days: List[CanonicalDaySchedule],
+    days: int,
+) -> List[CanonicalDaySchedule]:
+    """Normalize canonical days to length ``days`` (replicate or slice)."""
+    if not schedule_days:
+        raise ValueError("schedule_days is empty")
+    if len(schedule_days) == days:
+        return [
+            schedule_days[i].model_copy(update={"day_index": i + 1})
+            for i in range(days)
+        ]
+    if len(schedule_days) == 1:
+        t = schedule_days[0]
+        return [
+            CanonicalDaySchedule(
+                day_index=i + 1,
+                meals=list(t.meals),
+                workouts=list(t.workouts),
+            )
+            for i in range(days)
+        ]
+    if len(schedule_days) >= days:
+        return [
+            schedule_days[i].model_copy(update={"day_index": i + 1})
+            for i in range(days)
+        ]
+    out: List[CanonicalDaySchedule] = []
+    for i in range(days):
+        src = schedule_days[i] if i < len(schedule_days) else schedule_days[-1]
+        out.append(src.model_copy(update={"day_index": i + 1}))
+    return out
+
+
+def _meal_type_from_canonical(
+    tags: Optional[List[str]],
+    pos: int,
+    n: int,
+) -> str:
+    meal_type_by_position = ("breakfast", "lunch", "dinner", "snack")
+    if tags:
+        for t in tags:
+            tl = str(t).lower()
+            if tl in ("breakfast", "lunch", "dinner", "snack"):
+                return tl
+    if n >= 3 and pos == 0:
+        return "breakfast"
+    if n >= 3 and pos == n - 1:
+        return "dinner"
+    if n >= 3 and pos == n // 2:
+        return "lunch"
+    return meal_type_by_position[min(pos, 3)]
+
+
+def _canonical_day_to_planning_slots(
+    day: CanonicalDaySchedule,
+    meal_types_per_day: Optional[List[List[str]]],
+    day_index: int,
+) -> List[MealSlot]:
+    """Map API ``DaySchedule`` to planner ``MealSlot`` rows (per-meal busyness + clock)."""
+    slots: List[MealSlot] = []
+    n = len(day.meals)
+    for i, m in enumerate(day.meals):
+        clock = m.preferred_time
+        if not clock:
+            clock = _DEFAULT_MEAL_CLOCKS[i] if i < len(_DEFAULT_MEAL_CLOCKS) else "12:00"
+        if meal_types_per_day is not None and day_index < len(meal_types_per_day):
+            day_types = meal_types_per_day[day_index]
+            meal_type = (
+                day_types[i]
+                if i < len(day_types)
+                else _meal_type_from_canonical(m.tags, i, n)
+            )
+        else:
+            meal_type = _meal_type_from_canonical(m.tags, i, n)
+        slots.append(
+            MealSlot(
+                time=clock,
+                busyness_level=m.busyness_level,
+                meal_type=meal_type,
+            )
+        )
+    return slots
 
 
 def extract_ingredient_names(recipes: List[Recipe]) -> List[str]:
@@ -95,25 +197,59 @@ def convert_profile(
     Excluded ingredients = allergies + disliked_foods. Schedule is replicated
     for `days` days. Micronutrient targets from daily_micronutrient_targets
     (daily RDI values, pass-through). Deterministic.
+
+    When ``user_profile.schedule_days`` is set, per-day meal counts, busyness,
+    and workout gaps are taken from the canonical model; otherwise the legacy
+    ``schedule`` dict path is used without explicit workout topology.
     """
     excluded_ingredients = list(user_profile.allergies) + list(user_profile.disliked_foods)
 
-    one_day_slots = _schedule_dict_to_slots_one_day(
-        user_profile.schedule,
-        meal_types_per_day=meal_types_per_day,
-        day_index=0,
-    )
-    schedule: List[List[MealSlot]] = []
-    for d in range(days):
-        if meal_types_per_day is not None and d < len(meal_types_per_day):
-            slots_d = _schedule_dict_to_slots_one_day(
-                user_profile.schedule,
-                meal_types_per_day=meal_types_per_day,
-                day_index=d,
+    workout_after_meal_indices_by_day: Optional[List[List[int]]] = None
+    schedule: List[List[MealSlot]]
+
+    if user_profile.schedule_days is not None:
+        expanded = _expand_schedule_days(list(user_profile.schedule_days), days)
+        schedule = []
+        workout_after_meal_indices_by_day = []
+        for d in range(days):
+            day_ds = expanded[d]
+            schedule.append(
+                _canonical_day_to_planning_slots(day_ds, meal_types_per_day, d)
             )
-        else:
-            slots_d = one_day_slots
-        schedule.append(slots_d)
+            workout_after_meal_indices_by_day.append(
+                [w.after_meal_index for w in day_ds.workouts]
+            )
+        logger.debug(
+            "convert_profile: translated planner schedule: %s",
+            json.dumps(
+                [
+                    {
+                        "day_index": d + 1,
+                        "meal_count": len(schedule[d]),
+                        "workout_gaps": workout_after_meal_indices_by_day[d],
+                    }
+                    for d in range(days)
+                ],
+                sort_keys=True,
+            ),
+        )
+    else:
+        one_day_slots = _schedule_dict_to_slots_one_day(
+            user_profile.schedule,
+            meal_types_per_day=meal_types_per_day,
+            day_index=0,
+        )
+        schedule = []
+        for d in range(days):
+            if meal_types_per_day is not None and d < len(meal_types_per_day):
+                slots_d = _schedule_dict_to_slots_one_day(
+                    user_profile.schedule,
+                    meal_types_per_day=meal_types_per_day,
+                    day_index=d,
+                )
+            else:
+                slots_d = one_day_slots
+            schedule.append(slots_d)
 
     micronutrient_targets = dict(user_profile.daily_micronutrient_targets or {})
 
@@ -130,6 +266,8 @@ def convert_profile(
         upper_limits_overrides=None,
         pinned_assignments={},
         micronutrient_targets=micronutrient_targets,
+        micronutrient_weekly_min_fraction=user_profile.micronutrient_weekly_min_fraction,
         activity_schedule={},
+        workout_after_meal_indices_by_day=workout_after_meal_indices_by_day,
         enable_primary_carb_downscaling=False,
     )

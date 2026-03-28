@@ -1,0 +1,28 @@
+nutrition_goals:
+  daily_calories: 2400
+  daily_protein_g: 150
+  daily_fat_g:
+    min: 50
+    max: 100
+schedule:
+  07:00: 4
+  '12:00': 4
+  '18:00': 4
+  08:00: 0
+preferences:
+  liked_foods:
+  - salmon
+  - egg
+  - rice
+  - potatoes
+  - chicken
+  - broccoli
+  - blueberries
+  disliked_foods:
+  - brussels sprouts
+  - liver
+  allergies:
+  - shellfish
+  - peanuts
+demographic: adult_male
+micronutrient_goals: {}

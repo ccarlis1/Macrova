@@ -32,7 +32,9 @@ from pathlib import Path
 from typing import Optional, Dict, Any
 
 from src.ingestion.nutrient_mapper import MappedNutrition, NutrientMapper
+from src.ingestion.ingredient_ranker import rank_candidates
 from src.data_layer.models import MicronutrientProfile
+from src.ingestion.usda_client import USDALookupError
 
 
 @dataclass
@@ -257,7 +259,13 @@ class CachedIngredientLookup:
     def __init__(
         self,
         cache_dir: Optional[str] = None,
-        usda_client = None
+        usda_client=None,
+        *,
+        search_top_n: int = 8,
+        include_branded: bool = True,
+        resolution_mode: str = "deterministic",
+        confidence_threshold: float = 0.75,
+        llm_disambiguator=None,
     ):
         """Initialize cached lookup service.
         
@@ -268,6 +276,11 @@ class CachedIngredientLookup:
         self.cache = IngredientCache(cache_dir=cache_dir)
         self.client = usda_client
         self.mapper = NutrientMapper()
+        self.search_top_n = search_top_n
+        self.include_branded = include_branded
+        self.resolution_mode = resolution_mode
+        self.confidence_threshold = confidence_threshold
+        self.llm_disambiguator = llm_disambiguator
     
     def lookup(self, canonical_name: str) -> Optional[CacheEntry]:
         """Look up ingredient with caching.
@@ -287,30 +300,67 @@ class CachedIngredientLookup:
         if self.client is None:
             return None
         
-        # Step 2.2: Search for ingredient
-        lookup_result = self.client.lookup(canonical_name)
-        if not lookup_result.success:
+        # Step 2.2/2.3: Search top-N candidates, rank, then fetch details.
+        try:
+            candidates = self.client.search_candidates(
+                canonical_name,
+                page_size=self.search_top_n,
+                include_branded=self.include_branded,
+            )
+        except USDALookupError:
             return None
-        
+
+        if not candidates:
+            return None
+
+        ranked = rank_candidates(canonical_name, candidates)
+        selected_fdc_id = ranked.selected.fdc_id
+        if selected_fdc_id is None:
+            return None
+
+        # Confidence/mode gates:
+        # - Deterministic mode: never call LLM.
+        # - Assisted mode: call LLM only when confidence is below threshold.
+        mode = (self.resolution_mode or "deterministic").lower()
+        confidence_threshold = float(self.confidence_threshold)
+        if (
+            mode == "assisted"
+            and self.llm_disambiguator is not None
+            and ranked.confidence < confidence_threshold
+        ):
+            candidate_ids = [
+                c.fdc_id for c in ranked.top_candidates if isinstance(c.fdc_id, int)
+            ]
+            if candidate_ids:
+                llm_answer = self.llm_disambiguator.choose_fdc_id(
+                    query=canonical_name,
+                    candidates=[
+                        {
+                            "fdc_id": c.fdc_id,
+                            "description": c.description,
+                            "data_type": c.data_type,
+                        }
+                        for c in ranked.top_candidates
+                        if isinstance(c.fdc_id, int)
+                    ],
+                )
+                if isinstance(llm_answer, int) and llm_answer in candidate_ids:
+                    selected_fdc_id = llm_answer
+
         # Step 2.3: Get nutrition data
-        details = self.client.get_food_details(lookup_result.fdc_id)
+        details = self.client.get_food_details(selected_fdc_id)
         if not details.success:
             return None
         
         # Step 2.4: Map nutrients
         nutrition = self.mapper.map_nutrients(details.raw_payload)
         
-        # Get data type
-        data_type = ""
-        if hasattr(lookup_result, 'data_type') and lookup_result.data_type:
-            data_type = lookup_result.data_type.value if hasattr(lookup_result.data_type, 'value') else str(lookup_result.data_type)
-        
         # Create cache entry
         entry = CacheEntry(
             canonical_name=canonical_name,
-            fdc_id=lookup_result.fdc_id,
-            description=lookup_result.description or "",
-            data_type=data_type,
+            fdc_id=selected_fdc_id,
+            description=ranked.selected.description or "",
+            data_type=ranked.selected.data_type or "",
             nutrition=nutrition
         )
         

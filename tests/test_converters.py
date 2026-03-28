@@ -204,6 +204,21 @@ class TestConvertProfile:
         assert planning.micronutrient_targets["iron_mg"] == pytest.approx(10.0)
         assert planning.micronutrient_targets["vitamin_c_mg"] == pytest.approx(100.0)
 
+    def test_micronutrient_weekly_min_fraction_passes_through(self):
+        profile = UserProfile(
+            daily_calories=2000,
+            daily_protein_g=100.0,
+            daily_fat_g=(50.0, 80.0),
+            daily_carbs_g=200.0,
+            schedule={"08:00": 2},
+            liked_foods=[],
+            disliked_foods=[],
+            allergies=[],
+            micronutrient_weekly_min_fraction=0.9,
+        )
+        planning = convert_profile(profile, days=3)
+        assert planning.micronutrient_weekly_min_fraction == pytest.approx(0.9)
+
     def test_daily_micronutrient_targets_pass_through(self):
         """Verify converter does not modify daily values (no division by 7)."""
         profile = UserProfile(

@@ -1,17 +1,26 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:frontend/main.dart';
+import 'package:macrova/features/agent/llm_config_provider.dart';
+import 'package:macrova/main.dart';
+import 'package:macrova/providers/ingredient_provider.dart';
+import 'package:macrova/providers/meal_plan_provider.dart';
+import 'package:macrova/providers/profile_provider.dart';
+import 'package:macrova/providers/recipe_builder_coordinator.dart';
+import 'package:macrova/providers/recipe_provider.dart';
 
 void main() {
-  testWidgets('App boots profile setup screen', (WidgetTester tester) async {
-    await tester.pumpWidget(const MyApp());
-    expect(find.text('Nutrition Goals'), findsOneWidget);
+  testWidgets('App boots with Macrova shell', (WidgetTester tester) async {
+    final profile = ProfileProvider();
+    await tester.pumpWidget(
+      MacrovaApp(
+        profile: profile,
+        llmGate: LlmConfigProvider(profile),
+        ingredients: IngredientProvider(),
+        recipes: RecipeProvider(),
+        recipeBuilderCoordinator: RecipeBuilderCoordinator(),
+        mealPlan: MealPlanProvider(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Macrova'), findsOneWidget);
   });
 }

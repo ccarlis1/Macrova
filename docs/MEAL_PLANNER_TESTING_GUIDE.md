@@ -117,7 +117,8 @@ For a **success** (`result.success is True`, `result` is `MealPlanResult`):
 
 3. **Weekly tracker**
    - `result.weekly_tracker.days_completed == D`.
-   - If you use `micronutrient_targets`, weekly totals should meet or exceed prorated RDI (Spec Section 6.6).
+   - If you use `micronutrient_targets`, weekly totals should meet or exceed the **τ-aware weekly minimum** `τ × daily_RDI × D` per tracked nutrient (Spec Section 6.6). Default τ = 1.0 matches the legacy “full prorated RDI” bar.
+   - If τ < 1.0 and the planner succeeds with totals between `[τ × daily_RDI × D, daily_RDI × D)`, expect a **soft micronutrient deficit** warning on the result (Spec Section 6.6 / reporting).
 
 4. **Determinism**
    - Same `profile`, `recipe_pool`, `D`, `resolved_ul`, `attempt_limit` → same `result.plan` (same order).

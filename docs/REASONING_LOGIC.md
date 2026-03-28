@@ -12,6 +12,7 @@ LOAD user_profile:
     - Daily calorie target (e.g., 2400 kcal)
     - Daily macro targets (protein, fat range, carbs calculated)
     - Daily micronutrient RDIs (based on maintenance calories, not deficit)
+    - OPTIONAL: micronutrient_weekly_min_fraction τ in (0, 1], default 1.0 (weekly minimum vs prorated RDI; see MEALPLAN_SPECIFICATION_v1.md §6.6)
     - Schedule constraints (time slots with busyness levels 1-4)
     - Satiety requirements (long overnight fast, frequent meals, etc.)
     - Taste preferences (liked foods, disliked foods, allergies)
@@ -242,7 +243,7 @@ VALIDATE daily_plan:
         SPECIAL_CASES:
             - Vitamin D: Mark as "DOES NOT MATTER" (obtained from sun/supplements)
             - Omega-3:Omega-6 Ratio: Check ratio (e.g., 1:4) is more important than individual RDIs
-            - Sodium: Flag if high (e.g., >200% RDI) as "worth monitoring"
+            - Sodium: Flag if high (e.g., >200% of the user’s sodium RDI **times days in horizon**, i.e. vs. `daily_RDI_sodium × D` — not scaled by τ) as "worth monitoring"
 
     // Fat Diversity Check
     CHECK fat_diversity:
@@ -404,10 +405,10 @@ WHEN calculating nutrition (Future - Recipe API Integration):
 WHEN tracking weekly nutrients:
     - RDIs calculated from maintenance calories (not deficit)
     - Daily flexibility allowed
-    - Weekly totals must meet RDIs
-    - Prefer going over weekly RDI rather than under
-    - Carry forward deficits to next day
-    - Example: If Vitamin E is 96% today, need 104%+ tomorrow to meet weekly
+    - Let τ = micronutrient_weekly_min_fraction (default 1.0). Hard acceptance: weekly totals ≥ τ × daily_RDI × D per tracked nutrient; τ = 1.0 is strict (full prorated RDI). UL enforcement is separate — not relaxed by τ.
+    - Prefer going over the applicable weekly minimum rather than under
+    - Carry forward deficits relative to the τ-aware cumulative floor (see MEALPLAN_SPECIFICATION_v1.md §3.3)
+    - Example (τ = 1.0): If Vitamin E is 96% today, need 104%+ tomorrow to meet the full weekly line on schedule
 ```
 
 ---
@@ -472,7 +473,7 @@ OUTPUT:
 1. **This is conceptual pseudocode** - not actual implementation code
 2. **The reasoning process is iterative** - each meal informs the next
 3. **Micronutrients are prioritized** but not at the expense of adding random ingredients
-4. **Weekly tracking** allows daily flexibility while ensuring weekly RDIs are met
+4. **Weekly tracking** allows daily flexibility while enforcing the **τ-scaled weekly micronutrient minimum** (default τ = 1.0 = full prorated RDI per tracked nutrient); see `SYSTEM_RULES.md` and MEALPLAN Specification Section 6.6
 5. **"To taste" ingredients** are displayed but excluded from calculations
 6. **The output format** is flexible and can be adjusted (this pseudocode focuses on the reasoning logic)
 

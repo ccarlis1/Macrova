@@ -327,6 +327,46 @@ class TestUserProfileLoader:
         finally:
             Path(temp_path).unlink()
 
+    def test_load_micronutrient_weekly_min_fraction(self):
+        profile_data = {
+            "nutrition_goals": {
+                "daily_calories": 2400,
+                "daily_protein_g": 150,
+                "daily_fat_g": {"min": 50, "max": 100},
+                "micronutrient_weekly_min_fraction": 0.9,
+            },
+            "schedule": {"07:00": 2},
+            "preferences": {"liked_foods": [], "disliked_foods": [], "allergies": []},
+        }
+        with NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+            yaml.dump(profile_data, f)
+            temp_path = f.name
+        try:
+            profile = UserProfileLoader(temp_path).load()
+            assert profile.micronutrient_weekly_min_fraction == 0.9
+        finally:
+            Path(temp_path).unlink()
+
+    def test_load_invalid_micronutrient_weekly_min_fraction(self):
+        profile_data = {
+            "nutrition_goals": {
+                "daily_calories": 2400,
+                "daily_protein_g": 150,
+                "daily_fat_g": {"min": 50, "max": 100},
+                "micronutrient_weekly_min_fraction": 0.0,
+            },
+            "schedule": {"07:00": 2},
+            "preferences": {"liked_foods": [], "disliked_foods": [], "allergies": []},
+        }
+        with NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+            yaml.dump(profile_data, f)
+            temp_path = f.name
+        try:
+            with pytest.raises(ValueError):
+                UserProfileLoader(temp_path).load()
+        finally:
+            Path(temp_path).unlink()
+
     def test_load_profile_without_max_daily_calories(self):
         """Test loading user profile without max_daily_calories (feature disabled)."""
         profile_data = {

@@ -32,7 +32,7 @@ Given a user profile U, a finite recipe pool R, and a planning horizon of D days
 
 3. Each day's micronutrient totals do not exceed any applicable Upper Tolerable Intake (UL).
 
-4. The aggregate of all micronutrients across the D planned days meets or exceeds the prorated RDI target for each tracked micronutrient (see Section 6.6).
+4. The aggregate of all micronutrients across the D planned days meets or exceeds the **prorated minimum micronutrient requirement** for each tracked micronutrient: **τ × daily_RDI × D**, where **τ = `U.micronutrient_weekly_min_fraction` ∈ (0, 1]** (default **1.0**; see Section 2.1 / 6.6). When τ = 1.0 this matches the legacy “full prorated RDI” requirement.
 
 5. Among all valid plans, the plan selected is the one found first by the search strategy (Section 6), which uses a score-maximizing heuristic at every decision point.
 
@@ -82,6 +82,8 @@ The algorithm is **deterministic**: identical inputs shall produce identical out
 
 | `micronutrient_targets` | Dict[str, float] | Daily RDI targets for each tracked micronutrient, keyed by nutrient name. Only nutrients present in this dictionary participate in scoring, carryover tracking, and weekly validation. Nutrients the user does not wish to track (e.g., Vitamin D if obtained via supplementation) are simply omitted. |
 
+| `micronutrient_weekly_min_fraction` | float | **τ.** Minimum fraction of the prorated weekly RDI (`daily_RDI × D`) that must be met for each **tracked** micronutrient at plan completion. Must lie in **(0, 1]**; default **1.0**. Invalid values (τ ≤ 0 or τ > 1) shall be rejected at profile load. A **warning** should be logged if τ < 0.85 (product policy). |
+
 | `activity_schedule` | Dict[str, str] | Activity entries (e.g., workout times) used to derive activity context per slot |
 
 | `enable_primary_carb_downscaling` | bool | Optional. Default `false`. When `true`, enables the Primary Carb Downscaling operator (Section 6.7), which generates reduced-carb variants of candidate recipes to avoid calorie-overflow backtracking. |
@@ -97,6 +99,10 @@ The algorithm is **deterministic**: identical inputs shall produce identical out
   
 
 **Design note — `micronutrient_targets`:** This field replaces a prior `nutrient_exemptions` list. Rather than tracking all known micronutrients and exempting some, the system only tracks what the user explicitly targets. If a micronutrient is not relevant to the user's dietary goals (e.g., Vitamin D obtained from sun/supplementation), it is omitted from this dictionary and the algorithm has no awareness of it for scoring or validation purposes. UL enforcement (Section 4, HC-4) is independent — a nutrient may have a UL even if it is not in `micronutrient_targets`.
+
+  
+
+**Design note — `micronutrient_weekly_min_fraction` (τ):** τ scales only the **RDI minimum** path (weekly validation, FC-4, carryover pressure, FM-4 / soft-deficit reporting). It shall **not** scale UL checks (HC-4, FC-3) or macro ±10% rules. Implementations should centralize formulas for `τ × daily_RDI × …` so feasibility and final acceptance cannot diverge (see `SYSTEM_RULES.md`).
 
   
 
@@ -244,7 +250,7 @@ Within a recipe, the **primary carb source** is defined as the single scalable c
 
   
 
-- **Micronutrient RDI Reference:** Daily RDI targets per micronutrient, as defined by `U.micronutrient_targets`. Weekly targets are computed as `daily_RDI × D` (prorated to the planning horizon). Daily RDIs are based on maintenance calories (not deficit calories). (Source: KNOWLEDGE.md)
+- **Micronutrient RDI Reference:** Daily RDI targets per micronutrient, as defined by `U.micronutrient_targets`. The **full** prorated weekly goal line is `daily_RDI × D` (prorated to the planning horizon `D`). The **hard weekly minimum** used for acceptance, feasibility (FC-4), carryover, and FM-4 diagnostics is **τ × daily_RDI × D** with τ = `U.micronutrient_weekly_min_fraction` (default 1.0). Daily RDIs are based on maintenance calories (not deficit calories). (Source: KNOWLEDGE.md)
 
   
 
@@ -332,7 +338,7 @@ A single weekly tracker `W` contains:
 
 | `days_remaining` | int | D − `days_completed` |
 
-| `carryover_needs` | Dict[str, float] | For each tracked micronutrient: the accumulated deficit that must be compensated by remaining days. Computed as `max(0, (daily_RDI × days_completed) − weekly_totals[nutrient])` |
+| `carryover_needs` | Dict[str, float] | For each tracked micronutrient: the accumulated deficit that must be compensated by remaining days. **τ-aware:** after `days_completed = k`, computed as `max(0, τ × daily_RDI × k − weekly_totals[nutrient])` where τ = `U.micronutrient_weekly_min_fraction`. When τ = 1.0 this reduces to the legacy `max(0, (daily_RDI × k) − weekly_totals[nutrient])`. |
 
   
 
@@ -352,7 +358,7 @@ For each tracked micronutrient `n` (i.e., `n ∈ U.micronutrient_targets`):
 
   
 
-Where `days_remaining` includes the current day.
+Where `days_remaining` includes the current day. **`carryover_needs` is τ-aware** (Section 3.3); adjusted daily targets inherit that policy without duplicating the τ formula here.
 
   
 
@@ -680,7 +686,9 @@ Evaluated at the start of each day d (d > 1), before assigning any slot for that
 
 For each tracked micronutrient n (i.e., `n ∈ U.micronutrient_targets`):
 
-- Let `deficit(n) = (daily_RDI(n) × D) − W.weekly_totals[n]`
+- Let `weekly_minimum_required(n) = τ × daily_RDI(n) × D` where τ = `U.micronutrient_weekly_min_fraction`
+
+- Let `deficit(n) = weekly_minimum_required(n) − W.weekly_totals[n]`
 
 - Let `days_left = W.days_remaining` (including the current day)
 
@@ -850,19 +858,23 @@ When all D days have been fully assigned and individually validated, perform **w
 
 For each tracked micronutrient n (i.e., `n ∈ U.micronutrient_targets`):
 
-- `W.weekly_totals[n] ≥ daily_RDI(n) × D`
+- `W.weekly_totals[n] ≥ τ × daily_RDI(n) × D` where τ = `U.micronutrient_weekly_min_fraction`
 
   
 
-The weekly target is **prorated** to the planning horizon. If D = 3, the target is `daily_RDI × 3`, not the full 7-day RDI. This ensures the algorithm's validation is meaningful regardless of how many days are planned.
+The **full** prorated user goal line remains `daily_RDI × D`; the **minimum** enforced here is the τ fraction of that total. The horizon is **prorated**: if D = 3, the full goal line is `daily_RDI × 3`, not the full 7-day RDI. When τ = 1.0, the minimum equals the full prorated line.
 
   
 
-(Source: SYSTEM_RULES.md — "Weekly micronutrient logic may allow daily variance but MUST meet weekly RDI"; KNOWLEDGE.md — "it is not negotiable that [...] the weekly calculation of micronutrient RDIs are reached")
+(Source: SYSTEM_RULES.md — strict default τ = 1.0; relaxed τ < 1.0 is a documented product option with transparency requirements; UL rules are unchanged. KNOWLEDGE.md remains the rationale for maintenance-calorie-based RDIs.)
 
   
 
-**Sodium advisory:** If the planned total for Sodium exceeds 200% of `daily_RDI × D`, this should be flagged as a warning in the output. It is not a hard constraint and does not trigger backtracking. (Source: REASONING_LOGIC.md)
+**Reporting (τ < 1.0):** When the plan **passes** weekly validation but, for any tracked `n`, `τ × daily_RDI(n) × D ≤ W.weekly_totals[n] < daily_RDI(n) × D`, the result should include a **soft deficit** warning (e.g. `micronutrient_soft_deficit`) listing `n`, achieved total, `min_req = τ × daily_RDI × D`, and `full_req = daily_RDI × D`.
+
+  
+
+**Sodium advisory:** If the planned total for Sodium exceeds 200% of **`daily_RDI(Sodium) × D`** — i.e. 200% of the user’s **stated sodium RDI** summed over the horizon **without** applying τ — this should be flagged as a warning in the output. It is not a hard constraint and does not trigger backtracking. (Source: REASONING_LOGIC.md, SYSTEM_RULES.md)
 
   
 
@@ -1338,7 +1350,7 @@ Evaluates the fit between r's cooking time and the slot's busyness level.
 
 | BT-2 | Daily validation failure for day d | Day d completion (Section 6.5) |
 
-| BT-3 | Weekly validation failure | Plan completion (Section 6.6) |
+| BT-3 | Weekly validation failure: tracked weekly totals below **τ × prorated minimum** (Section 6.6) | Plan completion (Section 6.6) |
 
 | BT-4 | Weekly feasibility failure (FC-4) | Start of day d (d > 1) |
 
@@ -1554,7 +1566,7 @@ When the algorithm terminates without a valid plan (TC-2 or TC-3), it shall repo
 
   
 
-**Condition:** Each individual day can be planned to pass daily validation, but the accumulated totals for one or more tracked micronutrients fall below the prorated RDI target (`daily_RDI × D`) after all D days.
+**Condition:** Each individual day can be planned to pass daily validation, but the accumulated totals for one or more tracked micronutrients fall below **τ × prorated RDI** (`τ × daily_RDI × D`) after all D days — i.e. below the same floor used in Section 6.6 and FC-4.
 
   
 
@@ -1564,11 +1576,11 @@ When the algorithm terminates without a valid plan (TC-2 or TC-3), it shall repo
 
 **Report shall include:**
 
-- Which micronutrient(s) are deficient and by what amount.
+- Which micronutrient(s) are deficient and by what amount (vs. **`min_req = τ × daily_RDI × D`**).
 
-- The total achieved vs. the prorated RDI target for each deficient nutrient.
+- The total achieved vs. **`min_req`** for each deficient nutrient; optionally include **`full_req = daily_RDI × D`** for comparison with the user’s full goal line.
 
-- Whether the deficiency is marginal (close to target, potentially resolvable with recipe pool expansion) or structural (no combination in the pool can meet it).
+- Whether the deficiency is marginal (close to **`min_req`**, potentially resolvable with recipe pool expansion) or structural (no combination in the pool can meet **`min_req`**).
 
   
 

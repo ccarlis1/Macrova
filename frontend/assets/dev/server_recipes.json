@@ -1,0 +1,1072 @@
+{
+  "recipes": [
+    {
+      "id": "recipe_001",
+      "name": "Carb Heavy",
+      "description": "Simple bowl of jasmine rice and edamame with sesame oil and soy sauce for a quick carb-focused meal.",
+      "ingredients": [
+        {
+          "quantity": 320,
+          "unit": "g",
+          "name": "jasmine rice in unsalted water"
+        },
+        {
+          "quantity": 150,
+          "unit": "g",
+          "name": "edamame beans"
+        },
+        {
+          "quantity": 8,
+          "unit": "g",
+          "name": "sesame oil"
+        },
+        {
+          "quantity": 15,
+          "unit": "g",
+          "name": "soy sauce"
+        }
+      ],
+      "cooking_time_minutes": 15,
+      "instructions": [
+        "Cook jasmine rice according to package. Steam or boil edamame. Toss rice and edamame with sesame oil. Season with soy sauce to taste."
+      ]
+    },
+    {
+      "id": "recipe_002",
+      "name": "Spaghetti Squash",
+      "description": "Baked spaghetti squash topped with tomato, lean ground beef, parsley, and parmesan for a lower-carb pasta alternative.",
+      "ingredients": [
+        {
+          "quantity": 350,
+          "unit": "g",
+          "name": "spaghetti squash"
+        },
+        {
+          "quantity": 350,
+          "unit": "g",
+          "name": "tomato"
+        },
+        {
+          "quantity": 25,
+          "unit": "g",
+          "name": "parmesan cheese hard"
+        },
+        {
+          "quantity": 10,
+          "unit": "g",
+          "name": "parsley"
+        },
+        {
+          "quantity": 5,
+          "unit": "oz",
+          "name": "hamburger or beef 95%"
+        }
+      ],
+      "cooking_time_minutes": 45,
+      "instructions": [
+        "Halve and bake spaghetti squash until tender. Saut\u00e9 ground beef; add tomato and simmer. Scrape squash into strands, top with meat sauce, parsley, and parmesan."
+      ]
+    },
+    {
+      "id": "recipe_003",
+      "name": "Poke Bowl, Tuna",
+      "description": "Hawaiian-style bowl with tuna sashimi, jasmine rice, edamame, carrots, sesame oil, firm tofu, and soy sauce.",
+      "ingredients": [
+        {
+          "quantity": 4,
+          "unit": "oz",
+          "name": "tuna sashimi"
+        },
+        {
+          "quantity": 240,
+          "unit": "g",
+          "name": "jasmine rice in unsalted water"
+        },
+        {
+          "quantity": 150,
+          "unit": "g",
+          "name": "edamame beans"
+        },
+        {
+          "quantity": 30,
+          "unit": "g",
+          "name": "carrots"
+        },
+        {
+          "quantity": 5,
+          "unit": "g",
+          "name": "sesame oil"
+        },
+        {
+          "quantity": 15,
+          "unit": "g",
+          "name": "soy sauce"
+        },
+        {
+          "quantity": 3,
+          "unit": "oz",
+          "name": "tofu not silken firm"
+        }
+      ],
+      "cooking_time_minutes": 25,
+      "instructions": [
+        "Cook jasmine rice. Arrange rice in a bowl; top with tuna, edamame, grated carrots, and cubed tofu. Drizzle with sesame oil and season to taste."
+      ]
+    },
+    {
+      "id": "recipe_004",
+      "name": "Bolognese",
+      "description": "Classic meat sauce with lean ground beef, tomato, carrots, olive oil, parmesan, and spinach over pasta.",
+      "ingredients": [
+        {
+          "quantity": 100,
+          "unit": "g",
+          "name": "pasta"
+        },
+        {
+          "quantity": 15,
+          "unit": "g",
+          "name": "olive oil"
+        },
+        {
+          "quantity": 5,
+          "unit": "oz",
+          "name": "hamburger or beef 95%"
+        },
+        {
+          "quantity": 1,
+          "unit": "cup",
+          "name": "tomato"
+        },
+        {
+          "quantity": 4,
+          "unit": "tbsp",
+          "name": "carrots"
+        },
+        {
+          "quantity": 70,
+          "unit": "g",
+          "name": "spinach"
+        },
+        {
+          "quantity": 25,
+          "unit": "g",
+          "name": "parmesan cheese hard"
+        }
+      ],
+      "cooking_time_minutes": 40,
+      "instructions": [
+        "Saut\u00e9 ground beef in olive oil; add tomato and diced carrots. Simmer until thickened. Serve over pasta with grated parmesan."
+      ]
+    },
+    {
+      "id": "recipe_005",
+      "name": "Fried Rice",
+      "description": "Hearty fried rice with ground beef, scrambled eggs, jasmine rice, black beans, spinach, and soy sauce.",
+      "ingredients": [
+        {
+          "quantity": 4,
+          "unit": "oz",
+          "name": "hamburger or beef 90%"
+        },
+        {
+          "quantity": 55,
+          "unit": "g",
+          "name": "eggs"
+        },
+        {
+          "quantity": 70,
+          "unit": "g",
+          "name": "spinach"
+        },
+        {
+          "quantity": 240,
+          "unit": "g",
+          "name": "jasmine rice in unsalted water"
+        },
+        {
+          "quantity": 85,
+          "unit": "g",
+          "name": "black beans drained"
+        },
+        {
+          "quantity": 15,
+          "unit": "g",
+          "name": "soy sauce"
+        }
+      ],
+      "cooking_time_minutes": 25,
+      "instructions": [
+        "Cook rice and set aside. Brown ground beef; push to one side and scramble eggs. Add rice and black beans, stir-fry until hot. Season with soy sauce to taste."
+      ]
+    },
+    {
+      "id": "recipe_006",
+      "name": "Mexican Egg Skillet",
+      "description": "One-pan skillet with baked potato, black beans, eggs, spinach, salsa, butter, chicken breast, and cheddar.",
+      "ingredients": [
+        {
+          "quantity": 150,
+          "unit": "g",
+          "name": "potatoes flesh"
+        },
+        {
+          "quantity": 170,
+          "unit": "g",
+          "name": "black beans drained"
+        },
+        {
+          "quantity": 260,
+          "unit": "g",
+          "name": "eggs"
+        },
+        {
+          "quantity": 70,
+          "unit": "g",
+          "name": "spinach"
+        },
+        {
+          "quantity": 60,
+          "unit": "g",
+          "name": "salsa ready-to-serve"
+        },
+        {
+          "quantity": 10,
+          "unit": "g",
+          "name": "butter"
+        },
+        {
+          "quantity": 100,
+          "unit": "g",
+          "name": "chicken breast"
+        },
+        {
+          "quantity": 30,
+          "unit": "g",
+          "name": "cheddar cheese natural 50% reduced fat"
+        }
+      ],
+      "cooking_time_minutes": 30,
+      "instructions": [
+        "Dice potato and cook in butter until tender. Add black beans and salsa; make wells and crack in eggs. Add shredded chicken and cheddar; cover until eggs set."
+      ]
+    },
+    {
+      "id": "recipe_007",
+      "name": "Canned Salmon Wrap",
+      "description": "Quick wrap with canned salmon, corn tortilla, low-fat Greek yogurt, spinach, cheddar, and jasmine rice.",
+      "ingredients": [
+        {
+          "quantity": 80,
+          "unit": "g",
+          "name": "tortillas corn"
+        },
+        {
+          "quantity": 170,
+          "unit": "g",
+          "name": "salmon canned"
+        },
+        {
+          "quantity": 2,
+          "unit": "tbsp",
+          "name": "low fat greek yogurt"
+        },
+        {
+          "quantity": 30,
+          "unit": "g",
+          "name": "spinach"
+        },
+        {
+          "quantity": 1,
+          "unit": "oz",
+          "name": "cheddar cheese natural 50% reduced fat"
+        },
+        {
+          "quantity": 100,
+          "unit": "g",
+          "name": "jasmine rice in unsalted water"
+        }
+      ],
+      "cooking_time_minutes": 10,
+      "instructions": [
+        "Warm tortilla. Mix Greek yogurt with desired fillings; place on tortilla with cheddar and rice. Roll and serve."
+      ]
+    },
+    {
+      "id": "recipe_008",
+      "name": "Shakshuka",
+      "description": "Eggs poached in tomato sauce with olive oil, spinach, parmesan, sourdough, and black beans.",
+      "ingredients": [
+        {
+          "quantity": 220,
+          "unit": "g",
+          "name": "eggs"
+        },
+        {
+          "quantity": 500,
+          "unit": "g",
+          "name": "tomato"
+        },
+        {
+          "quantity": 10,
+          "unit": "g",
+          "name": "olive oil"
+        },
+        {
+          "quantity": 30,
+          "unit": "g",
+          "name": "parmesan grated"
+        },
+        {
+          "quantity": 70,
+          "unit": "g",
+          "name": "spinach"
+        },
+        {
+          "quantity": 160,
+          "unit": "g",
+          "name": "sourdough bread"
+        },
+        {
+          "quantity": 170,
+          "unit": "g",
+          "name": "black beans drained"
+        }
+      ],
+      "cooking_time_minutes": 30,
+      "instructions": [
+        "Saut\u00e9 tomato in olive oil until saucy. Make wells and crack in eggs; cover until set. Top with parmesan. Serve with sourdough and black beans."
+      ]
+    },
+    {
+      "id": "recipe_009",
+      "name": "Greek Yogurt Protein Bowl",
+      "description": "High-protein bowl with low-fat Greek yogurt, whey powder, blueberries, chocolate, honey, almond butter, and chia seeds.",
+      "ingredients": [
+        {
+          "quantity": 240,
+          "unit": "g",
+          "name": "low fat greek yogurt"
+        },
+        {
+          "quantity": 30,
+          "unit": "g",
+          "name": "whey protein powder 24 grams of protein per scoop"
+        },
+        {
+          "quantity": 80,
+          "unit": "g",
+          "name": "blueberries"
+        },
+        {
+          "quantity": 8,
+          "unit": "g",
+          "name": "chocolate dark 70-85% cacao solids"
+        },
+        {
+          "quantity": 15,
+          "unit": "g",
+          "name": "honey"
+        },
+        {
+          "quantity": 15,
+          "unit": "g",
+          "name": "almond butter unsalted"
+        },
+        {
+          "quantity": 15,
+          "unit": "g",
+          "name": "chia seeds"
+        }
+      ],
+      "cooking_time_minutes": 5,
+      "instructions": [
+        "Scoop yogurt into a bowl. Stir in whey powder until smooth. Top with chocolate, honey, almond butter, and chia seeds."
+      ]
+    },
+    {
+      "id": "recipe_010",
+      "name": "Dense Bean Salad",
+      "description": "Hearty bean salad with chickpeas, white beans, olive oil, feta, salami, and parmesan.",
+      "ingredients": [
+        {
+          "quantity": 170,
+          "unit": "g",
+          "name": "chickpeas drained"
+        },
+        {
+          "quantity": 170,
+          "unit": "g",
+          "name": "beans white mature seeds"
+        },
+        {
+          "quantity": 12,
+          "unit": "g",
+          "name": "olive oil"
+        },
+        {
+          "quantity": 30,
+          "unit": "g",
+          "name": "feta cheese reduced fat"
+        },
+        {
+          "quantity": 120,
+          "unit": "g",
+          "name": "salami genoa"
+        },
+        {
+          "quantity": 30,
+          "unit": "g",
+          "name": "parmesan cheese hard"
+        }
+      ],
+      "cooking_time_minutes": 15,
+      "instructions": [
+        "Combine chickpeas and white beans. Dress with olive oil; fold in feta, sliced salami, and grated parmesan. Serve chilled or at room temperature."
+      ]
+    },
+    {
+      "id": "recipe_011",
+      "name": "Greek Yogurt Balance",
+      "description": "Balanced parfait with nonfat Greek yogurt, blackberries, almond butter, honey, chia seeds, and acai.",
+      "ingredients": [
+        {
+          "quantity": 150,
+          "unit": "g",
+          "name": "blackberries unsweetened"
+        },
+        {
+          "quantity": 240,
+          "unit": "g",
+          "name": "greek yogurt plain nonfat"
+        },
+        {
+          "quantity": 15,
+          "unit": "g",
+          "name": "almond butter unsalted"
+        },
+        {
+          "quantity": 15,
+          "unit": "g",
+          "name": "honey"
+        },
+        {
+          "quantity": 15,
+          "unit": "g",
+          "name": "chia seeds"
+        },
+        {
+          "quantity": 70,
+          "unit": "g",
+          "name": "acai berry"
+        }
+      ],
+      "cooking_time_minutes": 5,
+      "instructions": [
+        "Layer Greek yogurt with blackberries, almond butter, honey, chia seeds, and acai. Serve immediately."
+      ]
+    },
+    {
+      "id": "recipe_012",
+      "name": "Pre Workout 1",
+      "description": "Light pre-workout combo of cream of rice, banana, and whey protein for quick energy and protein.",
+      "ingredients": [
+        {
+          "quantity": 50,
+          "unit": "g",
+          "name": "cream of rice dry"
+        },
+        {
+          "quantity": 118,
+          "unit": "g",
+          "name": "bananas"
+        },
+        {
+          "quantity": 30,
+          "unit": "g",
+          "name": "whey protein powder 24 grams of protein per scoop"
+        }
+      ],
+      "cooking_time_minutes": 5,
+      "instructions": [
+        "Prepare cream of rice according to package. Slice banana on top; stir in whey powder or serve on the side."
+      ]
+    },
+    {
+      "id": "recipe_013",
+      "name": "Pre Workout 2",
+      "description": "Pre-workout snack with banana, Rice Krispies Treat, whey protein, and kiwi for carbs and protein.",
+      "ingredients": [
+        {
+          "quantity": 118,
+          "unit": "g",
+          "name": "bananas"
+        },
+        {
+          "quantity": 22,
+          "unit": "g",
+          "name": "kellogg's rice krispies treats original"
+        },
+        {
+          "quantity": 30,
+          "unit": "g",
+          "name": "whey protein powder 24 grams of protein per scoop"
+        },
+        {
+          "quantity": 140,
+          "unit": "g",
+          "name": "kiwi fruit green"
+        }
+      ],
+      "cooking_time_minutes": 2,
+      "instructions": [
+        "Eat banana, Rice Krispies Treat, and kiwi. Have whey protein with water or milk as desired."
+      ]
+    },
+    {
+      "id": "recipe_014",
+      "name": "Power Shake",
+      "description": "Nutrient-dense shake with milk, whey, kiwi, blackberries, blueberries, spinach, chia, dark chocolate, egg yolk, Greek yogurt, and almonds.",
+      "ingredients": [
+        {
+          "quantity": 400,
+          "unit": "g",
+          "name": "milk 1% fat lowfat"
+        },
+        {
+          "quantity": 30,
+          "unit": "g",
+          "name": "whey protein powder 24 grams of protein per scoop"
+        },
+        {
+          "quantity": 140,
+          "unit": "g",
+          "name": "kiwi fruit green"
+        },
+        {
+          "quantity": 150,
+          "unit": "g",
+          "name": "blackberries unsweetened"
+        },
+        {
+          "quantity": 75,
+          "unit": "g",
+          "name": "blueberries"
+        },
+        {
+          "quantity": 75,
+          "unit": "g",
+          "name": "spinach"
+        },
+        {
+          "quantity": 15,
+          "unit": "g",
+          "name": "chia seeds"
+        },
+        {
+          "quantity": 1,
+          "unit": "tsp",
+          "name": "chocolate dark 70-85% cacao solids"
+        },
+        {
+          "quantity": 55,
+          "unit": "g",
+          "name": "egg yolk"
+        },
+        {
+          "quantity": 2,
+          "unit": "tbsp",
+          "name": "greek yogurt plain nonfat"
+        },
+        {
+          "quantity": 15,
+          "unit": "g",
+          "name": "almonds"
+        }
+      ],
+      "cooking_time_minutes": 5,
+      "instructions": [
+        "Add milk, whey, kiwi, blackberries, chia, chocolate, and yogurt to a blender. Blend until smooth and serve."
+      ]
+    },
+    {
+      "id": "recipe_015",
+      "name": "Slop Bowl",
+      "description": "Hearty bowl of jasmine rice, ground beef, chicken, black beans, spinach, avocado, carrots, and salsa.",
+      "ingredients": [
+        {
+          "quantity": 320,
+          "unit": "g",
+          "name": "jasmine rice in unsalted water"
+        },
+        {
+          "quantity": 4,
+          "unit": "oz",
+          "name": "hamburger or beef 90%"
+        },
+        {
+          "quantity": 4,
+          "unit": "oz",
+          "name": "chicken breast"
+        },
+        {
+          "quantity": 170,
+          "unit": "g",
+          "name": "black beans drained"
+        },
+        {
+          "quantity": 100,
+          "unit": "g",
+          "name": "spinach"
+        },
+        {
+          "quantity": 50,
+          "unit": "g",
+          "name": "avocado black skin"
+        },
+        {
+          "quantity": 75,
+          "unit": "g",
+          "name": "carrots"
+        },
+        {
+          "quantity": 60,
+          "unit": "g",
+          "name": "salsa ready-to-serve"
+        }
+      ],
+      "cooking_time_minutes": 30,
+      "instructions": [
+        "Cook rice. Brown ground beef and dice chicken; combine with black beans and salsa. Serve over rice with sliced avocado and shredded carrots."
+      ]
+    },
+    {
+      "id": "recipe_016",
+      "name": "Sweet Potato Bowl",
+      "description": "Loaded sweet potato bowl with baked sweet potato, butter, ground beef, black beans, cheddar, and spinach.",
+      "ingredients": [
+        {
+          "quantity": 150,
+          "unit": "g",
+          "name": "sweet potato"
+        },
+        {
+          "quantity": 5,
+          "unit": "g",
+          "name": "butter"
+        },
+        {
+          "quantity": 5,
+          "unit": "oz",
+          "name": "hamburger or beef 90%"
+        },
+        {
+          "quantity": 170,
+          "unit": "g",
+          "name": "black beans drained"
+        },
+        {
+          "quantity": 30,
+          "unit": "g",
+          "name": "cheddar cheese natural 50% reduced fat"
+        },
+        {
+          "quantity": 70,
+          "unit": "g",
+          "name": "spinach"
+        }
+      ],
+      "cooking_time_minutes": 35,
+      "instructions": [
+        "Bake or microwave sweet potato until tender. Brown ground beef; warm black beans. Split potato, add butter, top with beef, beans, cheddar, and spinach to taste."
+      ]
+    },
+    {
+      "id": "recipe_017",
+      "name": "Power Omelette",
+      "description": "Protein-packed omelette with eggs, roast beef, spinach, avocado oil, cheddar, and red bell peppers.",
+      "ingredients": [
+        {
+          "quantity": 275,
+          "unit": "g",
+          "name": "eggs"
+        },
+        {
+          "quantity": 120,
+          "unit": "g",
+          "name": "roast beef lunchmeat"
+        },
+        {
+          "quantity": 50,
+          "unit": "g",
+          "name": "spinach"
+        },
+        {
+          "quantity": 10,
+          "unit": "g",
+          "name": "avocado oil"
+        },
+        {
+          "quantity": 30,
+          "unit": "g",
+          "name": "cheddar cheese natural 50% reduced fat"
+        },
+        {
+          "quantity": 75,
+          "unit": "g",
+          "name": "red peppers"
+        }
+      ],
+      "cooking_time_minutes": 15,
+      "instructions": [
+        "Beat eggs and pour into a nonstick pan. When set, layer with roast beef, cheddar, and diced red pepper. Fold and serve."
+      ]
+    },
+    {
+      "id": "recipe_018",
+      "name": "Roast Beef Sandwich",
+      "description": "Classic deli-style sandwich with roast beef, turkey, sourdough, cheddar, and sauerkraut.",
+      "ingredients": [
+        {
+          "quantity": 120,
+          "unit": "g",
+          "name": "roast beef lunchmeat"
+        },
+        {
+          "quantity": 60,
+          "unit": "g",
+          "name": "turkey breast lunchmeat reduced fat"
+        },
+        {
+          "quantity": 80,
+          "unit": "g",
+          "name": "sourdough bread"
+        },
+        {
+          "quantity": 60,
+          "unit": "g",
+          "name": "cheddar cheese natural 50% reduced fat"
+        },
+        {
+          "quantity": 30,
+          "unit": "g",
+          "name": "sauerkraut"
+        }
+      ],
+      "cooking_time_minutes": 5,
+      "instructions": [
+        "Layer roast beef, turkey, and cheddar on sourdough. Add sauerkraut and condiments if desired. Serve."
+      ]
+    },
+    {
+      "id": "llm_0415c122c1511957",
+      "name": "Quinoa Salad",
+      "ingredients": [
+        {
+          "name": "quinoa",
+          "quantity": 150.0,
+          "unit": "g"
+        },
+        {
+          "name": "cherry tomatoes",
+          "quantity": 0.0,
+          "unit": "to taste"
+        },
+        {
+          "name": "cucumber",
+          "quantity": 100.0,
+          "unit": "g"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 29.58,
+          "unit": "ml"
+        },
+        {
+          "name": "lemon juice",
+          "quantity": 14.79,
+          "unit": "ml"
+        },
+        {
+          "name": "salt",
+          "quantity": 0.0,
+          "unit": "to taste"
+        },
+        {
+          "name": "pepper",
+          "quantity": 0.0,
+          "unit": "to taste"
+        }
+      ],
+      "cooking_time_minutes": 20,
+      "instructions": [
+        "Cook quinoa according to package instructions.",
+        "Chop cherry tomatoes and cucumber.",
+        "In a bowl, mix quinoa, tomatoes, cucumber, olive oil, lemon juice, salt, and pepper.",
+        "Serve chilled."
+      ]
+    },
+    {
+      "id": "llm_26427200aaed5fee",
+      "name": "Grilled Chicken with Vegetables",
+      "ingredients": [
+        {
+          "name": "chicken breast",
+          "quantity": 250.0,
+          "unit": "g"
+        },
+        {
+          "name": "bell pepper",
+          "quantity": 100.0,
+          "unit": "g"
+        },
+        {
+          "name": "zucchini",
+          "quantity": 100.0,
+          "unit": "g"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 14.79,
+          "unit": "ml"
+        },
+        {
+          "name": "garlic",
+          "quantity": 0.0,
+          "unit": "to taste"
+        },
+        {
+          "name": "salt",
+          "quantity": 0.0,
+          "unit": "to taste"
+        },
+        {
+          "name": "pepper",
+          "quantity": 0.0,
+          "unit": "to taste"
+        }
+      ],
+      "cooking_time_minutes": 25,
+      "instructions": [
+        "Preheat grill to medium-high heat.",
+        "Season chicken with olive oil, garlic, salt, and pepper.",
+        "Grill chicken for 6-7 minutes on each side until cooked through.",
+        "Slice bell pepper and zucchini, grill for 3-4 minutes.",
+        "Serve chicken with grilled vegetables."
+      ]
+    },
+    {
+      "id": "llm_59834f6218eb974e",
+      "name": "Oatmeal with Fruits",
+      "ingredients": [
+        {
+          "name": "rolled oats",
+          "quantity": 0.0,
+          "unit": "to taste"
+        },
+        {
+          "name": "water",
+          "quantity": 0.0,
+          "unit": "to taste"
+        },
+        {
+          "name": "banana",
+          "quantity": 1.0,
+          "unit": "large"
+        },
+        {
+          "name": "honey",
+          "quantity": 14.79,
+          "unit": "ml"
+        },
+        {
+          "name": "cinnamon",
+          "quantity": 0.0,
+          "unit": "to taste"
+        }
+      ],
+      "cooking_time_minutes": 25,
+      "instructions": [
+        "In a pot, bring water to a boil.",
+        "Add rolled oats and reduce heat, simmer for 5 minutes.",
+        "Slice banana and add to oatmeal.",
+        "Stir in honey and cinnamon.",
+        "Serve warm."
+      ]
+    },
+    {
+      "id": "llm_60014bc2d768d321",
+      "name": "Quinoa Salad",
+      "ingredients": [
+        {
+          "name": "quinoa",
+          "quantity": 150.0,
+          "unit": "g"
+        },
+        {
+          "name": "cherry tomatoes",
+          "quantity": 100.0,
+          "unit": "g"
+        },
+        {
+          "name": "cucumber",
+          "quantity": 100.0,
+          "unit": "g"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 29.58,
+          "unit": "ml"
+        },
+        {
+          "name": "lemon juice",
+          "quantity": 14.79,
+          "unit": "ml"
+        },
+        {
+          "name": "salt",
+          "quantity": 0.0,
+          "unit": "to taste"
+        },
+        {
+          "name": "pepper",
+          "quantity": 0.0,
+          "unit": "to taste"
+        }
+      ],
+      "cooking_time_minutes": 20,
+      "instructions": [
+        "Cook quinoa according to package instructions.",
+        "Chop cherry tomatoes and cucumber.",
+        "In a bowl, mix quinoa, tomatoes, cucumber, olive oil, lemon juice, salt, and pepper.",
+        "Serve chilled."
+      ]
+    },
+    {
+      "id": "llm_b9f9293329997a31",
+      "name": "Grilled Chicken with Vegetables",
+      "ingredients": [
+        {
+          "name": "chicken breast",
+          "quantity": 250.0,
+          "unit": "g"
+        },
+        {
+          "name": "bell pepper",
+          "quantity": 100.0,
+          "unit": "g"
+        },
+        {
+          "name": "zucchini",
+          "quantity": 100.0,
+          "unit": "g"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 14.79,
+          "unit": "ml"
+        },
+        {
+          "name": "garlic",
+          "quantity": 0.0,
+          "unit": "to taste"
+        },
+        {
+          "name": "salt",
+          "quantity": 0.0,
+          "unit": "to taste"
+        },
+        {
+          "name": "pepper",
+          "quantity": 0.0,
+          "unit": "to taste"
+        }
+      ],
+      "cooking_time_minutes": 25,
+      "instructions": [
+        "Preheat the grill.",
+        "Marinate chicken with olive oil, garlic, salt, and pepper.",
+        "Grill chicken for 6-7 minutes on each side.",
+        "Slice bell pepper and zucchini, grill them for 3-4 minutes.",
+        "Serve chicken with grilled vegetables."
+      ]
+    },
+    {
+      "id": "llm_16c9b474887858c0",
+      "name": "Oatmeal with Fruits",
+      "ingredients": [
+        {
+          "name": "oats",
+          "quantity": 100.0,
+          "unit": "g"
+        },
+        {
+          "name": "milk",
+          "quantity": 250.0,
+          "unit": "ml"
+        },
+        {
+          "name": "banana",
+          "quantity": 1.0,
+          "unit": "large"
+        },
+        {
+          "name": "honey",
+          "quantity": 14.79,
+          "unit": "ml"
+        },
+        {
+          "name": "cinnamon",
+          "quantity": 0.0,
+          "unit": "to taste"
+        }
+      ],
+      "cooking_time_minutes": 25,
+      "instructions": [
+        "In a pot, combine oats and milk, cook over medium heat.",
+        "Slice banana and add to the pot.",
+        "Stir in honey and cinnamon.",
+        "Cook until desired consistency is reached.",
+        "Serve warm."
+      ]
+    },
+    {
+      "id": "llm_90733bb7dabee3a4",
+      "name": "Oatmeal with Fruits",
+      "ingredients": [
+        {
+          "name": "oats",
+          "quantity": 100.0,
+          "unit": "g"
+        },
+        {
+          "name": "milk",
+          "quantity": 250.0,
+          "unit": "ml"
+        },
+        {
+          "name": "banana",
+          "quantity": 1.0,
+          "unit": "large"
+        },
+        {
+          "name": "honey",
+          "quantity": 14.79,
+          "unit": "ml"
+        },
+        {
+          "name": "cinnamon",
+          "quantity": 0.0,
+          "unit": "to taste"
+        }
+      ],
+      "cooking_time_minutes": 20,
+      "instructions": [
+        "In a pot, combine oats and milk, cook over medium heat.",
+        "Slice banana and add to the pot.",
+        "Stir in honey and cinnamon.",
+        "Cook until oats are soft, then serve."
+      ]
+    }
+  ]
+}

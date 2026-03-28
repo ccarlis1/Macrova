@@ -83,3 +83,7 @@ Thumbs.db
 *.tmp
 *.bak
 
+.mcp.json
+
+# Local planner debug exports (see scripts/export_planner_debug_artifacts.py)
+debug_artifacts/

@@ -45,6 +45,13 @@ from src.planning.phase4_scoring import ScoringStateView, composite_score
 from src.planning.phase5_ordering import OrderingStateView, ordering_key
 from src.planning.phase6_candidates import generate_candidates, CandidateGenerationResult
 from src.planning.phase9_carb_scaling import compute_variant_nutrition, load_scalable_carb_sources
+from src.planning.micronutrient_policy import (
+    MICRONUTRIENT_EPSILON as EPSILON,
+    cumulative_minimum_total,
+    is_below_weekly_minimum,
+    sodium_weekly_advisory_max_mg,
+    tau_from_profile,
+)
 from src.planning.phase10_reporting import (
     MealPlanResult,
     build_plan_snapshot,
@@ -57,7 +64,7 @@ from src.planning.phase10_reporting import (
     result_from_failure,
     result_from_success,
 )
-from src.planning.slot_attributes import activity_context, is_workout_slot
+from src.planning.slot_attributes import activity_context_for_profile, is_workout_slot
 
 from src.data_layer.models import UpperLimits
 
@@ -66,11 +73,6 @@ DEFAULT_ATTEMPT_LIMIT = 50_000
 
 # Debug logging gate: when True, emit structured logs for assign/remove/backtrack. No behavior change.
 DEBUG_SEARCH = False
-
-# Numerical tolerance for floating-point drift from add/subtract chains (e.g. (A+B)-B-A). Values with
-# magnitude below this are treated as zero for normalization and invariant checks.
-EPSILON = 1e-9
-
 
 def _debug_log(event: str, **kwargs: Any) -> None:
     """Emit structured debug log when DEBUG_SEARCH is True. No-op otherwise."""
@@ -412,11 +414,12 @@ def _recompute_carryover(weekly_tracker: WeeklyTracker, profile: PlanningUserPro
         return
     micro = micronutrient_profile_to_dict(getattr(weekly_tracker.weekly_totals, "micronutrients", None))
     days_done = weekly_tracker.days_completed
+    tau = tau_from_profile(profile)
     carryover = {}
     for n, daily_rdi in tracked.items():
         if daily_rdi <= 0:
             continue
-        needed = daily_rdi * days_done
+        needed = cumulative_minimum_total(daily_rdi, days_done, tau)
         consumed = micro.get(n, 0.0)
         carryover[n] = max(0.0, needed - consumed)
     weekly_tracker.carryover_needs = carryover
@@ -466,18 +469,18 @@ def _weekly_validation(
     tracked = profile.micronutrient_targets
     micro = micronutrient_profile_to_dict(getattr(weekly_tracker.weekly_totals, "micronutrients", None))
     sodium_adv = None
+    tau = tau_from_profile(profile)
     if "sodium_mg" in micro and "sodium_mg" in tracked:
         daily_rdi = tracked["sodium_mg"]
         if daily_rdi > 0:
             total_sodium = micro.get("sodium_mg", 0.0)
-            if total_sodium > 2.0 * daily_rdi * D:
+            if total_sodium > sodium_weekly_advisory_max_mg(daily_rdi, D):
                 sodium_adv = "Weekly sodium exceeds 200% of prorated RDI."
     for n, daily_rdi in tracked.items():
         if daily_rdi <= 0:
             continue
-        needed = daily_rdi * D
         consumed = micro.get(n, 0.0)
-        if consumed < needed:
+        if is_below_weekly_minimum(consumed, daily_rdi, D, tau):
             return False, f"weekly_deficit:{n}", sodium_adv
     return True, None, sodium_adv
 
@@ -672,7 +675,9 @@ def run_meal_plan_search(
             recipe = recipe_by_id[recipe_id]
             day_slots = schedule[day_index]
             next_first = schedule[day_index + 1][0] if day_index + 1 < D else None
-            act_ctx = activity_context(day_slots[slot_index], slot_index, day_slots, next_first, profile.activity_schedule or {})
+            act_ctx = activity_context_for_profile(
+                profile, day_index, day_slots[slot_index], slot_index, day_slots, next_first
+            )
             is_w = is_workout_slot(act_ctx)
             _apply_assignment(daily_trackers, assignments, day_index, slot_index, recipe_id, recipe, is_w, schedule, variant_index=0)
             _validate_planner_state(daily_trackers, weekly_tracker, completed_days, D, schedule)
@@ -763,7 +768,9 @@ def run_meal_plan_search(
         variant_nutrition = entry.variant_nutritions.get((recipe_id, variant_index)) if variant_index > 0 else None
         day_slots = schedule[day_index]
         next_first = schedule[day_index + 1][0] if day_index + 1 < D else None
-        act_ctx = activity_context(day_slots[slot_index], slot_index, day_slots, next_first, profile.activity_schedule or {})
+        act_ctx = activity_context_for_profile(
+            profile, day_index, day_slots[slot_index], slot_index, day_slots, next_first
+        )
         is_w = is_workout_slot(act_ctx)
         _apply_assignment(
             daily_trackers, assignments, day_index, slot_index, recipe_id, recipe, is_w, schedule,
@@ -975,7 +982,9 @@ def _unwind_to(
             continue
         day_slots = schedule[a.day_index]
         next_first = schedule[a.day_index + 1][0] if a.day_index + 1 < len(schedule) else None
-        act_ctx = activity_context(day_slots[a.slot_index], a.slot_index, day_slots, next_first, profile.activity_schedule or {})
+        act_ctx = activity_context_for_profile(
+            profile, a.day_index, day_slots[a.slot_index], a.slot_index, day_slots, next_first
+        )
         is_w = is_workout_slot(act_ctx)
         _remove_assignment(
             daily_trackers, weekly_tracker, assignments, a, recipe, is_w, schedule, profile, completed_days

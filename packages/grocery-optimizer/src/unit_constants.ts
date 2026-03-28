@@ -1,0 +1,40 @@
+/** Shared conversion factors for mass (→ grams) and volume (→ ml). */
+
+export const MASS_TO_G: Record<string, number> = {
+  g: 1,
+  gram: 1,
+  grams: 1,
+  kg: 1000,
+  kilogram: 1000,
+  kilograms: 1000,
+  oz: 28.349523125,
+  ounce: 28.349523125,
+  ounces: 28.349523125,
+  lb: 453.59237,
+  lbs: 453.59237,
+  pound: 453.59237,
+  pounds: 453.59237,
+};
+
+export const VOLUME_TO_ML: Record<string, number> = {
+  ml: 1,
+  milliliter: 1,
+  milliliters: 1,
+  millilitre: 1,
+  millilitres: 1,
+  l: 1000,
+  liter: 1000,
+  liters: 1000,
+  litre: 1000,
+  litres: 1000,
+  cup: 236.5882365,
+  cups: 236.5882365,
+  tbsp: 14.78676478125,
+  tablespoon: 14.78676478125,
+  tablespoons: 14.78676478125,
+  tsp: 4.92892159375,
+  teaspoon: 4.92892159375,
+  teaspoons: 4.92892159375,
+  "fl oz": 29.5735295625,
+  floz: 29.5735295625,
+};

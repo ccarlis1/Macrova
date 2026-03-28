@@ -1,0 +1,55 @@
+/**
+ * Adapter boundary for TinyFish: grocery logic imports this module only,
+ * never `@tiny-fish/sdk` or raw agent types directly.
+ */
+
+import {
+  TinyFishClient,
+  type ProductCandidate as TinyFishProductCandidate,
+  type ProductSearchResult,
+  type SearchProductsOptions,
+} from "@nutrition-agent/tinyfish-client";
+
+export type { SearchProductsOptions, TinyFishProductCandidate, ProductSearchResult };
+
+/** Minimal surface the optimizer needs for product search. */
+export interface TinyFishSearchAdapter {
+  searchProducts(
+    query: string,
+    storeUrl: string,
+    options?: SearchProductsOptions,
+  ): Promise<ProductSearchResult>;
+}
+
+export function createTinyFishSearchAdapter(
+  client?: TinyFishClient,
+): TinyFishSearchAdapter {
+  const c = client ?? new TinyFishClient();
+  return {
+    searchProducts: (query, storeUrl, options) =>
+      c.searchProducts(query, storeUrl, options),
+  };
+}
+
+/** In-memory adapter for tests and offline pipelines. */
+export class MockTinyFishSearchAdapter implements TinyFishSearchAdapter {
+  constructor(
+    private readonly handler: (
+      query: string,
+      storeUrl: string,
+    ) => TinyFishProductCandidate[],
+  ) {}
+
+  async searchProducts(
+    query: string,
+    storeUrl: string,
+  ): Promise<ProductSearchResult> {
+    const products = this.handler(query, storeUrl);
+    return {
+      ingredient_query: query,
+      store_url: storeUrl,
+      products,
+      raw_result: { mock: true },
+    };
+  }
+}

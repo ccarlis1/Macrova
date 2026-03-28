@@ -1,6 +1,19 @@
 {
   "ingredients": [
     {
+      "name": "cream of rice",
+      "per_100g": {
+        "calories": 370,
+        "protein_g": 7.5,
+        "fat_g": 0.5,
+        "carbs_g": 82.0
+      },
+      "aliases": [
+        "cream of rice",
+        "rice cereal"
+      ]
+    },
+    {
       "name": "cheddar cheese natural 50% reduced fat",
       "per_100g": {
         "calories": 173.0,

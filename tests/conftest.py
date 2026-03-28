@@ -6,6 +6,9 @@ GitHub Actions runs from the repo root with ``pip install -r requirements.txt`` 
 - ``python scripts/export_openapi.py --check`` (OpenAPI snapshot must match the app)
 
 ``config/user_profile.yaml`` is gitignored; CLI/API tests reference it by path.
+
+``data/ingredients/custom_ingredients.json`` and ``data/recipes/recipes.json`` are
+gitignored; CI clones do not contain them. Copy from ``*.example`` when absent.
 """
 
 import shutil
@@ -17,9 +20,16 @@ from pathlib import Path
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
+def _copy_if_missing(dest: Path, example: Path) -> None:
+    if dest.exists() or not example.is_file():
+        return
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(example, dest)
+
+
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_config():
-    """Ensure ``config/user_profile.yaml`` exists and has a valid schedule.
+    """Ensure config and default data files exist for API/CLI tests.
 
     Copies from ``user_profile.yaml.example`` when the file is missing or when
     YAML has no usable ``schedule_days`` or legacy ``schedule`` (avoids CLI
@@ -46,3 +56,13 @@ def setup_test_config():
 
     if needs_copy and example_file.exists():
         shutil.copy(example_file, profile_file)
+
+    # Gitignored data files required by src.api.server and src.cli defaults.
+    _copy_if_missing(
+        _REPO_ROOT / "data" / "ingredients" / "custom_ingredients.json",
+        _REPO_ROOT / "data" / "ingredients" / "custom_ingredients.json.example",
+    )
+    _copy_if_missing(
+        _REPO_ROOT / "data" / "recipes" / "recipes.json",
+        _REPO_ROOT / "data" / "recipes" / "recipes.json.example",
+    )

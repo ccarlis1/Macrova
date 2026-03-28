@@ -1,0 +1,19 @@
+{
+  "name": "@nutrition-agent/grocery-optimizer",
+  "version": "0.1.0",
+  "description": "Grocery cart optimization CLI (stdin/stdout JSON) for FastAPI",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  },
+  "license": "UNLICENSED"
+}

@@ -343,12 +343,15 @@ class RecipeIngredient {
 }
 
 class Meal {
+  /// From `recipe_id` in `POST /api/v1/plan` meals when present.
+  final String? recipeId;
   final String mealType;
   final Map<String, dynamic> recipe;
   final NutritionProfile nutrition;
   final int busynessLevel;
 
   const Meal({
+    this.recipeId,
     required this.mealType,
     required this.recipe,
     required this.nutrition,
@@ -357,6 +360,7 @@ class Meal {
 
   factory Meal.fromJson(Map<String, dynamic> json) {
     return Meal(
+      recipeId: json['recipe_id'] as String?,
       mealType: json['meal_type'] as String,
       recipe: Map<String, dynamic>.from(json['recipe'] as Map),
       nutrition:
@@ -369,6 +373,7 @@ class Meal {
   factory Meal.fromPlanApiV1(Map<String, dynamic> m) {
     if (m['error'] != null) {
       return Meal(
+        recipeId: m['recipe_id'] as String?,
         mealType: m['meal_type'] as String? ?? 'meal',
         recipe: {
           'name': 'Missing recipe ${m['recipe_id'] ?? ''}',
@@ -395,6 +400,7 @@ class Meal {
     ];
 
     return Meal(
+      recipeId: m['recipe_id'] as String?,
       mealType: m['meal_type'] as String? ?? 'meal',
       recipe: {
         'name': m['name']?.toString() ?? 'Recipe',

@@ -3,14 +3,19 @@
  * dedupe, and rank for downstream price normalization.
  */
 
+import { floorToBucket, QuerySearchCache } from "./caching/query_cache.js";
+import { OptimizationErrorCode, err } from "./errors.js";
 import { jaroWinkler, normalizeIngredientName } from "./ingredient_normalizer.js";
+import { logInfo } from "./observability/logger.js";
 import type {
+  ProductSearchResult,
   TinyFishProductCandidate,
   TinyFishSearchAdapter,
 } from "./integrations/tinyfish_client.js";
 import type {
   AggregatedIngredient,
   GroceryStoreRef,
+  PipelineResult,
   ProductCandidate,
   ProductCandidateSet,
   RankedProduct,
@@ -74,6 +79,111 @@ function dedupeCandidates(candidates: ProductCandidate[]): ProductCandidate[] {
 
 export interface ProductSearchPipelineOptions {
   maxPerQuery?: number;
+  queryCache?: QuerySearchCache;
+  /** Window for {@link floorToBucket} (default 5 minutes). */
+  cacheBucketMs?: number;
+  runId?: string;
+  signal?: AbortSignal;
+}
+
+export async function searchProductsForIngredientResult(
+  ingredient: AggregatedIngredient,
+  stores: GroceryStoreRef[],
+  adapter: TinyFishSearchAdapter,
+  options?: ProductSearchPipelineOptions,
+): Promise<PipelineResult<ProductCandidateSet>> {
+  const errors: PipelineResult<ProductCandidateSet>["errors"] = [];
+  const queries = buildSearchQueries(ingredient);
+  const maxResults = options?.maxPerQuery ?? 8;
+  const collected: ProductCandidate[] = [];
+  let seq = 0;
+  const cacheBucketMs = options?.cacheBucketMs ?? 5 * 60_000;
+  const queryCache = options?.queryCache;
+  const runId = options?.runId;
+
+  for (const store of stores) {
+    for (const q of queries) {
+      const t0 = performance.now();
+      const searchOpts = {
+        maxResults,
+        signal: options?.signal,
+      };
+
+      const doSearch = () => adapter.searchProducts(q, store.baseUrl, searchOpts);
+
+      let res: ProductSearchResult;
+      try {
+        res = queryCache
+          ? await queryCache.getOrRevalidate(
+              {
+                storeUrl: store.baseUrl,
+                canonicalIngredient: `${ingredient.canonicalKey}::${q}`,
+                timestampBucket: floorToBucket(Date.now(), cacheBucketMs),
+              },
+              doSearch,
+              { ttlMs: 10 * 60_000 },
+            )
+          : await doSearch();
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (runId !== undefined) {
+          logInfo({
+            runId,
+            stage: "search",
+            ingredientKey: ingredient.canonicalKey,
+            store: store.id,
+            query: q,
+            durationMs: Math.round(performance.now() - t0),
+            resultCount: 0,
+            error: msg,
+          });
+        }
+        errors.push(
+          err(
+            OptimizationErrorCode.STORE_SEARCH_QUERY_FAILED,
+            `Store search failed for "${q}" at ${store.id}: ${msg}`,
+            {
+              ingredient: ingredient.displayName,
+              severity: "warning",
+            },
+          ),
+        );
+        continue;
+      }
+
+      if (runId !== undefined) {
+        logInfo({
+          runId,
+          stage: "search",
+          ingredientKey: ingredient.canonicalKey,
+          store: store.id,
+          query: q,
+          durationMs: Math.round(performance.now() - t0),
+          resultCount: res.products.length,
+        });
+      }
+
+      for (const p of res.products) {
+        collected.push(mapTinyFishProduct(p, store.id, q, seq++));
+      }
+    }
+  }
+
+  const data: ProductCandidateSet = {
+    ingredientKey: ingredient.canonicalKey,
+    candidates: dedupeCandidates(collected),
+  };
+
+  if (data.candidates.length === 0) {
+    errors.push(
+      err(OptimizationErrorCode.NO_CANDIDATES, "No store products returned for this ingredient.", {
+        ingredient: ingredient.displayName,
+        severity: "error",
+      }),
+    );
+  }
+
+  return { data, errors };
 }
 
 export async function searchProductsForIngredient(
@@ -82,25 +192,15 @@ export async function searchProductsForIngredient(
   adapter: TinyFishSearchAdapter,
   options?: ProductSearchPipelineOptions,
 ): Promise<ProductCandidateSet> {
-  const queries = buildSearchQueries(ingredient);
-  const maxResults = options?.maxPerQuery ?? 8;
-  const collected: ProductCandidate[] = [];
-  let seq = 0;
-
-  for (const store of stores) {
-    for (const q of queries) {
-      const res = await adapter.searchProducts(q, store.baseUrl, {
-        maxResults,
-      });
-      for (const p of res.products) {
-        collected.push(mapTinyFishProduct(p, store.id, q, seq++));
-      }
-    }
-  }
-
-  return {
+  const r = await searchProductsForIngredientResult(
+    ingredient,
+    stores,
+    adapter,
+    options,
+  );
+  return r.data ?? {
     ingredientKey: ingredient.canonicalKey,
-    candidates: dedupeCandidates(collected),
+    candidates: [],
   };
 }
 

@@ -1,4 +1,9 @@
-"""Grocery optimizer HTTP routes (Phase 0: FastAPI → Node CLI)."""
+"""Grocery optimizer HTTP routes (FastAPI → Node CLI).
+
+The request/response shape matches ``packages/grocery-optimizer`` JSON types.
+To assemble ``mealPlan`` + ``recipeServings`` on the server, see
+``src.services.grocery_meal_plan``.
+"""
 
 from __future__ import annotations
 

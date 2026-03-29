@@ -168,11 +168,19 @@ def test_run_grocery_optimizer_bad_stdout_json(tmp_path, monkeypatch):
     not Path(go.grocery_run_js_path()).is_file(),
     reason="packages/grocery-optimizer/dist/run.js not built",
 )
-def test_grocery_optimize_e2e_with_real_node_cli():
+def test_grocery_optimize_e2e_with_real_node_cli(monkeypatch):
+    """Runs dist/run.js via FastAPI; mock TinyFish so CI does not call the network."""
+    monkeypatch.setenv("GROCERY_OPTIMIZER_USE_MOCK", "1")
     client = TestClient(app)
     r = client.post("/api/v1/grocery/optimize", json=SAMPLE_REQUEST)
     assert r.status_code == 200
     data = r.json()
     assert data["schemaVersion"] == "1.0"
     assert data["ok"] is True
-    assert data["result"]["message"] == "stub response"
+    result = data["result"]
+    assert isinstance(result, dict)
+    assert "cartPlan" in result and "lines" in result["cartPlan"]
+    assert "multiStoreOptimization" in result
+    assert "metrics" in result
+    assert "costGapVsGreedy" in result["metrics"]
+    assert "pipelineTrace" in result

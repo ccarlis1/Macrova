@@ -2,6 +2,7 @@
  * Parse retailer size strings and normalize to comparable unit economics.
  */
 
+import { OptimizationErrorCode, err } from "./errors.js";
 import type {
   IngredientUnitContext,
   NormalizedProduct,
@@ -9,6 +10,7 @@ import type {
   ParsedSize,
   ParseConfidence,
   ProductCandidate,
+  PipelineResult,
 } from "./types.js";
 import { VOLUME_TO_ML, MASS_TO_G } from "./unit_constants.js";
 
@@ -169,15 +171,34 @@ export function computeUnitPrice(
   return price / amount;
 }
 
-export function normalizeProductPrice(
+export interface NormalizePriceOptions {
+  /** For structured error messages (e.g. unit mismatch on this line). */
+  ingredientKey?: string;
+  ingredientDisplayName?: string;
+}
+
+export function normalizeProductPriceWithErrors(
   product: ProductCandidate,
   ingredientUnitContext: IngredientUnitContext,
-): NormalizedProduct {
+  options?: NormalizePriceOptions,
+): PipelineResult<NormalizedProduct> {
+  const errors: PipelineResult<NormalizedProduct>["errors"] = [];
   const parsedSize = parsePackSize(product.sizeRaw);
   const priceNum = product.priceRaw ? stripMoney(product.priceRaw) : null;
   let confidence: ParseConfidence = parsedSize?.confidence ?? "low";
   let unitPrice: number | null = null;
   let normalizedPackQty: number | null = null;
+  const ingLabel =
+    options?.ingredientDisplayName ?? options?.ingredientKey ?? product.name;
+
+  if (parsedSize && parsedSize.confidence === "low" && product.sizeRaw) {
+    errors.push(
+      err(OptimizationErrorCode.PRICE_PARSE_FAILED, `Ambiguous pack size "${product.sizeRaw}".`, {
+        ingredient: ingLabel,
+        severity: "warning",
+      }),
+    );
+  }
 
   if (parsedSize && priceNum !== null && priceNum > 0) {
     normalizedPackQty = parsedSize.totalAmount;
@@ -185,6 +206,13 @@ export function normalizeProductPrice(
     if (Number.isNaN(unitPrice)) {
       unitPrice = null;
       confidence = "low";
+      errors.push(
+        err(
+          OptimizationErrorCode.UNIT_MISMATCH,
+          "Pack units do not match the recipe line (volume vs mass) without a density mapping.",
+          { ingredient: ingLabel, severity: "warning" },
+        ),
+      );
     }
   } else if (priceNum !== null && product.unitPriceRaw) {
     const up = stripMoney(product.unitPriceRaw);
@@ -194,10 +222,28 @@ export function normalizeProductPrice(
     }
   }
 
+  if (priceNum === null && product.priceRaw) {
+    errors.push(
+      err(OptimizationErrorCode.PRICE_PARSE_FAILED, "Could not parse shelf price string.", {
+        ingredient: ingLabel,
+        severity: "warning",
+      }),
+    );
+  }
+
   const lowConfidence =
     confidence === "low" || unitPrice === null || unitPrice <= 0;
 
-  return {
+  if (lowConfidence) {
+    errors.push(
+      err(OptimizationErrorCode.LOW_CONFIDENCE_MATCH, "Low confidence in unit price / pack parse.", {
+        ingredient: ingLabel,
+        severity: "warning",
+      }),
+    );
+  }
+
+  const data: NormalizedProduct = {
     candidate: product,
     parsedSize,
     unitPrice,
@@ -206,4 +252,13 @@ export function normalizeProductPrice(
     confidence,
     lowConfidence,
   };
+
+  return { data, errors };
+}
+
+export function normalizeProductPrice(
+  product: ProductCandidate,
+  ingredientUnitContext: IngredientUnitContext,
+): NormalizedProduct {
+  return normalizeProductPriceWithErrors(product, ingredientUnitContext).data!;
 }

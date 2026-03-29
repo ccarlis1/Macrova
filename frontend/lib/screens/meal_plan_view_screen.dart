@@ -6,6 +6,9 @@ import '../models/models.dart';
 import '../models/user_profile.dart';
 import '../providers/meal_plan_provider.dart';
 import '../providers/profile_provider.dart';
+import '../providers/recipe_provider.dart';
+import '../services/api_service.dart';
+import '../services/grocery_optimize_payload.dart';
 import '../widgets/macro_display.dart';
 import '../widgets/meal_card.dart';
 import '../widgets/micronutrient_bar.dart';
@@ -20,12 +23,14 @@ class MealPlanViewScreen extends StatefulWidget {
 
 class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
   bool _showCalendar = false;
+  bool _groceryBusy = false;
 
   @override
   Widget build(BuildContext context) {
     final planProvider = context.watch<MealPlanProvider>();
     final mealPlan = planProvider.mealPlan;
     final profile = context.watch<ProfileProvider>().profile;
+    final recipeProvider = context.watch<RecipeProvider>();
 
     if (mealPlan == null) {
       return Center(
@@ -83,6 +88,23 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
                         setState(() => _showCalendar = s.first),
                   ),
                 ],
+              ),
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: FilledButton.tonalIcon(
+                  onPressed: _groceryBusy
+                      ? null
+                      : () => _runGroceryOptimize(mealPlan, recipeProvider),
+                  icon: _groceryBusy
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.shopping_cart_outlined),
+                  label: Text(_groceryBusy ? 'Building cart…' : 'Create optimal grocery cart'),
+                ),
               ),
               const SizedBox(height: 24),
 
@@ -273,5 +295,109 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: blocks,
     );
+  }
+
+  /// POST `/api/v1/grocery/optimize` via [ApiService.groceryOptimize] (multi-minute
+  /// runs; client timeout and [ApiException] surfaced with [SnackBar]).
+  Future<void> _runGroceryOptimize(
+    MealPlan mealPlan,
+    RecipeProvider recipes,
+  ) async {
+    final body = buildGroceryOptimizeRequestBody(
+      mealPlan: mealPlan,
+      recipes: recipes,
+    );
+    if (body == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Could not build a cart: ensure meals include recipe IDs and recipes have ingredients.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _groceryBusy = true);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Searching stores for your ingredients — this can take a few minutes.',
+          ),
+          duration: Duration(seconds: 5),
+        ),
+      );
+    }
+    try {
+      final res = await ApiService.groceryOptimize(body);
+      if (!mounted) return;
+      if (res['ok'] == true) {
+        final r = res['result'];
+        if (r is! Map<String, dynamic>) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Unexpected response shape.')),
+          );
+          return;
+        }
+        final ms = r['multiStoreOptimization'];
+        final cost = ms is Map<String, dynamic> ? ms['totalCost'] : null;
+        final cart = r['cartPlan'];
+        final lines =
+            cart is Map<String, dynamic> ? cart['lines'] as List<dynamic>? : null;
+        final nLines = lines?.length ?? 0;
+        await showDialog<void>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Grocery cart'),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Estimated total: '
+                    '${cost != null ? "\$${cost.toString()}" : "—"}',
+                    style: Theme.of(ctx).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text('$nLines cart line(s)'),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        final err = res['error'];
+        final msg = err is Map && err['message'] is String
+            ? err['message'] as String
+            : 'Grocery optimizer failed';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg)),
+        );
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _groceryBusy = false);
+      }
+    }
   }
 }

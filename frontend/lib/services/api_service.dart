@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -271,4 +272,44 @@ class ApiService {
 
   /// Prefer [listRecipes]; kept for call sites not yet migrated.
   static Future<List<RecipeSummary>> getRecipes() => listRecipes();
+
+  /// POST `/api/v1/grocery/optimize` — Node grocery optimizer (may take minutes).
+  ///
+  /// Uses a long client-side timeout so the request is not cut off while the
+  /// server runs the subprocess (see FastAPI `run_grocery_optimizer` timeout).
+  static Future<Map<String, dynamic>> groceryOptimize(
+    Map<String, dynamic> body,
+  ) async {
+    http.Response res;
+    try {
+      res = await http
+          .post(
+            Uri.parse('$baseUrl/api/v1/grocery/optimize'),
+            headers: _jsonHeaders,
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(minutes: 6));
+    } on TimeoutException {
+      throw const ApiException(
+        statusCode: 408,
+        code: 'CLIENT_TIMEOUT',
+        message:
+            'The grocery optimizer is taking too long. Try again later or check your connection.',
+      );
+    }
+
+    if (res.statusCode == 200) {
+      final decoded = jsonDecode(res.body);
+      if (decoded is! Map) {
+        throw const ApiException(
+          statusCode: 200,
+          code: 'INVALID_RESPONSE',
+          message: 'Grocery optimize response was not a JSON object',
+        );
+      }
+      return Map<String, dynamic>.from(decoded);
+    }
+
+    throw ApiException.fromResponse(res);
+  }
 }

@@ -22,6 +22,12 @@ export enum OptimizationErrorCode {
   PRICE_PARSE_FAILED = "PRICE_PARSE_FAILED",
   INSUFFICIENT_QUANTITY = "INSUFFICIENT_QUANTITY",
   INTERNAL_ERROR = "INTERNAL_ERROR",
+  /** Search returned rows but none were priced or usable (likely bad HTML / blocking). */
+  SEMANTIC_NULL_RESULT = "SEMANTIC_NULL_RESULT",
+  /** Result set looked like the wrong product category or irrelevant matches. */
+  LOW_RELEVANCE_SET = "LOW_RELEVANCE_SET",
+  /** Query variants produced systematically bad matches (possible modifier pollution). */
+  QUERY_POLLUTION = "QUERY_POLLUTION",
 }
 
 export type OptimizationError = {

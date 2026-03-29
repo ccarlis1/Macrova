@@ -174,6 +174,69 @@ describe("caching", () => {
     expect(c.get(key)).toEqual(payload);
   });
 
+  it("low-confidence cache entries await refresh via quality policy", async () => {
+    const c = new QuerySearchCache({ ttlMs: 60_000, staleMaxAgeMs: 60_000 });
+    const key = {
+      storeUrl: "https://lowq.example",
+      canonicalIngredient: "milk::milk",
+      timestampBucket: floorToBucket(Date.now(), 300_000),
+    };
+    const stalePayload = {
+      ingredient_query: "milk",
+      store_url: key.storeUrl,
+      products: [],
+      raw_result: {},
+    };
+    c.set(key, stalePayload, 60_000, 0.15);
+    const refresh = vi.fn().mockResolvedValue({
+      value: {
+        ingredient_query: "milk",
+        store_url: key.storeUrl,
+        products: [fakeProduct("m", "$3", "1 gal")],
+        raw_result: {},
+      },
+      qualityScore: 0.82,
+    });
+    const out = await c.getOrRevalidateWithQualityPolicy(key, refresh, {
+      ttlMs: 60_000,
+      highQualityThreshold: 0.55,
+    });
+    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(out.products).toHaveLength(1);
+  });
+
+  it("high-confidence fresh cache hits skip refresh", async () => {
+    const c = new QuerySearchCache({ ttlMs: 60_000 });
+    const key = {
+      storeUrl: "https://hiq.example",
+      canonicalIngredient: "eggs::eggs",
+      timestampBucket: floorToBucket(Date.now(), 300_000),
+    };
+    const payload = {
+      ingredient_query: "eggs",
+      store_url: key.storeUrl,
+      products: [fakeProduct("e", "$4", "12 ct")],
+      raw_result: {},
+    };
+    c.set(key, payload, 60_000, 0.9);
+    const refresh = vi.fn();
+    const out = await c.getOrRevalidateWithQualityPolicy(
+      key,
+      async () => ({
+        value: {
+          ingredient_query: "eggs",
+          store_url: key.storeUrl,
+          products: [],
+          raw_result: {},
+        },
+        qualityScore: 0.99,
+      }),
+      { ttlMs: 60_000 },
+    );
+    expect(refresh).not.toHaveBeenCalled();
+    expect(out.products).toHaveLength(1);
+  });
+
   it("stale-while-revalidate returns stale immediately", async () => {
     const c = new QuerySearchCache({ ttlMs: 1, staleMaxAgeMs: 10_000 });
     const key = {

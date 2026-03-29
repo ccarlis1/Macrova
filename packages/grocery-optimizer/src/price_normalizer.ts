@@ -177,6 +177,11 @@ export interface NormalizePriceOptions {
   ingredientDisplayName?: string;
 }
 
+function parseShelfUnitPrice(raw: string | null | undefined): number | null {
+  if (!raw) return null;
+  return stripMoney(raw);
+}
+
 export function normalizeProductPriceWithErrors(
   product: ProductCandidate,
   ingredientUnitContext: IngredientUnitContext,
@@ -200,7 +205,12 @@ export function normalizeProductPriceWithErrors(
     );
   }
 
-  if (parsedSize && priceNum !== null && priceNum > 0) {
+  const parseSucceeded =
+    parsedSize !== null &&
+    (parsedSize.confidence === "high" || parsedSize.confidence === "medium");
+
+  // 1) Prefer price ÷ parsed pack quantity when pack parse is reliable.
+  if (parseSucceeded && priceNum !== null && priceNum > 0 && parsedSize) {
     normalizedPackQty = parsedSize.totalAmount;
     unitPrice = computeUnitPrice(priceNum, parsedSize, ingredientUnitContext);
     if (Number.isNaN(unitPrice)) {
@@ -214,11 +224,30 @@ export function normalizeProductPriceWithErrors(
         ),
       );
     }
-  } else if (priceNum !== null && product.unitPriceRaw) {
-    const up = stripMoney(product.unitPriceRaw);
-    if (up !== null) {
+  }
+
+  // 2) Fall back to provider unit-price string when shelf math is unavailable or failed.
+  if (unitPrice === null && priceNum !== null && product.unitPriceRaw) {
+    const up = parseShelfUnitPrice(product.unitPriceRaw);
+    if (up !== null && up > 0) {
       unitPrice = up;
       confidence = "medium";
+    }
+  }
+
+  // 3) Last resort: divide shelf price by a low-confidence parse (explicitly marked low).
+  if (
+    unitPrice === null &&
+    priceNum !== null &&
+    priceNum > 0 &&
+    parsedSize &&
+    !parseSucceeded
+  ) {
+    normalizedPackQty = parsedSize.totalAmount;
+    const trial = computeUnitPrice(priceNum, parsedSize, ingredientUnitContext);
+    if (!Number.isNaN(trial) && trial > 0) {
+      unitPrice = trial;
+      confidence = "low";
     }
   }
 

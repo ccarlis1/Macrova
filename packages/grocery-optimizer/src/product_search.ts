@@ -6,7 +6,12 @@
 import { floorToBucket, QuerySearchCache } from "./caching/query_cache.js";
 import { OptimizationErrorCode, err } from "./errors.js";
 import { jaroWinkler, normalizeIngredientName } from "./ingredient_normalizer.js";
+import { buildSearchQueryVariants } from "./query_builder.js";
 import { logInfo } from "./observability/logger.js";
+import {
+  DEFAULT_ACCEPT_CONFIDENCE,
+  validateTinyFishSearchResult,
+} from "./result_validator.js";
 import type {
   ProductSearchResult,
   TinyFishProductCandidate,
@@ -55,15 +60,11 @@ function mapTinyFishProduct(
 }
 
 /**
- * Primary query = display/canonical name; add light retail variants.
+ * @deprecated Prefer {@link buildSearchQueryVariants} from `./query_builder.js`.
+ * Kept for backward compatibility — delegates to the sanitizer-aware builder.
  */
 export function buildSearchQueries(ingredient: AggregatedIngredient): string[] {
-  const base = ingredient.displayName.trim();
-  const out = new Set<string>([base, `${base} boneless`]);
-  if (base.includes("chicken")) {
-    out.add("chicken breast boneless skinless");
-  }
-  return [...out];
+  return buildSearchQueryVariants(ingredient);
 }
 
 function dedupeCandidates(candidates: ProductCandidate[]): ProductCandidate[] {
@@ -84,6 +85,10 @@ export interface ProductSearchPipelineOptions {
   cacheBucketMs?: number;
   runId?: string;
   signal?: AbortSignal;
+  /** Max query variants to try per store when results fail semantic validation (default 6). */
+  maxQueryAttempts?: number;
+  /** Minimum validator confidence to accept a result set without trying another variant (default {@link DEFAULT_ACCEPT_CONFIDENCE}). */
+  validationAcceptThreshold?: number;
 }
 
 export async function searchProductsForIngredientResult(
@@ -93,37 +98,69 @@ export async function searchProductsForIngredientResult(
   options?: ProductSearchPipelineOptions,
 ): Promise<PipelineResult<ProductCandidateSet>> {
   const errors: PipelineResult<ProductCandidateSet>["errors"] = [];
-  const queries = buildSearchQueries(ingredient);
+  const variants = buildSearchQueryVariants(ingredient);
   const maxResults = options?.maxPerQuery ?? 8;
   const collected: ProductCandidate[] = [];
   let seq = 0;
   const cacheBucketMs = options?.cacheBucketMs ?? 5 * 60_000;
   const queryCache = options?.queryCache;
   const runId = options?.runId;
+  const maxAttempts = Math.min(
+    variants.length,
+    options?.maxQueryAttempts ?? 6,
+  );
+  const acceptThreshold =
+    options?.validationAcceptThreshold ?? DEFAULT_ACCEPT_CONFIDENCE;
 
   for (const store of stores) {
-    for (const q of queries) {
+    let acceptedForStore = false;
+    let best: {
+      res: ProductSearchResult;
+      query: string;
+      validation: ReturnType<typeof validateTinyFishSearchResult>;
+    } | null = null;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const q = variants[attempt]!;
       const t0 = performance.now();
       const searchOpts = {
         maxResults,
         signal: options?.signal,
       };
 
-      const doSearch = () => adapter.searchProducts(q, store.baseUrl, searchOpts);
+      const fetchOnce = async (): Promise<{
+        res: ProductSearchResult;
+        validation: ReturnType<typeof validateTinyFishSearchResult>;
+      }> => {
+        let res: ProductSearchResult;
+        if (queryCache) {
+          res = await queryCache.getOrRevalidateWithQualityPolicy(
+            {
+              storeUrl: store.baseUrl,
+              canonicalIngredient: `${ingredient.canonicalKey}::${normalizeSig(q)}`,
+              timestampBucket: floorToBucket(Date.now(), cacheBucketMs),
+            },
+            async () => {
+              const r = await adapter.searchProducts(q, store.baseUrl, searchOpts);
+              const v = validateTinyFishSearchResult(ingredient, r, {
+                acceptThreshold,
+              });
+              return { value: r, qualityScore: v.confidence };
+            },
+            { ttlMs: 10 * 60_000 },
+          );
+        } else {
+          res = await adapter.searchProducts(q, store.baseUrl, searchOpts);
+        }
+        const validation = validateTinyFishSearchResult(ingredient, res, {
+          acceptThreshold,
+        });
+        return { res, validation };
+      };
 
-      let res: ProductSearchResult;
+      let payload: Awaited<ReturnType<typeof fetchOnce>>;
       try {
-        res = queryCache
-          ? await queryCache.getOrRevalidate(
-              {
-                storeUrl: store.baseUrl,
-                canonicalIngredient: `${ingredient.canonicalKey}::${q}`,
-                timestampBucket: floorToBucket(Date.now(), cacheBucketMs),
-              },
-              doSearch,
-              { ttlMs: 10 * 60_000 },
-            )
-          : await doSearch();
+        payload = await fetchOnce();
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         if (runId !== undefined) {
@@ -151,6 +188,8 @@ export async function searchProductsForIngredientResult(
         continue;
       }
 
+      const { res, validation } = payload;
+
       if (runId !== undefined) {
         logInfo({
           runId,
@@ -160,11 +199,48 @@ export async function searchProductsForIngredientResult(
           query: q,
           durationMs: Math.round(performance.now() - t0),
           resultCount: res.products.length,
+          validatorTags: validation.tags.join(","),
+          validatorConfidence: validation.confidence,
         });
       }
 
+      if (!best || validation.confidence > best.validation.confidence) {
+        best = { res, query: q, validation };
+      }
+
+      if (validation.acceptable) {
+        for (const p of res.products) {
+          collected.push(mapTinyFishProduct(p, store.id, q, seq++));
+        }
+        acceptedForStore = true;
+        break;
+      }
+    }
+
+    if (!acceptedForStore && best && best.res.products.length > 0) {
+      const { res, query: q, validation } = best;
       for (const p of res.products) {
         collected.push(mapTinyFishProduct(p, store.id, q, seq++));
+      }
+      if (validation.semanticNull) {
+        errors.push(
+          err(
+            OptimizationErrorCode.SEMANTIC_NULL_RESULT,
+            `Store search for "${ingredient.displayName}" at ${store.id} returned no priced products.`,
+            { ingredient: ingredient.displayName, severity: "warning" },
+          ),
+        );
+      } else if (!validation.acceptable) {
+        const code = validation.tags.includes("low-relevance-set")
+          ? OptimizationErrorCode.QUERY_POLLUTION
+          : OptimizationErrorCode.LOW_RELEVANCE_SET;
+        errors.push(
+          err(
+            code,
+            `Low relevance matches for "${ingredient.displayName}" at ${store.id} after query variants.`,
+            { ingredient: ingredient.displayName, severity: "warning" },
+          ),
+        );
       }
     }
   }

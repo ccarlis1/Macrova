@@ -26,6 +26,8 @@ export interface CacheEntry<T> {
   value: T;
   storedAtMs: number;
   ttlMs: number;
+  /** Validator confidence 0–1 when set; omitted entries are treated as low-confidence for policy. */
+  qualityScore?: number;
 }
 
 export type StaleWhileRevalidateOptions = {
@@ -62,6 +64,7 @@ export class QuerySearchCache {
   getWithMeta(key: QueryCacheKey): {
     value: ProductSearchResult;
     isStale: boolean;
+    qualityScore: number;
   } | null {
     const e = this.map.get(keyString(key));
     if (!e) return null;
@@ -70,18 +73,21 @@ export class QuerySearchCache {
       this.map.delete(keyString(key));
       return null;
     }
-    return { value: e.value, isStale: age > e.ttlMs };
+    const qs = e.qualityScore ?? 0;
+    return { value: e.value, isStale: age > e.ttlMs, qualityScore: qs };
   }
 
   set(
     key: QueryCacheKey,
     value: ProductSearchResult,
     ttlMs?: number,
+    qualityScore?: number,
   ): void {
     this.map.set(keyString(key), {
       value,
       storedAtMs: Date.now(),
       ttlMs: ttlMs ?? this.defaultTtlMs,
+      qualityScore,
     });
   }
 
@@ -109,6 +115,38 @@ export class QuerySearchCache {
     const fresh = await refresh();
     this.set(key, fresh, ttl);
     return fresh;
+  }
+
+  /**
+   * SWR with quality policy: fresh high-confidence hits return immediately;
+   * stale high-confidence hits return stale and refresh in the background;
+   * low-confidence (or unknown) hits always await a full refresh.
+   */
+  async getOrRevalidateWithQualityPolicy(
+    key: QueryCacheKey,
+    refresh: () => Promise<{ value: ProductSearchResult; qualityScore: number }>,
+    opts?: StaleWhileRevalidateOptions & { highQualityThreshold?: number },
+  ): Promise<ProductSearchResult> {
+    const ttl = opts?.ttlMs ?? this.defaultTtlMs;
+    const hi = opts?.highQualityThreshold ?? 0.55;
+    const meta = this.getWithMeta(key);
+    if (meta) {
+      const high = meta.qualityScore >= hi;
+      if (!meta.isStale && high) {
+        return meta.value;
+      }
+      if (meta.isStale && high) {
+        void refresh()
+          .then((r) => this.set(key, r.value, ttl, r.qualityScore))
+          .catch(() => {
+            /* keep stale */
+          });
+        return meta.value;
+      }
+    }
+    const fresh = await refresh();
+    this.set(key, fresh.value, ttl, fresh.qualityScore);
+    return fresh.value;
   }
 
   clear(): void {

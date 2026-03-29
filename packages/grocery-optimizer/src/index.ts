@@ -12,6 +12,16 @@ export {
   searchProductsForIngredientResult,
   type ProductSearchPipelineOptions,
 } from "./product_search.js";
+export {
+  buildSearchQueryVariants,
+  classifyIngredientQueryCategory,
+  type IngredientQueryCategory,
+} from "./query_builder.js";
+export {
+  DEFAULT_ACCEPT_CONFIDENCE,
+  validateTinyFishSearchResult,
+  type SearchResultValidation,
+} from "./result_validator.js";
 export * from "./price_normalizer.js";
 export * from "./optimizer.js";
 export * from "./optimizer_multistore.js";

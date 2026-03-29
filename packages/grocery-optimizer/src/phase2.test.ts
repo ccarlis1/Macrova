@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { OptimizationErrorCode } from "./errors.js";
 import { optimizeCart, optimizeIngredientDetailed } from "./optimizer.js";
 import { normalizeProductPriceWithErrors } from "./price_normalizer.js";
+import { buildSearchQueryVariants } from "./query_builder.js";
 import { searchProductsForIngredientResult } from "./product_search.js";
 import type {
   IngredientRequirement,
@@ -185,8 +186,8 @@ describe("structured errors", () => {
       },
     };
     const ingredient = {
-      canonicalKey: "x",
-      displayName: "x",
+      canonicalKey: "chicken breast",
+      displayName: "chicken breast",
       totalQuantity: 1,
       normalizedUnit: "mass_g" as const,
       sourceRecipes: [],
@@ -201,6 +202,100 @@ describe("structured errors", () => {
     expect(
       res.errors.some((e) => e.code === OptimizationErrorCode.STORE_SEARCH_QUERY_FAILED),
     ).toBe(true);
+  });
+
+  it("does not generate boneless variants for produce-like ingredients", () => {
+    const onion = {
+      canonicalKey: "onion",
+      displayName: "yellow onion",
+      totalQuantity: 1,
+      normalizedUnit: "mass_g" as const,
+      sourceRecipes: [],
+      isToTaste: false,
+    };
+    const qs = buildSearchQueryVariants(onion);
+    expect(qs.some((q) => /\bboneless\b/i.test(q))).toBe(false);
+  });
+
+  it("retries the next query variant when the first response is semantically null", async () => {
+    let calls = 0;
+    const adapter: TinyFishSearchAdapter = {
+      async searchProducts(query: string, storeUrl: string): Promise<ProductSearchResult> {
+        calls++;
+        if (query === "chicken breast") {
+          return {
+            ingredient_query: query,
+            store_url: storeUrl,
+            products: [
+              {
+                name: "unrelated decor",
+                price: null,
+                quantity_or_size: null,
+                unit_price: null,
+              },
+            ],
+            raw_result: {},
+          };
+        }
+        return {
+          ingredient_query: query,
+          store_url: storeUrl,
+          products: [
+            {
+              name: "Boneless Skinless Chicken Breast",
+              price: "$9.99",
+              quantity_or_size: "1 lb",
+              unit_price: null,
+            },
+          ],
+          raw_result: {},
+        };
+      },
+    };
+    const ingredient = {
+      canonicalKey: "chicken breast",
+      displayName: "chicken breast",
+      totalQuantity: 400,
+      normalizedUnit: "mass_g" as const,
+      sourceRecipes: [],
+      isToTaste: false,
+    };
+    const res = await searchProductsForIngredientResult(
+      ingredient,
+      [{ id: "s", baseUrl: "https://example.com" }],
+      adapter,
+    );
+    expect(calls).toBeGreaterThanOrEqual(2);
+    expect(res.data?.candidates.length).toBeGreaterThan(0);
+  });
+
+  it("derives unit price from pack size when unit_price is absent", () => {
+    const c: ProductCandidate = {
+      id: "1",
+      name: "Test",
+      priceRaw: "$10.00",
+      sizeRaw: "500 g",
+      unitPriceRaw: null,
+      storeId: "s",
+      query: "q",
+    };
+    const r = normalizeProductPriceWithErrors(c, { kind: "mass_g" });
+    expect(r.data?.unitPrice).toBeCloseTo(0.02, 5);
+    expect(r.data?.confidence).toBe("high");
+  });
+
+  it("prefers shelf price over unit_price when pack parse is high confidence", () => {
+    const c: ProductCandidate = {
+      id: "1",
+      name: "Test",
+      priceRaw: "$5.00",
+      sizeRaw: "250 g",
+      unitPriceRaw: "$0.99",
+      storeId: "s",
+      query: "q",
+    };
+    const r = normalizeProductPriceWithErrors(c, { kind: "mass_g" });
+    expect(r.data?.unitPrice).toBeCloseTo(5 / 250, 6);
   });
 
   it("emits PRICE_PARSE_FAILED for an ambiguous size string", () => {

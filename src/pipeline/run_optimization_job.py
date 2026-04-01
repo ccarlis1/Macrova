@@ -21,6 +21,7 @@ _DEFAULT_JOB_TIMEOUT_SEC = 300.0
 _MAX_ATTEMPTS = 3
 _MIN_COVERAGE_RATIO = 0.7
 _SUBPROCESS_TIMEOUT_CAP_SEC = 120
+_MIN_ATTEMPT_SEC = 90.0
 
 
 def _coverage_ratio(result: Dict[str, Any]) -> float:
@@ -215,20 +216,26 @@ async def run_optimization_job(
     bump(18, "preparing product search")
     await asyncio.sleep(0)
 
+    best_result: Optional[Dict[str, Any]] = None
+    best_stats: Optional[JobStats] = None
+    best_coverage: float = 0.0
+    consecutive_timeouts = 0
+
     for attempt in range(1, _MAX_ATTEMPTS + 1):
         if time.monotonic() >= deadline:
-            job_store.update_job(
-                job_id,
-                status=JobStatus.FAILED,
-                progress=100,
-                stage="failed",
-                finished_at=time.monotonic(),
-                error=_serialize_timeout_error(),
-                attempts=attempt,
-            )
-            return
+            break
 
         budget = remaining_budget()
+        if budget < _MIN_ATTEMPT_SEC:
+            logger.warning(
+                "optimize job %s stopping retries: insufficient remaining budget (%.2fs) before attempt %s/%s",
+                job_id,
+                budget,
+                attempt,
+                _MAX_ATTEMPTS,
+            )
+            break
+
         sub_timeout = int(min(_SUBPROCESS_TIMEOUT_CAP_SEC, budget))
         bump(25, f"searching products (attempt {attempt}/{_MAX_ATTEMPTS})")
 
@@ -258,16 +265,23 @@ async def run_optimization_job(
         except asyncio.TimeoutError:
             stop_heartbeat.set()
             await hb
-            job_store.update_job(
+            consecutive_timeouts += 1
+            logger.warning(
+                "optimize job %s subprocess budget timeout on attempt %s/%s (budget=%.2fs, sub_timeout=%ss)",
                 job_id,
-                status=JobStatus.FAILED,
-                progress=100,
-                stage="failed",
-                finished_at=time.monotonic(),
-                error=_serialize_timeout_error(),
-                attempts=attempt,
+                attempt,
+                _MAX_ATTEMPTS,
+                budget,
+                sub_timeout,
             )
-            return
+            if consecutive_timeouts >= 2:
+                logger.warning(
+                    "optimize job %s stopping after %s consecutive timeouts",
+                    job_id,
+                    consecutive_timeouts,
+                )
+                break
+            continue
         finally:
             stop_heartbeat.set()
             await hb
@@ -278,37 +292,50 @@ async def run_optimization_job(
         ok, result, err = evaluate_optimizer_response(raw)
         if ok and result is not None:
             stats = _stats_from_result(result)
-            bump(95, "finalizing results")
-            await asyncio.sleep(0)
-            job_store.update_job(
-                job_id,
-                status=JobStatus.COMPLETED,
-                progress=100,
-                stage="completed",
-                finished_at=time.monotonic(),
-                result=result,
-                error=None,
-                stats=stats,
-            )
-            logger.info(
-                "optimize job completed job_id=%s run_id=%s total_latency_ms=%s search_latency_ms=%s "
-                "failed_queries=%s cache_hits=%s search_hits=%s search_misses=%s parse_hits=%s",
-                job_id,
-                stats.run_id,
-                stats.total_latency_ms,
-                stats.search_latency_ms,
-                stats.failed_queries,
-                stats.cache_hits,
-                int((result.get("metrics") or {}).get("searchCacheHits") or 0),
-                int((result.get("metrics") or {}).get("searchCacheMisses") or 0),
-                int((result.get("metrics") or {}).get("parseCacheHits") or 0),
-            )
-            return
+            coverage = _coverage_ratio(result)
+            if coverage > best_coverage:
+                best_result = result
+                best_stats = stats
+                best_coverage = coverage
+                job_store.update_job(job_id, result=best_result, stats=best_stats)
+            if coverage >= _MIN_COVERAGE_RATIO:
+                bump(95, "finalizing results")
+                await asyncio.sleep(0)
+                job_store.update_job(
+                    job_id,
+                    status=JobStatus.COMPLETED,
+                    progress=100,
+                    stage="completed",
+                    finished_at=time.monotonic(),
+                    result=result,
+                    error=None,
+                    stats=stats,
+                )
+                logger.info(
+                    "optimize job completed job_id=%s run_id=%s total_latency_ms=%s search_latency_ms=%s "
+                    "failed_queries=%s cache_hits=%s search_hits=%s search_misses=%s parse_hits=%s",
+                    job_id,
+                    stats.run_id,
+                    stats.total_latency_ms,
+                    stats.search_latency_ms,
+                    stats.failed_queries,
+                    stats.cache_hits,
+                    int((result.get("metrics") or {}).get("searchCacheHits") or 0),
+                    int((result.get("metrics") or {}).get("searchCacheMisses") or 0),
+                    int((result.get("metrics") or {}).get("parseCacheHits") or 0),
+                )
+                return
 
-        should_retry = err is not None and err.retryable and attempt < _MAX_ATTEMPTS
-        if should_retry and remaining_budget() > 5:
+        consecutive_timeouts = 0
+        should_retry = (
+            err is not None
+            and err.retryable
+            and attempt < _MAX_ATTEMPTS
+            and remaining_budget() >= _MIN_ATTEMPT_SEC
+        )
+        if should_retry:
             delay = (2 ** (attempt - 1)) + random.uniform(0, 0.5)
-            delay = min(delay, max(0.5, remaining_budget() - sub_timeout - 1))
+            delay = min(delay, max(0.5, remaining_budget() - 1))
             bump(22, f"retrying after transient failure ({attempt}/{_MAX_ATTEMPTS})")
             logger.warning(
                 "optimize job %s retry %s/%s: %s",
@@ -320,13 +347,42 @@ async def run_optimization_job(
             await asyncio.sleep(delay)
             continue
 
+        break
+
+    if best_result is not None:
+        warns: List[Any] = list(best_result.get("optimizationWarnings") or [])
+        warns.append(
+            {
+                "code": "JOB_TIMEOUT_PARTIAL",
+                "message": "Optimization exceeded job time budget; returning best partial cart.",
+            }
+        )
+        best_result["optimizationWarnings"] = warns
+        stats = best_stats or _stats_from_result(best_result)
+        bump(95, "finalizing partial results")
+        await asyncio.sleep(0)
         job_store.update_job(
             job_id,
-            status=JobStatus.FAILED,
+            status=JobStatus.COMPLETED,
             progress=100,
-            stage="failed",
+            stage="completed",
             finished_at=time.monotonic(),
-            error=err,
-            attempts=attempt,
+            result=best_result,
+            error=_serialize_timeout_error(),
+            stats=stats,
+        )
+        logger.warning(
+            "optimize job %s completed with timeout and partial result (coverage=%.3f)",
+            job_id,
+            best_coverage,
         )
         return
+
+    job_store.update_job(
+        job_id,
+        status=JobStatus.FAILED,
+        progress=100,
+        stage="failed",
+        finished_at=time.monotonic(),
+        error=_serialize_timeout_error(),
+    )

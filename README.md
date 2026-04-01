@@ -74,7 +74,110 @@ The planner recommends meals over a **planning horizon of 1–7 days** from your
 
 For a deeper architectural overview, see **`docs/planner_architecture.md`** and **`docs/MEALPLAN_SPECIFICATION_v1.md`**.
 
-**Interfaces:** CLI (`plan_meals.py` / `python3 -m src.cli`) and an optional **REST API** (FastAPI server in `src/api/server.py`) for programmatic use.
+**Interfaces:** CLI (`plan_meals.py` / `python3 -m src.cli`), an optional **REST API** (FastAPI server in `src/api/server.py`), and a **Flutter frontend** (`frontend/`) that integrates async grocery cart optimization.
+
+### Async Grocery Cart Optimization (Macrova frontend + FastAPI + TinyFish)
+
+The project includes an end-to-end **async grocery cart optimizer** that takes a generated meal plan, calls a Node-based optimizer backed by TinyFish product search, and returns a **multi-store shopping cart** with progress updates.
+
+- **Frontend (Flutter, `frontend/`)**
+  - `MealPlanViewScreen` exposes an **“Optimize Grocery Cart”** button.
+  - Tapping the button:
+    - Builds a `GroceryOptimizeRequest` JSON body from the current meal plan.
+    - Calls `POST /api/v1/grocery/meal-plan-snapshot` to register the plan.
+    - Calls `POST /api/v1/grocery/optimize-cart` to start an async job and receive a `jobId`.
+    - Starts polling `GET /api/v1/grocery/optimize-cart/{jobId}` every 2–4 seconds via `OptimizationJobProvider`.
+  - While the job runs:
+    - `OptimizationProgress` shows a **progress bar**, stage text, and elapsed time.
+  - When the job completes:
+    - A “Cart ready” panel appears with latency/cache stats.
+    - A **cart dialog** shows:
+      - Estimated total cost.
+      - Total cart line count.
+      - **Per-store sections** (e.g. Target) with product-level rows (name, pack count, price).
+    - If the job fails, a failure card is shown with the error message and an always-available **Retry** button that re-submits the same snapshot as a new job.
+
+- **Backend API (FastAPI, `src/api/server.py` + `src/routes/grocery.py`)**
+  - Synchronous optimizer:
+    - `POST /api/v1/grocery/optimize` — runs the Node CLI inline and returns a `GroceryOptimizeResponse` (JSON) for blocking flows.
+  - Async cart optimization:
+    - `POST /api/v1/grocery/meal-plan-snapshot`
+      - Accepts a `GroceryOptimizeRequest` body and stores a **snapshot** (meal plan + stores) in a short-lived in-memory store.
+      - Returns `{ "mealPlanId": "..." }` for subsequent async jobs.
+    - `POST /api/v1/grocery/optimize-cart`
+      - Body:
+        - `mealPlanId: string` (must match a registered snapshot).
+        - `preferences: { mode: "balanced" | "min_cost" | "min_waste", maxStores: number }`.
+      - Requires an identity header: **`X-User-Id`**.
+      - Enforces **rate limits** via:
+        - A global max queue depth.
+        - A per-user cap on active (queued + running) jobs.
+      - On success, enqueues a job and returns `202 Accepted` with `{ "jobId": "..." }`.
+    - `GET /api/v1/grocery/optimize-cart/{jobId}`
+      - Returns the async job status:
+        - `status: "queued" | "running" | "completed" | "failed"`
+        - `progress: 0–100`
+        - `stage: string` (human-readable pipeline stage)
+        - `result: OptimizationResult | null` (cart + per-store breakdown) when completed
+        - `error: { message, code?, retryable? } | null` on failure
+        - `stats: { runId, totalLatency, searchLatency, failedQueries, cacheHits }` when available
+      - Also requires the same `X-User-Id` header and **enforces ownership**:
+        - Unknown/expired job → `404 JOB_NOT_FOUND`.
+        - Job belongs to a different user → `403 FORBIDDEN`.
+
+- **Job system and worker (Python, `src/jobs/`, `src/pipeline/`)**
+  - `OptimizationJobRecord` tracks:
+    - `id`, `meal_plan_id`, `user_id`, `status`, `progress`, `stage`,
+    - timestamps, attempts, `result`, `error`, and `stats`.
+  - `InMemoryJobStore`:
+    - Thread-safe in-memory dictionary of jobs with a **post-completion TTL** to bound memory.
+    - Supports listing stuck jobs and counting active jobs per user for rate limiting.
+  - `InMemoryJobQueue`:
+    - `asyncio.Queue` of job IDs with admission checks:
+      - Rejects when the queue is full (returns `429 QUEUE_FULL`).
+      - Rejects when a user exceeds the active job cap (returns `429 CONCURRENCY_LIMIT`).
+  - Worker lifecycle:
+    - On API startup, the server creates the store, queue, and a `MealPlanSnapshotStore`, then launches a **supervised background worker**:
+      - `job_worker_loop(app)` pulls job IDs, resolves the snapshot, and calls `run_optimization_job`.
+      - `supervised_job_worker_loop(app)` restarts the worker after crashes with a small backoff, so a single bad job cannot permanently kill async processing.
+  - `run_optimization_job`:
+    - Wraps the existing Node optimizer (`run_grocery_optimizer`) and:
+      - Builds the Node request payload from the saved snapshot and preferences.
+      - Updates `progress`/`stage` at key milestones:
+        - e.g. “aggregating ingredients”, “preparing product search”, “searching products (attempt i/n)”, “processing optimizer output”, “finalizing results”.
+      - Enforces a **hard per-job timeout** (~5 minutes by default).
+      - Performs **bounded retries** for transient TinyFish/Node failures, with exponential backoff.
+      - Applies a **partial result policy**: jobs can succeed with warnings when a high-enough fraction of ingredients are covered.
+      - Computes and stores metrics (`JobStats`) from the Node pipeline trace:
+        - `totalLatency`, `searchLatency`, `failedQueries`, `cacheHits`, etc.
+      - Guarantees **monotonic progress**: progress values never decrease, even across retries, to avoid jarring UX regressions.
+
+- **TinyFish integration (Node, `packages/grocery-optimizer/`)**
+  - `grocery_pipeline.ts` orchestrates:
+    - Ingredient aggregation and normalization.
+    - Bounded-concurrency TinyFish search (configurable, default 3 in-flight searches).
+    - Query/result caching for product search and parsed prices.
+    - Heuristic skipping of low-value ingredients (e.g. salt, water).
+    - Multi-store cart optimization with waste and cost trade-offs.
+  - `TinyFishAdapter` implements:
+    - Retries with backoff for transient errors.
+    - Abort signals and progress callbacks for streaming searches.
+
+To use the async grocery cart feature locally:
+
+1. Run the FastAPI server (after building the Node `grocery-optimizer` package):
+   ```bash
+   uvicorn src.api.server:app --reload
+   ```
+2. Run the Flutter app in `frontend/` pointing at the API (set `API_BASE_URL` if not `http://localhost:8000`).
+3. Generate a meal plan, then tap **“Optimize Grocery Cart”** on the Meal Plan screen.
+
+The system will:
+
+- Register the current plan snapshot.
+- Start an async job tied to your `X-User-Id`.
+- Stream progress via polling until the job completes or fails.
+- Render a **per-store cart summary** with product-level details and a clear retry path on failures.
 
 ### End Game Vision
 The ultimate goal is to create an **all-purpose nutritious meals generator** that combines:

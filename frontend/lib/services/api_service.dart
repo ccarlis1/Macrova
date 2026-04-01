@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
 import '../models/ingredient_search.dart';
 import '../models/models.dart';
@@ -95,6 +97,25 @@ class ApiService {
 
   static Map<String, String> get _jsonHeaders =>
       const {'Content-Type': 'application/json'};
+
+  static const String _userIdPrefsKey = 'user_id';
+  static String? _cachedUserId;
+
+  static Future<String> _getOrCreateUserId() async {
+    if (_cachedUserId != null && _cachedUserId!.isNotEmpty) {
+      return _cachedUserId!;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    var userId = prefs.getString(_userIdPrefsKey);
+
+    if (userId == null || userId.isEmpty) {
+      userId = const Uuid().v4();
+      await prefs.setString(_userIdPrefsKey, userId);
+    }
+
+    _cachedUserId = userId;
+    return userId;
+  }
 
   /// POST /api/v1/recipes/sync
   static Future<List<String>> syncRecipes(List<Recipe> recipes) async {
@@ -276,9 +297,13 @@ class ApiService {
 
   /// POST `/api/v1/grocery/meal-plan-snapshot` — register plan for async optimize-cart.
   static Future<void> registerMealPlanSnapshot(Map<String, dynamic> body) async {
+    final userId = await _getOrCreateUserId();
     final res = await http.post(
       Uri.parse('$baseUrl/api/v1/grocery/meal-plan-snapshot'),
-      headers: _jsonHeaders,
+      headers: {
+        ..._jsonHeaders,
+        'X-User-Id': userId,
+      },
       body: jsonEncode(body),
     );
     if (res.statusCode == 200) {
@@ -293,9 +318,13 @@ class ApiService {
     String mode = 'balanced',
     int maxStores = 4,
   }) async {
+    final userId = await _getOrCreateUserId();
     final res = await http.post(
       Uri.parse('$baseUrl/api/v1/grocery/optimize-cart'),
-      headers: _jsonHeaders,
+      headers: {
+        ..._jsonHeaders,
+        'X-User-Id': userId,
+      },
       body: jsonEncode({
         'mealPlanId': mealPlanId,
         'preferences': {'mode': mode, 'maxStores': maxStores},
@@ -327,9 +356,14 @@ class ApiService {
   static Future<Map<String, dynamic>> getOptimizeCartJobRaw(
     String jobId,
   ) async {
+    final userId = await _getOrCreateUserId();
     final encoded = Uri.encodeComponent(jobId);
     final res = await http.get(
       Uri.parse('$baseUrl/api/v1/grocery/optimize-cart/$encoded'),
+      headers: {
+        ..._jsonHeaders,
+        'X-User-Id': userId,
+      },
     );
     if (res.statusCode == 200) {
       final decoded = jsonDecode(res.body);

@@ -56,6 +56,7 @@ class GroceryOptimizeError(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     message: str
+    code: Optional[str] = None
 
 
 class GroceryOptimizeResponse(BaseModel):

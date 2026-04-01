@@ -1,8 +1,10 @@
 """FastAPI server for the Nutrition Agent meal planning pipeline."""
 
+import asyncio
 import json
 import os
 import sys
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 
@@ -81,7 +83,31 @@ recipes_path = "data/recipes/recipes.json"
 ingredients_path = "data/ingredients/custom_ingredients.json"
 DEFAULT_TAG_PATH = "data/recipes/recipe_tags.json"
 
-app = FastAPI(title="Nutrition Agent API")
+
+@asynccontextmanager
+async def _nutrition_agent_lifespan(app: FastAPI):
+    from src.jobs.job_queue import InMemoryJobQueue
+    from src.jobs.job_store import InMemoryJobStore
+    from src.jobs.job_worker import supervised_job_worker_loop
+    from src.jobs.protocols import NoOpJobEventPublisher
+    from src.services.meal_plan_snapshots import MealPlanSnapshotStore
+
+    app.state.job_store = InMemoryJobStore()
+    app.state.job_queue = InMemoryJobQueue()
+    app.state.meal_plan_snapshots = MealPlanSnapshotStore()
+    app.state.job_event_publisher = NoOpJobEventPublisher()
+    worker_task = asyncio.create_task(supervised_job_worker_loop(app))
+    try:
+        yield
+    finally:
+        worker_task.cancel()
+        try:
+            await worker_task
+        except asyncio.CancelledError:
+            pass
+
+
+app = FastAPI(title="Nutrition Agent API", lifespan=_nutrition_agent_lifespan)
 
 app.include_router(grocery_router)
 

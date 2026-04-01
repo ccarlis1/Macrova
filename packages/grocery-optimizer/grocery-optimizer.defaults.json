@@ -3,12 +3,13 @@
     "objective": "balanced",
     "maxCandidatesPerQuery": 8,
     "maxStores": 4,
-    "allowMultiStore": true
+    "allowMultiStore": true,
+    "searchConcurrency": 3
   },
   "stores": [
     {
-      "id": "walmart",
-      "baseUrl": "https://www.walmart.com"
+      "id": "target",
+      "baseUrl": "https://www.target.com"
     }
   ]
 }

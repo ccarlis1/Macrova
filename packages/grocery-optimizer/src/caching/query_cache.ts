@@ -40,10 +40,17 @@ export class QuerySearchCache {
   private readonly map = new Map<string, CacheEntry<ProductSearchResult>>();
   private readonly defaultTtlMs: number;
   private readonly staleMaxAgeMs: number;
+  private _hits = 0;
+  private _misses = 0;
 
   constructor(options?: { ttlMs?: number; staleMaxAgeMs?: number }) {
     this.defaultTtlMs = options?.ttlMs ?? 10 * 60_000;
     this.staleMaxAgeMs = options?.staleMaxAgeMs ?? 15 * 60_000;
+  }
+
+  /** Fresh or stale hits where cached TinyFish-shaped payload was returned without awaiting refresh. */
+  hitStats(): { hits: number; misses: number } {
+    return { hits: this._hits, misses: this._misses };
   }
 
   get(key: QueryCacheKey): ProductSearchResult | undefined {
@@ -133,9 +140,11 @@ export class QuerySearchCache {
     if (meta) {
       const high = meta.qualityScore >= hi;
       if (!meta.isStale && high) {
+        this._hits += 1;
         return meta.value;
       }
       if (meta.isStale && high) {
+        this._hits += 1;
         void refresh()
           .then((r) => this.set(key, r.value, ttl, r.qualityScore))
           .catch(() => {
@@ -144,6 +153,7 @@ export class QuerySearchCache {
         return meta.value;
       }
     }
+    this._misses += 1;
     const fresh = await refresh();
     this.set(key, fresh.value, ttl, fresh.qualityScore);
     return fresh.value;

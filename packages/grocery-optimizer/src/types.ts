@@ -52,6 +52,13 @@ export interface GroceryOptimizeRequest {
   runId?: string;
 }
 
+/** Ingredient rows omitted from retailer search (e.g. pantry staples). */
+export interface SkippedSearchIngredient {
+  canonicalKey: string;
+  displayName: string;
+  reason: "low_value";
+}
+
 /** Successful `result` payload (camelCase JSON). */
 export interface GroceryOptimizeSuccessResult {
   runId: string;
@@ -62,6 +69,8 @@ export interface GroceryOptimizeSuccessResult {
   stores: GroceryStoreRef[];
   /** Stage timing spans (aggregation → search → optimization → cart). */
   pipelineTrace?: readonly TraceSpan[];
+  /** Ingredients not sent to TinyFish (transparent UX / cost control). */
+  skippedIngredients?: SkippedSearchIngredient[];
 }
 
 export interface GroceryOptimizeErrorBody {
@@ -104,6 +113,8 @@ export interface OptimizationPreferences {
   maxStores?: number;
   /** When false, single-store per-ingredient behavior is preferred (frontier collapses). */
   allowMultiStore?: boolean;
+  /** Max concurrent TinyFish ingredient searches (default 3). */
+  searchConcurrency?: number;
 }
 
 // --- Aggregation ---

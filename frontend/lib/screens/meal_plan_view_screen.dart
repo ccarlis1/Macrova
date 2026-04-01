@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 
 import '../models/micronutrient_metadata.dart';
 import '../models/models.dart';
 import '../models/user_profile.dart';
 import '../providers/meal_plan_provider.dart';
+import '../providers/optimization_job_provider.dart';
 import '../providers/profile_provider.dart';
 import '../providers/recipe_provider.dart';
 import '../services/api_service.dart';
@@ -12,6 +14,8 @@ import '../services/grocery_optimize_payload.dart';
 import '../widgets/macro_display.dart';
 import '../widgets/meal_card.dart';
 import '../widgets/micronutrient_bar.dart';
+import '../widgets/optimize_cart_button.dart';
+import '../widgets/optimization_progress.dart';
 import '../widgets/section_header.dart';
 
 class MealPlanViewScreen extends StatefulWidget {
@@ -23,7 +27,8 @@ class MealPlanViewScreen extends StatefulWidget {
 
 class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
   bool _showCalendar = false;
-  bool _groceryBusy = false;
+  DateTime? _optimizeStartedAt;
+  String? _lastShownResultRunId;
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +36,7 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
     final mealPlan = planProvider.mealPlan;
     final profile = context.watch<ProfileProvider>().profile;
     final recipeProvider = context.watch<RecipeProvider>();
+    final optimizeJob = context.watch<OptimizationJobProvider>();
 
     if (mealPlan == null) {
       return Center(
@@ -92,20 +98,16 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
               const SizedBox(height: 12),
               Align(
                 alignment: Alignment.centerLeft,
-                child: FilledButton.tonalIcon(
-                  onPressed: _groceryBusy
-                      ? null
-                      : () => _runGroceryOptimize(mealPlan, recipeProvider),
-                  icon: _groceryBusy
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.shopping_cart_outlined),
-                  label: Text(_groceryBusy ? 'Building cart…' : 'Create optimal grocery cart'),
+                child: OptimizeCartButton(
+                  busy: optimizeJob.isBusy,
+                  onPressed: () => _startAsyncGroceryOptimize(
+                    mealPlan,
+                    recipeProvider,
+                    optimizeJob,
+                  ),
                 ),
               ),
+              ..._buildOptimizeJobPanel(context, optimizeJob),
               const SizedBox(height: 24),
 
               if (_showCalendar) ...[
@@ -297,15 +299,166 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
     );
   }
 
-  /// POST `/api/v1/grocery/optimize` via [ApiService.groceryOptimize] (multi-minute
-  /// runs; client timeout and [ApiException] surfaced with [SnackBar]).
-  Future<void> _runGroceryOptimize(
+  List<Widget> _buildOptimizeJobPanel(
+    BuildContext context,
+    OptimizationJobProvider job,
+  ) {
+    final status = job.status;
+    final started = _optimizeStartedAt;
+
+    if (status == null) return [];
+
+    if ((status.isQueued || status.isRunning) && started != null) {
+      return [
+        const SizedBox(height: 12),
+        OptimizationProgress(status: status, startedAt: started),
+      ];
+    }
+
+    if (status.isFailed) {
+      final err = status.error;
+      final msg = err?.message ?? 'Optimization failed';
+      final retryable = err?.retryable == true;
+      return [
+        const SizedBox(height: 12),
+        Card(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Theme.of(context).colorScheme.errorContainer),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.error_outline,
+                        color: Theme.of(context).colorScheme.error),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Cart optimization failed',
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(msg),
+                if (retryable) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'This error is likely transient. Retrying may succeed.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                FilledButton(
+                  onPressed: job.isBusy ? null : () => job.retry(),
+                  child: const Text('Retry'),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _optimizeStartedAt = null;
+                      _lastShownResultRunId = null;
+                    });
+                    job.dismissUi();
+                  },
+                  child: const Text('Dismiss'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ];
+    }
+
+    if (status.isCompleted && status.result != null) {
+      final runId = status.result!['runId']?.toString() ?? '';
+      if (runId.isNotEmpty && runId != _lastShownResultRunId) {
+        _lastShownResultRunId = runId;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _showGroceryResultDialog(status.result!);
+        });
+      }
+
+      final st = status.stats;
+      return [
+        const SizedBox(height: 12),
+        Card(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Cart ready',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                if (st != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Cache hits: ${st.cacheHits} · '
+                    'Search latency: ${st.searchLatency} ms',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    FilledButton.tonal(
+                      onPressed: () =>
+                          _showGroceryResultDialog(status.result!),
+                      child: const Text('View cart summary'),
+                    ),
+                    const SizedBox(width: 8),
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _optimizeStartedAt = null;
+                          _lastShownResultRunId = null;
+                        });
+                        job.dismissUi();
+                      },
+                      child: const Text('Dismiss'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ];
+    }
+
+    return [];
+  }
+
+  Future<void> _startAsyncGroceryOptimize(
     MealPlan mealPlan,
     RecipeProvider recipes,
+    OptimizationJobProvider job,
   ) async {
+    final mealPlanId = const Uuid().v4();
     final body = buildGroceryOptimizeRequestBody(
       mealPlan: mealPlan,
       recipes: recipes,
+      mealPlanId: mealPlanId,
     );
     if (body == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -318,86 +471,152 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
       return;
     }
 
-    setState(() => _groceryBusy = true);
+    setState(() => _optimizeStartedAt = DateTime.now());
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Searching stores for your ingredients — this can take a few minutes.',
+            'Cart optimization started — progress updates below.',
           ),
-          duration: Duration(seconds: 5),
+          duration: Duration(seconds: 4),
         ),
       );
     }
+
     try {
-      final res = await ApiService.groceryOptimize(body);
-      if (!mounted) return;
-      if (res['ok'] == true) {
-        final r = res['result'];
-        if (r is! Map<String, dynamic>) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Unexpected response shape.')),
-          );
-          return;
-        }
-        final ms = r['multiStoreOptimization'];
-        final cost = ms is Map<String, dynamic> ? ms['totalCost'] : null;
-        final cart = r['cartPlan'];
-        final lines =
-            cart is Map<String, dynamic> ? cart['lines'] as List<dynamic>? : null;
-        final nLines = lines?.length ?? 0;
-        await showDialog<void>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Grocery cart'),
-            content: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Estimated total: '
-                    '${cost != null ? "\$${cost.toString()}" : "—"}',
-                    style: Theme.of(ctx).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text('$nLines cart line(s)'),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
-      } else {
-        final err = res['error'];
-        final msg = err is Map && err['message'] is String
-            ? err['message'] as String
-            : 'Grocery optimizer failed';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg)),
-        );
-      }
+      await job.startOptimizeCart(
+        groceryBody: body,
+        mealPlanId: mealPlanId,
+      );
     } on ApiException catch (e) {
       if (mounted) {
+        setState(() => _optimizeStartedAt = null);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.message)),
         );
       }
     } catch (e) {
       if (mounted) {
+        setState(() => _optimizeStartedAt = null);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: $e')),
         );
       }
-    } finally {
-      if (mounted) {
-        setState(() => _groceryBusy = false);
+    }
+  }
+
+  Future<void> _showGroceryResultDialog(Map<String, dynamic> result) async {
+    final ms = result['multiStoreOptimization'];
+    final cost = ms is Map<String, dynamic> ? ms['totalCost'] : null;
+    final cart = result['cartPlan'];
+    final lines =
+        cart is Map<String, dynamic> ? cart['lines'] as List<dynamic>? : null;
+    final nLines = lines?.length ?? 0;
+    final skipped = result['skippedIngredients'] as List<dynamic>?;
+
+    // Build store → friendly name map from `stores` array when present.
+    final stores = result['stores'];
+    final storeNameById = <String, String>{};
+    if (stores is List) {
+      for (final s in stores) {
+        if (s is Map<String, dynamic>) {
+          final id = s['id']?.toString();
+          if (id == null) continue;
+          final base = s['baseUrl']?.toString();
+          storeNameById[id] = base ?? id;
+        }
       }
     }
+
+    // Group selected products by store using multiStoreOptimization.storePlans.
+    final storePlans =
+        ms is Map<String, dynamic> ? ms['storePlans'] as Map<String, dynamic>? : null;
+    final storeSections = <Widget>[];
+    if (storePlans != null) {
+      storePlans.forEach((storeId, products) {
+        if (products is! List) return;
+        final storeLabel = storeNameById[storeId] ?? storeId;
+        final productTiles = <Widget>[];
+        for (final p in products) {
+          if (p is! Map<String, dynamic>) continue;
+          final product = p['product'] as Map<String, dynamic>?;
+          if (product == null) continue;
+          final candidate =
+              product['candidate'] as Map<String, dynamic>? ?? const {};
+          final name = candidate['name']?.toString() ?? 'Unknown product';
+          final packCount = (p['packCount'] as num?)?.toDouble() ?? 1;
+          final totalPackPrice =
+              (product['totalPackPrice'] as num?)?.toDouble();
+          final unitPrice = (product['unitPrice'] as num?)?.toDouble();
+          String priceText;
+          if (totalPackPrice != null) {
+            priceText =
+                '\$${(totalPackPrice * packCount).toStringAsFixed(2)} for ${packCount.toStringAsFixed(0)} pack(s)';
+          } else if (unitPrice != null) {
+            priceText = '\$${unitPrice.toStringAsFixed(2)} per unit';
+          } else {
+            priceText = 'Price unavailable';
+          }
+          productTiles.add(
+            ListTile(
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+              title: Text(name),
+              subtitle: Text(priceText),
+            ),
+          );
+        }
+        if (productTiles.isEmpty) return;
+        storeSections.addAll([
+          const SizedBox(height: 12),
+          Text(
+            storeLabel,
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          const SizedBox(height: 4),
+          ...productTiles,
+        ]);
+      });
+    }
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Grocery cart'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Estimated total: '
+                '${cost != null ? "\$${cost.toString()}" : "—"}',
+                style: Theme.of(ctx).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              Text('$nLines cart line(s)'),
+              if (storeSections.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                ...storeSections,
+              ],
+              if (skipped != null && skipped.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Skipped staples: ${skipped.length} (e.g. salt, water)',
+                  style: Theme.of(ctx).textTheme.bodySmall,
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 }

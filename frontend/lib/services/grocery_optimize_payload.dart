@@ -3,8 +3,8 @@ import '../providers/recipe_provider.dart';
 
 /// Default storefront for TinyFish search (v1); override when the app adds store settings.
 const Map<String, String> kDefaultGroceryStore = {
-  'id': 'walmart',
-  'baseUrl': 'https://www.walmart.com',
+  'id': 'target',
+  'baseUrl': 'https://www.target.com',
 };
 
 /// Builds the JSON body for `POST /api/v1/grocery/optimize` from a generated [MealPlan].
@@ -16,6 +16,7 @@ Map<String, dynamic>? buildGroceryOptimizeRequestBody({
   required RecipeProvider recipes,
   Map<String, dynamic>? preferences,
   List<Map<String, String>>? stores,
+  String? mealPlanId,
 }) {
   final counts = <String, double>{};
   final seenIds = <String>{};
@@ -56,7 +57,7 @@ Map<String, dynamic>? buildGroceryOptimizeRequestBody({
   return {
     'schemaVersion': '1.0',
     'mealPlan': {
-      'id': 'local-plan',
+      'id': mealPlanId ?? 'local-plan',
       'recipes': recipePayloads,
       'recipeServings': counts,
     },

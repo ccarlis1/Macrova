@@ -10,6 +10,7 @@ import { QuerySearchCache } from "./caching/query_cache.js";
 import { loadGroceryOptimizerDefaults } from "./config.js";
 import { mergeErrors, type OptimizationError } from "./errors.js";
 import { aggregateIngredients, extractIngredientLines } from "./ingredient_aggregator.js";
+import { isLowValueIngredientSkip } from "./ingredient_low_value_skip.js";
 import type { TinyFishSearchAdapter } from "./integrations/tinyfish_client.js";
 import { logInfo } from "./observability/logger.js";
 import { MetricsCollector } from "./observability/metrics.js";
@@ -27,6 +28,7 @@ import {
 } from "./product_search.js";
 import { buildCartPlan } from "./cart_builder.js";
 import type {
+  AggregatedIngredient,
   GroceryOptimizeRequest,
   GroceryOptimizeResponse,
   GroceryStoreRef,
@@ -36,6 +38,7 @@ import type {
   NormalizedProduct,
   OptimizationPreferences,
   RankedProduct,
+  SkippedSearchIngredient,
 } from "./types.js";
 
 export type GroceryPipelineDeps = {
@@ -98,6 +101,31 @@ function normalizeMealPlan(mealPlan: MealPlanInput): MealPlanInput {
   return { id: mealPlan.id, recipes, recipeServings };
 }
 
+async function mapPool<T, R>(
+  items: readonly T[],
+  concurrency: number,
+  mapper: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  if (items.length === 0) {
+    return [];
+  }
+  const results: R[] = new Array(items.length);
+  let next = 0;
+  const workers = Math.min(Math.max(1, concurrency), items.length);
+  await Promise.all(
+    Array.from({ length: workers }, async () => {
+      while (true) {
+        const i = next++;
+        if (i >= items.length) {
+          break;
+        }
+        results[i] = await mapper(items[i]!, i);
+      }
+    }),
+  );
+  return results;
+}
+
 function failResponse(message: string, code?: string): GroceryOptimizeResponse {
   return {
     schemaVersion: "1.0",
@@ -155,11 +183,28 @@ export async function runGroceryPipeline(
   trace.end(spanAgg);
 
   const toOptimize = aggregated.filter((a) => !a.isToTaste);
-  const requirements = toOptimize.map(toIngredientRequirement);
 
   const candidatesByIngredient: Record<string, NormalizedProduct[]> = {};
   const rankedByIngredient: Record<string, RankedProduct[]> = {};
   const stageErrors: OptimizationError[] = [];
+  const skippedIngredients: SkippedSearchIngredient[] = [];
+  const toSearch: AggregatedIngredient[] = [];
+
+  for (const a of toOptimize) {
+    if (isLowValueIngredientSkip(a)) {
+      skippedIngredients.push({
+        canonicalKey: a.canonicalKey,
+        displayName: a.displayName,
+        reason: "low_value",
+      });
+      candidatesByIngredient[a.canonicalKey] = [];
+      rankedByIngredient[a.canonicalKey] = [];
+      continue;
+    }
+    toSearch.push(a);
+  }
+
+  const requirements = toSearch.map(toIngredientRequirement);
 
   const maxRanked = Math.max(16, (prefs.maxCandidatesPerQuery ?? 8) * 3);
 
@@ -173,19 +218,31 @@ export async function runGroceryPipeline(
 
   let parseOk = 0;
   let parseTotal = 0;
+  let parseCacheHits = 0;
+
+  const searchConcurrency = prefs.searchConcurrency ?? defaults.preferences?.searchConcurrency ?? 3;
 
   const spanSearch = trace.begin("search", runId, {
-    ingredientCount: toOptimize.length,
+    ingredientCount: toSearch.length,
+    searchConcurrency,
   });
 
-  for (const agg of toOptimize) {
-    const tSearch = performance.now();
-    const searchRes = await searchProductsForIngredientResult(
-      agg,
-      stores,
-      deps.adapter,
-      searchOpts,
-    );
+  const searchPhase = await mapPool(
+    toSearch,
+    searchConcurrency,
+    async (agg) => {
+      const tSearch = performance.now();
+      const searchRes = await searchProductsForIngredientResult(
+        agg,
+        stores,
+        deps.adapter,
+        searchOpts,
+      );
+      return { agg, searchRes, tSearch };
+    },
+  );
+
+  for (const { agg, searchRes, tSearch } of searchPhase) {
     if (searchRes.errors.length > 0) {
       stageErrors.push(...searchRes.errors);
     }
@@ -217,6 +274,7 @@ export async function runGroceryPipeline(
       if (parseCache) {
         const hit = parseCache.get(cacheKey);
         if (hit) {
+          parseCacheHits++;
           normalized.push(hit);
           if (!hit.lowConfidence) parseOk++;
           continue;
@@ -248,6 +306,21 @@ export async function runGroceryPipeline(
   }
 
   trace.end(spanSearch);
+
+  if (queryCache) {
+    const st = queryCache.hitStats();
+    metrics.recordSearchCacheHits(st.hits, st.misses);
+  }
+  metrics.recordParseCacheHits(parseCacheHits);
+
+  logInfo({
+    runId,
+    stage: "search_pool",
+    message: "ingredient search phase complete",
+    workers: searchConcurrency,
+    searched: toSearch.length,
+    skippedLowValue: skippedIngredients.length,
+  });
 
   const spanOpt = trace.begin("optimization", runId);
   const multi = optimizeMultiStoreCart(
@@ -305,13 +378,19 @@ export async function runGroceryPipeline(
     metrics: metrics.snapshot(),
     stores,
     pipelineTrace: trace.spansSnapshot(),
+    ...(skippedIngredients.length > 0 ? { skippedIngredients } : {}),
   };
 
+  const finalMetrics = metrics.snapshot();
   logInfo({
     runId,
     stage: "pipeline_done",
     durationMs: Math.round(elapsed),
     message: "grocery pipeline complete",
+    searchCacheHits: finalMetrics.searchCacheHits,
+    searchCacheMisses: finalMetrics.searchCacheMisses,
+    parseCacheHits: finalMetrics.parseCacheHits,
+    skippedIngredients: skippedIngredients.length,
   });
 
   return {

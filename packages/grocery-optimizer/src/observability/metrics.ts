@@ -9,6 +9,12 @@ export type PipelineMetrics = {
   coverageRate: number;
   avgStoresPerCart: number;
   priceParseSuccessRate: number;
+  /** TinyFish query-cache hits (fresh or stale-while-revalidate served). */
+  searchCacheHits: number;
+  /** TinyFish query-cache paths that awaited live fetch. */
+  searchCacheMisses: number;
+  /** Parse cache hits for normalized price rows. */
+  parseCacheHits: number;
 };
 
 export class MetricsCollector {
@@ -18,6 +24,9 @@ export class MetricsCollector {
   coverageRate = 0;
   avgStoresPerCart = 0;
   priceParseSuccessRate = 0;
+  searchCacheHits = 0;
+  searchCacheMisses = 0;
+  parseCacheHits = 0;
 
   recordOptimizationLatency(ms: number): void {
     this.optimizationLatencyMs = ms;
@@ -43,6 +52,15 @@ export class MetricsCollector {
     this.priceParseSuccessRate = rate;
   }
 
+  recordSearchCacheHits(hits: number, misses: number): void {
+    this.searchCacheHits = hits;
+    this.searchCacheMisses = misses;
+  }
+
+  recordParseCacheHits(n: number): void {
+    this.parseCacheHits = n;
+  }
+
   snapshot(): PipelineMetrics {
     return {
       optimizationLatencyMs: this.optimizationLatencyMs,
@@ -51,6 +69,9 @@ export class MetricsCollector {
       coverageRate: this.coverageRate,
       avgStoresPerCart: this.avgStoresPerCart,
       priceParseSuccessRate: this.priceParseSuccessRate,
+      searchCacheHits: this.searchCacheHits,
+      searchCacheMisses: this.searchCacheMisses,
+      parseCacheHits: this.parseCacheHits,
     };
   }
 
@@ -61,5 +82,8 @@ export class MetricsCollector {
     this.coverageRate = 0;
     this.avgStoresPerCart = 0;
     this.priceParseSuccessRate = 0;
+    this.searchCacheHits = 0;
+    this.searchCacheMisses = 0;
+    this.parseCacheHits = 0;
   }
 }

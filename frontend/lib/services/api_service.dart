@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../models/ingredient_search.dart';
 import '../models/models.dart';
 import '../models/nutrition_summary.dart';
+import '../models/optimize_cart_job_status.dart';
 import '../models/recipe.dart';
 
 /// Thrown when the API returns a non-success status with a parseable body.
@@ -272,6 +273,83 @@ class ApiService {
 
   /// Prefer [listRecipes]; kept for call sites not yet migrated.
   static Future<List<RecipeSummary>> getRecipes() => listRecipes();
+
+  /// POST `/api/v1/grocery/meal-plan-snapshot` — register plan for async optimize-cart.
+  static Future<void> registerMealPlanSnapshot(Map<String, dynamic> body) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/api/v1/grocery/meal-plan-snapshot'),
+      headers: _jsonHeaders,
+      body: jsonEncode(body),
+    );
+    if (res.statusCode == 200) {
+      return;
+    }
+    throw ApiException.fromResponse(res);
+  }
+
+  /// POST `/api/v1/grocery/optimize-cart` — returns job id (202).
+  static Future<String> startOptimizeCartJob({
+    required String mealPlanId,
+    String mode = 'balanced',
+    int maxStores = 4,
+  }) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/api/v1/grocery/optimize-cart'),
+      headers: _jsonHeaders,
+      body: jsonEncode({
+        'mealPlanId': mealPlanId,
+        'preferences': {'mode': mode, 'maxStores': maxStores},
+      }),
+    );
+    if (res.statusCode == 202) {
+      final decoded = jsonDecode(res.body);
+      if (decoded is! Map) {
+        throw const ApiException(
+          statusCode: 202,
+          code: 'INVALID_RESPONSE',
+          message: 'optimize-cart response was not a JSON object',
+        );
+      }
+      final id = decoded['jobId'] as String?;
+      if (id == null || id.isEmpty) {
+        throw const ApiException(
+          statusCode: 202,
+          code: 'INVALID_RESPONSE',
+          message: 'Missing jobId in optimize-cart response',
+        );
+      }
+      return id;
+    }
+    throw ApiException.fromResponse(res);
+  }
+
+  /// GET `/api/v1/grocery/optimize-cart/{jobId}` — job status for polling.
+  static Future<Map<String, dynamic>> getOptimizeCartJobRaw(
+    String jobId,
+  ) async {
+    final encoded = Uri.encodeComponent(jobId);
+    final res = await http.get(
+      Uri.parse('$baseUrl/api/v1/grocery/optimize-cart/$encoded'),
+    );
+    if (res.statusCode == 200) {
+      final decoded = jsonDecode(res.body);
+      if (decoded is! Map) {
+        throw const ApiException(
+          statusCode: 200,
+          code: 'INVALID_RESPONSE',
+          message: 'Job status response was not a JSON object',
+        );
+      }
+      return Map<String, dynamic>.from(decoded);
+    }
+    throw ApiException.fromResponse(res);
+  }
+
+  /// Typed job status (same as [getOptimizeCartJobRaw]).
+  static Future<OptimizeCartJobStatus> getOptimizeCartJob(String jobId) async {
+    final raw = await getOptimizeCartJobRaw(jobId);
+    return OptimizeCartJobStatus.fromJson(raw);
+  }
 
   /// POST `/api/v1/grocery/optimize` — Node grocery optimizer (may take minutes).
   ///

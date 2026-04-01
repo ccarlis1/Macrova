@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'features/agent/llm_config_provider.dart';
 import 'providers/ingredient_provider.dart';
 import 'providers/meal_plan_provider.dart';
+import 'providers/optimization_job_provider.dart';
 import 'providers/profile_provider.dart';
 import 'providers/recipe_builder_coordinator.dart';
 import 'providers/recipe_provider.dart';
@@ -80,6 +81,7 @@ class MacrovaApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: recipes),
         ChangeNotifierProvider.value(value: recipeBuilderCoordinator),
         ChangeNotifierProvider.value(value: mealPlan),
+        ChangeNotifierProvider(create: (_) => OptimizationJobProvider()),
       ],
       child: MaterialApp(
         title: 'Macrova',

@@ -4,7 +4,7 @@
 
 ## Summary
 
-Profile screen UI for editing day-type schedules: per-slot `required_tags`, `preferred_tags`, and `busyness_max`.
+Profile screen UI for editing **`DaySchedule`** / **`MealSlot`** rows: per-slot `required_tag_slugs`, `preferred_tag_slugs`, and **`busyness_level` (1–4)**; workouts edited as **`WorkoutSlot`** (`after_meal_index`, `type`, `intensity`) — not as `busyness_level = 0` meals.
 
 ## Context
 
@@ -14,13 +14,12 @@ Without this, the user cannot express slot intent in the new model — they'd ha
 
 - [ ] New tab/section "Week Template" in the Profile screen:
   - Day-type selector (Workout / Golf / Rest, plus "+ Add day type").
-  - For each selected day type, an ordered list of slots (`workout.meal_1`, `workout.meal_2`, …).
-  - Per slot:
-    - Drag handle to reorder.
-    - Label (editable).
-    - `busyness_max` dropdown (time-0..time-4).
-    - `required_tags` chip picker (FE-5, grouped).
-    - `preferred_tags` chip picker (FE-5).
+  - For each selected day type, an ordered list of **`MealSlot`** rows (`index` 1..N).
+  - Per meal slot:
+    - Drag handle to reorder (updates `index` consistently).
+    - Optional `preferred_time` (`HH:MM`).
+    - `busyness_level` dropdown **1–4** (maps to recipe `time-*` fit at plan time, not the same as recipe `time-0`).
+    - `required_tag_slugs` / `preferred_tag_slugs` chip pickers (FE-5).
     - Delete button.
   - "+ Add slot" at the bottom.
 - [ ] "Week pattern" editor: 7 day-type buttons (Mon..Sun), each a dropdown over available day types.

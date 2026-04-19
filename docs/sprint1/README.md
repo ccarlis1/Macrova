@@ -36,16 +36,16 @@ Week 2 fills in: AI-1..AI-5, FE-4, FE-6, FE-7.
 ## Tasks
 
 ### Data Model
-- [DM-1 — Tag model + registry](./DM-1-tag-model-registry.md)
+- [DM-1 — Unify tag registry with `tag_repository`](./DM-1-tag-model-registry.md)
 - [DM-2 — Extend Recipe with tags](./DM-2-recipe-tags-extension.md)
 - [DM-3 — MealPrepBatch entity + store](./DM-3-meal-prep-batch-entity.md)
-- [DM-4 — MealSlot + day_type_schedules in UserProfile](./DM-4-userprofile-slots.md)
+- [DM-4 — Extend canonical `MealSlot` + `DaySchedule`](./DM-4-userprofile-slots.md)
 - [DM-5 — Busyness → time-* tag migration](./DM-5-busyness-time-migration.md)
 
 ### Backend
 - [BE-1 — TagService (CRUD + normalize)](./BE-1-tag-service.md)
-- [BE-2 — Planner Phase-B pre-fill from batches](./BE-2-planner-batch-prefill.md)
-- [BE-3 — Hard tag-constraint filter](./BE-3-hard-tag-filter.md)
+- [BE-2 — Meal-prep batch locks in planner path](./BE-2-planner-batch-prefill.md)
+- [BE-3 — Extend `recipe_tag_filtering` for required slot slugs](./BE-3-hard-tag-filter.md)
 - [BE-4 — Soft scoring: preferred tags + variety](./BE-4-soft-scoring-tags.md)
 - [BE-5 — Meal-prep endpoints](./BE-5-meal-prep-endpoints.md)
 - [BE-6 — Planner request wiring](./BE-6-plan-request-wiring.md)

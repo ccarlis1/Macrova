@@ -1,43 +1,32 @@
-# DM-4 — MealSlot + day_type_schedules in UserProfile
+# DM-4 — Extend canonical `MealSlot` + `DaySchedule`
 
 **Status:** todo  ·  **Complexity:** M  ·  **Depends on:** DM-1
 
 ## Summary
 
-Replace the loose `schedule: Dict[str, int]` with typed `MealSlot`s grouped by day type (`workout | golf | rest | ...`) while preserving `busyness=0` as a workout-only marker. Preserve backwards compatibility with existing YAML profiles.
+Extend **`src/models/schedule.py::MealSlot`** with optional **`required_tag_slugs`** and **`preferred_tag_slugs`**. Keep **`WorkoutSlot`** exactly as implemented (`after_meal_index`, `type`, `intensity`) — no parallel workout model. Preserve legacy `schedule: Dict[str, int]` migration via **`src/models/legacy_schedule_migration.py`** (`0` → workout gap / `DaySchedule.workouts`, `1..4` → meals).
 
 ## Context
 
-Problem P1 is rooted in the current schedule shape: it only encodes time → busyness, not slot intent. Sprint 1 elevates slots to first-class: each slot has `required_tags`, `preferred_tags`, and a `busyness_max`. Day-type templates (workout/golf/rest) then compose into a weekly plan.
+Canonical schedule contract is `DaySchedule` + `MealSlot` + `WorkoutSlot` per `schedule.py` and `architecture.json`. Sprint slot intent maps onto these types; `PlanningMealSlot` / converters remain downstream.
 
 Unblocks: BE-3, BE-6, FE-8.
 
 ## Acceptance criteria
 
-- [ ] New `src/models/meal_slot.py`:
-  - `@dataclass MealSlot { slot_id: str, day_type: str, ordinal: int, required_tags: List[str], preferred_tags: List[str], busyness_max: int }`.
-  - `@dataclass WorkoutSlot { slot_id: str, day_type: str, ordinal: int, workout_type: Optional[str], relative_to_meal_index: Optional[int] }`.
-- [ ] `UserProfile` gains:
-  - `day_type_schedules: Dict[str, List[MealSlot]]` (defaults to `{}`).
-  - `week_template: List[str]` (length 7, defaults to 7 × `"default"`).
-- [ ] Extended `src/models/legacy_schedule_migration.py`:
-  - If `day_type_schedules` is empty and legacy `schedule: Dict[str, int]` is set:
-    - Entries with `busyness_level in 1..4` become `MealSlot`s.
-    - Entries with `busyness_level == 0` become `WorkoutSlot`s (or `schedule_days.workouts`) and are excluded from meal slots.
-- [ ] Example profile YAML under `config/user_profile.yaml.example` extended with a commented `day_type_schedules:` block showing workout/golf/rest for reference.
-- [ ] Fixture: `config/fixtures/profile_workout_golf_rest.yaml` materializing the notes' week (workout, workout, golf, rest, workout, workout, rest).
-- [ ] Unit tests:
-  - Legacy profile load → non-empty `day_type_schedules["default"]`.
-  - New profile load → slots match YAML verbatim.
-  - Tag slugs on slots are validated against `TagRegistry` with a clear error for unknowns.
+- [ ] `MealSlot` gains optional `required_tag_slugs: Optional[List[str]]`, `preferred_tag_slugs: Optional[List[str]]` (Pydantic `Field` defaults `None`); `extra="forbid"` preserved or extended per project rules.
+- [ ] `WorkoutSlot` unchanged field set; no `slot_id` / `day_type` / `ordinal` additions required for Sprint 1.
+- [ ] `legacy_schedule_migration` maps `busyness == 0` to workout placement per existing module contract (see `schedule.py` module docstring).
+- [ ] Multi-day “templates” (workout / golf / rest) expressed as **distinct `DaySchedule` instances** (e.g. `schedule_days` list or config fixtures), not a parallel `day_type_schedules` map on `UserProfile` **unless** implemented as a thin YAML convenience that still compiles to `List[DaySchedule]`.
+- [ ] Example / fixture YAML updated so Flutter + CLI load valid `DaySchedule` JSON.
+- [ ] Unit tests: migration round-trip; unknown tag slug validation at load time (clear error).
 
 ## Implementation notes
 
-- `slot_id` is stable, human-readable, namespaced by day type (e.g. `workout.meal_2`). Do not reuse numeric indices across day types.
-- Keep the legacy `schedule` attribute on `UserProfile` populated (derive from default template) until all callers are migrated; do not break existing planner code paths in this task.
-- Validation of tag slugs belongs here at profile-load time, not in the planner.
+- Stable slot addressing for UI + batches + pins: **`(day_index, slot_index)`** with `slot_index` aligning to `MealSlot.index` (1-based).
+- Validate tag slugs against DM-1 registry at profile load.
 
 ## Out of scope
 
-- Planner reading the new slots (BE-3 + BE-6).
-- Flutter UI for editing slots (FE-8).
+- Planner wiring (BE-3, BE-2).
+- Flutter slot editor (FE-8) beyond field binding.

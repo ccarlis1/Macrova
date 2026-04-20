@@ -41,3 +41,49 @@ Unblocks: BE-2, BE-5, BE-6, FE-3, FE-7.
 - HTTP endpoints (BE-5).
 - UI (FE-3, FE-7).
 - Fractional serving splits across multiple assignments (Week 2+).
+
+---
+
+## 🔒 IMPLEMENTATION CONTRACT
+
+**Files to inspect before writing any code:**
+- `src/data_layer/models.py` — `Recipe` dataclass (for `recipe_id` FK reference and `is_meal_prep_capable` check); `DailyMealPlan` (for `date` ISO string format: `YYYY-MM-DD`)
+- Architecture states `src/data_layer/meal_prep.py` is **MISSING** — this task creates it from scratch
+
+**Entities to reuse:**
+- Date format from `DailyMealPlan.date` in `src/data_layer/models.py` — use the same ISO `YYYY-MM-DD` string convention
+- `uuid4().hex` pattern as specified; do not use a different ID scheme
+
+**Do NOT create:**
+- HTTP endpoints (BE-5)
+- Planner integration code (BE-2)
+- Any frontend code
+
+**Persistence path:** `data/meal_prep/batches.json` — create the directory and file on first save if absent.
+
+---
+
+## 🧠 PRE-IMPLEMENTATION ANALYSIS
+
+Before writing any code, perform the following in order:
+
+1. **Read `src/data_layer/models.py` in full.** Confirm the `DailyMealPlan.date` field type/format. Note how other dataclasses in this file are structured (field ordering, JSON serialization pattern).
+2. **Check whether `src/data_layer/meal_prep.py` already exists.** Architecture marks it missing — confirm before creating.
+3. **Check whether `data/meal_prep/` directory exists.** The repository will need this path created on first save.
+4. **Identify the JSON serialization approach** used by other repositories in `src/data_layer/` (e.g., does `RecipeDB` use `dataclasses.asdict`, `pydantic`, or manual dicts?) — follow the same pattern for consistency.
+5. State the complete `MealPrepBatch` and `BatchAssignment` field signatures before writing code.
+
+---
+
+## ✅ POST-IMPLEMENTATION VALIDATION
+
+After implementation, verify each of the following:
+
+- [ ] `src/data_layer/meal_prep.py` is the only new file created; no changes made to `models.py` or other existing files
+- [ ] `MealPrepBatchRepository` creates `data/meal_prep/batches.json` on first `create()` call if the directory and file don't exist
+- [ ] Round-trip test: `create()` → process exit → `list_active()` returns the same batch
+- [ ] `servings_remaining` returns `total_servings - sum(a.servings for a in assignments)` exactly
+- [ ] `assignments_for(date)` returns only assignments matching the given ISO date string
+- [ ] `mark_orphaned_for_recipe(recipe_id)` transitions matching batches to `orphaned` without deleting assignments
+- [ ] Create validation enforces: `total_servings >= 2`, `len(assignments) <= total_servings`, no duplicate `(date, slot_id)` pairs
+- [ ] All tests in `tests/data_layer/test_meal_prep.py` pass

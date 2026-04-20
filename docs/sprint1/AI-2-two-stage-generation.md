@@ -35,3 +35,52 @@ Today `src/llm/pipeline.py` couples suggestion + generation. Decoupling lets the
 - Refinement / rewrite loops.
 - Image generation for the recipe.
 - Bulk import.
+
+---
+
+## 🔒 IMPLEMENTATION CONTRACT
+
+**Files to inspect before writing any code:**
+- `src/llm/pipeline.py` — the primary refactor target; `validated_recipe_generation_via_llm` feature is implemented here; split into `suggest()` and `generate()` in-place; do not create a parallel pipeline module
+- `src/llm/feedback_cache.py` — `FeedbackCache` for suggestion TTL (30 min); `generate()` resolves suggestions from here; 404 on miss/expired
+- `src/llm/ingredient_matcher.py` — `IngredientMatcher`; called from `generate()` to resolve every ingredient; unresolved → 422 `INGREDIENT_UNRESOLVED`
+- `src/nutrition/aggregator.py` — called post-ingredient-resolution; all nutrition computed here; LLM nutrition never trusted (see AI-4)
+- `src/api/server.py` — mount `POST /api/v1/llm/generate`; confirm the existing `POST /api/v1/recipes/generate-validated` endpoint and its deprecation plan
+- `src/llm/schemas.py` — `GenerateRecipeOutput` must have no nutrition fields (AI-4)
+
+**Entities to reuse:**
+- `IngredientMatcher` from `src/llm/ingredient_matcher.py`
+- `FeedbackCache` from `src/llm/feedback_cache.py`
+- `src/nutrition/aggregator.py` — sole source of nutrition values
+
+**Do NOT create:**
+- A parallel pipeline module
+- Any nutrition fields on the LLM output model (AI-4 governs this)
+
+---
+
+## 🧠 PRE-IMPLEMENTATION ANALYSIS
+
+Before writing any code, perform the following in order:
+
+1. **Read `src/llm/pipeline.py` in full.** Map the current single-shot flow: where suggestion happens, where generation happens, where validation occurs, where ingredients are resolved.
+2. **Read `src/llm/feedback_cache.py`.** Confirm TTL configuration mechanism and the `get`/`set` interface.
+3. **Read `src/llm/ingredient_matcher.py`.** Confirm the interface for resolving a single ingredient and what it returns on failure.
+4. **Read `src/nutrition/aggregator.py`.** Confirm the interface for computing nutrition from resolved ingredients.
+5. **Read `src/api/server.py`.** Find `POST /api/v1/recipes/generate-validated` — this is the endpoint to keep as a deprecated thin wrapper around `suggest` → auto-pick first → `generate`.
+6. State the exact refactored `suggest()` and `generate()` signatures and the `generate` idempotency mechanism before writing code.
+
+---
+
+## ✅ POST-IMPLEMENTATION VALIDATION
+
+After implementation, verify each of the following:
+
+- [ ] `src/llm/pipeline.py` is refactored into `suggest()` and `generate()` — no new parallel pipeline module
+- [ ] `POST /api/v1/llm/generate` resolves suggestion from `FeedbackCache`; returns 404 if unknown or expired (> 30 min)
+- [ ] `generate()` is idempotent per `suggestion_id`: calling twice returns the same recipe id
+- [ ] Unresolved ingredient → 422 `INGREDIENT_UNRESOLVED` with the offending name; no partial save
+- [ ] Final `Recipe.nutrition` comes exclusively from `src/nutrition/aggregator.py` — no LLM nutrition values stored
+- [ ] `POST /api/v1/recipes/generate-validated` still works as a deprecated thin wrapper
+- [ ] E2E test: suggest → pick → generate → recipe appears in `GET /api/v1/recipes` with computed nutrition and typed tags
+- [ ] Stderr log emitted per stage: `{stage, suggestion_id, elapsed_ms, outcome}`

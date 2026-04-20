@@ -40,3 +40,47 @@ Entry points: Meal Prep Tray "+ New batch" (FE-3) and Recipe card "Start a batch
 
 - Editing an existing batch (delete + recreate for Sprint 1).
 - Partial-serving assignments.
+
+---
+
+## 🔒 IMPLEMENTATION CONTRACT
+
+**Files to inspect before writing any code:**
+- `frontend/lib/screens/planner_config_screen.dart` — `PlannerConfigScreen`; slot metadata (days × slots) is already rendered here; reuse the same `PlannerState`/`MealPlanProvider` data source for Step 3's mini-week grid — do not re-fetch
+- `frontend/lib/services/api_service.dart` — add `createMealPrepBatch(body)` (`POST /api/v1/meal_prep_batches`) here; do not make HTTP calls from inside the wizard steps
+- FE-3's `MealPrepTray` — "+ New batch" CTA in the tray opens this wizard; confirm the navigation/callback pattern
+- `frontend/lib/models/recipe.dart` — `Recipe_frontend`; Step 1 filters by `is_meal_prep_capable`; confirm this field exists on the Flutter model (DM-2 backend output — may need adding to Flutter model)
+
+**Backend dependency:** `POST /api/v1/meal_prep_batches` (BE-5) must exist before the wizard can complete.
+
+**Do NOT create:**
+- Server calls in Steps 1–3 — all local state; only Step 4 calls the server
+- An editing flow for existing batches (delete + recreate)
+
+---
+
+## 🧠 PRE-IMPLEMENTATION ANALYSIS
+
+Before writing any code, perform the following in order:
+
+1. **Read `frontend/lib/screens/planner_config_screen.dart`.** Identify how slot metadata (days, slot ids, occupied status) is read — Step 3 reuses this source.
+2. **Read `frontend/lib/services/api_service.dart`.** Note the pattern for POST calls; add `createMealPrepBatch()` following the same pattern.
+3. **Read `frontend/lib/models/recipe.dart`.** Check whether `is_meal_prep_capable` and `default_servings` fields are present — if absent, they must be added here (aligned with DM-2's backend changes).
+4. **Read FE-3's `MealPrepTray` opening mechanism** to confirm the navigation pattern (push route vs. show dialog vs. callback).
+5. State the step navigation approach (PageView inside Dialog vs. full-screen route) and the local state shape (`WizardState`) before writing code.
+
+---
+
+## ✅ POST-IMPLEMENTATION VALIDATION
+
+After implementation, verify each of the following:
+
+- [ ] Step 1 filters recipe list to `is_meal_prep_capable == true`; shows hint for non-capable recipes
+- [ ] Step 2 servings stepper enforces min 2, max 14; date picker defaults to today
+- [ ] Step 3 mini-week grid reuses slot data from `PlannerState`/`MealPlanProvider` — no new fetch; already-occupied slots are disabled with tooltip
+- [ ] Selecting more slots than servings → overflow selections are disabled
+- [ ] Step 4 summary shows recipe, cook date, N servings, K slots, leftovers, estimated nutrition; "Create batch" triggers `POST /api/v1/meal_prep_batches` only at this step
+- [ ] On success: modal closes; planner + tray refresh; toast "Batch created"
+- [ ] On `BATCH_CONFLICT`: Step 3 re-highlights conflicting cells with red border; user can re-pick
+- [ ] No server calls in Steps 1–3
+- [ ] Widget tests pass: step navigation, overflow guard, conflict re-highlight

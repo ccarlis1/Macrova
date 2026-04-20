@@ -38,3 +38,49 @@ Without this, the user cannot express slot intent in the new model — they'd ha
 
 - Multi-week patterns (Week 2+).
 - Macro targets editing (handled elsewhere).
+
+---
+
+## 🔒 IMPLEMENTATION CONTRACT
+
+**Files to inspect before writing any code:**
+- `frontend/lib/screens/profile_screen.dart` — `ProfileScreen`; the new "Week Template" tab/section is added here — do not create a new screen
+- `frontend/lib/models/user_profile.dart` — `UserProfile_frontend`; confirm whether `schedule_days` or equivalent `DaySchedule` list field exists; add if missing
+- `frontend/lib/models/models.dart` — `DaySchedule`, `MealSlot`, `WorkoutSlot`; the editors bind to these models; `WorkoutSlot` fields are `after_meal_index`, `type`, `intensity` — do not add `busyness_level=0` meal slots
+- `frontend/lib/widgets/tags/tag_chip_picker.dart` (FE-5 output) — `TagChipPicker` is reused for `required_tag_slugs` and `preferred_tag_slugs` pickers; import, do not reimplement
+- `frontend/lib/services/api_service.dart` — add profile-write method if the profile save endpoint exists; check `src/api/server.py` for a profile write route before creating a new one
+
+**Do NOT create:**
+- A new screen separate from `ProfileScreen`
+- A `busyness_level=0` meal slot — workouts use `WorkoutSlot`
+- Reimplementation of `TagChipPicker`
+
+---
+
+## 🧠 PRE-IMPLEMENTATION ANALYSIS
+
+Before writing any code, perform the following in order:
+
+1. **Read `frontend/lib/screens/profile_screen.dart` in full.** Map existing sections/tabs. Identify where the "Week Template" tab is inserted.
+2. **Read `frontend/lib/models/user_profile.dart` and `frontend/lib/models/models.dart`.** Confirm `DaySchedule`, `MealSlot`, `WorkoutSlot` fields on the Flutter side. Note whether `schedule_days: List<DaySchedule>` is on `UserProfile_frontend`.
+3. **Check `src/api/server.py` for a profile write/update endpoint.** If absent, note that FE-8 needs a new endpoint (or confirm it will be added as part of this task).
+4. **Confirm FE-5's `TagChipPicker` is importable** and note its constructor interface for `required_tag_slugs` / `preferred_tag_slugs` pickers.
+5. **Read `src/models/legacy_schedule_migration.py` (DM-4 output)** to understand the legacy `schedule: Dict[str, int]` migration prompt that shows on first load.
+6. State the tab structure, the `MealSlot` row widget fields, and the profile save endpoint before writing code.
+
+---
+
+## ✅ POST-IMPLEMENTATION VALIDATION
+
+After implementation, verify each of the following:
+
+- [ ] "Week Template" section is a new tab/section inside `ProfileScreen` — not a separate screen
+- [ ] Day-type selector (Workout / Golf / Rest / + Add) renders; each day type has an ordered list of `MealSlot` rows
+- [ ] Per `MealSlot` row: drag handle (reorder), `preferred_time`, `busyness_level` dropdown 1–4, `required_tag_slugs` + `preferred_tag_slugs` chip pickers (FE-5), delete button
+- [ ] Workout slots are `WorkoutSlot` rows with `after_meal_index`, `type`, `intensity` — not `busyness_level=0` meal slots
+- [ ] 7-day pattern editor maps each day (Mon–Sun) to a day type
+- [ ] Legacy `schedule: Dict[str, int]` profiles trigger a one-time migration prompt on first load
+- [ ] Can't delete a slot referenced by an active batch — inline error shown
+- [ ] Unknown required tag slug → inline warning with "Create tag" shortcut (FE-5 inline creator)
+- [ ] Save persists via profile-write API call through `api_service.dart`
+- [ ] Widget tests pass: add/delete slot, reorder, tag selection, validation

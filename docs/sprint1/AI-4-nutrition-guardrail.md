@@ -16,9 +16,11 @@ G4 is a hard success metric. The cheapest and most reliable enforcement is schem
 - [ ] Prompt templates for `generate` explicitly forbid nutrition fields.
 - [ ] `RecipeValidator` gains `reject_llm_nutrition(raw_json)` that 422s if any of those keys appear at the top level or under `nutrition`.
 - [ ] Final `Recipe.nutrition` (or `NutritionProfile`) is populated exclusively by `src/nutrition/aggregator.py` post-ingredient-resolution.
+- [ ] Any nutrition tags that depend on nutrient thresholds (for example `high-omega-3`, `high-fiber`, `high-calcium`) are validated from computed nutrition only; LLM-declared nutrient claims cannot directly set these tags.
 - [ ] Regression test (`tests/llm/test_nutrition_guardrail.py`):
   - Feed the validator a crafted payload with a `nutrition` block → 422 with code `LLM_NUTRITION_FORBIDDEN`.
   - Feed a clean payload → passes; resulting `Recipe` has nutrition computed from ingredients, not echoed from LLM.
+  - Feed a payload that implies micronutrient-rich wording without computed support → tag is not persisted until computed nutrition confirms threshold.
 
 ## Implementation notes
 

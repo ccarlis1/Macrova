@@ -35,7 +35,7 @@ This sprint makes meal planning smarter and easier to use. We are moving to one 
 | G2   | Time to add a meal-prep batch and have it populate 3 slots | < 30 s, ≤ 4 taps                                                                                                                                                                                                                      |
 | G3   | Planner respects hard tag constraints                      | 100 % of slots with a required tag match it (enforced in tests)                                                                                                                                                                       |
 | G4   | LLM-generated recipes are schema-valid and USDA-grounded   | 100 % pass `RecipeValidator`; 0 hallucinated nutrient values                                                                                                                                                                          |
-| G5   | User reuses recipes instead of re-picking                  | ≥ 60 % of lunches in a week come from a `meal_prep` batch                                                                                                                                                                             |
+| G5   | User reuses recipes instead of re-picking                  | Meal prep is optional. If a meal-prep batch is created, target ≥ 60 % lunch reuse from that batch; plans with partial reuse (for example 2/5 days) or 0 prepped meals are still valid.                                         |
 | G6   | Tag coverage of recipe corpus                              | ≥ 95 % of recipes carry ≥ 1 `context` tag (after unified tag migration)                                                                                                                                                               |
 | G7   | Planner determinism parity (CLI vs Flutter)                | Same plan outcome for same seed and inputs; parity artifacts per `[docs/DEBUG_PLANNER_PARITY.md](./DEBUG_PLANNER_PARITY.md)` (`cli_plan_request.json`, `recipe_pool_snapshot.json` including `recipe_ids_sha256`, `planner_run.json`) |
 
@@ -182,7 +182,7 @@ DailyMealPlan ──< Meal ──> Recipe
 | -------------- | ------------------------------------ | --------------------------------------------------------------------- | ------------------- |
 | **context**    | Where/when this recipe fits in a day | `meal-prep`, `instant-snack`, `pre-workout`, `portable`, `no-kitchen` | Yes, ≥ 1            |
 | **time**       | Meal prep/cook effort (recipe-only)  | `time-0` … `time-4`                                                   | Yes, exactly 1      |
-| **nutrition**  | Macro / ingredient emphasis          | `high-protein`, `shrimp`, `vitamin-e`                                 | Optional            |
+| **nutrition**  | Macro / micronutrient emphasis       | `high-protein`, `high-omega-3`, `high-fiber`, `high-calcium`          | Optional            |
 | **constraint** | Hard exclusions                      | `no-dairy`, `nut-free`                                                | Optional            |
 
 
@@ -194,6 +194,13 @@ DailyMealPlan ──< Meal ──> Recipe
 2. Apply **existing** `apply_tag_filtering` pipeline, extended for typed slugs + slot `required_tag_slugs`.
 3. Hard constraint: `required_tag_slugs` ⊆ resolved recipe slug set.
 4. Soft: `preferred_tag_slugs` in `phase4_scoring.py`.
+
+### Micronutrient deficit recovery (optional)
+
+- Deficit recovery uses **preferred** nutrition slugs (soft), not hard-required tags by default.
+- Example: omega-3 deficit can raise preference for recipes tagged `high-omega-3`.
+- Plans remain valid with partial or zero micronutrient-tag matches when constraints or availability limit options.
+- Keep nutrient-recovery tags in a curated slug set (start small; expand with evidence).
 
 ### Canonical slug + aliases
 
@@ -323,10 +330,13 @@ The product **does** support forcing via `**PlanningUserProfile.pinned_assignmen
 ## 4.2 Tagging Loop
 
 - LLM proposes typed slugs → normalize through **tag_repository** (aliases, caps) → persist on recipe / `RecipeTagsJson` extension.
+- Nutrition slugs use a curated vocabulary (for example `high-omega-3`, `high-fiber`, `high-calcium`) and are treated as recommendation signals (soft).
+- Where nutrient values are needed to confirm tags, rely on post-validation USDA-computed nutrition, not LLM-declared nutrition values.
 
 ## 4.3 Guardrails
 
 - Unchanged intent: no hallucinated nutrition in LLM JSON; schema-only outputs; caps on tag counts; bounded retries.
+- Nutrition-tag quality guardrail: micronutrient-focused tags must be selected from the curated registry and validated against computed nutrition when thresholds are used.
 
 ---
 

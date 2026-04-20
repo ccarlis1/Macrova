@@ -23,6 +23,7 @@ Unblocks: AI-3, FE-5, FE-8.
 - [ ] Service layer `src/llm/tag_repository.py` extended (or new `src/services/tag_service.py`) so LLM code calls the same logic, not the HTTP layer.
 - [ ] Merge operation is transactional: on failure, no partial recipe updates.
 - [ ] Recipe-count aggregation reads from `RecipeDB` — do not cache stale counts.
+- [ ] Nutrition-tag create path supports curated micronutrient starter slugs (for example `high-omega-3`, `high-fiber`, `high-calcium`) and keeps nutrition slugs normalized through the same registry controls as other tag types.
 - [ ] OpenAPI (`openapi/`) regenerated.
 - [ ] Integration tests (`tests/api/test_tag_routes.py`) cover create, duplicate, alias, merge, and `GET` filtering.
 

@@ -18,6 +18,7 @@ Unblocks: DM-2, BE-1, BE-3, AI-3, FE-5.
 - [ ] Slug normalization: lowercased, whitespace → `-`, non-`[a-z0-9-]` stripped.
 - [ ] `resolve(slug_or_display) -> TagMeta`; `merge(src_slug, dst_slug)` transactional across recipes.
 - [ ] Aliases stored in the same persistence story as `recipe_tags.json` (extend schema; avoid a forked `data/tags/*.json` unless it is clearly the single backing file adopted by `tag_repository`).
+- [ ] Curated starter nutrition slug set present in registry (at minimum `high-omega-3`, `high-fiber`, `high-calcium`) to support deficit-recovery scoring without uncontrolled tag sprawl.
 - [ ] `apply_tag_filtering` / planner reads **only** this registry + per-recipe slug lists post-migration.
 - [ ] Unit tests: normalization, alias resolution, merge, unknown slug behavior.
 
@@ -25,6 +26,7 @@ Unblocks: DM-2, BE-1, BE-3, AI-3, FE-5.
 
 - Prefer extending existing load/save paths in `tag_repository.py` over new parallel modules.
 - Do **not** attach full tag objects to `Recipe` in this task — DM-2.
+- Keep nutrition-slug curation explicit in one place (registry seed data), so LLM and planner use the same canonical set.
 
 ## Out of scope
 

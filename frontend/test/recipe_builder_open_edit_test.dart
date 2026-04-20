@@ -22,10 +22,10 @@ void main() {
     final recipes = RecipeProvider(recipeSyncFn: (_) async => []);
     await recipes.load();
 
-    final recipe = Recipe(
+    const recipe = Recipe(
       id: 'r1',
       name: 'Oat Bowl',
-      ingredients: const [
+      ingredients: [
         RecipeIngredientEntry(
           ingredientId: 'i1',
           ingredientName: 'oats',
@@ -63,7 +63,8 @@ void main() {
     expect(find.text('Edit Recipe'), findsOneWidget);
   });
 
-  testWidgets('startCreate clears builder title to create mode', (tester) async {
+  testWidgets('startCreate clears builder title to create mode',
+      (tester) async {
     final profile = ProfileProvider();
     final coord = RecipeBuilderCoordinator();
     final recipes = RecipeProvider(recipeSyncFn: (_) async => []);
@@ -88,10 +89,10 @@ void main() {
     await tester.pump();
 
     coord.openForEdit(
-      Recipe(
+      const Recipe(
         id: 'x',
         name: 'Temp',
-        ingredients: const [
+        ingredients: [
           RecipeIngredientEntry(
             ingredientId: 'i',
             ingredientName: 'a',

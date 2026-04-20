@@ -11,10 +11,10 @@ void main() {
     expect(c.takePendingAction(), isNull);
 
     c.openForEdit(
-      Recipe(
+      const Recipe(
         id: 'a',
         name: 'N',
-        ingredients: const [
+        ingredients: [
           RecipeIngredientEntry(
             ingredientId: 'i',
             ingredientName: 'x',

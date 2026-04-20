@@ -3,10 +3,10 @@ import 'package:macrova/models/recipe.dart';
 
 void main() {
   test('toSyncPayload sends cooking_time_minutes and instructions', () {
-    final r = Recipe(
+    const r = Recipe(
       id: 'rid',
       name: 'Soup',
-      ingredients: const [
+      ingredients: [
         RecipeIngredientEntry(
           ingredientId: 'i1',
           ingredientName: 'water',
@@ -16,7 +16,7 @@ void main() {
       ],
       servings: 2,
       cookingTimeMinutes: 35,
-      instructions: const ['Boil.', 'Simmer.'],
+      instructions: ['Boil.', 'Simmer.'],
     );
     final p = r.toSyncPayload();
     expect(p['cooking_time_minutes'], 35);

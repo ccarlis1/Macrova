@@ -19,10 +19,10 @@ void main() {
     await provider.load();
 
     await provider.addRecipe(
-      Recipe(
+      const Recipe(
         id: '',
         name: 'Synced Dish',
-        ingredients: const [
+        ingredients: [
           RecipeIngredientEntry(
             ingredientId: 'ing',
             ingredientName: 'rice',
@@ -52,10 +52,10 @@ void main() {
 
     const id = 'fixed-id';
     await provider.addRecipe(
-      Recipe(
+      const Recipe(
         id: id,
         name: 'V1',
-        ingredients: const [
+        ingredients: [
           RecipeIngredientEntry(
             ingredientId: 'ing',
             ingredientName: 'rice',
@@ -69,10 +69,10 @@ void main() {
     syncedBatches.clear();
 
     await provider.updateRecipe(
-      Recipe(
+      const Recipe(
         id: id,
         name: 'V2',
-        ingredients: const [
+        ingredients: [
           RecipeIngredientEntry(
             ingredientId: 'ing',
             ingredientName: 'rice',

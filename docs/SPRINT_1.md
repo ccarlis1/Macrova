@@ -1,8 +1,14 @@
 # Sprint 1 — Tagging v2, Meal Prep, Planner Intelligence, UI Revamp
 
-**Owner:** You  ·  **Duration:** Week 1 (5 working days) + Week 2 buffer  ·  **Status:** Ready to build (architecture-reconciled)
+**Owner:** ccarls1  ·  **Duration:** Week 1 (5 working days) + Week 2 buffer  ·  **Status:** Ready to build (architecture-reconciled)
 
-> Per-task stubs live in [`docs/sprint1/`](./sprint1/README.md). This revision aligns the sprint with [`../.cursor/architecture.json`](../.cursor/architecture.json) and resolves issues in [`../.cursor/report.json`](../.cursor/report.json).
+> Per-task stubs live in `[docs/sprint1/](./sprint1/README.md)`. This revision aligns the sprint with `[../.cursor/architecture.json](../.cursor/architecture.json)` and resolves issues in `[../.cursor/report.json](../.cursor/report.json)`.
+
+---
+
+# 0. Brief Summary
+
+This sprint makes meal planning smarter and easier to use. We are moving to one clear tag system, improving how meal prep and pinned meals are handled, keeping planner behavior consistent, and updating the app UI so users can set meal needs with simple controls. The goal is better meal matches, fewer conflicts, and a cleaner planning experience.
 
 ---
 
@@ -10,25 +16,29 @@
 
 ## 1.1 Problem Definition
 
-| # | Problem | User behavior evidence |
-| --- | --- | --- |
-| P1 | **Planner cannot express real-world meal slot intent.** A slot is not "breakfast" — it's "portable, no-kitchen, must be kiwis + bar." | User manually overrides output; plan fights reality. |
-| P2 | **Recipes cannot be reliably reused across busy schedules.** Meal prep exists in the user's head, not the system. | User cooks one batch Sunday → eats it Mon/Tue/Wed but planner re-picks different lunches. |
-| P3 | **Tagging is nominal, not functional.** Tags exist but do not drive selection through one canonical path. | User cannot filter planner to a tag; LLM tags are free-form noise. |
-| P4 | **UI feels like a spreadsheet.** High cognitive load to read or rearrange a day. | User reads CLI markdown output instead of using the Flutter screens. |
-| P5 | **LLM recipe generation is a blind fire-and-forget.** User cannot preview before paying full generation cost + USDA lookups. | User distrusts auto-generated recipes; manually edits after. |
+
+| #   | Problem                                                                                                                               | User behavior evidence                                                                    |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| P1  | **Planner cannot express real-world meal slot intent.** A slot is not "breakfast" — it's "portable, no-kitchen, must be kiwis + bar." | User manually overrides output; plan fights reality.                                      |
+| P2  | **Recipes cannot be reliably reused across busy schedules.** Meal prep exists in the user's head, not the system.                     | User cooks one batch Sunday → eats it Mon/Tue/Wed but planner re-picks different lunches. |
+| P3  | **Tagging is nominal, not functional.** Tags exist but do not drive selection through one canonical path.                             | User cannot filter planner to a tag; LLM tags are free-form noise.                        |
+| P4  | **UI feels like a spreadsheet.** High cognitive load to read or rearrange a day.                                                      | User reads CLI markdown output instead of using the Flutter screens.                      |
+| P5  | **LLM recipe generation is a blind fire-and-forget.** User cannot preview before paying full generation cost + USDA lookups.          | User distrusts auto-generated recipes; manually edits after.                              |
+
 
 ## 1.2 Goals & Success Metrics
 
-| Goal | Metric | Target |
-| --- | --- | --- |
-| G1 | Time to generate a full 7-day plan from a clean profile | < 120 s end-to-end (90 s planner + 30 s user confirms) |
-| G2 | Time to add a meal-prep batch and have it populate 3 slots | < 30 s, ≤ 4 taps |
-| G3 | Planner respects hard tag constraints | 100 % of slots with a required tag match it (enforced in tests) |
-| G4 | LLM-generated recipes are schema-valid and USDA-grounded | 100 % pass `RecipeValidator`; 0 hallucinated nutrient values |
-| G5 | User reuses recipes instead of re-picking | ≥ 60 % of lunches in a week come from a `meal_prep` batch |
-| G6 | Tag coverage of recipe corpus | ≥ 95 % of recipes carry ≥ 1 `context` tag (after unified tag migration) |
-| G7 | Planner determinism parity (CLI vs Flutter) | Same plan outcome for same seed and inputs; parity artifacts per [`docs/DEBUG_PLANNER_PARITY.md`](./DEBUG_PLANNER_PARITY.md) (`cli_plan_request.json`, `recipe_pool_snapshot.json` including `recipe_ids_sha256`, `planner_run.json`) |
+
+| Goal | Metric                                                     | Target                                                                                                                                                                                                                                |
+| ---- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| G1   | Time to generate a full 7-day plan from a clean profile    | < 120 s end-to-end (90 s planner + 30 s user confirms)                                                                                                                                                                                |
+| G2   | Time to add a meal-prep batch and have it populate 3 slots | < 30 s, ≤ 4 taps                                                                                                                                                                                                                      |
+| G3   | Planner respects hard tag constraints                      | 100 % of slots with a required tag match it (enforced in tests)                                                                                                                                                                       |
+| G4   | LLM-generated recipes are schema-valid and USDA-grounded   | 100 % pass `RecipeValidator`; 0 hallucinated nutrient values                                                                                                                                                                          |
+| G5   | User reuses recipes instead of re-picking                  | ≥ 60 % of lunches in a week come from a `meal_prep` batch                                                                                                                                                                             |
+| G6   | Tag coverage of recipe corpus                              | ≥ 95 % of recipes carry ≥ 1 `context` tag (after unified tag migration)                                                                                                                                                               |
+| G7   | Planner determinism parity (CLI vs Flutter)                | Same plan outcome for same seed and inputs; parity artifacts per `[docs/DEBUG_PLANNER_PARITY.md](./DEBUG_PLANNER_PARITY.md)` (`cli_plan_request.json`, `recipe_pool_snapshot.json` including `recipe_ids_sha256`, `planner_run.json`) |
+
 
 ## 1.3 Core Features
 
@@ -53,7 +63,7 @@
 
 #### F3. Planner Tag-Constrained Selection
 
-- **Description:** Extend `MealSlot` in `src/models/schedule.py` with optional **`required_tag_slugs`** and **`preferred_tag_slugs`** (additive fields). Hard filter: slot’s required slugs ⊆ recipe’s resolved tag slug set. Preferred slugs contribute in `phase4_scoring.py` only.
+- **Description:** Extend `MealSlot` in `src/models/schedule.py` with optional `**required_tag_slugs`** and `**preferred_tag_slugs**` (additive fields). Hard filter: slot’s required slugs ⊆ recipe’s resolved tag slug set. Preferred slugs contribute in `phase4_scoring.py` only.
 - **Why:** P1; extends canonical `DaySchedule` / `MealSlot` rather than a parallel slot model.
 - **Edge cases:** Empty candidate set → `FM-TAG-EMPTY`; exactly one recipe matches required set → deterministic pick; meal-prep lock + pin + tags → follow **§3.5 precedence**.
 - **Dependencies:** F1; extends `recipe_tag_filtering` / `tag_filtering_service.py`.
@@ -152,25 +162,29 @@ DailyMealPlan ──< Meal ──> Recipe
 
 ### Slot / profile mapping table (naming reconciliation)
 
-| Concept in sprint UX | Canonical store | Notes |
-| --- | --- | --- |
-| Stable slot address | `(day_index, slot_index)` | Aligns with `Assignment`, `pinned_assignments`, and `MealSlot.index` (1-based meal index). |
-| Max cook band | `MealSlot.busyness_level` | Existing 1–4; maps to recipe `time-*` tags per §2.4. |
-| Legacy clock | `MealSlot.preferred_time` | Optional `HH:MM`. |
-| Informal labels | `MealSlot.tags` | Legacy string labels; may overlap with slugs during migration. |
-| Hard / soft planner tags | `required_tag_slugs`, `preferred_tag_slugs` | New optional fields on `MealSlot`. |
-| Workout | `WorkoutSlot` on same `DaySchedule` | `after_meal_index`, `type`, `intensity` only. |
+
+| Concept in sprint UX     | Canonical store                             | Notes                                                                                      |
+| ------------------------ | ------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Stable slot address      | `(day_index, slot_index)`                   | Aligns with `Assignment`, `pinned_assignments`, and `MealSlot.index` (1-based meal index). |
+| Max cook band            | `MealSlot.busyness_level`                   | Existing 1–4; maps to recipe `time-*` tags per §2.4.                                       |
+| Legacy clock             | `MealSlot.preferred_time`                   | Optional `HH:MM`.                                                                          |
+| Informal labels          | `MealSlot.tags`                             | Legacy string labels; may overlap with slugs during migration.                             |
+| Hard / soft planner tags | `required_tag_slugs`, `preferred_tag_slugs` | New optional fields on `MealSlot`.                                                         |
+| Workout                  | `WorkoutSlot` on same `DaySchedule`         | `after_meal_index`, `type`, `intensity` only.                                              |
+
 
 ## 2.2 Tagging System Redesign
 
 ### Tag types
 
-| Type | Purpose | Examples | Required on recipe? |
-| --- | --- | --- | --- |
-| **context** | Where/when this recipe fits in a day | `meal-prep`, `instant-snack`, `pre-workout`, `portable`, `no-kitchen` | Yes, ≥ 1 |
-| **time** | Meal prep/cook effort (recipe-only) | `time-0` … `time-4` | Yes, exactly 1 |
-| **nutrition** | Macro / ingredient emphasis | `high-protein`, `shrimp` | Optional |
-| **constraint** | Hard exclusions | `no-dairy`, `nut-free` | Optional |
+
+| Type           | Purpose                              | Examples                                                              | Required on recipe? |
+| -------------- | ------------------------------------ | --------------------------------------------------------------------- | ------------------- |
+| **context**    | Where/when this recipe fits in a day | `meal-prep`, `instant-snack`, `pre-workout`, `portable`, `no-kitchen` | Yes, ≥ 1            |
+| **time**       | Meal prep/cook effort (recipe-only)  | `time-0` … `time-4`                                                   | Yes, exactly 1      |
+| **nutrition**  | Macro / ingredient emphasis          | `high-protein`, `shrimp`, `vitamin-e`                                 | Optional            |
+| **constraint** | Hard exclusions                      | `no-dairy`, `nut-free`                                                | Optional            |
+
 
 **[DECISION]** Single read path: planner tag filter reads the same structures as `recipe_tag_filtering` after migration.
 
@@ -209,24 +223,30 @@ DailyMealPlan ──< Meal ──> Recipe
 
 ## 2.4 Busyness scale reconciliation (+ workouts)
 
-**[DECISION]** `MealSlot.busyness_level` stays **1–4** for meals. Workouts use **`WorkoutSlot`** on `DaySchedule.workouts`, not `busyness_level = 0` on a meal after canonical migration.
+**[DECISION]** `MealSlot.busyness_level` stays **1–4** for meals. Workouts use `**WorkoutSlot`** on `DaySchedule.workouts`, not `busyness_level = 0` on a meal after canonical migration.
 
-| Legacy `schedule` int (pre-migration) | Canonical target |
-| --- | --- |
-| `0` | Workout time → becomes a `WorkoutSlot` (gap after a meal) or workout row per `src.models.legacy_schedule_migration`; **not** a `MealSlot`. |
-| `1`–`4` | `MealSlot.busyness_level` |
 
-**Recipe `time-*` tags** (effort class, independent of meal count):
+| Legacy `schedule` int (pre-migration) | Canonical target                                                                                                                           |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `0`                                   | Workout time → becomes a `WorkoutSlot` (gap after a meal) or workout row per `src.models.legacy_schedule_migration`; **not** a `MealSlot`. |
+| `1`–`4`                               | `MealSlot.busyness_level`                                                                                                                  |
 
-| Tag | `cooking_time_minutes` | Label |
-| --- | --- | --- |
-| `time-0` | 0 | Instant / no prep |
-| `time-1` | 1–5 | Quick |
-| `time-2` | 6–15 | Fast |
-| `time-3` | 16–30 | Medium |
-| `time-4` | 31+ | Long |
 
-`time-*` is **not** the same dimension as “8 meals per day”; it classifies **recipes**, while each of the eight `MealSlot`s carries its own `busyness_level` cap.
+**Recipe `time-`* tags** (effort class, independent of meal count):
+
+
+| Tag      | `cooking_time_minutes` | Label             |
+| -------- | ---------------------- | ----------------- |
+| `time-0` | 0                      | Instant / no prep |
+| `time-1` | 1–5                    | Quick             |
+| `time-2` | 6–15                   | Fast              |
+| `time-3` | 16–30                  | Medium            |
+| `time-4` | 31+                    | Long              |
+
+
+Canonical slug values (`time-0` ... `time-4`) are machine-facing identifiers for filtering, persistence, and API contracts. User-facing surfaces should render the `Label` text (or equivalent localized copy), not raw slug names like `time-2`.
+
+`time-`* is **not** the same dimension as “8 meals per day”; it classifies **recipes**, while each of the eight `MealSlot`s carries its own `busyness_level` cap.
 
 ---
 
@@ -277,14 +297,16 @@ Tag filtering and scoring occur **inside** the existing phase pipeline (`tag_fil
 
 ## 3.5 Forced-recipe selection and precedence
 
-The product **does** support forcing via **`PlanningUserProfile.pinned_assignments`** (existing). Sprint additions coexist as follows:
+The product **does** support forcing via `**PlanningUserProfile.pinned_assignments`** (existing). Sprint additions coexist as follows:
 
-| Priority | Mechanism | Key |
-| --- | --- | --- |
-| 1 (highest) | Meal-prep batch lock for a slot | `(day_index, slot_index)` from batch |
-| 2 | Pinned assignment | `pinned_assignments[(day_index, slot_index)]` |
-| 3 | Required tag slugs (hard filter) | On `MealSlot` |
-| 4 | Planner search / scoring | Default fill |
+
+| Priority    | Mechanism                        | Key                                           |
+| ----------- | -------------------------------- | --------------------------------------------- |
+| 1 (highest) | Meal-prep batch lock for a slot  | `(day_index, slot_index)` from batch          |
+| 2           | Pinned assignment                | `pinned_assignments[(day_index, slot_index)]` |
+| 3           | Required tag slugs (hard filter) | On `MealSlot`                                 |
+| 4           | Planner search / scoring         | Default fill                                  |
+
 
 **[DECISION]** Tags do not remove pins; pins do not remove batch locks. UI may offer “pin this recipe” and “assign batch serving” as separate actions that both map into the table above.
 
@@ -315,7 +337,7 @@ Unchanged intent: card layout, DnD, tag chips, meal-prep tray, failure banners k
 **Critical UX adjustments**
 
 - “Force recipe” may be **pin** (existing) **or** single-recipe required tag **or** meal-prep lock; copy must mention all three.
-- Slot editing maps to **`MealSlot` fields** in `DaySchedule` (`required_tag_slugs` / `preferred_tag_slugs`), not a parallel schema.
+- Slot editing maps to `**MealSlot` fields** in `DaySchedule` (`required_tag_slugs` / `preferred_tag_slugs`), not a parallel schema.
 
 ---
 
@@ -325,49 +347,57 @@ Complexity: **S** ≤ 0.5 day, **M** 0.5–1.5 days, **L** 1.5–3 days.
 
 ## Data Model
 
-| # | Title | Description | Acceptance | C |
-| --- | --- | --- | --- | --- |
-| [DM-1](./sprint1/DM-1-tag-model-registry.md) | Unify tag registry with `tag_repository` | Evolve `tag_repository.py` / `recipe_tags.json` + optional `RecipeTagsJson` / `Recipe` persistence for typed slugs; one planner read path. | No duplicate tag DB; `apply_tag_filtering` uses unified slugs. | M |
-| [DM-2](./sprint1/DM-2-recipe-tags-extension.md) | Extend `Recipe` + JSON | Additive fields + migration for `default_servings` and typed tags. | Round-trip load/save; tests. | M |
-| [DM-3](./sprint1/DM-3-meal-prep-batch-entity.md) | `MealPrepBatch` + store | JSON store; assignments `(day_index, slot_index)`. | CRUD + orphan tests. | M |
-| [DM-4](./sprint1/DM-4-userprofile-slots.md) | Extend `MealSlot` + schedules | Add optional `required_tag_slugs` / `preferred_tag_slugs` on `src/models/schedule.py::MealSlot`; migrate legacy YAML via `legacy_schedule_migration`. | Valid `DaySchedule` invariants; workouts use `WorkoutSlot` only. | M |
-| [DM-5](./sprint1/DM-5-busyness-time-migration.md) | Recipe `time-*` migration | Script from `cooking_time_minutes` only. | Every recipe has exactly one `time-*` slug. | S |
+
+| #                                                 | Title                                    | Description                                                                                                                                           | Acceptance                                                       | C   |
+| ------------------------------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | --- |
+| [DM-1](./sprint1/DM-1-tag-model-registry.md)      | Unify tag registry with `tag_repository` | Evolve `tag_repository.py` / `recipe_tags.json` + optional `RecipeTagsJson` / `Recipe` persistence for typed slugs; one planner read path.            | No duplicate tag DB; `apply_tag_filtering` uses unified slugs.   | M   |
+| [DM-2](./sprint1/DM-2-recipe-tags-extension.md)   | Extend `Recipe` + JSON                   | Additive fields + migration for `default_servings` and typed tags.                                                                                    | Round-trip load/save; tests.                                     | M   |
+| [DM-3](./sprint1/DM-3-meal-prep-batch-entity.md)  | `MealPrepBatch` + store                  | JSON store; assignments `(day_index, slot_index)`.                                                                                                    | CRUD + orphan tests.                                             | M   |
+| [DM-4](./sprint1/DM-4-userprofile-slots.md)       | Extend `MealSlot` + schedules            | Add optional `required_tag_slugs` / `preferred_tag_slugs` on `src/models/schedule.py::MealSlot`; migrate legacy YAML via `legacy_schedule_migration`. | Valid `DaySchedule` invariants; workouts use `WorkoutSlot` only. | M   |
+| [DM-5](./sprint1/DM-5-busyness-time-migration.md) | Recipe `time-`* migration                | Script from `cooking_time_minutes` only.                                                                                                              | Every recipe has exactly one `time-*` slug.                      | S   |
+
 
 ## Backend
 
-| # | Title | Description | Acceptance | C |
-| --- | --- | --- | --- | --- |
-| [BE-1](./sprint1/BE-1-tag-service.md) | Tag HTTP API | Extends registry; merge/alias endpoints. | Tests + OpenAPI. | M |
-| [BE-2](./sprint1/BE-2-planner-batch-prefill.md) | Batch locks in planner | Wire `active_batches` into `PlanningUserProfile` / `plan_meals` path at same precedence as pins; **REQUIRES_VERIFICATION** for exact insertion point in `planner.py` / phases. | Locked slots match batch. | M |
-| [BE-3](./sprint1/BE-3-hard-tag-filter.md) | Extend `recipe_tag_filtering` | Evolve `tag_filtering_service.py` / `tag_filter.py` for slot `required_tag_slugs`; do not add a second filter pipeline. | `FM-TAG-EMPTY` test; Flutter parity fields completed. | M |
-| [BE-4](./sprint1/BE-4-soft-scoring-tags.md) | Preferred tags + variety | Extend `phase4_scoring.py`. | Regression tests. | S |
-| [BE-5](./sprint1/BE-5-meal-prep-endpoints.md) | Meal-prep REST | Additive endpoints. | Integration tests. | M |
-| [BE-6](./sprint1/BE-6-plan-request-wiring.md) | Plan request hydration | Server loads batches + seeds consistently for CLI/API. | Parity artifacts per DEBUG doc. | S |
-| [BE-7](./sprint1/BE-7-failure-codes.md) | Structured failures | Extend `MealPlanResult.report` / API envelope additively. | Schema tests. | S |
+
+| #                                               | Title                         | Description                                                                                                                                                                    | Acceptance                                            | C   |
+| ----------------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------- | --- |
+| [BE-1](./sprint1/BE-1-tag-service.md)           | Tag HTTP API                  | Extends registry; merge/alias endpoints.                                                                                                                                       | Tests + OpenAPI.                                      | M   |
+| [BE-2](./sprint1/BE-2-planner-batch-prefill.md) | Batch locks in planner        | Wire `active_batches` into `PlanningUserProfile` / `plan_meals` path at same precedence as pins; **REQUIRES_VERIFICATION** for exact insertion point in `planner.py` / phases. | Locked slots match batch.                             | M   |
+| [BE-3](./sprint1/BE-3-hard-tag-filter.md)       | Extend `recipe_tag_filtering` | Evolve `tag_filtering_service.py` / `tag_filter.py` for slot `required_tag_slugs`; do not add a second filter pipeline.                                                        | `FM-TAG-EMPTY` test; Flutter parity fields completed. | M   |
+| [BE-4](./sprint1/BE-4-soft-scoring-tags.md)     | Preferred tags + variety      | Extend `phase4_scoring.py`.                                                                                                                                                    | Regression tests.                                     | S   |
+| [BE-5](./sprint1/BE-5-meal-prep-endpoints.md)   | Meal-prep REST                | Additive endpoints.                                                                                                                                                            | Integration tests.                                    | M   |
+| [BE-6](./sprint1/BE-6-plan-request-wiring.md)   | Plan request hydration        | Server loads batches + seeds consistently for CLI/API.                                                                                                                         | Parity artifacts per DEBUG doc.                       | S   |
+| [BE-7](./sprint1/BE-7-failure-codes.md)         | Structured failures           | Extend `MealPlanResult.report` / API envelope additively.                                                                                                                      | Schema tests.                                         | S   |
+
 
 ## AI / LLM
 
-| # | Title | Description | Acceptance | C |
-| --- | --- | --- | --- | --- |
-| [AI-1](./sprint1/AI-1-llm-suggest.md) | Suggest endpoint | Structured shortlist. | Schema + timing tests. | M |
-| [AI-2](./sprint1/AI-2-two-stage-generation.md) | Two-stage pipeline | Extends `pipeline.py`; shares validator with existing generate-validated flow. | E2E test. | M |
-| [AI-3](./sprint1/AI-3-recipe-tagger-v2.md) | Tagger → unified registry | Writes typed slugs through tag_repository. | Corpus tests. | M |
-| [AI-4](./sprint1/AI-4-nutrition-guardrail.md) | Nutrition guardrail | Schema excludes nutrition from LLM. | Regression. | S |
-| [AI-5](./sprint1/AI-5-duplicate-detection.md) | Duplicate detection | Fuzzy match before save. | Tests. | S |
+
+| #                                              | Title                     | Description                                                                    | Acceptance             | C   |
+| ---------------------------------------------- | ------------------------- | ------------------------------------------------------------------------------ | ---------------------- | --- |
+| [AI-1](./sprint1/AI-1-llm-suggest.md)          | Suggest endpoint          | Structured shortlist.                                                          | Schema + timing tests. | M   |
+| [AI-2](./sprint1/AI-2-two-stage-generation.md) | Two-stage pipeline        | Extends `pipeline.py`; shares validator with existing generate-validated flow. | E2E test.              | M   |
+| [AI-3](./sprint1/AI-3-recipe-tagger-v2.md)     | Tagger → unified registry | Writes typed slugs through tag_repository.                                     | Corpus tests.          | M   |
+| [AI-4](./sprint1/AI-4-nutrition-guardrail.md)  | Nutrition guardrail       | Schema excludes nutrition from LLM.                                            | Regression.            | S   |
+| [AI-5](./sprint1/AI-5-duplicate-detection.md)  | Duplicate detection       | Fuzzy match before save.                                                       | Tests.                 | S   |
+
 
 ## Frontend (Flutter)
 
-| # | Title | Description | Acceptance | C |
-| --- | --- | --- | --- | --- |
-| FE-1 | Planner cards | Rebuild per §5. | Widget tests. | L |
-| FE-2 | DnD | Slot moves. | Tests + QA. | M |
-| FE-3 | Meal prep tray | Uses batch API. | Integration. | M |
-| FE-4 | Recipe builder | Unified tags + `RecipeTagsJson` fields. | Save validation. | L |
-| FE-5 | Tag chip picker | Registry-backed. | A11y. | S |
-| FE-6 | LLM suggest flow | Side sheet. | E2E. | M |
-| FE-7 | Meal-prep wizard | `(day_index, slot_index)` selection. | E2E. | M |
-| FE-8 | Slot config | Edits `MealSlot` extensions on `DaySchedule`. | Persist API. | M |
-| FE-9 | Failure surfaces | Reads extended `report` / API fields. | Tests. | S |
+
+| #    | Title            | Description                                   | Acceptance       | C   |
+| ---- | ---------------- | --------------------------------------------- | ---------------- | --- |
+| FE-1 | Planner cards    | Rebuild per §5.                               | Widget tests.    | L   |
+| FE-2 | DnD              | Slot moves.                                   | Tests + QA.      | M   |
+| FE-3 | Meal prep tray   | Uses batch API.                               | Integration.     | M   |
+| FE-4 | Recipe builder   | Unified tags + `RecipeTagsJson` fields.       | Save validation. | L   |
+| FE-5 | Tag chip picker  | Registry-backed.                              | A11y.            | S   |
+| FE-6 | LLM suggest flow | Side sheet.                                   | E2E.             | M   |
+| FE-7 | Meal-prep wizard | `(day_index, slot_index)` selection.          | E2E.             | M   |
+| FE-8 | Slot config      | Edits `MealSlot` extensions on `DaySchedule`. | Persist API.     | M   |
+| FE-9 | Failure surfaces | Reads extended `report` / API fields.         | Tests.           | S   |
+
 
 **Rough total:** unchanged order-of-magnitude; Week 1 critical path DM-1 → DM-2 → DM-4 → BE-3 → BE-2 → FE-1/FE-3/FE-5.
 
@@ -426,3 +456,4 @@ Complexity: **S** ≤ 0.5 day, **M** 0.5–1.5 days, **L** 1.5–3 days.
 5. **Additive API and DTO evolution** for meal metadata and failures; no breaking renames.
 6. **G7** anchored to DEBUG parity artifacts and export script.
 7. **REQUIRES_VERIFICATION** only where code signature must be confirmed during implementation (`plan_meals` batch injection, architecture snapshot updates for phase files).
+

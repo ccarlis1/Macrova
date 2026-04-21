@@ -87,3 +87,5 @@ Thumbs.db
 
 # Local planner debug exports (see scripts/export_planner_debug_artifacts.py)
 debug_artifacts/
+.claude/worktrees/intelligent-bardeen-ec9fc2/
+.claude/worktrees/nostalgic-pare/

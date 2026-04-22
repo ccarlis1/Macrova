@@ -74,6 +74,7 @@ from src.llm.tag_filtering_service import apply_tag_filtering
 from src.llm.recipe_tagger import tag_recipes
 from src.llm.tag_repository import load_recipe_tags
 from src.llm.tag_repository import upsert_recipe_tags
+from src.api.tag_routes import router as tag_router
 
 
 recipes_path = "data/recipes/recipes.json"
@@ -81,6 +82,7 @@ ingredients_path = "data/ingredients/custom_ingredients.json"
 DEFAULT_TAG_PATH = "data/recipes/recipe_tags.json"
 
 app = FastAPI(title="Nutrition Agent API")
+app.include_router(tag_router, prefix="/api/v1")
 
 app.add_middleware(
     CORSMiddleware,

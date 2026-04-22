@@ -221,10 +221,18 @@ class Recipe:
     ingredients: List[Ingredient]  # List of ingredients
     cooking_time_minutes: int  # Total cooking time
     instructions: List[str]  # Step-by-step instructions
-    # Future fields (post-MVP):
-    # cuisine_type: Optional[str]
-    # tags: List[str]
-    # difficulty: Optional[str]
+    default_servings: int = 1
+    tags: List[Dict[str, str]] = field(default_factory=list)
+
+    @property
+    def is_meal_prep_capable(self) -> bool:
+        """True when recipe serves 2+ and has a context meal-prep tag."""
+        if self.default_servings < 2:
+            return False
+        for tag in self.tags:
+            if tag.get("slug") == "meal-prep" and tag.get("type") == "context":
+                return True
+        return False
 
 
 @dataclass

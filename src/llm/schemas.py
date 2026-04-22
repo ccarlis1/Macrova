@@ -50,6 +50,9 @@ def _unit_is_supported(unit: str) -> bool:
 
 TagType: TypeAlias = Literal["context", "time", "nutrition", "constraint"]
 TagSource: TypeAlias = Literal["user", "llm", "system"]
+# Lightweight persisted recipe tag reference.
+# The recipe model stores only slug/type to avoid duplicating TagMetaJson.
+RecipeTagRefJson: TypeAlias = Dict[Literal["slug", "type"], StrictStr]
 
 
 class TagMetaJson(BaseModel):

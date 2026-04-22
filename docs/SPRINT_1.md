@@ -342,6 +342,94 @@ The product **does** support forcing via `**PlanningUserProfile.pinned_assignmen
 
 # 5. UX / UI Spec
 
+## 5.1 Principles
+
+- **Card-based, not grid-based.** A day is a column of meal cards, not a row of cells.
+- **Drag-and-drop is the primary rearrange gesture.** Tap-to-edit is secondary.
+- **Tags are visual chips**, colored per type (context=blue, time=amber, nutrition=green, constraint=red).
+- **Meal prep is always visible** as a tray/panel on the planner, never buried in a submenu.
+- **Progressive disclosure.** Macros, nutrition detail, and instructions live one tap away — never on the primary card.
+- **No spreadsheet vibes.** No fixed-width columns, no row numbers, no "edit cell" affordance.
+
+## 5.2 Key Screens
+
+### 5.2.1 Planner Screen
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ [Week of Apr 20] [◀ prev] [next ▶]          [Generate Plan] ⚙   │
+├─────────────────────────────────────────────────────────────────┤
+│ MEAL PREP TRAY                                                   │
+│ ┌───────────┐ ┌───────────┐  + New batch                         │
+│ │ Chicken   │ │ Turkey    │                                      │
+│ │ Rice Bowl │ │ Chili     │                                      │
+│ │ 3 / 5 left│ │ 2 / 4 left│                                      │
+│ └───────────┘ └───────────┘                                      │
+├──────────┬──────────┬──────────┬──────────┬──────────┬──────────┤
+│ MON      │ TUE      │ WED      │ THU      │ FRI      │ SAT      │
+│ workout  │ workout  │ golf     │ rest     │ workout  │ rest     │
+├──────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
+│ ▣ Meal 1 │ ▣ Meal 1 │ ...      │          │          │          │
+│ Kiwi+Bar │ Kiwi+Bar │                                            │
+│ [instant]│ [instant]│                                            │
+│ ─────    │ ─────    │                                            │
+│ ◆ Meal 2 │ ◆ Meal 2 │  ← ◆ = meal prep, ▣ = required tag lock    │
+│ Chicken  │ Chicken  │                                            │
+│ Rice(1/5)│ Rice(2/5)│                                            │
+│ ...                                                               │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+Interactions:
+
+- Drag a Meal Prep Tray card onto a slot → creates a `BatchAssignment`.
+- Drag a meal card between slots (same or different day) → updates plan; if dragged card is a batch serving, prompt detach/move-serving.
+- Tap a card → bottom sheet with macros, ingredients, instructions, **[Swap]** button (opens tag-filtered candidate list).
+- Tap **[Swap]** → shows candidates matching slot's required tags, ranked by same scorer the planner uses.
+
+### 5.2.2 Recipe Builder
+
+Single screen, three collapsible sections:
+
+1. **Basics** — name, cooking time, default servings, **"Meal-prep capable"** switch (toggling this adds/removes `context:meal-prep` tag and makes `default_servings` min = 2).
+2. **Ingredients** — autocomplete against USDA + local DB. Inline resolve status (✓ / ⚠ / ✗).
+3. **Tags** — 4 chip rows, one per tag type. `context` and `time` rows have a **required** indicator; saving is blocked until each has ≥ 1.
+
+A sticky "LLM assist" button at the top: opens a side sheet to run the suggestion flow and pre-fill the form.
+
+### 5.2.3 Meal Prep Flow
+
+Triggered from (a) Recipe card's "Start a batch" CTA, or (b) Planner's Meal Prep Tray **+ New batch**.
+
+Steps:
+Unchanged intent: card layout, DnD, tag chips, meal-prep tray, failure banners keyed off `MealPlanResult.report` / API `failureDetails`.
+
+1. Pick recipe (filtered to `is_meal_prep_capable`).
+2. Pick total servings (N) and cook date.
+3. Pick target slots across the week (multi-select on a mini-week view).
+4. Confirm. Backend creates `MealPrepBatch`; planner refreshes; tray updates.
+
+No separate top-level menu. The feature lives where the user needs it: inside the recipe and inside the planner. This directly resolves the notes' tension about a separate menu vs integrated flow.
+
+### 5.2.4 Tag Management
+
+Settings → Tags. Two tabs:
+
+- **By type** — lists `context`, `time`, `nutrition`, `constraint` with recipe counts per tag.
+- **Aliases** — merge duplicates; rename (canonical slug stays, display changes).
+
+LLM-created tags show a **"Suggested by LLM"** badge until confirmed by the user.
+
+## 5.3 Critical UX Decisions
+
+
+| Question                                         | Decision                                                                                                                                                                 | Rationale                                                                           |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| How does user "force" a specific meal in a slot? | Create a tag with one recipe; assign it as `required_tag` on the slot. OR use meal-prep batch. No dedicated "force" control.                                             | One mental model (tags). Keeps the planner's contract clean.                        |
+| How are tags selected on a slot?                 | Multi-select chip picker, grouped by type. Required tags live on the slot definition (in profile), not per-day.                                                          | Per-day required tags = spreadsheet energy. Day-type templates scale.               |
+| Is meal prep visible or hidden?                  | Always visible as a tray on the planner + inline CTA on every recipe. Never a separate top-level menu.                                                                   | Notes explicitly flagged the discoverability risk of a hidden menu. Tray solves it. |
+| What does a planner failure look like?           | Card for the failing slot shows a red banner with `FM-`* code + one-line fix ("No recipes match tag `pre-workout`. Add one or relax constraints.") + CTA to LLM suggest. | Turns failures into actionable recovery, not dead ends.                             |
+
 Unchanged intent: card layout, DnD, tag chips, meal-prep tray, failure banners keyed off `MealPlanResult.report` / API `failureDetails`.
 
 **Critical UX adjustments**

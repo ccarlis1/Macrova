@@ -167,6 +167,8 @@ def append_validated_recipes(
                 ],
                 "cooking_time_minutes": int(recipe.cooking_time_minutes),
                 "instructions": list(recipe.instructions),
+                "default_servings": int(getattr(recipe, "default_servings", 1)),
+                "tags": list(getattr(recipe, "tags", []) or []),
             }
         )
 

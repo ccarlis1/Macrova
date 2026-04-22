@@ -18,9 +18,13 @@ from src.llm.constraint_parser import PlannerConfigParsingError
 from src.data_layer.user_profile import PlannerConfigMappingError
 from src.llm.feedback_cache import DeterministicCacheMissError
 from src.planning.orchestrator import LLMFeedbackOrchestratorError, LLMPlanningModeError
+from src.llm.tag_repository import TagRepositoryError
 
 
 API_ERROR = "error"
+TAG_NOT_FOUND = "TAG_NOT_FOUND"
+TAG_CONFLICT = "TAG_CONFLICT"
+TAG_INVALID = "TAG_INVALID"
 
 
 def _payload(code: str, message: str) -> Dict[str, Any]:
@@ -88,6 +92,15 @@ def map_exception_to_api_error(exc: Exception) -> Tuple[int, Dict[str, Any]]:
     # Validation failures that are specifically about input/provider correctness.
     if isinstance(exc, USDAProviderRequiredError):
         return 422, _payload("INGREDIENT_VALIDATION_ERROR", str(exc))
+
+    if isinstance(exc, TagRepositoryError):
+        if exc.code == TAG_NOT_FOUND:
+            return 404, _payload(TAG_NOT_FOUND, str(exc))
+        if exc.code == TAG_CONFLICT:
+            return 409, _payload(TAG_CONFLICT, str(exc))
+        if exc.code == TAG_INVALID:
+            return 400, _payload(TAG_INVALID, str(exc))
+        return 400, _payload(exc.code, str(exc))
 
     # Unknown/unexpected failures
     return 500, _payload("PIPELINE_EXECUTION_ERROR", str(exc))

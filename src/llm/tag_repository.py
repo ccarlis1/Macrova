@@ -3,8 +3,12 @@ from __future__ import annotations
 import json
 import os
 import re
+import tempfile
+from contextlib import contextmanager
+from dataclasses import dataclass
+import fcntl
 from pathlib import Path
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Iterable, Optional, Tuple
 
 from src.llm.schemas import (
     RecipeTagsJson,
@@ -19,6 +23,18 @@ _SEED_TAGS: Dict[str, Dict[str, str]] = {
     "high-fiber": {"display": "High Fiber", "tag_type": "nutrition"},
     "high-calcium": {"display": "High Calcium", "tag_type": "nutrition"},
 }
+
+_VALID_TAG_TYPES = {"context", "time", "nutrition", "constraint"}
+_VALID_SOURCES = {"user", "llm", "system"}
+
+
+@dataclass(frozen=True)
+class TagRepositoryError(ValueError):
+    code: str
+    message: str
+
+    def __str__(self) -> str:
+        return self.message
 
 
 def _normalize_slug(raw: str) -> str:
@@ -38,6 +54,66 @@ def _dedupe_preserve_order(values: list[str]) -> list[str]:
         seen.add(value)
         out.append(value)
     return out
+
+
+def _load_registry_state(path: str) -> tuple[
+    Dict[str, RecipeTagsJson], Dict[str, TagMetaJson], Dict[str, str]
+]:
+    raw = _load_tags_json(Path(path))
+    tags_by_id_raw = raw.get("tags_by_id", {})
+    tags_by_id: Dict[str, RecipeTagsJson] = {}
+    for recipe_id, tag_raw in tags_by_id_raw.items():
+        if not isinstance(tag_raw, dict):
+            continue
+        parsed = parse_llm_json(RecipeTagsJson, tag_raw)
+        if isinstance(parsed, ValidationFailure):
+            continue
+        tags_by_id[str(recipe_id)] = parsed
+    tag_registry = _parse_tag_registry(raw.get("tag_registry", {}))
+    tag_aliases = _parse_tag_aliases(raw.get("tag_aliases", {}))
+    tag_registry, tag_aliases = _ensure_seed_data(tag_registry, tag_aliases)
+    return tags_by_id, tag_registry, tag_aliases
+
+
+def _assert_tag_type(tag_type: str) -> str:
+    normalized = str(tag_type).strip().lower()
+    if normalized not in _VALID_TAG_TYPES:
+        raise TagRepositoryError("TAG_INVALID", "Invalid tag type.")
+    return normalized
+
+
+def _assert_source(source: str) -> str:
+    normalized = str(source).strip().lower()
+    if normalized not in _VALID_SOURCES:
+        raise TagRepositoryError("TAG_INVALID", "Invalid tag source.")
+    return normalized
+
+
+def _now_utc_iso() -> str:
+    from datetime import datetime, timezone
+
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace(
+        "+00:00", "Z"
+    )
+
+
+def _write_bytes_atomic(path: Path, data: bytes) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(dir=path.parent, delete=False) as tmp:
+        tmp.write(data)
+        tmp_path = Path(tmp.name)
+    os.replace(str(tmp_path), str(path))
+
+
+@contextmanager
+def _exclusive_file_lock(lock_path: Path) -> Iterable[None]:
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("a+", encoding="utf-8") as lock_file:
+        fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
 
 
 def _parse_tag_registry(raw: Any) -> Dict[str, TagMetaJson]:
@@ -229,106 +305,249 @@ def resolve(slug_or_display: str, path: str) -> TagMetaJson:
     )
 
 
-def merge(src_slug: str, dst_slug: str, path: str) -> None:
-    """Merge source slug into destination slug and update all recipe references."""
-    raw = _load_tags_json(Path(path))
-    tag_registry = _parse_tag_registry(raw.get("tag_registry", {}))
-    tag_aliases = _parse_tag_aliases(raw.get("tag_aliases", {}))
-    tag_registry, tag_aliases = _ensure_seed_data(tag_registry, tag_aliases)
-
-    src_meta = _resolve_from_maps(
-        slug_or_display=src_slug,
-        tag_registry=tag_registry,
-        tag_aliases=tag_aliases,
+def list_by_type(path: str, tag_type: Optional[str] = None) -> list[TagMetaJson]:
+    """List canonical tags, optionally filtered by type."""
+    _, tag_registry, _ = _load_registry_state(path)
+    items = list(tag_registry.values())
+    if tag_type is None:
+        return sorted(items, key=lambda m: m.slug)
+    normalized_type = _assert_tag_type(tag_type)
+    return sorted(
+        [meta for meta in items if meta.tag_type == normalized_type],
+        key=lambda m: m.slug,
     )
-    dst_meta = _resolve_from_maps(
-        slug_or_display=dst_slug,
-        tag_registry=tag_registry,
-        tag_aliases=tag_aliases,
+
+
+def create(
+    *,
+    path: str,
+    display: str,
+    tag_type: str,
+    slug: Optional[str] = None,
+    source: str = "user",
+) -> TagMetaJson:
+    """Create a new canonical tag in the registry."""
+    normalized_display = str(display).strip()
+    if not normalized_display:
+        raise TagRepositoryError("TAG_INVALID", "Tag display must not be empty.")
+    normalized_tag_type = _assert_tag_type(tag_type)
+    normalized_source = _assert_source(source)
+    canonical_slug = _normalize_slug(slug if slug is not None else normalized_display)
+    if not canonical_slug:
+        raise TagRepositoryError("TAG_INVALID", "Invalid tag slug.")
+
+    tags_by_id, tag_registry, tag_aliases = _load_registry_state(path)
+    if canonical_slug in tag_registry or canonical_slug in tag_aliases:
+        raise TagRepositoryError("TAG_CONFLICT", "Tag slug already exists.")
+
+    meta = TagMetaJson(
+        slug=canonical_slug,
+        display=normalized_display,
+        tag_type=normalized_tag_type,  # type: ignore[arg-type]
+        source=normalized_source,  # type: ignore[arg-type]
+        created_at=_now_utc_iso(),
+        aliases=[],
     )
-    src = src_meta.slug
-    dst = dst_meta.slug
-    if src == dst:
-        return
-
-    tags_by_id = load_recipe_tags(path)
-    updated_tags_by_id: Dict[str, RecipeTagsJson] = {}
-    for recipe_id, recipe_tags in tags_by_id.items():
-        tag_slugs_by_type = {
-            tag_type: list(slugs)
-            for tag_type, slugs in (recipe_tags.tag_slugs_by_type or {}).items()
-        }
-
-        for tag_type, slugs in tag_slugs_by_type.items():
-            normalized = [_normalize_slug(v) for v in slugs]
-            replaced = [dst if v == src else v for v in normalized if v]
-            tag_slugs_by_type[tag_type] = _dedupe_preserve_order(replaced)
-
-        tag_metadata = dict(recipe_tags.tag_metadata or {})
-        if src in tag_metadata:
-            tag_metadata.pop(src, None)
-            tag_metadata[dst] = dst_meta
-
-        aliases = {
-            _normalize_slug(k): _normalize_slug(v)
-            for k, v in (recipe_tags.aliases or {}).items()
-            if _normalize_slug(k) and _normalize_slug(v)
-        }
-        aliases[src] = dst
-        for k, v in list(aliases.items()):
-            if v == src:
-                aliases[k] = dst
-
-        updated_tags_by_id[recipe_id] = recipe_tags.model_copy(
-            update={
-                "tag_slugs_by_type": tag_slugs_by_type,
-                "tag_metadata": tag_metadata,
-                "aliases": aliases,
-            }
-        )
-
-    tag_aliases[src] = dst
-    for alias_key, canonical in list(tag_aliases.items()):
-        if canonical == src:
-            tag_aliases[alias_key] = dst
-
-    dst_aliases = [_normalize_slug(a) for a in dst_meta.aliases]
-    src_aliases = [_normalize_slug(a) for a in src_meta.aliases]
-    combined_aliases = _dedupe_preserve_order(
-        [a for a in dst_aliases + src_aliases + [src] if a and a != dst]
-    )
-    tag_registry[dst] = dst_meta.model_copy(update={"aliases": combined_aliases})
-    tag_registry.pop(src, None)
-
-    # Keep recipe-level tag references in sync with registry merges.
-    recipes_path = Path(path).with_name("recipes.json")
-    if recipes_path.exists():
-        from src.data_layer.recipe_db import RecipeDB
-
-        recipe_db = RecipeDB(str(recipes_path), tag_repo_path=path)
-        for recipe in recipe_db.get_all_recipes():
-            seen: set[tuple[str, str]] = set()
-            updated_tags: list[dict[str, str]] = []
-            for tag in recipe.tags:
-                if not isinstance(tag, dict):
-                    continue
-                slug = str(tag.get("slug", ""))
-                tag_type = str(tag.get("type", ""))
-                if not slug or not tag_type:
-                    continue
-                canonical_slug = dst if slug == src else slug
-                key = (canonical_slug, tag_type)
-                if key in seen:
-                    continue
-                seen.add(key)
-                updated_tags.append({"slug": canonical_slug, "type": tag_type})
-            recipe.tags = updated_tags
-        recipe_db.save()
-
+    tag_registry[canonical_slug] = meta
     _write_tags_payload(
         path=path,
-        tags_by_id=updated_tags_by_id,
+        tags_by_id=tags_by_id,
         tag_registry=tag_registry,
         tag_aliases=tag_aliases,
     )
+    return meta
+
+
+def rename_display(*, path: str, slug: str, display: str) -> TagMetaJson:
+    """Rename display field only for a canonical tag."""
+    normalized_display = str(display).strip()
+    if not normalized_display:
+        raise TagRepositoryError("TAG_INVALID", "Tag display must not be empty.")
+    _, tag_registry, tag_aliases = _load_registry_state(path)
+    try:
+        existing = _resolve_from_maps(
+            slug_or_display=slug,
+            tag_registry=tag_registry,
+            tag_aliases=tag_aliases,
+        )
+    except ValueError as exc:
+        raise TagRepositoryError("TAG_NOT_FOUND", "Tag not found.") from exc
+    canonical = existing.slug
+    if canonical not in tag_registry:
+        raise TagRepositoryError("TAG_NOT_FOUND", "Tag not found.")
+    tag_registry[canonical] = existing.model_copy(update={"display": normalized_display})
+    tags_by_id = load_recipe_tags(path)
+    _write_tags_payload(
+        path=path,
+        tags_by_id=tags_by_id,
+        tag_registry=tag_registry,
+        tag_aliases=tag_aliases,
+    )
+    return tag_registry[canonical]
+
+
+def add_alias(*, path: str, slug: str, alias_slug: str) -> TagMetaJson:
+    """Attach an alias slug to a canonical tag."""
+    normalized_alias = _normalize_slug(alias_slug)
+    if not normalized_alias:
+        raise TagRepositoryError("TAG_INVALID", "Invalid alias slug.")
+    _, tag_registry, tag_aliases = _load_registry_state(path)
+    try:
+        existing = _resolve_from_maps(
+            slug_or_display=slug,
+            tag_registry=tag_registry,
+            tag_aliases=tag_aliases,
+        )
+    except ValueError as exc:
+        raise TagRepositoryError("TAG_NOT_FOUND", "Tag not found.") from exc
+    canonical = existing.slug
+    if normalized_alias == canonical:
+        raise TagRepositoryError("TAG_CONFLICT", "Alias conflicts with canonical slug.")
+    if normalized_alias in tag_registry:
+        raise TagRepositoryError("TAG_CONFLICT", "Alias conflicts with existing tag.")
+    bound = tag_aliases.get(normalized_alias)
+    if bound is not None and bound != canonical:
+        raise TagRepositoryError("TAG_CONFLICT", "Alias already bound to another tag.")
+    aliases = _dedupe_preserve_order(
+        [a for a in [_normalize_slug(v) for v in existing.aliases] if a]
+        + [normalized_alias]
+    )
+    tag_registry[canonical] = existing.model_copy(update={"aliases": aliases})
+    tag_aliases[normalized_alias] = canonical
+    tags_by_id = load_recipe_tags(path)
+    _write_tags_payload(
+        path=path,
+        tags_by_id=tags_by_id,
+        tag_registry=tag_registry,
+        tag_aliases=tag_aliases,
+    )
+    return tag_registry[canonical]
+
+
+def merge(src_slug: str, dst_slug: str, path: str) -> None:
+    """Merge source slug into destination slug and update all recipe references."""
+    tags_path = Path(path)
+    recipes_path = tags_path.with_name("recipes.json")
+    lock_path = tags_path.with_suffix(tags_path.suffix + ".merge.lock")
+
+    with _exclusive_file_lock(lock_path):
+        original_tags_bytes = tags_path.read_bytes() if tags_path.exists() else None
+        original_recipes_bytes = (
+            recipes_path.read_bytes() if recipes_path.exists() else None
+        )
+        try:
+            raw = _load_tags_json(tags_path)
+            tag_registry = _parse_tag_registry(raw.get("tag_registry", {}))
+            tag_aliases = _parse_tag_aliases(raw.get("tag_aliases", {}))
+            tag_registry, tag_aliases = _ensure_seed_data(tag_registry, tag_aliases)
+
+            try:
+                src_meta = _resolve_from_maps(
+                    slug_or_display=src_slug,
+                    tag_registry=tag_registry,
+                    tag_aliases=tag_aliases,
+                )
+                dst_meta = _resolve_from_maps(
+                    slug_or_display=dst_slug,
+                    tag_registry=tag_registry,
+                    tag_aliases=tag_aliases,
+                )
+            except ValueError as exc:
+                raise TagRepositoryError("TAG_NOT_FOUND", "Tag not found.") from exc
+            src = src_meta.slug
+            dst = dst_meta.slug
+            if src == dst:
+                return
+
+            tags_by_id = load_recipe_tags(path)
+            updated_tags_by_id: Dict[str, RecipeTagsJson] = {}
+            for recipe_id, recipe_tags in tags_by_id.items():
+                tag_slugs_by_type = {
+                    tag_type: list(slugs)
+                    for tag_type, slugs in (recipe_tags.tag_slugs_by_type or {}).items()
+                }
+
+                for tag_type, slugs in tag_slugs_by_type.items():
+                    normalized = [_normalize_slug(v) for v in slugs]
+                    replaced = [dst if v == src else v for v in normalized if v]
+                    tag_slugs_by_type[tag_type] = _dedupe_preserve_order(replaced)
+
+                tag_metadata = dict(recipe_tags.tag_metadata or {})
+                if src in tag_metadata:
+                    tag_metadata.pop(src, None)
+                    tag_metadata[dst] = dst_meta
+
+                aliases = {
+                    _normalize_slug(k): _normalize_slug(v)
+                    for k, v in (recipe_tags.aliases or {}).items()
+                    if _normalize_slug(k) and _normalize_slug(v)
+                }
+                aliases[src] = dst
+                for k, v in list(aliases.items()):
+                    if v == src:
+                        aliases[k] = dst
+
+                updated_tags_by_id[recipe_id] = recipe_tags.model_copy(
+                    update={
+                        "tag_slugs_by_type": tag_slugs_by_type,
+                        "tag_metadata": tag_metadata,
+                        "aliases": aliases,
+                    }
+                )
+
+            tag_aliases[src] = dst
+            for alias_key, canonical in list(tag_aliases.items()):
+                if canonical == src:
+                    tag_aliases[alias_key] = dst
+
+            dst_aliases = [_normalize_slug(a) for a in dst_meta.aliases]
+            src_aliases = [_normalize_slug(a) for a in src_meta.aliases]
+            combined_aliases = _dedupe_preserve_order(
+                [a for a in dst_aliases + src_aliases + [src] if a and a != dst]
+            )
+            tag_registry[dst] = dst_meta.model_copy(update={"aliases": combined_aliases})
+            tag_registry.pop(src, None)
+
+            if recipes_path.exists():
+                from src.data_layer.recipe_db import RecipeDB
+
+                recipe_db = RecipeDB(str(recipes_path), tag_repo_path=path)
+                for recipe in recipe_db.get_all_recipes():
+                    seen: set[tuple[str, str]] = set()
+                    updated_tags: list[dict[str, str]] = []
+                    for tag in recipe.tags:
+                        if not isinstance(tag, dict):
+                            continue
+                        slug = str(tag.get("slug", ""))
+                        tag_type = str(tag.get("type", ""))
+                        if not slug or not tag_type:
+                            continue
+                        canonical_slug = dst if slug == src else slug
+                        key = (canonical_slug, tag_type)
+                        if key in seen:
+                            continue
+                        seen.add(key)
+                        updated_tags.append({"slug": canonical_slug, "type": tag_type})
+                    recipe.tags = updated_tags
+                # Bulk write of all recipes.
+                recipe_db.save()
+
+            _write_tags_payload(
+                path=path,
+                tags_by_id=updated_tags_by_id,
+                tag_registry=tag_registry,
+                tag_aliases=tag_aliases,
+            )
+        except Exception:
+            if original_recipes_bytes is None:
+                if recipes_path.exists():
+                    recipes_path.unlink()
+            else:
+                _write_bytes_atomic(recipes_path, original_recipes_bytes)
+            if original_tags_bytes is None:
+                if tags_path.exists():
+                    tags_path.unlink()
+            else:
+                _write_bytes_atomic(tags_path, original_tags_bytes)
+            raise
 

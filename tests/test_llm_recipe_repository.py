@@ -1,6 +1,11 @@
 import json
 
+import pytest
+
+from src.data_layer.recipe_db import RecipeDB
+from src.llm.schemas import BudgetLevel, PrepTimeBucket, RecipeTagsJson
 from src.llm.repository import append_validated_recipes
+from src.llm.tag_repository import merge, resolve, upsert_recipe_tags
 from src.data_layer.models import Ingredient, Recipe
 from src.llm.types import ValidatedRecipeForPersistence
 
@@ -174,4 +179,204 @@ def test_append_validated_recipes_rejects_raw_recipe(tmp_path):
         assert False, "Expected TypeError when persisting raw Recipe"
     except TypeError as e:
         assert "ValidatedRecipeForPersistence" in str(e)
+
+
+def test_resolve_normalization_variants_map_to_high_fiber(tmp_path):
+    tags_path = str(tmp_path / "recipe_tags.json")
+    upsert_recipe_tags(
+        tags_path,
+        {
+            "r1": RecipeTagsJson(
+                cuisine="mexican",
+                cost_level=BudgetLevel.cheap,
+                prep_time_bucket=PrepTimeBucket.quick_meal,
+                dietary_flags=[],
+            )
+        },
+    )
+
+    assert resolve("High Fiber", tags_path).slug == "high-fiber"
+    assert resolve("high fiber!", tags_path).slug == "high-fiber"
+    assert resolve("HIGH-FIBER", tags_path).slug == "high-fiber"
+
+
+def test_resolve_alias_valid_and_invalid(tmp_path):
+    tags_path = tmp_path / "recipe_tags.json"
+    tags_path.write_text(
+        json.dumps(
+            {
+                "tags_by_id": {},
+                "tag_registry": {
+                    "high-fiber": {
+                        "slug": "high-fiber",
+                        "display": "High Fiber",
+                        "tag_type": "nutrition",
+                        "source": "system",
+                        "created_at": "1970-01-01T00:00:00Z",
+                        "aliases": ["fiber-high"],
+                    }
+                },
+                "tag_aliases": {"fiber-rich": "high-fiber"},
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    assert resolve("fiber-rich", str(tags_path)).slug == "high-fiber"
+    assert resolve("fiber-high", str(tags_path)).slug == "high-fiber"
+    with pytest.raises(ValueError):
+        resolve("not-a-real-alias", str(tags_path))
+
+
+def test_merge_updates_registry_and_recipes_without_duplicates(tmp_path):
+    recipes_path = tmp_path / "recipes.json"
+    recipes_path.write_text(
+        json.dumps(
+            {
+                "recipes": [
+                    {
+                        "id": "r1",
+                        "name": "Tagged",
+                        "ingredients": [],
+                        "cooking_time_minutes": 10,
+                        "instructions": [],
+                        "default_servings": 1,
+                        "tags": [
+                            {"slug": "fiber-rich", "type": "nutrition"},
+                            {"slug": "high-fiber", "type": "nutrition"},
+                            {"slug": "high-fiber", "type": "nutrition"},
+                        ],
+                    }
+                ]
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    tags_path = tmp_path / "recipe_tags.json"
+    tags_path.write_text(
+        json.dumps(
+            {
+                "tags_by_id": {
+                    "r1": {
+                        "cuisine": "mexican",
+                        "cost_level": "cheap",
+                        "prep_time_bucket": "quick_meal",
+                        "dietary_flags": [],
+                        "tag_slugs_by_type": {"nutrition": ["fiber-rich", "high-fiber"]},
+                    }
+                },
+                "tag_registry": {
+                    "fiber-rich": {
+                        "slug": "fiber-rich",
+                        "display": "Fiber Rich",
+                        "tag_type": "nutrition",
+                        "source": "system",
+                        "created_at": "1970-01-01T00:00:00Z",
+                        "aliases": [],
+                    },
+                    "high-fiber": {
+                        "slug": "high-fiber",
+                        "display": "High Fiber",
+                        "tag_type": "nutrition",
+                        "source": "system",
+                        "created_at": "1970-01-01T00:00:00Z",
+                        "aliases": [],
+                    },
+                },
+                "tag_aliases": {},
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    merge("fiber-rich", "high-fiber", str(tags_path))
+
+    merged_payload = json.loads(tags_path.read_text(encoding="utf-8"))
+    assert "fiber-rich" not in merged_payload["tag_registry"]
+    assert merged_payload["tag_aliases"]["fiber-rich"] == "high-fiber"
+    assert merged_payload["tags_by_id"]["r1"]["tag_slugs_by_type"]["nutrition"] == ["high-fiber"]
+
+    recipe = RecipeDB(str(recipes_path), tag_repo_path=str(tags_path)).get_all_recipes()[0]
+    assert recipe.tags == [{"slug": "high-fiber", "type": "nutrition"}]
+
+
+def test_recipe_db_drops_unknown_tags(tmp_path):
+    recipes_path = tmp_path / "recipes.json"
+    recipes_path.write_text(
+        json.dumps(
+            {
+                "recipes": [
+                    {
+                        "id": "r1",
+                        "name": "Unknown Tag Recipe",
+                        "ingredients": [],
+                        "cooking_time_minutes": 10,
+                        "instructions": [],
+                        "tags": [{"slug": "does-not-exist", "type": "nutrition"}],
+                    }
+                ]
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    tags_path = tmp_path / "recipe_tags.json"
+    upsert_recipe_tags(
+        str(tags_path),
+        {
+            "r1": RecipeTagsJson(
+                cuisine="mexican",
+                cost_level=BudgetLevel.cheap,
+                prep_time_bucket=PrepTimeBucket.quick_meal,
+                dietary_flags=[],
+            )
+        },
+    )
+
+    recipe = RecipeDB(str(recipes_path), tag_repo_path=str(tags_path)).get_all_recipes()[0]
+    assert recipe.tags == []
+
+
+def test_recipe_db_roundtrip_tags_stable(tmp_path):
+    recipes_path = tmp_path / "recipes.json"
+    recipes_path.write_text(
+        json.dumps(
+            {
+                "recipes": [
+                    {
+                        "id": "r1",
+                        "name": "Roundtrip",
+                        "ingredients": [],
+                        "cooking_time_minutes": 10,
+                        "instructions": [],
+                        "default_servings": 3,
+                        "tags": [{"slug": "high-fiber", "type": "nutrition"}],
+                    }
+                ]
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    tags_path = tmp_path / "recipe_tags.json"
+    upsert_recipe_tags(
+        str(tags_path),
+        {
+            "r1": RecipeTagsJson(
+                cuisine="mexican",
+                cost_level=BudgetLevel.cheap,
+                prep_time_bucket=PrepTimeBucket.quick_meal,
+                dietary_flags=[],
+            )
+        },
+    )
+
+    db = RecipeDB(str(recipes_path), tag_repo_path=str(tags_path))
+    db.save()
+    reloaded = RecipeDB(str(recipes_path), tag_repo_path=str(tags_path)).get_all_recipes()[0]
+    assert reloaded.default_servings == 3
+    assert reloaded.tags == [{"slug": "high-fiber", "type": "nutrition"}]
 

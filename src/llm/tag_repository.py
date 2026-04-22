@@ -300,6 +300,31 @@ def merge(src_slug: str, dst_slug: str, path: str) -> None:
     tag_registry[dst] = dst_meta.model_copy(update={"aliases": combined_aliases})
     tag_registry.pop(src, None)
 
+    # Keep recipe-level tag references in sync with registry merges.
+    recipes_path = Path(path).with_name("recipes.json")
+    if recipes_path.exists():
+        from src.data_layer.recipe_db import RecipeDB
+
+        recipe_db = RecipeDB(str(recipes_path), tag_repo_path=path)
+        for recipe in recipe_db.get_all_recipes():
+            seen: set[tuple[str, str]] = set()
+            updated_tags: list[dict[str, str]] = []
+            for tag in recipe.tags:
+                if not isinstance(tag, dict):
+                    continue
+                slug = str(tag.get("slug", ""))
+                tag_type = str(tag.get("type", ""))
+                if not slug or not tag_type:
+                    continue
+                canonical_slug = dst if slug == src else slug
+                key = (canonical_slug, tag_type)
+                if key in seen:
+                    continue
+                seen.add(key)
+                updated_tags.append({"slug": canonical_slug, "type": tag_type})
+            recipe.tags = updated_tags
+        recipe_db.save()
+
     _write_tags_payload(
         path=path,
         tags_by_id=updated_tags_by_id,

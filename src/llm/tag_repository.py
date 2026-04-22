@@ -2,23 +2,123 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 
-from src.llm.schemas import RecipeTagsJson, parse_llm_json, ValidationFailure
+from src.llm.schemas import (
+    RecipeTagsJson,
+    TagMetaJson,
+    ValidationFailure,
+    parse_llm_json,
+)
+
+_SEED_CREATED_AT = "1970-01-01T00:00:00Z"
+_SEED_TAGS: Dict[str, Dict[str, str]] = {
+    "high-omega-3": {"display": "High Omega 3", "tag_type": "nutrition"},
+    "high-fiber": {"display": "High Fiber", "tag_type": "nutrition"},
+    "high-calcium": {"display": "High Calcium", "tag_type": "nutrition"},
+}
+
+
+def _normalize_slug(raw: str) -> str:
+    s = str(raw).strip().lower()
+    s = re.sub(r"\s+", "-", s)
+    s = re.sub(r"[^a-z0-9-]", "", s)
+    s = re.sub(r"-{2,}", "-", s)
+    return s.strip("-")
+
+
+def _dedupe_preserve_order(values: list[str]) -> list[str]:
+    out: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        if value in seen:
+            continue
+        seen.add(value)
+        out.append(value)
+    return out
+
+
+def _parse_tag_registry(raw: Any) -> Dict[str, TagMetaJson]:
+    if not isinstance(raw, dict):
+        return {}
+
+    out: Dict[str, TagMetaJson] = {}
+    for slug, meta_raw in raw.items():
+        if not isinstance(meta_raw, dict):
+            continue
+        parsed = parse_llm_json(TagMetaJson, meta_raw)
+        if isinstance(parsed, ValidationFailure):
+            continue
+        normalized_slug = _normalize_slug(slug)
+        if not normalized_slug:
+            continue
+        meta_slug = _normalize_slug(parsed.slug)
+        canonical = meta_slug or normalized_slug
+        out[canonical] = parsed.model_copy(update={"slug": canonical})
+    return out
+
+
+def _parse_tag_aliases(raw: Any) -> Dict[str, str]:
+    if not isinstance(raw, dict):
+        return {}
+    out: Dict[str, str] = {}
+    for alias_raw, canonical_raw in raw.items():
+        alias = _normalize_slug(alias_raw)
+        canonical = _normalize_slug(canonical_raw)
+        if alias and canonical:
+            out[alias] = canonical
+    return out
+
+
+def _ensure_seed_data(
+    tag_registry: Dict[str, TagMetaJson],
+    tag_aliases: Dict[str, str],
+) -> Tuple[Dict[str, TagMetaJson], Dict[str, str]]:
+    registry = dict(tag_registry)
+    aliases = dict(tag_aliases)
+    for slug, seed in _SEED_TAGS.items():
+        if slug not in registry:
+            registry[slug] = TagMetaJson(
+                slug=slug,
+                display=seed["display"],
+                tag_type=seed["tag_type"],
+                source="system",
+                created_at=_SEED_CREATED_AT,
+                aliases=[],
+            )
+    for meta in registry.values():
+        for alias_raw in meta.aliases:
+            alias = _normalize_slug(alias_raw)
+            if alias:
+                aliases[alias] = meta.slug
+    return registry, aliases
 
 
 def _load_tags_json(path: Path) -> Dict[str, Any]:
     if not path.exists():
-        return {"tags_by_id": {}}
+        payload: Dict[str, Any] = {"tags_by_id": {}, "tag_registry": {}, "tag_aliases": {}}
+        registry, aliases = _ensure_seed_data({}, {})
+        payload["tag_registry"] = {k: v.model_dump() for k, v in registry.items()}
+        payload["tag_aliases"] = dict(aliases)
+        return payload
     with path.open("r", encoding="utf-8") as f:
         data = json.load(f)
     if not isinstance(data, dict):
         raise ValueError("Recipe tags file must contain a JSON object.")
+
     tags_by_id = data.get("tags_by_id", {})
     if not isinstance(tags_by_id, dict):
         raise ValueError('"tags_by_id" must be a JSON object.')
-    return {"tags_by_id": tags_by_id}
+    tag_registry = _parse_tag_registry(data.get("tag_registry", {}))
+    tag_aliases = _parse_tag_aliases(data.get("tag_aliases", {}))
+    tag_registry, tag_aliases = _ensure_seed_data(tag_registry, tag_aliases)
+    return {
+        "tags_by_id": tags_by_id,
+        "tag_registry": {k: v.model_dump() for k, v in tag_registry.items()},
+        "tag_aliases": tag_aliases,
+    }
 
 
 def load_recipe_tags(path: str) -> Dict[str, RecipeTagsJson]:
@@ -42,6 +142,38 @@ def load_recipe_tags(path: str) -> Dict[str, RecipeTagsJson]:
     return out
 
 
+def _write_tags_payload(
+    *,
+    path: str,
+    tags_by_id: Dict[str, RecipeTagsJson],
+    tag_registry: Dict[str, TagMetaJson],
+    tag_aliases: Dict[str, str],
+) -> None:
+    tags_path = Path(path)
+    tags_path.parent.mkdir(parents=True, exist_ok=True)
+    # Normalize payload values into plain JSON types (no Pydantic objects).
+    tags_dump: Dict[str, Any] = {
+        str(recipe_id): tag.model_dump(exclude_none=True)
+        for recipe_id, tag in tags_by_id.items()
+    }
+    registry, aliases = _ensure_seed_data(tag_registry, tag_aliases)
+    registry_dump: Dict[str, Any] = {
+        slug: meta.model_dump() for slug, meta in registry.items()
+    }
+    aliases_dump: Dict[str, str] = dict(aliases)
+
+    payload = {
+        "tags_by_id": tags_dump,
+        "tag_registry": registry_dump,
+        "tag_aliases": aliases_dump,
+    }
+    tmp_path = tags_path.with_suffix(tags_path.suffix + ".tmp")
+    with tmp_path.open("w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2, sort_keys=True, ensure_ascii=True)
+
+    os.replace(str(tmp_path), str(tags_path))
+
+
 def upsert_recipe_tags(path: str, tags_by_id: Dict[str, RecipeTagsJson]) -> None:
     """Persist recipe tags atomically as JSON.
 
@@ -49,19 +181,129 @@ def upsert_recipe_tags(path: str, tags_by_id: Dict[str, RecipeTagsJson]) -> None
     - Stable ordering: keys are sorted for deterministic writes.
     - Atomic write: write to `*.tmp` then `os.replace`.
     """
+    raw = _load_tags_json(Path(path))
+    tag_registry = _parse_tag_registry(raw.get("tag_registry", {}))
+    tag_aliases = _parse_tag_aliases(raw.get("tag_aliases", {}))
+    _write_tags_payload(
+        path=path,
+        tags_by_id=tags_by_id,
+        tag_registry=tag_registry,
+        tag_aliases=tag_aliases,
+    )
 
-    tags_path = Path(path)
-    tags_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Normalize payload values into plain JSON types (no Pydantic objects).
-    tags_dump: Dict[str, Any] = {
-        str(recipe_id): tag.model_dump() for recipe_id, tag in tags_by_id.items()
-    }
+def _resolve_from_maps(
+    *,
+    slug_or_display: str,
+    tag_registry: Dict[str, TagMetaJson],
+    tag_aliases: Dict[str, str],
+) -> TagMetaJson:
+    token = _normalize_slug(slug_or_display)
+    if not token:
+        raise ValueError("Unknown tag slug/display.")
 
-    payload = {"tags_by_id": tags_dump}
-    tmp_path = tags_path.with_suffix(tags_path.suffix + ".tmp")
-    with tmp_path.open("w", encoding="utf-8") as f:
-        json.dump(payload, f, indent=2, sort_keys=True, ensure_ascii=True)
+    if token in tag_registry:
+        return tag_registry[token]
 
-    os.replace(str(tmp_path), str(tags_path))
+    canonical = tag_aliases.get(token)
+    if canonical and canonical in tag_registry:
+        return tag_registry[canonical]
+
+    for meta in tag_registry.values():
+        if _normalize_slug(meta.display) == token:
+            return meta
+
+    raise ValueError("Unknown tag slug/display.")
+
+
+def resolve(slug_or_display: str, path: str) -> TagMetaJson:
+    """Resolve a slug, alias, or display into canonical tag metadata."""
+    raw = _load_tags_json(Path(path))
+    tag_registry = _parse_tag_registry(raw.get("tag_registry", {}))
+    tag_aliases = _parse_tag_aliases(raw.get("tag_aliases", {}))
+    tag_registry, tag_aliases = _ensure_seed_data(tag_registry, tag_aliases)
+    return _resolve_from_maps(
+        slug_or_display=slug_or_display,
+        tag_registry=tag_registry,
+        tag_aliases=tag_aliases,
+    )
+
+
+def merge(src_slug: str, dst_slug: str, path: str) -> None:
+    """Merge source slug into destination slug and update all recipe references."""
+    raw = _load_tags_json(Path(path))
+    tag_registry = _parse_tag_registry(raw.get("tag_registry", {}))
+    tag_aliases = _parse_tag_aliases(raw.get("tag_aliases", {}))
+    tag_registry, tag_aliases = _ensure_seed_data(tag_registry, tag_aliases)
+
+    src_meta = _resolve_from_maps(
+        slug_or_display=src_slug,
+        tag_registry=tag_registry,
+        tag_aliases=tag_aliases,
+    )
+    dst_meta = _resolve_from_maps(
+        slug_or_display=dst_slug,
+        tag_registry=tag_registry,
+        tag_aliases=tag_aliases,
+    )
+    src = src_meta.slug
+    dst = dst_meta.slug
+    if src == dst:
+        return
+
+    tags_by_id = load_recipe_tags(path)
+    updated_tags_by_id: Dict[str, RecipeTagsJson] = {}
+    for recipe_id, recipe_tags in tags_by_id.items():
+        tag_slugs_by_type = {
+            tag_type: list(slugs)
+            for tag_type, slugs in (recipe_tags.tag_slugs_by_type or {}).items()
+        }
+
+        for tag_type, slugs in tag_slugs_by_type.items():
+            normalized = [_normalize_slug(v) for v in slugs]
+            replaced = [dst if v == src else v for v in normalized if v]
+            tag_slugs_by_type[tag_type] = _dedupe_preserve_order(replaced)
+
+        tag_metadata = dict(recipe_tags.tag_metadata or {})
+        if src in tag_metadata:
+            tag_metadata.pop(src, None)
+            tag_metadata[dst] = dst_meta
+
+        aliases = {
+            _normalize_slug(k): _normalize_slug(v)
+            for k, v in (recipe_tags.aliases or {}).items()
+            if _normalize_slug(k) and _normalize_slug(v)
+        }
+        aliases[src] = dst
+        for k, v in list(aliases.items()):
+            if v == src:
+                aliases[k] = dst
+
+        updated_tags_by_id[recipe_id] = recipe_tags.model_copy(
+            update={
+                "tag_slugs_by_type": tag_slugs_by_type,
+                "tag_metadata": tag_metadata,
+                "aliases": aliases,
+            }
+        )
+
+    tag_aliases[src] = dst
+    for alias_key, canonical in list(tag_aliases.items()):
+        if canonical == src:
+            tag_aliases[alias_key] = dst
+
+    dst_aliases = [_normalize_slug(a) for a in dst_meta.aliases]
+    src_aliases = [_normalize_slug(a) for a in src_meta.aliases]
+    combined_aliases = _dedupe_preserve_order(
+        [a for a in dst_aliases + src_aliases + [src] if a and a != dst]
+    )
+    tag_registry[dst] = dst_meta.model_copy(update={"aliases": combined_aliases})
+    tag_registry.pop(src, None)
+
+    _write_tags_payload(
+        path=path,
+        tags_by_id=updated_tags_by_id,
+        tag_registry=tag_registry,
+        tag_aliases=tag_aliases,
+    )
 

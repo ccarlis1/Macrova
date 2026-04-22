@@ -53,7 +53,7 @@ This uses the bundled ingredient database (no API key). For USDA API mode, see [
 ### Run tests
 
 ```bash
-pytest tests/
+python3 scripts/run_pytest.py
 ```
 
 No API key or network access is required; USDA-dependent tests use mocks.

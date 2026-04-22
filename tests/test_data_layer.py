@@ -122,6 +122,134 @@ class TestRecipeDB:
         finally:
             Path(temp_path).unlink()
 
+    def test_load_recipe_defaults_when_dm2_fields_missing(self):
+        """Missing DM-2 fields should load with backward-compatible defaults."""
+        recipe_data = {
+            "recipes": [
+                {
+                    "id": "legacy_001",
+                    "name": "Legacy Recipe",
+                    "ingredients": [],
+                    "cooking_time_minutes": 5,
+                    "instructions": [],
+                }
+            ]
+        }
+        with NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(recipe_data, f)
+            temp_path = f.name
+
+        try:
+            recipe = RecipeDB(temp_path).get_all_recipes()[0]
+            assert recipe.default_servings == 1
+            assert recipe.tags == []
+        finally:
+            Path(temp_path).unlink()
+
+    def test_save_load_roundtrip_dm2_fields(self):
+        """DM-2 fields should persist through save/load round trip."""
+        recipe_data = {
+            "recipes": [
+                {
+                    "id": "recipe_001",
+                    "name": "Tagged Recipe",
+                    "ingredients": [],
+                    "cooking_time_minutes": 10,
+                    "instructions": [],
+                    "default_servings": 4,
+                    "tags": [{"slug": "high-fiber", "type": "nutrition"}],
+                }
+            ]
+        }
+        with NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(recipe_data, f)
+            temp_path = f.name
+
+        try:
+            db = RecipeDB(temp_path)
+            db.save()
+            reloaded = RecipeDB(temp_path).get_all_recipes()[0]
+            assert reloaded.default_servings == 4
+            assert reloaded.tags == [{"slug": "high-fiber", "type": "nutrition"}]
+        finally:
+            Path(temp_path).unlink()
+
+    def test_parse_tags_resolves_against_tag_repository_path(self, monkeypatch):
+        """Tag resolution should use tag repository payload path, not recipes path."""
+        recipe_data = {
+            "recipes": [
+                {
+                    "id": "recipe_001",
+                    "name": "Tagged Recipe",
+                    "ingredients": [],
+                    "cooking_time_minutes": 10,
+                    "instructions": [],
+                    "tags": [{"slug": "high-fiber", "type": "nutrition"}],
+                }
+            ]
+        }
+        with NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(recipe_data, f)
+            temp_path = f.name
+
+        expected_tag_path = "data/recipes/recipe_tags.json"
+        calls = []
+
+        class _ResolvedTag:
+            slug = "high-fiber"
+            tag_type = "nutrition"
+
+        def _fake_resolve(slug, path):
+            calls.append((slug, path))
+            return _ResolvedTag()
+
+        monkeypatch.setattr("src.data_layer.recipe_db.tag_repository.resolve", _fake_resolve)
+        try:
+            recipe = RecipeDB(temp_path, tag_repo_path=expected_tag_path).get_all_recipes()[0]
+            assert recipe.tags == [{"slug": "high-fiber", "type": "nutrition"}]
+            assert calls == [("high-fiber", expected_tag_path)]
+        finally:
+            Path(temp_path).unlink()
+
+    def test_is_meal_prep_capable_property(self):
+        """Derived meal-prep capability should be computed dynamically."""
+        recipe = Recipe(
+            id="r_mealprep",
+            name="Meal Prep Bowl",
+            ingredients=[],
+            cooking_time_minutes=20,
+            instructions=[],
+            default_servings=2,
+            tags=[{"slug": "meal-prep", "type": "context"}],
+        )
+        assert recipe.is_meal_prep_capable is True
+
+    def test_is_meal_prep_capable_false_when_servings_below_two(self):
+        """Meal-prep tag alone is insufficient when default servings < 2."""
+        recipe = Recipe(
+            id="r_not_enough_servings",
+            name="Single Serve Prep",
+            ingredients=[],
+            cooking_time_minutes=15,
+            instructions=[],
+            default_servings=1,
+            tags=[{"slug": "meal-prep", "type": "context"}],
+        )
+        assert recipe.is_meal_prep_capable is False
+
+    def test_is_meal_prep_capable_false_without_meal_prep_tag(self):
+        """Sufficient servings alone is insufficient without context meal-prep tag."""
+        recipe = Recipe(
+            id="r_no_meal_prep_tag",
+            name="Batch Bowl",
+            ingredients=[],
+            cooking_time_minutes=15,
+            instructions=[],
+            default_servings=2,
+            tags=[{"slug": "high-fiber", "type": "nutrition"}],
+        )
+        assert recipe.is_meal_prep_capable is False
+
 
 class TestIngredientDB:
     """Tests for IngredientDB."""

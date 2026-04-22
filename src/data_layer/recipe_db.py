@@ -1,21 +1,32 @@
 """Recipe database for loading recipes from JSON."""
 import json
+import logging
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from src.data_layer.models import Recipe, Ingredient
+from src.llm import tag_repository
+
+
+logger = logging.getLogger(__name__)
 
 
 class RecipeDB:
     """Database for managing recipes loaded from JSON."""
 
-    def __init__(self, json_path: str):
+    def __init__(self, json_path: str, tag_repo_path: Optional[str] = None):
         """Initialize recipe database from JSON file.
 
         Args:
             json_path: Path to JSON file containing recipes
+            tag_repo_path: Path to canonical tag repository payload used by
+                tag_repository.resolve(). Defaults to data/recipes/recipe_tags.json.
         """
         self.json_path = Path(json_path)
+        if tag_repo_path is None:
+            self.tag_repo_path = Path("data/recipes/recipe_tags.json")
+        else:
+            self.tag_repo_path = Path(tag_repo_path)
         self._recipes: List[Recipe] = []
         self._load_recipes()
 
@@ -24,10 +35,46 @@ class RecipeDB:
         with open(self.json_path, "r") as f:
             data = json.load(f)
 
+        self._recipes = []
         recipes_data = data.get("recipes", [])
         for recipe_data in recipes_data:
             recipe = self._parse_recipe(recipe_data)
             self._recipes.append(recipe)
+
+    def _parse_tags(self, recipe_data: dict) -> List[Dict[str, str]]:
+        """Parse recipe tags as lightweight slug/type pairs.
+
+        Unknown tags are dropped after warning.
+        """
+        raw_tags = recipe_data.get("tags", [])
+        if not isinstance(raw_tags, list):
+            return []
+
+        parsed: List[Dict[str, str]] = []
+        for raw_tag in raw_tags:
+            if not isinstance(raw_tag, dict):
+                continue
+
+            slug = raw_tag.get("slug")
+            tag_type = raw_tag.get("type")
+            if not isinstance(slug, str) or not isinstance(tag_type, str):
+                continue
+
+            try:
+                resolved = tag_repository.resolve(slug, str(self.tag_repo_path))
+            except ValueError:
+                logger.warning(
+                    "Dropping unknown recipe tag slug '%s' for recipe '%s'.",
+                    slug,
+                    recipe_data.get("id", ""),
+                )
+                continue
+
+            if resolved.tag_type != tag_type:
+                continue
+
+            parsed.append({"slug": resolved.slug, "type": tag_type})
+        return parsed
 
     def _parse_recipe(self, recipe_data: dict) -> Recipe:
         """Parse a single recipe from dictionary data.
@@ -49,6 +96,8 @@ class RecipeDB:
             ingredients=ingredients,
             cooking_time_minutes=recipe_data["cooking_time_minutes"],
             instructions=recipe_data.get("instructions", []),
+            default_servings=int(recipe_data.get("default_servings", 1)),
+            tags=self._parse_tags(recipe_data),
         )
 
     def _parse_ingredient(self, ing_data: dict) -> Ingredient:
@@ -96,4 +145,37 @@ class RecipeDB:
             if recipe.id == recipe_id:
                 return recipe
         return None
+
+    def save(self) -> None:
+        """Persist recipes to JSON file."""
+        recipes_payload = []
+        for recipe in self._recipes:
+            recipes_payload.append(
+                {
+                    "id": recipe.id,
+                    "name": recipe.name,
+                    "ingredients": [
+                        {
+                            "name": ing.name,
+                            "quantity": ing.quantity,
+                            "unit": ing.unit,
+                        }
+                        for ing in recipe.ingredients
+                    ],
+                    "cooking_time_minutes": recipe.cooking_time_minutes,
+                    "instructions": list(recipe.instructions),
+                    "default_servings": int(recipe.default_servings),
+                    "tags": [
+                        {"slug": str(tag.get("slug", "")), "type": str(tag.get("type", ""))}
+                        for tag in recipe.tags
+                        if isinstance(tag, dict)
+                        and isinstance(tag.get("slug"), str)
+                        and isinstance(tag.get("type"), str)
+                    ],
+                }
+            )
+
+        payload = {"recipes": recipes_payload}
+        with open(self.json_path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
 

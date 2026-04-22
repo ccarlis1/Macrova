@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Dict, List, Literal, Optional, TypeVar
+from typing import Any, Dict, List, Literal, Optional, TypeAlias, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, StrictStr, ValidationError, model_validator
 
@@ -48,6 +48,24 @@ def _unit_is_supported(unit: str) -> bool:
     return unit in SUPPORTED_UNITS
 
 
+TagType: TypeAlias = Literal["context", "time", "nutrition", "constraint"]
+TagSource: TypeAlias = Literal["user", "llm", "system"]
+# Lightweight persisted recipe tag reference.
+# The recipe model stores only slug/type to avoid duplicating TagMetaJson.
+RecipeTagRefJson: TypeAlias = Dict[Literal["slug", "type"], StrictStr]
+
+
+class TagMetaJson(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    slug: StrictStr
+    display: StrictStr
+    tag_type: TagType
+    source: TagSource
+    created_at: StrictStr
+    aliases: List[StrictStr] = Field(default_factory=list)
+
+
 class RecipeTagsJson(BaseModel):
     # Enum fields arrive from JSON as strings; allow coercion while keeping
     # "extra" forbidden and string fields strict.
@@ -57,6 +75,10 @@ class RecipeTagsJson(BaseModel):
     cost_level: BudgetLevel
     prep_time_bucket: PrepTimeBucket
     dietary_flags: List[DietaryFlag] = Field(default_factory=list)
+    # Additive DM-1 fields for typed slug usage and registry references.
+    tag_slugs_by_type: Optional[Dict[TagType, List[StrictStr]]] = None
+    tag_metadata: Optional[Dict[StrictStr, TagMetaJson]] = None
+    aliases: Optional[Dict[StrictStr, StrictStr]] = None
 
 
 class RecipeIngredientDraft(BaseModel):

@@ -1,10 +1,10 @@
 # DM-5 — Busyness → time-* tag migration
 
-**Status:** todo  ·  **Complexity:** S  ·  **Depends on:** DM-1, DM-2
+**Status:** implemented  ·  **Complexity:** S  ·  **Depends on:** DM-1, DM-2
 
 ## Summary
 
-One-shot script that stamps a `time-*` tag onto every existing recipe by bucketing `cooking_time_minutes`, while keeping schedule `busyness=0` semantics untouched (workout-only).
+One-shot script that stamps a `time-`* tag onto every existing recipe by bucketing `cooking_time_minutes`, while keeping schedule `busyness=0` semantics untouched (workout-only).
 
 ## Context
 
@@ -14,8 +14,8 @@ Unblocks: BE-3 (in practice — without `time-*` tags the planner filter has not
 
 ## Acceptance criteria
 
-- [ ] Scope guard: this task only migrates recipe tags; it does **not** reinterpret profile schedule slots.
-- [ ] `scripts/migrate_recipes_time_tags.py`:
+- Scope guard: this task only migrates recipe tags; it does **not** reinterpret profile schedule slots.
+- `scripts/migrate_recipes_time_tags.py`:
   - Reads `data/recipes/recipes.json`.
   - For each recipe, computes the bucket from `cooking_time_minutes`:
     - `0` → `time-0`
@@ -25,10 +25,10 @@ Unblocks: BE-3 (in practice — without `time-*` tags the planner filter has not
     - `31..∞` → `time-4`
   - Removes any existing `time-*` tag before adding the new one (idempotent).
   - Writes back in place with a `.bak` copy.
-- [ ] Supports a `--dry-run` flag that prints the proposed change per recipe.
-- [ ] Logs a summary: `{total, tagged, changed, unchanged}`.
-- [ ] After running on the current corpus, every recipe has exactly 1 `time-*` tag (enforced by a sanity check test).
-- [ ] Test `tests/scripts/test_migrate_time_tags.py` with a small fixture.
+- Supports a `--dry-run` flag that prints the proposed change per recipe.
+- Logs a summary: `{total, tagged, changed, unchanged}`.
+- After running on the current corpus, every recipe has exactly 1 `time-*` tag (enforced by a sanity check test).
+- Test `tests/scripts/test_migrate_time_tags.py` with a small fixture.
 
 ## Implementation notes
 
@@ -47,15 +47,18 @@ Unblocks: BE-3 (in practice — without `time-*` tags the planner filter has not
 ## 🔒 IMPLEMENTATION CONTRACT
 
 **Files to inspect before writing any code:**
+
 - `src/data_layer/models.py` — `Recipe` (fields: `cooking_time_minutes`, `id`, `name`) and `Meal` (field: `busyness_level`); recipe is the migration target; `Meal.busyness_level` is runtime-only and untouched
 - `src/llm/tag_repository.py` — `TagRegistry.resolve("time-N")` must exist (DM-1 output); the script calls this to fail loudly on an unseeded registry
 - `scripts/` directory — check for `migrate_recipes_time_tags.py`; it should not exist yet
 
 **Entities to reuse:**
+
 - `TagRegistry.resolve()` from `src/llm/tag_repository.py` (DM-1) — the bucket function must call this, not write tags directly
 - `data/recipes/recipes.json` — the backing file read and written in-place
 
 **Do NOT create:**
+
 - A duplicate bucket function in this script — extract it as a standalone importable helper so BE-3 and AI-3 can import it
 - Any changes to `Meal.busyness_level` or profile schedule entries
 
@@ -80,11 +83,12 @@ Before writing any code, perform the following in order:
 
 After implementation, verify each of the following:
 
-- [ ] The bucket function is **importable** from a stable path (not embedded only in the script); BE-3 and AI-3 can `from ... import time_bucket` without copying code
-- [ ] `scripts/migrate_recipes_time_tags.py --dry-run` prints proposed changes without modifying any files
-- [ ] Running the script on the current corpus: every recipe gets exactly 1 `time-*` tag; `cooking_time_minutes=0` → `time-0`; no `time-*` tag left duplicated
-- [ ] Script creates a `.bak` copy before writing
-- [ ] Script summary output includes `{total, tagged, changed, unchanged}`
-- [ ] `TagRegistry.resolve("time-N")` is called for each bucket; if the registry is empty/unseeded, the script raises loudly (not silently writes garbage)
-- [ ] Test in `tests/scripts/test_migrate_time_tags.py` with a small fixture passes
-- [ ] `Meal.busyness_level` and profile schedule entries are unchanged
+- The bucket function is **importable** from a stable path (not embedded only in the script); BE-3 and AI-3 can `from ... import time_bucket` without copying code
+- `scripts/migrate_recipes_time_tags.py --dry-run` prints proposed changes without modifying any files
+- Running the script on the current corpus: every recipe gets exactly 1 `time-`* tag; `cooking_time_minutes=0` → `time-0`; no `time-*` tag left duplicated
+- Script creates a `.bak` copy before writing
+- Script summary output includes `{total, tagged, changed, unchanged}`
+- `TagRegistry.resolve("time-N")` is called for each bucket; if the registry is empty/unseeded, the script raises loudly (not silently writes garbage)
+- Test in `tests/scripts/test_migrate_time_tags.py` with a small fixture passes
+- `Meal.busyness_level` and profile schedule entries are unchanged
+

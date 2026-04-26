@@ -25,6 +25,9 @@ class MealSlot:
     time: str  # HH:MM
     busyness_level: int  # 1-4
     meal_type: str  # e.g. "breakfast", "lunch", "snack", "dinner"
+    # Canonical slot-level tag constraints (DM-4/BE-8 inputs).
+    required_tag_slugs: Optional[List[str]] = None
+    preferred_tag_slugs: Optional[List[str]] = None
 
 
 def validate_schedule_structure(

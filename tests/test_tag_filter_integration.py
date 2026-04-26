@@ -81,7 +81,7 @@ def test_filter_recipe_ids_fallback_when_all_tags_missing():
     tags_by_id = {"r1": None, "r2": None}
 
     out = filter_recipe_ids_by_preferences(tags_by_id, preferences={"cuisine": "mexican"})
-    assert out == ["r1", "r2"]
+    assert out == []
 
 
 def test_filter_recipe_ids_rejects_missing_tag_when_any_tags_present():
@@ -96,5 +96,28 @@ def test_filter_recipe_ids_rejects_missing_tag_when_any_tags_present():
     }
 
     out = filter_recipe_ids_by_preferences(tags_by_id, preferences={"cuisine": "mexican"})
+    assert out == ["r1"]
+
+
+def test_filter_recipe_ids_requires_multi_slug_intersection_for_dietary_flags():
+    tags_by_id = {
+        "r1": _tags(
+            cuisine="mexican",
+            cost_level=BudgetLevel.cheap,
+            prep_time_bucket=PrepTimeBucket.quick_meal,
+            dietary_flags=[DietaryFlag.vegan, DietaryFlag.gluten_free],
+        ),
+        "r2": _tags(
+            cuisine="mexican",
+            cost_level=BudgetLevel.cheap,
+            prep_time_bucket=PrepTimeBucket.quick_meal,
+            dietary_flags=[DietaryFlag.vegan],
+        ),
+    }
+
+    out = filter_recipe_ids_by_preferences(
+        tags_by_id,
+        preferences={"dietary_flags": ["vegan", "gluten-free"]},
+    )
     assert out == ["r1"]
 

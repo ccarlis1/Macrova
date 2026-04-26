@@ -17,8 +17,19 @@ from src.planning.phase7_search import (
 )
 
 
-def _make_slot(busyness: int = 2) -> MealSlot:
-    return MealSlot("12:00", busyness, "lunch")
+def _make_slot(
+    busyness: int = 2,
+    *,
+    required_tag_slugs: list[str] | None = None,
+    preferred_tag_slugs: list[str] | None = None,
+) -> MealSlot:
+    return MealSlot(
+        "12:00",
+        busyness,
+        "lunch",
+        required_tag_slugs=required_tag_slugs,
+        preferred_tag_slugs=preferred_tag_slugs,
+    )
 
 
 def _make_schedule(ndays: int = 1, slots_per_day: int = 2) -> list:
@@ -34,6 +45,7 @@ def _make_recipe(
     cooking_min: int = 10,
     ingredients: list | None = None,
     micronutrients: MicronutrientProfile | None = None,
+    canonical_tag_slugs: set[str] | None = None,
 ) -> PlanningRecipe:
     return PlanningRecipe(
         id=rid,
@@ -45,6 +57,7 @@ def _make_recipe(
             micronutrients=micronutrients or MicronutrientProfile(),
         ),
         primary_carb_contribution=None,
+        canonical_tag_slugs=set(canonical_tag_slugs or set()),
     )
 
 
@@ -219,6 +232,41 @@ class TestSearchWithPinnedSlots:
         assert Assignment(0, 0, "r1") in result.plan
         assert len(result.plan) == 4
         _assert_weekly_equals_sum_daily(result)
+
+    def test_pinned_recipe_precedence_over_required_tags_on_same_slot(self):
+        schedule = [[
+            _make_slot(required_tag_slugs=["high-protein"]),
+            _make_slot(required_tag_slugs=["high-protein"]),
+        ]]
+        profile = _make_profile(
+            schedule,
+            pinned_assignments={(1, 0): "r_pinned"},
+        )
+        pool = [
+            _make_recipe(
+                "r_pinned",
+                1000.0,
+                50.0,
+                32.0,
+                125.0,
+                canonical_tag_slugs={"comfort-food"},
+            ),
+            _make_recipe(
+                "r_match",
+                1000.0,
+                50.0,
+                32.0,
+                125.0,
+                canonical_tag_slugs={"high-protein"},
+            ),
+        ]
+
+        result = run_meal_plan_search(profile, pool, 1, None)
+
+        assert result.success is True, getattr(result, "report", result)
+        assert result.plan is not None
+        assert Assignment(0, 0, "r_pinned") in result.plan
+        assert Assignment(0, 1, "r_match") in result.plan
 
 
 # --- Failure modes ---

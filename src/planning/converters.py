@@ -112,6 +112,8 @@ def _canonical_day_to_planning_slots(
                 time=clock,
                 busyness_level=m.busyness_level,
                 meal_type=meal_type,
+                required_tag_slugs=list(m.required_tag_slugs or []) or None,
+                preferred_tag_slugs=list(m.preferred_tag_slugs or []) or None,
             )
         )
     return slots
@@ -186,7 +188,13 @@ def _schedule_dict_to_slots_one_day(
         else:
             meal_type = meal_type_by_position[min(i, 3)]
         slots.append(
-            MealSlot(time=time_str, busyness_level=busyness, meal_type=meal_type)
+            MealSlot(
+                time=time_str,
+                busyness_level=busyness,
+                meal_type=meal_type,
+                required_tag_slugs=None,
+                preferred_tag_slugs=None,
+            )
         )
     return slots
 

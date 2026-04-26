@@ -22,10 +22,8 @@ def apply_tag_filtering(
     Requirements enforced:
     - Deterministic behavior.
     - Stable output ordering preserves `recipes` input order.
-    - Fallback to full pool when:
-      - no preferences are provided
-      - tag metadata is missing (treated as "no tags present")
-      - filtering results in an empty set
+    - Fallback to full pool when no preferences are provided.
+    - If constraints are provided and no recipe matches, returns an empty list.
     - Supports OR-union across multiple cuisine preferences.
     """
 
@@ -56,8 +54,7 @@ def apply_tag_filtering(
         accepted_ids_set = set(filtered_ids)
 
     if not accepted_ids_set:
-        # REQUIRED fallback: if filtering returns empty, use full pool.
-        return list(recipes)
+        return []
 
     filtered_recipes = [
         r for r in recipes if getattr(r, "id", None) in accepted_ids_set

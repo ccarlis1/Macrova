@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, List, Optional, Set
+import re
+from typing import Any, Dict, List, Optional
 
 from src.llm.schemas import (
     BudgetLevel,
@@ -8,6 +9,7 @@ from src.llm.schemas import (
     PrepTimeBucket,
     RecipeTagsJson,
 )
+from src.llm.time_bucket import TagRegistry
 
 
 def _normalize_str(v: Any) -> Optional[str]:
@@ -33,16 +35,26 @@ def _normalize_str_list(v: Any) -> List[str]:
     return [s] if s else []
 
 
-def _tag_as_set(values: Iterable[Any]) -> Set[str]:
-    out: Set[str] = set()
-    for v in values:
-        if hasattr(v, "value"):
-            out.add(str(v.value).lower())
-        else:
-            s = _normalize_str(v)
-            if s:
-                out.add(s)
-    return out
+def _normalize_slug_token(v: Any) -> Optional[str]:
+    token = _normalize_str(v)
+    if token is None:
+        return None
+    token = token.replace("_", "-")
+    token = re.sub(r"[^a-z0-9-]", "", token)
+    token = re.sub(r"-{2,}", "-", token).strip("-")
+    return token or None
+
+
+def _canonical_slug(v: Any) -> Optional[str]:
+    token = _normalize_slug_token(v)
+    if token is None:
+        return None
+    try:
+        return TagRegistry.resolve(token)
+    except Exception:
+        # Preserve backwards compatibility for legacy enum-backed fields
+        # that may not exist in the tag registry yet.
+        return token
 
 
 def _get_required_constraints(preferences: Dict[str, Any]) -> Dict[str, Any]:
@@ -69,7 +81,11 @@ def _get_required_constraints(preferences: Dict[str, Any]) -> Dict[str, Any]:
 
     required_flags = _normalize_str_list(diet_flags)
     if required_flags:
-        constraints["dietary_flags"] = required_flags
+        constraints["dietary_flags"] = [
+            canonical
+            for canonical in (_canonical_slug(flag) for flag in required_flags)
+            if canonical
+        ]
 
     # Drop empty / None constraints.
     return {k: v for k, v in constraints.items() if v is not None}
@@ -101,7 +117,11 @@ def _matches_constraints(tags: RecipeTagsJson | None, constraints: Dict[str, Any
 
     if "dietary_flags" in constraints:
         required_flags: List[str] = list(constraints["dietary_flags"])
-        tag_flags = _tag_as_set(tags.dietary_flags or [])
+        tag_flags = {
+            canonical
+            for canonical in (_canonical_slug(flag) for flag in (tags.dietary_flags or []))
+            if canonical
+        }
         if not set(required_flags).issubset(tag_flags):
             return False
 
@@ -117,7 +137,7 @@ def filter_recipe_ids_by_preferences(
     Rules:
     - Output ordering preserves `tags_by_id` insertion order.
     - Unknown preference fields are ignored.
-    - If all recipes have missing tags (values are None), fallback returns all ids.
+    - If all recipes have missing tags (values are None), returns an empty set.
     """
 
     recipe_ids = list(tags_by_id.keys())
@@ -130,7 +150,7 @@ def filter_recipe_ids_by_preferences(
 
     any_tags_present = any(v is not None for v in tags_by_id.values())
     if not any_tags_present:
-        return recipe_ids
+        return []
 
     accepted: List[str] = []
     for recipe_id in recipe_ids:

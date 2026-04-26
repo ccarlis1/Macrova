@@ -84,6 +84,14 @@ def _rejected_solely_calorie_fc1(
     return (current_cal + recipe_cal) > profile.max_daily_calories
 
 
+def _matches_slot_required_tags(recipe: PlanningRecipe, slot: MealSlot) -> bool:
+    required = list(getattr(slot, "required_tag_slugs", None) or [])
+    if not required:
+        return True
+    recipe_tags = set(getattr(recipe, "canonical_tag_slugs", set()) or set())
+    return set(required).issubset(recipe_tags)
+
+
 def _filter_step_1_through_7(
     recipe_pool: List[PlanningRecipe],
     day_index: int,
@@ -101,6 +109,8 @@ def _filter_step_1_through_7(
     # Step 1–2: HC-1, HC-2
     surviving: List[PlanningRecipe] = []
     for r in recipe_pool:
+        if not _matches_slot_required_tags(r, slot):
+            continue
         if not check_hc1_excluded_ingredients(r, slot, day_index, constraint_state, profile, resolved_ul):
             continue
         if not check_hc2_no_same_day_reuse(r, slot, day_index, constraint_state, profile, resolved_ul):
@@ -162,6 +172,8 @@ def _filter_hard_constraints_only(
     """
     surviving: List[PlanningRecipe] = []
     for r in recipe_pool:
+        if not _matches_slot_required_tags(r, slot):
+            continue
         if not check_hc1_excluded_ingredients(r, slot, day_index, constraint_state, profile, resolved_ul):
             continue
         if not check_hc2_no_same_day_reuse(r, slot, day_index, constraint_state, profile, resolved_ul):

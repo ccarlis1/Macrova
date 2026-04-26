@@ -9,6 +9,7 @@ Split the existing end-to-end recipe generation into Stage A (`suggest`) and Sta
 ## Context
 
 Today `src/llm/pipeline.py` couples suggestion + generation. Decoupling lets the UI insert a human approval step and avoids wasted USDA calls on rejected candidates.
+This task is on the Week 1 critical path and is blocked only by AI-1.
 
 ## Acceptance criteria
 

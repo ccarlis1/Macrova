@@ -12,6 +12,7 @@ Entry points: Meal Prep Tray "+ New batch" (FE-3) and Recipe card "Start a batch
 
 ## Acceptance criteria
 
+- [ ] Wizard is reachable from both entry points: `MealPrepTray` "+ New batch" and recipe card "Start a batch".
 - [ ] Step 1 — Pick recipe:
   - Searchable list, filtered to `is_meal_prep_capable == true`.
   - Shows a hint: "Only meal-prep capable recipes appear here. Edit a recipe to enable."
@@ -28,6 +29,7 @@ Entry points: Meal Prep Tray "+ New batch" (FE-3) and Recipe card "Start a batch
   - "Create batch" button → POST `/api/v1/meal_prep_batches`.
 - [ ] On success: modal closes; planner + tray refresh; toast "Batch created".
 - [ ] On `BATCH_CONFLICT`: step 3 re-highlights conflicting cells with a red border; user can re-pick.
+- [ ] Confirmation copy explicitly states that selected slots are exact forced allocations, not soft preferences.
 - [ ] Widget tests for step navigation, overflow guard, conflict rehighlight.
 
 ## Implementation notes

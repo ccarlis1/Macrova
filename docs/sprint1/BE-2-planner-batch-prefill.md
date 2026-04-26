@@ -15,6 +15,7 @@ Unblocks: BE-5, FE-3, FE-7.
 ## Acceptance criteria
 
 - [ ] Active batches loaded server-side and passed into the planning entrypoint (exact parameter: **REQUIRES_VERIFICATION** against `planner.plan_meals` signature at implementation time).
+- [ ] Batch assignment addressing is canonical `SlotAddress = (day_index, slot_index)` end-to-end (no `date`/`slot_id` writes in planner contracts).
 - [ ] Batch lock **precedence** vs pins vs required tags matches `docs/SPRINT_1.md` §3.5.
 - [ ] Two batches targeting same `(day_index, slot_index)` → `FM-BATCH-CONFLICT` in extended `MealPlanResult.report`.
 - [ ] Locked slots skipped by free search; nutrition totals include locked meals.
@@ -24,6 +25,7 @@ Unblocks: BE-5, FE-3, FE-7.
 
 - Prefer reusing `pinned_assignments` merge semantics internally (implementation detail) **or** a dedicated `batch_locks` dict merged with explicit precedence — document choice in code comment.
 - Determinism: sort batch ids and assignments before merge.
+- This task only injects/merges locks and conflict reporting; slot-level required-tag enforcement belongs to BE-8.
 - Do **not** name-drop phase files not confirmed in `architecture.json`; hook at **`planner.py` / `phase0_models.py`** level unless repo audit adds phase modules to the snapshot.
 
 ## Out of scope

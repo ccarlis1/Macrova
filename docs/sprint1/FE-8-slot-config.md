@@ -1,6 +1,6 @@
 # FE-8 — Slot config in Profile
 
-**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** DM-4, BE-1, FE-5
+**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** DM-4, BE-1, BE-9, FE-5
 
 ## Summary
 
@@ -24,6 +24,8 @@ Without this, the user cannot express slot intent in the new model — they'd ha
   - "+ Add slot" at the bottom.
 - [ ] "Week pattern" editor: 7 day-type buttons (Mon..Sun), each a dropdown over available day types.
 - [ ] Save persists via an API call that writes the profile YAML server-side (new endpoint if needed, or reuse existing profile-write route).
+- [ ] Save contract uses BE-9 payload/response schema (no implicit ad-hoc frontend serialization).
+- [ ] Slot forcing metadata is persisted in a first-class way where applicable so FE-10 can render explicit forcing mode state.
 - [ ] Validation:
   - Can't delete a slot that's currently referenced by an active batch assignment; show an inline error pointing to the batch.
   - Required tag slugs that don't resolve → inline warning with "Create tag" shortcut (uses FE-5's inline creator).

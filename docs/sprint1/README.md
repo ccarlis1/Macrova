@@ -18,20 +18,25 @@ Each task file contains:
 
 ```
 DM-1 ─► DM-2 ─► DM-5 ─┐
-          │            ├─► BE-3 ─► BE-4 ─► BE-6 ─► BE-7
-          └─► BE-1 ────┘                             │
-DM-3 ──────► BE-2 ─────► BE-5 ────────────────────┐ │
-DM-4 ───────────────────────────────────────────┐ │ │
-                                                │ │ │
-                                        FE-5 ──►│ │ │
-                                        FE-1 ──►│ │ │
-                                        FE-3 ──►│ │ │──► Ship Week 1
-                                        FE-2 ──►│ │ │
-                                        FE-8 ──►│ │ │
-                                        FE-9 ──►┘ │ │
+          │            ├─► BE-3 (pool) ─► BE-8 (slot) ─► BE-4 ─► BE-6 ─► BE-7
+          ├─► DM-6 ────┘                                              │
+          └─► BE-1 ────────────────────────────────────────────────────┘
+DM-3 ──────► BE-2 ─────► BE-5 ───────────────────────────────────────┐
+DM-4 ──────► BE-9 ─────► FE-8 ────────────────────────────────────┐  │
+                                                                   │  │
+                                                           FE-10 ─►│  │
+                                                           FE-5  ─►│  │
+                                                           FE-1  ─►│  │
+                                                           FE-3  ─►│  │
+                                                           FE-2  ─►│  │
+                                                           FE-9  ─►┘  │
+
+AI-1 ─► AI-2 ─► FE-6 ─────────────────────────────────────────────────┘
+
+                                                       ───────────► Ship Week 1
 ```
 
-Week 2 fills in: AI-1..AI-5, FE-4, FE-6, FE-7.
+Week 2 buffer focus: AI-3..AI-5, FE-4, FE-7, and polish/stabilization.
 
 ## Tasks
 
@@ -41,6 +46,7 @@ Week 2 fills in: AI-1..AI-5, FE-4, FE-6, FE-7.
 - [DM-3 — MealPrepBatch entity + store](./DM-3-meal-prep-batch-entity.md)
 - [DM-4 — Extend canonical `MealSlot` + `DaySchedule`](./DM-4-userprofile-slots.md)
 - [DM-5 — Busyness → time-* tag migration](./DM-5-busyness-time-migration.md)
+- [DM-6 — Tag semantics contract](./DM-6-tag-semantics-contract.md)
 
 ### Backend
 - [BE-1 — TagService (CRUD + normalize)](./BE-1-tag-service.md)
@@ -50,6 +56,8 @@ Week 2 fills in: AI-1..AI-5, FE-4, FE-6, FE-7.
 - [BE-5 — Meal-prep endpoints](./BE-5-meal-prep-endpoints.md)
 - [BE-6 — Planner request wiring](./BE-6-plan-request-wiring.md)
 - [BE-7 — Failure-code surfacing](./BE-7-failure-codes.md)
+- [BE-8 — Slot constraint evaluator in planner](./BE-8-slot-constraint-evaluator.md)
+- [BE-9 — Profile schedule write contract](./BE-9-profile-schedule-write-contract.md)
 
 ### AI / LLM
 - [AI-1 — LLM.suggest_recipes(query, k)](./AI-1-llm-suggest.md)
@@ -68,3 +76,4 @@ Week 2 fills in: AI-1..AI-5, FE-4, FE-6, FE-7.
 - [FE-7 — Meal-prep creation wizard](./FE-7-meal-prep-wizard.md)
 - [FE-8 — Slot config in Profile](./FE-8-slot-config.md)
 - [FE-9 — Failure-state surfaces](./FE-9-failure-surfaces.md)
+- [FE-10 — Forcing mode UX clarity](./FE-10-forcing-mode-ux-clarity.md)

@@ -9,6 +9,7 @@ Side sheet opened from the Recipe Builder's "LLM assist" button. Takes a free-te
 ## Context
 
 Implements F4 in the UI. Keeps the LLM path opt-in (R3) and visible to the user before cost is paid.
+This task is a Week 1 critical-path deliverable alongside AI-1 and AI-2.
 
 ## Acceptance criteria
 

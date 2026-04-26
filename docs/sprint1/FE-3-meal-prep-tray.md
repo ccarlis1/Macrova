@@ -13,6 +13,7 @@ Directly resolves R2 (meal prep visibility vs minimalism). The notes flagged thi
 ## Acceptance criteria
 
 - [ ] New widget `MealPrepTray` lives above the 7-column row in the planner screen.
+- [ ] Discoverability contract: tray is visible by default on planner load (collapsed is user-controlled only after first render).
 - [ ] Lists active batches from `GET /api/v1/meal_prep_batches?active=true`.
 - [ ] Each tray card shows:
   - Recipe name.
@@ -20,7 +21,7 @@ Directly resolves R2 (meal prep visibility vs minimalism). The notes flagged thi
   - Cook date ("Cook Sun Apr 19").
   - "Delete" icon (confirms before DELETE).
 - [ ] Tray is a drag source: dropping a card on a slot POSTs a new `BatchAssignment` (or if a free pattern exists, calls an "assign serving" endpoint). Plan view refreshes.
-- [ ] Auto-hide: when `batches.isEmpty`, render an empty-state card with "Meal prep saves time across the week — **+ New batch**" CTA.
+- [ ] Empty-state discoverability: when `batches.isEmpty`, render an explainer card with "Meal prep saves time across the week — **+ New batch**" CTA (never silently hidden).
 - [ ] Collapsible: a chevron button collapses the tray to a single-line summary ("2 active batches · 5 servings left"). State persists per user.
 - [ ] "+ New batch" opens the wizard (FE-7 — until FE-7 lands, wire it to a "Coming soon" snackbar).
 - [ ] Widget tests: empty state, populated state, collapse toggle.

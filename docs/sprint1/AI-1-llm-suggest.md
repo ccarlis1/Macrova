@@ -9,6 +9,7 @@ New LLM pipeline stage that returns a shortlist of 3–5 recipe candidates for a
 ## Context
 
 F4 / G4: the notes explicitly asked that the user see a lightweight preview ("simple text list or an image") before paying for full generation. This is Stage A of the two-stage flow.
+This task is on the Week 1 critical path and must ship with AI-2/FE-6 (not deferred to Week 2).
 
 Unblocks: AI-2, FE-6.
 

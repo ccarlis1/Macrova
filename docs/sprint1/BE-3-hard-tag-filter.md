@@ -4,7 +4,7 @@
 
 ## Summary
 
-**Extend** `src/llm/tag_filtering_service.py` / `tag_filter.py` / `tag_repository.py` so the **same** `apply_tag_filtering` path enforces **`MealSlot.required_tag_slugs`** as a hard constraint during planning. **Do not** add a second filter pipeline or delete the existing service.
+**Extend** `src/llm/tag_filtering_service.py` / `tag_filter.py` / `tag_repository.py` so the **same** `apply_tag_filtering` path handles **pool-level** filtering only and normalizes recipe tags for planner consumption. **Do not** add a second filter pipeline or delete the existing service.
 
 ## Context
 
@@ -14,20 +14,22 @@ Unblocks: BE-4, BE-7.
 
 ## Acceptance criteria
 
-- [ ] For each planning slot, candidate recipes satisfy `required_tag_slugs ⊆ recipe_tag_slugs` after unified tag resolution.
+- [ ] Pool filtering removes recipes that fail global hard constraints (allergies/profile-level filters) via unified tag resolution.
 - [ ] Empty candidate set → `FM-TAG-EMPTY` with `{day_index, slot_index, required_tag_slugs, ...}` in extended `report` (BE-7).
-- [ ] Exactly one matching recipe → deterministic selection (coexists with **`pinned_assignments`** per §3.5 precedence).
+- [ ] Slot-level `required_tag_slugs` enforcement is delegated to BE-8 (planner candidate evaluator), not implemented in pool prefilter.
+- [ ] Exactly one matching recipe after BE-8 slot evaluation remains deterministic (coexists with **`pinned_assignments`** per §3.5 precedence).
 - [ ] Flutter plan request sends tag fields expected by server (close `flutter_plan_request_vs_server_tag_fields` gap).
 - [ ] Tests: multi-slug intersection; empty pool; pin + required tags precedence.
 
 ## Implementation notes
 
-- Slot fields: `required_tag_slugs` / `preferred_tag_slugs` on `schedule.MealSlot` (DM-4).
+- Slot fields: `required_tag_slugs` / `preferred_tag_slugs` on `schedule.MealSlot` (DM-4), enforced in BE-8.
 - Recipe side: slug set from unified persistence (DM-2 / `RecipeTagsJson` extension).
 - **Do not** call LLM in this path.
 
 ## Out of scope
 
+- Slot-level evaluator logic (BE-8).
 - Preferred-tag scoring (BE-4).
 - Final JSON envelope shape beyond BE-7.
 
@@ -61,8 +63,8 @@ Before writing any code, perform the following in order:
 2. **Read `src/models/schedule.py`.** Confirm `MealSlot.required_tag_slugs` exists (DM-4 output) and its type.
 3. **Read `src/api/server.py`.** Identify the `PlanRequest` fields related to tags and whether `required_tag_slugs` is threaded through to the planner call. Note the gap.
 4. **Read `frontend/lib/models/models.dart`.** Confirm which tag fields the Flutter model currently has and what needs to be added to close the gap.
-5. **Determine how slot-level required tags are passed to `apply_tag_filtering`** — as a parameter per slot, or as a modified request object — and confirm the chosen approach doesn't break the existing call.
-6. State the exact extension to `apply_tag_filtering` (new parameters, changed behavior) before writing code.
+5. **Determine BE-3/BE-8 handoff** — what global constraints are resolved in `apply_tag_filtering` and what slot-level constraints are deferred to BE-8.
+6. State the exact extension to `apply_tag_filtering` (pool-level behavior only) before writing code.
 
 ---
 
@@ -71,9 +73,9 @@ Before writing any code, perform the following in order:
 After implementation, verify each of the following:
 
 - [ ] `apply_tag_filtering` in `src/llm/tag_filtering_service.py` is extended — the existing function is not replaced or forked
-- [ ] For each planning slot, only recipes satisfying `required_tag_slugs ⊆ recipe.tag_slugs` are candidates; empty result → `FM-TAG-EMPTY` with full context
-- [ ] `FM-TAG-EMPTY` payload includes `{day_index, slot_index, required_tag_slugs}` at minimum
-- [ ] Exactly-one-recipe pool still produces a deterministic selection compatible with `pinned_assignments` precedence
+- [ ] Pool-level filtering respects unified tag resolution and configured global hard constraints
+- [ ] BE-3 explicitly documents/delegates slot-level hard filtering and `FM-TAG-EMPTY` emission to BE-8
+- [ ] Exactly-one-recipe pool still produces deterministic downstream behavior compatible with `pinned_assignments` precedence
 - [ ] Flutter `PlanRequest` model in `frontend/lib/models/models.dart` includes the tag fields required by the server — the architecture gap is closed
 - [ ] No LLM calls exist anywhere in the filter path
 - [ ] Tests pass: multi-slug intersection, empty pool, pin + required-tags precedence

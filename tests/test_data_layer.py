@@ -522,3 +522,36 @@ class TestUserProfileLoader:
         finally:
             Path(temp_path).unlink()
 
+    def test_load_profile_schedule_days_unknown_meal_tag_slug_raises_clear_error(self):
+        profile_data = {
+            "nutrition_goals": {
+                "daily_calories": 2400,
+                "daily_protein_g": 150,
+                "daily_fat_g": {"min": 50, "max": 100},
+            },
+            "schedule_days": [
+                {
+                    "day_index": 1,
+                    "meals": [
+                        {
+                            "index": 1,
+                            "busyness_level": 2,
+                            "preferred_time": "07:00",
+                            "required_tag_slugs": ["unknown-dm4-slug"],
+                        }
+                    ],
+                    "workouts": [],
+                }
+            ],
+            "preferences": {"liked_foods": [], "disliked_foods": [], "allergies": []},
+        }
+        with NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+            yaml.dump(profile_data, f)
+            temp_path = f.name
+
+        try:
+            with pytest.raises(ValueError, match="required_tag_slugs contains unknown tag slug"):
+                UserProfileLoader(temp_path).load()
+        finally:
+            Path(temp_path).unlink()
+

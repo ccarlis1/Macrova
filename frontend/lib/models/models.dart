@@ -82,12 +82,16 @@ class MealSlot {
   final int busynessLevel;
   final List<String>? tags;
   final String? preferredTime;
+  final List<String>? requiredTagSlugs;
+  final List<String>? preferredTagSlugs;
 
   const MealSlot({
     required this.index,
     required this.busynessLevel,
     this.tags,
     this.preferredTime,
+    this.requiredTagSlugs,
+    this.preferredTagSlugs,
   });
 
   factory MealSlot.fromJson(Map<String, dynamic> json) {
@@ -96,6 +100,12 @@ class MealSlot {
       busynessLevel: json['busyness_level'] as int,
       tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList(),
       preferredTime: json['preferred_time'] as String?,
+      requiredTagSlugs: (json['required_tag_slugs'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      preferredTagSlugs: (json['preferred_tag_slugs'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
     );
   }
 
@@ -104,6 +114,8 @@ class MealSlot {
         'busyness_level': busynessLevel,
         if (tags != null) 'tags': tags,
         if (preferredTime != null) 'preferred_time': preferredTime,
+        if (requiredTagSlugs != null) 'required_tag_slugs': requiredTagSlugs,
+        if (preferredTagSlugs != null) 'preferred_tag_slugs': preferredTagSlugs,
       };
 }
 

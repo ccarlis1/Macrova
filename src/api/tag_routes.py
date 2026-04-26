@@ -9,11 +9,9 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from src.api.error_mapping import map_exception_to_api_error
-from src.data_layer.recipe_db import RecipeDB
 from src.llm import tag_repository
 from src.llm.tag_repository import TagRepositoryError
 
-recipes_path = "data/recipes/recipes.json"
 DEFAULT_TAG_PATH = "data/recipes/recipe_tags.json"
 
 router = APIRouter(prefix="/tags", tags=["tags"])
@@ -45,19 +43,7 @@ def _to_payload(meta: Any, recipe_count: int) -> Dict[str, Any]:
 
 
 def _compute_recipe_counts() -> Dict[str, int]:
-    counts: Dict[str, int] = {}
-    db = RecipeDB(recipes_path)
-    for recipe in db.get_all_recipes():
-        seen: set[str] = set()
-        for tag in recipe.tags:
-            if not isinstance(tag, dict):
-                continue
-            slug = str(tag.get("slug", "")).strip()
-            if not slug or slug in seen:
-                continue
-            seen.add(slug)
-            counts[slug] = counts.get(slug, 0) + 1
-    return counts
+    return tag_repository.compute_recipe_tag_counts(DEFAULT_TAG_PATH)
 
 
 def _log_mutation(action: str, payload: Dict[str, Any]) -> None:

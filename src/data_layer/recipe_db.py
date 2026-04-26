@@ -6,6 +6,7 @@ from typing import Dict, List, Optional
 
 from src.data_layer.models import Recipe, Ingredient
 from src.llm import tag_repository
+from src.llm.schemas import RecipeTagsJson
 
 
 logger = logging.getLogger(__name__)
@@ -28,6 +29,7 @@ class RecipeDB:
         else:
             self.tag_repo_path = Path(tag_repo_path)
         self._recipes: List[Recipe] = []
+        self._canonical_tags_by_id: Dict[str, RecipeTagsJson] = {}
         self._load_recipes()
 
     def _load_recipes(self):
@@ -35,45 +37,50 @@ class RecipeDB:
         with open(self.json_path, "r") as f:
             data = json.load(f)
 
+        self._canonical_tags_by_id = tag_repository.load_recipe_tags(
+            str(self.tag_repo_path)
+        )
         self._recipes = []
         recipes_data = data.get("recipes", [])
         for recipe_data in recipes_data:
             recipe = self._parse_recipe(recipe_data)
             self._recipes.append(recipe)
 
-    def _parse_tags(self, recipe_data: dict) -> List[Dict[str, str]]:
-        """Parse recipe tags as lightweight slug/type pairs.
-
-        Unknown tags are dropped after warning.
-        """
-        raw_tags = recipe_data.get("tags", [])
-        if not isinstance(raw_tags, list):
+    def _derive_tags_from_canonical(self, recipe_id: str) -> List[Dict[str, str]]:
+        """Derive lightweight compatibility tags from canonical tags_by_id only."""
+        recipe_tags = self._canonical_tags_by_id.get(recipe_id)
+        if recipe_tags is None:
             return []
 
+        slugs_by_type = recipe_tags.tag_slugs_by_type or {}
         parsed: List[Dict[str, str]] = []
-        for raw_tag in raw_tags:
-            if not isinstance(raw_tag, dict):
-                continue
-
-            slug = raw_tag.get("slug")
-            tag_type = raw_tag.get("type")
-            if not isinstance(slug, str) or not isinstance(tag_type, str):
-                continue
-
-            try:
-                resolved = tag_repository.resolve(slug, str(self.tag_repo_path))
-            except ValueError:
-                logger.warning(
-                    "Dropping unknown recipe tag slug '%s' for recipe '%s'.",
-                    slug,
-                    recipe_data.get("id", ""),
-                )
-                continue
-
-            if resolved.tag_type != tag_type:
-                continue
-
-            parsed.append({"slug": resolved.slug, "type": tag_type})
+        seen: set[tuple[str, str]] = set()
+        for tag_type in sorted(slugs_by_type.keys()):
+            raw_slugs = slugs_by_type.get(tag_type) or []
+            normalized_slugs = sorted({str(s).strip() for s in raw_slugs if str(s).strip()})
+            for slug in normalized_slugs:
+                try:
+                    resolved = tag_repository.resolve(slug, str(self.tag_repo_path))
+                except ValueError:
+                    logger.warning(
+                        "Dropping unknown canonical tag slug '%s' for recipe '%s'.",
+                        slug,
+                        recipe_id,
+                    )
+                    continue
+                if resolved.tag_type != tag_type:
+                    logger.warning(
+                        "Dropping canonical tag '%s' with mismatched type '%s' for recipe '%s'.",
+                        resolved.slug,
+                        tag_type,
+                        recipe_id,
+                    )
+                    continue
+                key = (resolved.slug, resolved.tag_type)
+                if key in seen:
+                    continue
+                seen.add(key)
+                parsed.append({"slug": resolved.slug, "type": resolved.tag_type})
         return parsed
 
     def _parse_recipe(self, recipe_data: dict) -> Recipe:
@@ -85,19 +92,20 @@ class RecipeDB:
         Returns:
             Recipe object
         """
+        recipe_id = str(recipe_data["id"])
         ingredients = []
         for ing_data in recipe_data.get("ingredients", []):
             ingredient = self._parse_ingredient(ing_data)
             ingredients.append(ingredient)
 
         return Recipe(
-            id=recipe_data["id"],
+            id=recipe_id,
             name=recipe_data["name"],
             ingredients=ingredients,
             cooking_time_minutes=recipe_data["cooking_time_minutes"],
             instructions=recipe_data.get("instructions", []),
             default_servings=int(recipe_data.get("default_servings", 1)),
-            tags=self._parse_tags(recipe_data),
+            tags=self._derive_tags_from_canonical(recipe_id),
         )
 
     def _parse_ingredient(self, ing_data: dict) -> Ingredient:
@@ -147,7 +155,11 @@ class RecipeDB:
         return None
 
     def save(self) -> None:
-        """Persist recipes to JSON file."""
+        """Persist recipes to JSON file.
+
+        Note: ``Recipe.tags`` is a derived compatibility projection from
+        canonical ``recipe_tags.json`` and is never persisted here.
+        """
         recipes_payload = []
         for recipe in self._recipes:
             recipes_payload.append(
@@ -165,13 +177,6 @@ class RecipeDB:
                     "cooking_time_minutes": recipe.cooking_time_minutes,
                     "instructions": list(recipe.instructions),
                     "default_servings": int(recipe.default_servings),
-                    "tags": [
-                        {"slug": str(tag.get("slug", "")), "type": str(tag.get("type", ""))}
-                        for tag in recipe.tags
-                        if isinstance(tag, dict)
-                        and isinstance(tag.get("slug"), str)
-                        and isinstance(tag.get("type"), str)
-                    ],
                 }
             )
 

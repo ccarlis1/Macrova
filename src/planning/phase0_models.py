@@ -119,6 +119,9 @@ class PlanningRecipe:
     nutrition: NutritionProfile
     primary_carb_contribution: Optional[NutritionProfile] = None
     primary_carb_source: Optional[str] = None
+    # Canonical decisioning tags loaded from recipe_tags.json/tags_by_id.
+    # BE-8 slot-level required/preferred matching should use this field.
+    canonical_tag_slugs: Set[str] = field(default_factory=set)
 
 
 # --- Section 3.1 Assignment Sequence ---

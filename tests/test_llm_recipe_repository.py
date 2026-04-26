@@ -370,6 +370,7 @@ def test_recipe_db_roundtrip_tags_stable(tmp_path):
                 cost_level=BudgetLevel.cheap,
                 prep_time_bucket=PrepTimeBucket.quick_meal,
                 dietary_flags=[],
+                tag_slugs_by_type={"nutrition": ["high-fiber"]},
             )
         },
     )

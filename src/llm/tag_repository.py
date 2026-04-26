@@ -223,6 +223,48 @@ def load_recipe_tags(path: str) -> Dict[str, RecipeTagsJson]:
     return out
 
 
+def _recipe_tag_slug_set(recipe_tags: RecipeTagsJson) -> set[str]:
+    """Build canonical slug set from canonical per-recipe tag payload."""
+    out: set[str] = set()
+
+    slugs_by_type = recipe_tags.tag_slugs_by_type or {}
+    for slugs in slugs_by_type.values():
+        for raw in slugs:
+            normalized = _normalize_slug(raw)
+            if normalized:
+                out.add(normalized)
+
+    # Fallback compatibility: include metadata and alias targets when present.
+    for slug in (recipe_tags.tag_metadata or {}).keys():
+        normalized = _normalize_slug(slug)
+        if normalized:
+            out.add(normalized)
+    for canonical in (recipe_tags.aliases or {}).values():
+        normalized = _normalize_slug(canonical)
+        if normalized:
+            out.add(normalized)
+
+    return out
+
+
+def load_canonical_recipe_tag_slugs(path: str) -> Dict[str, set[str]]:
+    """Load canonical per-recipe slug sets from recipe_tags.json."""
+    tags_by_id = load_recipe_tags(path)
+    return {
+        recipe_id: _recipe_tag_slug_set(recipe_tags)
+        for recipe_id, recipe_tags in tags_by_id.items()
+    }
+
+
+def compute_recipe_tag_counts(path: str) -> Dict[str, int]:
+    """Count recipes per canonical tag slug using recipe_tags.json only."""
+    counts: Dict[str, int] = {}
+    for slugs in load_canonical_recipe_tag_slugs(path).values():
+        for slug in slugs:
+            counts[slug] = counts.get(slug, 0) + 1
+    return counts
+
+
 def _write_tags_payload(
     *,
     path: str,
@@ -430,16 +472,12 @@ def add_alias(*, path: str, slug: str, alias_slug: str) -> TagMetaJson:
 
 
 def merge(src_slug: str, dst_slug: str, path: str) -> None:
-    """Merge source slug into destination slug and update all recipe references."""
+    """Merge source slug into destination slug in canonical tag repository."""
     tags_path = Path(path)
-    recipes_path = tags_path.with_name("recipes.json")
     lock_path = tags_path.with_suffix(tags_path.suffix + ".merge.lock")
 
     with _exclusive_file_lock(lock_path):
         original_tags_bytes = tags_path.read_bytes() if tags_path.exists() else None
-        original_recipes_bytes = (
-            recipes_path.read_bytes() if recipes_path.exists() else None
-        )
         try:
             raw = _load_tags_json(tags_path)
             tag_registry = _parse_tag_registry(raw.get("tag_registry", {}))
@@ -513,30 +551,6 @@ def merge(src_slug: str, dst_slug: str, path: str) -> None:
             tag_registry[dst] = dst_meta.model_copy(update={"aliases": combined_aliases})
             tag_registry.pop(src, None)
 
-            if recipes_path.exists():
-                from src.data_layer.recipe_db import RecipeDB
-
-                recipe_db = RecipeDB(str(recipes_path), tag_repo_path=path)
-                for recipe in recipe_db.get_all_recipes():
-                    seen: set[tuple[str, str]] = set()
-                    updated_tags: list[dict[str, str]] = []
-                    for tag in recipe.tags:
-                        if not isinstance(tag, dict):
-                            continue
-                        slug = str(tag.get("slug", ""))
-                        tag_type = str(tag.get("type", ""))
-                        if not slug or not tag_type:
-                            continue
-                        canonical_slug = dst if slug == src else slug
-                        key = (canonical_slug, tag_type)
-                        if key in seen:
-                            continue
-                        seen.add(key)
-                        updated_tags.append({"slug": canonical_slug, "type": tag_type})
-                    recipe.tags = updated_tags
-                # Bulk write of all recipes.
-                recipe_db.save()
-
             _write_tags_payload(
                 path=path,
                 tags_by_id=updated_tags_by_id,
@@ -544,11 +558,6 @@ def merge(src_slug: str, dst_slug: str, path: str) -> None:
                 tag_aliases=tag_aliases,
             )
         except Exception:
-            if original_recipes_bytes is None:
-                if recipes_path.exists():
-                    recipes_path.unlink()
-            else:
-                _write_bytes_atomic(recipes_path, original_recipes_bytes)
             if original_tags_bytes is None:
                 if tags_path.exists():
                     tags_path.unlink()

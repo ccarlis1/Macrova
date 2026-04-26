@@ -198,6 +198,12 @@ class PlanRequest {
   final double micronutrientWeeklyMinFraction;
   final String? planningMode;
   final List<String>? recipeIds;
+  // Canonical pool-level tag filtering fields (backed by recipe_tags.json).
+  final List<String>? cuisine;
+  final String? costLevel;
+  final String? prepTimeBucket;
+  final List<String>? dietaryFlags;
+  final String? recipeTagsPath;
 
   const PlanRequest({
     required this.dailyCalories,
@@ -215,6 +221,11 @@ class PlanRequest {
     this.micronutrientWeeklyMinFraction = 1.0,
     this.planningMode,
     this.recipeIds,
+    this.cuisine,
+    this.costLevel,
+    this.prepTimeBucket,
+    this.dietaryFlags,
+    this.recipeTagsPath,
   });
 
   factory PlanRequest.fromJson(Map<String, dynamic> json) {
@@ -250,6 +261,15 @@ class PlanRequest {
       recipeIds: (json['recipe_ids'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
+      cuisine: (json['cuisine'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      costLevel: json['cost_level'] as String?,
+      prepTimeBucket: json['prep_time_bucket'] as String?,
+      dietaryFlags: (json['dietary_flags'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      recipeTagsPath: json['recipe_tags_path'] as String?,
     );
   }
 
@@ -284,6 +304,23 @@ class PlanRequest {
     final ids = recipeIds;
     if (ids != null && ids.isNotEmpty) {
       map['recipe_ids'] = ids;
+    }
+    final cuisineValues = cuisine;
+    if (cuisineValues != null && cuisineValues.isNotEmpty) {
+      map['cuisine'] = cuisineValues;
+    }
+    if (costLevel != null && costLevel!.isNotEmpty) {
+      map['cost_level'] = costLevel;
+    }
+    if (prepTimeBucket != null && prepTimeBucket!.isNotEmpty) {
+      map['prep_time_bucket'] = prepTimeBucket;
+    }
+    final dietaryValues = dietaryFlags;
+    if (dietaryValues != null && dietaryValues.isNotEmpty) {
+      map['dietary_flags'] = dietaryValues;
+    }
+    if (recipeTagsPath != null && recipeTagsPath!.isNotEmpty) {
+      map['recipe_tags_path'] = recipeTagsPath;
     }
     return map;
   }

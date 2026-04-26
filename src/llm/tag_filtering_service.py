@@ -15,6 +15,10 @@ def apply_tag_filtering(
 ) -> List[Recipe]:
     """Apply deterministic tag-based recipe filtering.
 
+    Canonical source: ``recipe_tags.json`` -> ``tags_by_id`` payload passed as
+    ``tags_by_id``. ``Recipe.tags`` is legacy compatibility data and is not used
+    for decisioning in this path.
+
     Requirements enforced:
     - Deterministic behavior.
     - Stable output ordering preserves `recipes` input order.

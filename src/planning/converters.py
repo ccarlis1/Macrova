@@ -5,7 +5,7 @@ Pure functions only. No I/O, no provider access. Deterministic.
 
 import json
 import logging
-from typing import List, Optional
+from typing import Dict, List, Optional, Set
 
 from src.data_layer.models import (
     Recipe,
@@ -141,6 +141,7 @@ def extract_ingredient_names(recipes: List[Recipe]) -> List[str]:
 def convert_recipes(
     recipes: List[Recipe],
     calculator: NutritionCalculator,
+    canonical_tag_slugs_by_id: Optional[Dict[str, Set[str]]] = None,
 ) -> List[PlanningRecipe]:
     """Convert data-layer recipes to planning recipes with pre-computed nutrition.
 
@@ -159,6 +160,9 @@ def convert_recipes(
                 nutrition=nutrition,
                 primary_carb_contribution=None,
                 primary_carb_source=None,
+                canonical_tag_slugs=set(
+                    (canonical_tag_slugs_by_id or {}).get(recipe.id, set())
+                ),
             )
         )
     out.sort(key=lambda r: r.id)

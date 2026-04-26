@@ -4,7 +4,7 @@
 
 ## Summary
 
-**Extend** `src/llm/tag_filtering_service.py` / `tag_filter.py` / `tag_repository.py` so the **same** `apply_tag_filtering` path handles **pool-level** filtering only and normalizes recipe tags for planner consumption. **Do not** add a second filter pipeline or delete the existing service.
+**Extend** `src/llm/tag_filtering_service.py` / `tag_filter.py` / `tag_repository.py` so the **same** `apply_tag_filtering` path handles **pool-level** filtering only and normalizes recipe tags for planner consumption. Canonical source is `recipe_tags.json -> tags_by_id`; `Recipe.tags` is compatibility-only and must not drive decisioning. **Do not** add a second filter pipeline or delete the existing service.
 
 ## Context
 

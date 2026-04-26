@@ -18,6 +18,11 @@ _SEED_TAGS: Dict[str, Dict[str, str]] = {
     "high-omega-3": {"display": "High Omega 3", "tag_type": "nutrition"},
     "high-fiber": {"display": "High Fiber", "tag_type": "nutrition"},
     "high-calcium": {"display": "High Calcium", "tag_type": "nutrition"},
+    "time-0": {"display": "Instant / No Prep", "tag_type": "time"},
+    "time-1": {"display": "Quick", "tag_type": "time"},
+    "time-2": {"display": "Fast", "tag_type": "time"},
+    "time-3": {"display": "Medium", "tag_type": "time"},
+    "time-4": {"display": "Long", "tag_type": "time"},
 }
 
 

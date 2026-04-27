@@ -43,9 +43,13 @@ from src.providers.local_provider import LocalIngredientProvider
 from src.providers.summary_hybrid_provider import SummaryHybridIngredientProvider
 from src.nutrition.calculator import NutritionCalculator
 from src.planning.converters import convert_recipes, convert_profile, extract_ingredient_names
-from src.planning.phase0_models import PlanningBatchLock
 from src.planning.planner import plan_meals
-from src.planning.orchestrator import LLMPlanningModeError, plan_with_llm_feedback
+from src.planning.orchestrator import (
+    LLMPlanningModeError,
+    build_plan_request_from_profile,
+    planning_batch_locks_from_batches,
+    plan_with_llm_feedback,
+)
 from src.output.formatters import format_result_json
 from src.providers.api_provider import APIIngredientProvider
 from src.config.llm_settings import load_llm_settings
@@ -359,28 +363,6 @@ def _filter_recipes_by_ids(
     return out
 
 
-def _load_planning_batch_locks() -> List[PlanningBatchLock]:
-    """Load active meal-prep batches as deterministic planner lock records."""
-    repo = MealPrepBatchRepository()
-    active_batches = sorted(repo.list_active(), key=lambda batch: str(batch.id))
-    locks: List[PlanningBatchLock] = []
-    for batch in active_batches:
-        for assignment in sorted(
-            batch.assignments,
-            key=lambda item: (int(item.day_index), int(item.slot_index), str(batch.recipe_id)),
-        ):
-            locks.append(
-                PlanningBatchLock(
-                    batch_id=str(batch.id),
-                    recipe_id=str(batch.recipe_id),
-                    day_index=int(assignment.day_index),
-                    slot_index=int(assignment.slot_index),
-                    servings=float(assignment.servings),
-                )
-            )
-    return locks
-
-
 def _mapped_nutrition_to_resolve_payload(
     *,
     source: Literal["usda", "local"],
@@ -692,18 +674,27 @@ def llm_status_endpoint() -> Dict[str, Any]:
 
 @app.post("/api/v1/plan")
 @app.post("/api/plan")
-def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
+async def plan_meals_endpoint(
+    request: Request,
+    plan_request: PlanRequest,
+) -> Dict[str, Any]:
     try:
-        user_profile, sched_warnings = _build_user_profile(request)
+        raw_payload = await request.json()
+        if isinstance(raw_payload, dict) and "active_batches" in raw_payload:
+            logger.warning(
+                "Ignoring client-supplied active_batches in /api/v1/plan payload."
+            )
+
+        user_profile, sched_warnings = _build_user_profile(plan_request)
 
         recipe_db = RecipeDB(recipes_path)
         all_recipes = recipe_db.get_all_recipes()
-        all_recipes = _filter_recipes_by_ids(all_recipes, request.recipe_ids)
+        all_recipes = _filter_recipes_by_ids(all_recipes, plan_request.recipe_ids)
 
-        tag_path = getattr(request, "recipe_tags_path", None) or DEFAULT_TAG_PATH
+        tag_path = getattr(plan_request, "recipe_tags_path", None) or DEFAULT_TAG_PATH
         all_recipes, filter_log = _apply_recipe_tag_filter_pre_convert(
             recipes=all_recipes,
-            request_like=request,
+            request_like=plan_request,
             tag_path=tag_path,
         )
         print(
@@ -711,7 +702,7 @@ def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
             file=sys.stderr,
         )
 
-        if request.ingredient_source == "api":
+        if plan_request.ingredient_source == "api":
             usda_client = USDAClient.from_env()
             cached_lookup = CachedIngredientLookup(usda_client=usda_client)
             provider = APIIngredientProvider(cached_lookup)
@@ -727,18 +718,29 @@ def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
         recipe_pool = convert_recipes(all_recipes, calculator)
         _attach_canonical_recipe_tags(recipe_pool, canonical_tag_slugs_by_id)
         recipe_by_id = {r.id: r for r in recipe_pool}
-        planning_profile = convert_profile(user_profile, request.days)
-        planning_profile.batch_locks = _load_planning_batch_locks()
+        planning_profile = convert_profile(user_profile, plan_request.days)
+        active_batches = MealPrepBatchRepository().list_active()
+        effective_plan_request = build_plan_request_from_profile(
+            user_profile,
+            all_recipes,
+            active_batches,
+            seed=None,
+        )
+        logger.debug(
+            "Built effective plan request for /api/v1/plan with keys=%s",
+            sorted(effective_plan_request.keys()),
+        )
+        planning_profile.batch_locks = planning_batch_locks_from_batches(active_batches)
 
         llm_settings = load_llm_settings()
-        planning_mode_provided = request.planning_mode is not None
-        effective_mode = request.planning_mode
+        planning_mode_provided = plan_request.planning_mode is not None
+        effective_mode = plan_request.planning_mode
         if effective_mode is None:
             # Omitted => deterministic regardless of LLM env (assisted modes are explicit-only).
             effective_mode = "deterministic"
 
         if effective_mode == "deterministic":
-            result = plan_meals(planning_profile, recipe_pool, request.days)
+            result = plan_meals(planning_profile, recipe_pool, plan_request.days)
         else:
             if not llm_settings.enabled:
                 raise LLMPlanningModeError(
@@ -775,7 +777,7 @@ def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
             result = plan_with_llm_feedback(
                 planning_profile,
                 recipe_pool,
-                request.days,
+                plan_request.days,
                 max_feedback_retries=3,
                 recipes_path=recipes_path,
                 client=llm_client,
@@ -799,11 +801,11 @@ def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
             )
             recipe_by_id = {r.id: r for r in recipe_pool_updated}
 
-        out = format_result_json(result, recipe_by_id, planning_profile, request.days)
+        out = format_result_json(result, recipe_by_id, planning_profile, plan_request.days)
         merge_schedule_warnings_into_result(
             out,
             sched_warnings,
-            deprecated_legacy=request.schedule_days is None and request.schedule is not None,
+            deprecated_legacy=plan_request.schedule_days is None and plan_request.schedule is not None,
         )
         _merge_filter_warnings(out, filter_log)
         return out

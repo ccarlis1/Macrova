@@ -10,12 +10,17 @@ import os
 from src.data_layer.user_profile import UserProfileLoader
 from src.data_layer.recipe_db import RecipeDB
 from src.data_layer.nutrition_db import NutritionDB
+from src.data_layer.meal_prep import MealPrepBatchRepository
 from src.nutrition.calculator import NutritionCalculator
 from src.ingestion.usda_client import USDAClient
 from src.ingestion.ingredient_cache import CachedIngredientLookup
 from src.planning.converters import convert_recipes, convert_profile, extract_ingredient_names
 from src.planning.planner import plan_meals
-from src.planning.orchestrator import plan_with_llm_feedback
+from src.planning.orchestrator import (
+    build_plan_request_from_profile,
+    plan_with_llm_feedback,
+    planning_batch_locks_from_batches,
+)
 from src.output.formatters import format_result_markdown, format_result_json_string
 from src.providers.local_provider import LocalIngredientProvider
 from src.providers.api_provider import APIIngredientProvider, IngredientResolutionError
@@ -389,6 +394,18 @@ def main():
         recipe_pool = convert_recipes(all_recipes, calculator)
         recipe_by_id = {r.id: r for r in recipe_pool}
         planning_profile = convert_profile(user_profile, args.days)
+        active_batches = MealPrepBatchRepository().list_active()
+        effective_plan_request = build_plan_request_from_profile(
+            user_profile,
+            all_recipes,
+            active_batches,
+            seed=None,
+        )
+        print(
+            f"Built effective plan request with keys={sorted(effective_plan_request.keys())}",
+            file=sys.stderr,
+        )
+        planning_profile.batch_locks = planning_batch_locks_from_batches(active_batches)
 
 
         loader = UpperLimitsLoader("data/reference/ul_by_demographic.json")

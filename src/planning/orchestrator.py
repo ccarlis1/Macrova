@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+import json
 import copy
 import hashlib
 import os
-import json
 import sys
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -18,7 +18,7 @@ from src.ingestion.ingredient_cache import CachedIngredientLookup
 from src.ingestion.usda_client import USDAClient
 from src.llm.types import ValidatedRecipeForPersistence
 from src.nutrition.calculator import NutritionCalculator
-from src.planning.phase0_models import PlanningRecipe, PlanningUserProfile
+from src.planning.phase0_models import PlanningBatchLock, PlanningRecipe, PlanningUserProfile
 from src.planning.phase10_reporting import MealPlanResult
 from src.planning.converters import convert_recipes, extract_ingredient_names
 from src.planning.planner import plan_meals
@@ -35,6 +35,88 @@ from src.llm.feedback_cache import (
     load_feedback_cache,
     upsert_cached_drafts,
 )
+
+
+def _serialize_active_batches(batches: List[Any]) -> List[Dict[str, Any]]:
+    """Serialize repository batch entities to a stable plan-request shape."""
+    rows: List[Dict[str, Any]] = []
+    for batch in sorted(batches, key=lambda item: str(getattr(item, "id", ""))):
+        assignments_raw = list(getattr(batch, "assignments", []) or [])
+        assignments = []
+        for item in sorted(
+            assignments_raw,
+            key=lambda a: (
+                int(getattr(a, "day_index", 0)),
+                int(getattr(a, "slot_index", 0)),
+                float(getattr(a, "servings", 1.0)),
+            ),
+        ):
+            assignments.append(
+                {
+                    "day_index": int(getattr(item, "day_index")),
+                    "slot_index": int(getattr(item, "slot_index")),
+                    "servings": float(getattr(item, "servings", 1.0)),
+                }
+            )
+        rows.append(
+            {
+                "id": str(getattr(batch, "id")),
+                "recipe_id": str(getattr(batch, "recipe_id")),
+                "total_servings": int(getattr(batch, "total_servings")),
+                "cook_date": str(getattr(batch, "cook_date")),
+                "status": str(getattr(batch, "status")),
+                "assignments": assignments,
+            }
+        )
+    return rows
+
+
+def build_plan_request_from_profile(
+    profile: Any,
+    recipes: List[Any],
+    batches: List[Any],
+    seed: Optional[int],
+) -> Dict[str, Any]:
+    """Build a PlanRequest-compatible payload from canonical local/server inputs."""
+    payload: Dict[str, Any] = {
+        "daily_calories": int(profile.daily_calories),
+        "daily_protein_g": float(profile.daily_protein_g),
+        "daily_fat_g_min": float(profile.daily_fat_g[0]),
+        "daily_fat_g_max": float(profile.daily_fat_g[1]),
+        "schedule": dict(profile.schedule),
+        "liked_foods": list(profile.liked_foods),
+        "disliked_foods": list(profile.disliked_foods),
+        "allergies": list(profile.allergies),
+        "micronutrient_weekly_min_fraction": float(
+            profile.micronutrient_weekly_min_fraction
+        ),
+        "recipe_ids": sorted(
+            [str(getattr(recipe, "id")) for recipe in recipes if getattr(recipe, "id", None)]
+        ),
+        "active_batches": _serialize_active_batches(batches),
+    }
+    if getattr(profile, "daily_micronutrient_targets", None):
+        payload["micronutrient_goals"] = dict(profile.daily_micronutrient_targets)
+    if seed is not None:
+        payload["seed"] = int(seed)
+    return payload
+
+
+def planning_batch_locks_from_batches(batches: List[Any]) -> List[PlanningBatchLock]:
+    """Build planner batch locks from repository batches."""
+    locks: List[PlanningBatchLock] = []
+    for batch in _serialize_active_batches(batches):
+        for assignment in batch["assignments"]:
+            locks.append(
+                PlanningBatchLock(
+                    batch_id=str(batch["id"]),
+                    recipe_id=str(batch["recipe_id"]),
+                    day_index=int(assignment["day_index"]),
+                    slot_index=int(assignment["slot_index"]),
+                    servings=float(assignment.get("servings", 1.0)),
+                )
+            )
+    return locks
 
 
 class LLMFeedbackOrchestratorError(RuntimeError):

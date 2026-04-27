@@ -54,12 +54,17 @@ if _env_file.exists():
             os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
 
 from src.data_layer.nutrition_db import NutritionDB
+from src.data_layer.meal_prep import MealPrepBatchRepository
 from src.data_layer.recipe_db import RecipeDB
 from src.data_layer.user_profile import UserProfileLoader
 from src.ingestion.ingredient_cache import CachedIngredientLookup
 from src.ingestion.usda_client import USDAClient
 from src.nutrition.calculator import NutritionCalculator
 from src.planning.converters import convert_profile, convert_recipes, extract_ingredient_names
+from src.planning.orchestrator import (
+    build_plan_request_from_profile,
+    planning_batch_locks_from_batches,
+)
 from src.planning.planner import plan_meals
 from src.providers.api_provider import APIIngredientProvider
 from src.providers.local_provider import LocalIngredientProvider
@@ -81,31 +86,31 @@ def _build_ingredient_provider(
 def _user_profile_to_plan_request(
     *,
     loader_path: str,
+    recipes_path: str,
     days: int,
     ingredient_source: str,
     planning_mode: Optional[str],
     recipe_ids: Optional[List[str]],
 ) -> Dict[str, Any]:
     user = UserProfileLoader(loader_path).load()
-    body: Dict[str, Any] = {
-        "daily_calories": user.daily_calories,
-        "daily_protein_g": user.daily_protein_g,
-        "daily_fat_g_min": user.daily_fat_g[0],
-        "daily_fat_g_max": user.daily_fat_g[1],
-        "schedule": dict(user.schedule),
-        "liked_foods": list(user.liked_foods),
-        "disliked_foods": list(user.disliked_foods),
-        "allergies": list(user.allergies),
-        "days": days,
-        "ingredient_source": ingredient_source,
-        "micronutrient_weekly_min_fraction": user.micronutrient_weekly_min_fraction,
-    }
+    all_recipes = RecipeDB(recipes_path).get_all_recipes()
+    active_batches = MealPrepBatchRepository().list_active()
+    body: Dict[str, Any] = build_plan_request_from_profile(
+        user,
+        all_recipes,
+        active_batches,
+        seed=None,
+    )
+    body["days"] = days
+    body["ingredient_source"] = ingredient_source
     if user.daily_micronutrient_targets:
         body["micronutrient_goals"] = dict(user.daily_micronutrient_targets)
     if planning_mode is not None:
         body["planning_mode"] = planning_mode
     if recipe_ids is not None and recipe_ids:
         body["recipe_ids"] = list(recipe_ids)
+    elif "recipe_ids" in body:
+        del body["recipe_ids"]
     return body
 
 
@@ -162,6 +167,8 @@ def _run_planner(
 ) -> Dict[str, Any]:
     user = UserProfileLoader(profile_yaml).load()
     planning_profile = convert_profile(user, days)
+    active_batches = MealPrepBatchRepository().list_active()
+    planning_profile.batch_locks = planning_batch_locks_from_batches(active_batches)
 
     recipe_db = RecipeDB(recipes_path)
     all_recipes = recipe_db.get_all_recipes()
@@ -228,6 +235,7 @@ def main() -> None:
 
     plan_request = _user_profile_to_plan_request(
         loader_path=args.profile,
+        recipes_path=args.recipes,
         days=args.days,
         ingredient_source=args.ingredient_source,
         planning_mode=args.planning_mode,

@@ -18,10 +18,13 @@ This writes:
 | File | Contents |
 |------|----------|
 | `cli_plan_request.json` | Exact **POST `/api/v1/plan`** JSON body equivalent to your YAML profile + `--days` |
+| `active_batches` (inside `cli_plan_request.json`) | Repository-hydrated batch locks used for planner parity; emitted explicitly and may be `[]` when no planned/active batches exist |
 | `recipe_pool_snapshot.json` | Sorted recipe ids, names, counts, `recipe_ids_sha256` for quick pool diffs |
 | `planner_run.json` | `termination_code`, `failure_mode`, full `report`, `stats`, planning profile summary |
 
 **`planner_run.json` uses the same `--ingredient-source` as the CLI** (`local` vs `api` / USDA). If you only set `ingredient_source` in `cli_plan_request.json` but the dry-run used local nutrition, results would not match `plan_meals.py --ingredient-source api` (e.g. FM-4 vs a successful plan).
+
+`active_batches` is hydrated from the local/server `MealPrepBatchRepository` in HTTP, CLI, and export flows. Client-supplied `active_batches` must be treated as untrusted input: the server logs a warning and ignores that payload field, then uses repository state to build planner locks.
 
 **Flutter:** `ingredient_source` comes from `MealPlanProvider.ingredientSource` (default `local`), persisted under planner config. The **Meal Planner Configuration** screen includes **Ingredient nutrition source** (local vs USDA API) so you can match CLI `--ingredient-source api` without editing code. The server must have `USDA_API_KEY` (e.g. in `.env`) when using `api`.
 

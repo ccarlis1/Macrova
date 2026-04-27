@@ -23,7 +23,7 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field, constr, model_validator
+from pydantic import BaseModel, Field, ValidationError, constr, model_validator
 from dataclasses import fields as dc_fields
 
 from src.ingestion.nutrient_mapper import MappedNutrition, NutrientMapper
@@ -69,7 +69,10 @@ from src.llm.ingredient_matcher import (
     validate_matches,
 )
 from src.llm.schemas import BudgetLevel, DietaryFlag, PrepTimeBucket, PlannerConfigJson
-from src.data_layer.user_profile import user_profile_from_planner_config
+from src.data_layer.user_profile import (
+    persist_profile_schedule_days,
+    user_profile_from_planner_config,
+)
 from src.models.legacy_schedule_migration import (
     canonical_day_to_meal_only_legacy_dict,
     legacy_schedule_dict_to_schedule_days,
@@ -205,6 +208,10 @@ class PlanFromTextRequest(BaseModel):
     planning_mode: Optional[
         Literal["deterministic", "assisted", "assisted_cached", "assisted_live"]
     ] = None
+
+
+class ProfileScheduleWriteResponse(BaseModel):
+    schedule_days: List[Dict[str, Any]]
 
 
 class PlanFailure(BaseModel):
@@ -683,6 +690,119 @@ class NutritionIngredientLine(BaseModel):
 class NutritionSummaryRequest(BaseModel):
     servings: int = Field(1, ge=1)
     ingredients: List[NutritionIngredientLine] = Field(..., min_length=1)
+
+
+def _field_path_from_loc(loc: tuple[Any, ...]) -> str:
+    return ".".join(str(part) for part in loc if part != "body")
+
+
+def _profile_schedule_validation_error(
+    field_errors: List[Dict[str, str]],
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=400,
+        content={
+            "error": {
+                "code": "PROFILE_SCHEDULE_INVALID",
+                "message": "Invalid profile schedule.",
+                "details": {"field_errors": field_errors},
+            }
+        },
+    )
+
+
+def _validate_schedule_days_payload(payload: Any) -> tuple[List[DaySchedule], List[Dict[str, str]]]:
+    field_errors: List[Dict[str, str]] = []
+    if not isinstance(payload, dict):
+        field_errors.append(
+            {
+                "code": "INVALID_FIELD",
+                "field_path": "",
+                "message": "Request body must be a JSON object.",
+            }
+        )
+        return [], field_errors
+
+    allowed_keys = {"schedule_days"}
+    for key in sorted(payload.keys()):
+        if key not in allowed_keys:
+            field_errors.append(
+                {
+                    "code": "INVALID_FIELD",
+                    "field_path": str(key),
+                    "message": "Extra inputs are not permitted",
+                }
+            )
+    if "schedule_days" not in payload:
+        field_errors.append(
+            {
+                "code": "INVALID_FIELD",
+                "field_path": "schedule_days",
+                "message": "Field required",
+            }
+        )
+        return [], field_errors
+
+    raw_schedule_days = payload.get("schedule_days")
+    if not isinstance(raw_schedule_days, list):
+        field_errors.append(
+            {
+                "code": "INVALID_FIELD",
+                "field_path": "schedule_days",
+                "message": "Input should be a valid list",
+            }
+        )
+        return [], field_errors
+    if not raw_schedule_days:
+        field_errors.append(
+            {
+                "code": "INVALID_FIELD",
+                "field_path": "schedule_days",
+                "message": "schedule_days must contain at least one day.",
+            }
+        )
+        return [], field_errors
+
+    parsed_days: List[DaySchedule] = []
+    for i, day_payload in enumerate(raw_schedule_days):
+        try:
+            day = DaySchedule.model_validate(day_payload)
+        except ValidationError as exc:
+            for err in exc.errors():
+                field_path = _field_path_from_loc(("schedule_days", i, *err.get("loc", ())))
+                field_errors.append(
+                    {
+                        "code": "INVALID_FIELD",
+                        "field_path": field_path,
+                        "message": str(err.get("msg", "Invalid value")),
+                    }
+                )
+            continue
+        except ValueError as exc:
+            field_errors.append(
+                {
+                    "code": "INVALID_FIELD",
+                    "field_path": f"schedule_days.{i}",
+                    "message": str(exc),
+                }
+            )
+            continue
+        parsed_days.append(day)
+
+    for idx, day in enumerate(sorted(parsed_days, key=lambda d: d.day_index)):
+        expected = idx + 1
+        if day.day_index != expected:
+            field_errors.append(
+                {
+                    "code": "INVALID_FIELD",
+                    "field_path": f"schedule_days.{idx}.day_index",
+                    "message": f"day_index must be {expected}, got {day.day_index}",
+                }
+            )
+
+    return parsed_days, sorted(
+        field_errors, key=lambda item: (item["field_path"], item["message"])
+    )
 
 
 def _nutrition_line_to_data_ingredient(line: NutritionIngredientLine) -> DataIngredient:
@@ -1485,6 +1605,25 @@ def nutrition_summary_endpoint(request: NutritionSummaryRequest) -> Any:
     except Exception as exc:
         status_code, payload = map_exception_to_api_error(exc)
         return JSONResponse(status_code=status_code, content=payload)
+
+
+@app.put("/api/v1/profile/schedule", response_model=ProfileScheduleWriteResponse)
+async def put_profile_schedule_endpoint(request: Request) -> Any:
+    """Persist canonical schedule_days into the existing profile YAML path."""
+    try:
+        payload = await request.json()
+    except Exception:
+        return JSONResponse(
+            status_code=400,
+            content={"error": {"code": "INVALID_REQUEST", "message": "Invalid request schema."}},
+        )
+
+    schedule_days, field_errors = _validate_schedule_days_payload(payload)
+    if field_errors:
+        return _profile_schedule_validation_error(field_errors)
+
+    normalized_days = persist_profile_schedule_days(schedule_days)
+    return {"schedule_days": normalized_days}
 
 
 if __name__ == "__main__":

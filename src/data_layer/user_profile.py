@@ -1,8 +1,10 @@
 """User profile loader and helpers for planning input mapping."""
+import os
 import sys
+import tempfile
 import yaml
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from src.llm.schemas import BudgetLevel, PlannerConfigJson
 
@@ -16,6 +18,62 @@ from src.models.legacy_schedule_migration import (
 from src.models.schedule import DaySchedule
 from src.planning.converters import _expand_schedule_days
 from src.planning.micronutrient_policy import validate_micronutrient_weekly_min_fraction
+
+DEFAULT_USER_PROFILE_PATH = Path("config/user_profile.yaml")
+
+
+def _normalize_schedule_days_for_storage(
+    schedule_days: List[DaySchedule],
+) -> List[Dict[str, Any]]:
+    normalized: List[Dict[str, Any]] = []
+    for day in sorted(schedule_days, key=lambda d: d.day_index):
+        day_payload = day.model_dump(mode="json", exclude_none=True)
+        day_payload["meals"] = sorted(day_payload.get("meals", []), key=lambda m: m["index"])
+        day_payload["workouts"] = sorted(
+            day_payload.get("workouts", []),
+            key=lambda w: (w["after_meal_index"], w["type"]),
+        )
+        normalized.append(day_payload)
+    return normalized
+
+
+def persist_profile_schedule_days(
+    schedule_days: List[DaySchedule],
+    *,
+    yaml_path: str | Path | None = None,
+) -> List[Dict[str, Any]]:
+    """Persist canonical schedule_days into the existing profile YAML document."""
+    target_path = Path(yaml_path) if yaml_path is not None else Path(
+        os.environ.get("NUTRITION_USER_PROFILE_PATH", str(DEFAULT_USER_PROFILE_PATH))
+    )
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+
+    existing: Dict[str, Any] = {}
+    if target_path.exists():
+        with open(target_path, "r", encoding="utf-8") as f:
+            loaded = yaml.safe_load(f) or {}
+            if not isinstance(loaded, dict):
+                raise ValueError("User profile YAML root must be a mapping object.")
+            existing = dict(loaded)
+
+    normalized_days = _normalize_schedule_days_for_storage(schedule_days)
+    existing["schedule_days"] = normalized_days
+    # Remove legacy schedule to avoid conflicting representations.
+    existing.pop("schedule", None)
+
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        suffix=".yaml",
+        prefix="user_profile.",
+        dir=str(target_path.parent),
+        delete=False,
+        encoding="utf-8",
+    ) as tmp:
+        yaml.safe_dump(existing, tmp, sort_keys=False)
+        temp_path = Path(tmp.name)
+
+    temp_path.replace(target_path)
+    return normalized_days
 
 
 class UserProfileLoader:

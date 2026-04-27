@@ -15,7 +15,8 @@ from src.data_layer.models import (
 from src.data_layer.recipe_db import RecipeDB
 from src.data_layer.ingredient_db import IngredientDB
 from src.data_layer.nutrition_db import NutritionDB
-from src.data_layer.user_profile import UserProfileLoader
+from src.data_layer.user_profile import UserProfileLoader, persist_profile_schedule_days
+from src.models.schedule import DaySchedule
 
 
 class TestRecipeDB:
@@ -595,4 +596,66 @@ class TestUserProfileLoader:
                 UserProfileLoader(temp_path).load()
         finally:
             Path(temp_path).unlink()
+
+
+def test_persist_profile_schedule_days_replaces_legacy_schedule_and_preserves_other_sections(monkeypatch):
+    profile_data = {
+        "nutrition_goals": {
+            "daily_calories": 2400,
+            "daily_protein_g": 150,
+            "daily_fat_g": {"min": 50, "max": 100},
+        },
+        "schedule": {"07:00": 2, "12:00": 3},
+        "preferences": {
+            "liked_foods": ["eggs"],
+            "disliked_foods": [],
+            "allergies": [],
+        },
+    }
+    class _ResolvedTag:
+        def __init__(self, slug: str) -> None:
+            self.slug = slug
+
+    monkeypatch.setattr(
+        "src.llm.tag_repository.resolve",
+        lambda slug, path: _ResolvedTag(str(slug)),
+    )
+
+    day = DaySchedule.model_validate(
+        {
+            "day_index": 1,
+            "meals": [
+                {
+                    "index": 1,
+                    "busyness_level": 2,
+                    "preferred_time": "07:30",
+                    "required_tag_slugs": ["high-protein"],
+                    "preferred_tag_slugs": ["quick-meal"],
+                },
+                {"index": 2, "busyness_level": 3},
+            ],
+            "workouts": [{"after_meal_index": 1, "type": "PM", "intensity": "moderate"}],
+        }
+    )
+
+    with NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        yaml.dump(profile_data, f)
+        temp_path = f.name
+
+    try:
+        persisted = persist_profile_schedule_days([day], yaml_path=temp_path)
+        assert persisted[0]["meals"][0]["preferred_time"] == "07:30"
+        assert persisted[0]["meals"][0]["required_tag_slugs"] == ["high-protein"]
+        assert persisted[0]["meals"][0]["preferred_tag_slugs"] == ["quick-meal"]
+        assert persisted[0]["workouts"] == [
+            {"after_meal_index": 1, "type": "PM", "intensity": "moderate"}
+        ]
+
+        with open(temp_path, "r", encoding="utf-8") as f:
+            saved = yaml.safe_load(f)
+        assert "schedule" not in saved
+        assert saved["preferences"] == profile_data["preferences"]
+        assert saved["schedule_days"] == persisted
+    finally:
+        Path(temp_path).unlink()
 

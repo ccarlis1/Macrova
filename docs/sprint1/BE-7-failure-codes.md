@@ -1,6 +1,6 @@
 # BE-7 — Failure-code surfacing
 
-**Status:** todo  ·  **Complexity:** S  ·  **Depends on:** BE-2, BE-3
+**Status:** implemented  ·  **Complexity:** S  ·  **Depends on:** BE-2, BE-3
 
 ## Summary
 

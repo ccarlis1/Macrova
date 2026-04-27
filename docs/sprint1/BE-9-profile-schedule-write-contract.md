@@ -1,31 +1,124 @@
 # BE-9 — Profile schedule write contract
 
-**Status:** todo  ·  **Complexity:** S  ·  **Depends on:** DM-4
+**Status:** implemented  ·  **Complexity:** S  ·  **Depends on:** DM-4
 
-## Summary
+## Endpoint
 
-Define and implement an explicit backend API contract for writing `DaySchedule` and `MealSlot` edits from FE-8.
+- `PUT /api/v1/profile/schedule`
+- Request body is canonical `schedule_days` and fully replaces persisted `schedule_days`.
+- Writes to existing profile path (`config/user_profile.yaml` by default; override via `NUTRITION_USER_PROFILE_PATH`).
+- Response returns normalized persisted `schedule_days`.
 
-## Context
+## Request Schema
 
-FE-8 requires a stable persistence path; without a clear contract, slot-config UX is non-functional and brittle.
+```json
+{
+  "schedule_days": [
+    {
+      "day_index": 1,
+      "meals": [
+        {
+          "index": 1,
+          "busyness_level": 2,
+          "preferred_time": "07:30",
+          "required_tag_slugs": ["high-protein"],
+          "preferred_tag_slugs": ["quick-meal"]
+        }
+      ],
+      "workouts": [
+        {
+          "after_meal_index": 1,
+          "type": "PM",
+          "intensity": "moderate"
+        }
+      ]
+    }
+  ]
+}
+```
 
-Unblocks: FE-8, FE-10.
+Supported fields:
 
-## Acceptance criteria
+- `MealSlot`: `index`, `busyness_level`, `preferred_time`, `required_tag_slugs`, `preferred_tag_slugs` (plus optional canonical `tags` passthrough).
+- `WorkoutSlot`: `after_meal_index`, `type`, `intensity`.
+- `DaySchedule`: `meals`, `workouts` (with `day_index`).
 
-- [ ] A documented request/response schema exists for profile schedule writes, including validation errors.
-- [ ] Contract supports `required_tag_slugs`, `preferred_tag_slugs`, `busyness_level`, `preferred_time`, and canonical slot indexing.
-- [ ] Contract preserves workout modeling via `WorkoutSlot` (`after_meal_index`, `type`, `intensity`) instead of `busyness_level=0`.
-- [ ] Endpoint behavior is idempotent for equivalent payloads and returns normalized persisted shape.
-- [ ] FE-8 integration test can save and re-load edited slot config without lossy field drops.
+## Response Schema
 
-## Implementation notes
+```json
+{
+  "schedule_days": [
+    {
+      "day_index": 1,
+      "meals": [
+        {
+          "index": 1,
+          "busyness_level": 2,
+          "preferred_time": "07:30",
+          "required_tag_slugs": ["high-protein"],
+          "preferred_tag_slugs": ["quick-meal"]
+        }
+      ],
+      "workouts": [
+        {
+          "after_meal_index": 1,
+          "type": "PM",
+          "intensity": "moderate"
+        }
+      ]
+    }
+  ]
+}
+```
 
-- Reuse existing profile write route if it already exists; otherwise add one additive endpoint.
-- Keep payload aligned with canonical slot addressing and planner input expectations.
+Normalization guarantees:
 
-## Out of scope
+- `schedule_days` sorted by `day_index`
+- `meals` sorted by `index`
+- `workouts` sorted by (`after_meal_index`, `type`)
+- optional `None` fields omitted from persisted/returned payload
 
-- Frontend editor implementation (FE-8).
-- Forcing mode UX copy and control behavior (FE-10).
+## Validation Errors
+
+Stable 400 error envelope:
+
+```json
+{
+  "error": {
+    "code": "PROFILE_SCHEDULE_INVALID",
+    "message": "Invalid profile schedule.",
+    "details": {
+      "field_errors": [
+        {
+          "code": "INVALID_FIELD",
+          "field_path": "schedule_days.0.meals.1.index",
+          "message": "Meal indices must be contiguous 1..2; got [1, 1]"
+        }
+      ]
+    }
+  }
+}
+```
+
+Validation rules enforced:
+
+- reject duplicate/non-contiguous `MealSlot.index` within a day
+- reject non-1-based meal indexes and `busyness_level=0`
+- reject unknown fields (`extra="forbid"` stays enforced)
+- reject invalid `required_tag_slugs` / `preferred_tag_slugs` shapes or unknown slugs
+- reject missing/empty/invalid `schedule_days`
+- reject non-contiguous `day_index` sequence in submitted `schedule_days`
+
+## Workout Modeling Rule
+
+Workouts must be represented only with canonical `WorkoutSlot` entries under `schedule_days[].workouts[]`.
+Do not encode workouts as `MealSlot.busyness_level=0`. Legacy top-level `schedule` is removed on write.
+
+## Idempotency
+
+Equivalent payloads are persisted to the same normalized shape and repeated `PUT` requests return the same response body.
+
+## Out of Scope
+
+- Frontend editor implementation (FE-8)
+- Planner behavior changes

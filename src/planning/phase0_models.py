@@ -101,6 +101,20 @@ class PlanningUserProfile:
     enable_primary_carb_downscaling: bool = False
     max_scaling_steps: int = 4
     scaling_step_fraction: float = 0.10
+    # Canonical meal-prep locks addressed as (day_index, slot_index).
+    # Planner resolves these into pinned_assignments before search.
+    batch_locks: List["PlanningBatchLock"] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class PlanningBatchLock:
+    """Planner-facing meal-prep lock addressed by canonical slot coordinates."""
+
+    batch_id: str
+    recipe_id: str
+    day_index: int
+    slot_index: int
+    servings: float = 1.0
 
 
 # --- Section 2.2 Recipe Pool ---

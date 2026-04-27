@@ -38,10 +38,12 @@ from src.data_layer.models import (
 )
 from src.data_layer.recipe_db import RecipeDB
 from src.data_layer.nutrition_db import NutritionDB
+from src.data_layer.meal_prep import MealPrepBatchRepository
 from src.providers.local_provider import LocalIngredientProvider
 from src.providers.summary_hybrid_provider import SummaryHybridIngredientProvider
 from src.nutrition.calculator import NutritionCalculator
 from src.planning.converters import convert_recipes, convert_profile, extract_ingredient_names
+from src.planning.phase0_models import PlanningBatchLock
 from src.planning.planner import plan_meals
 from src.planning.orchestrator import LLMPlanningModeError, plan_with_llm_feedback
 from src.output.formatters import format_result_json
@@ -353,6 +355,28 @@ def _filter_recipes_by_ids(
         if r is not None:
             out.append(r)
     return out
+
+
+def _load_planning_batch_locks() -> List[PlanningBatchLock]:
+    """Load active meal-prep batches as deterministic planner lock records."""
+    repo = MealPrepBatchRepository()
+    active_batches = sorted(repo.list_active(), key=lambda batch: str(batch.id))
+    locks: List[PlanningBatchLock] = []
+    for batch in active_batches:
+        for assignment in sorted(
+            batch.assignments,
+            key=lambda item: (int(item.day_index), int(item.slot_index), str(batch.recipe_id)),
+        ):
+            locks.append(
+                PlanningBatchLock(
+                    batch_id=str(batch.id),
+                    recipe_id=str(batch.recipe_id),
+                    day_index=int(assignment.day_index),
+                    slot_index=int(assignment.slot_index),
+                    servings=float(assignment.servings),
+                )
+            )
+    return locks
 
 
 def _mapped_nutrition_to_resolve_payload(
@@ -702,6 +726,7 @@ def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
         _attach_canonical_recipe_tags(recipe_pool, canonical_tag_slugs_by_id)
         recipe_by_id = {r.id: r for r in recipe_pool}
         planning_profile = convert_profile(user_profile, request.days)
+        planning_profile.batch_locks = _load_planning_batch_locks()
 
         llm_settings = load_llm_settings()
         planning_mode_provided = request.planning_mode is not None
@@ -894,6 +919,7 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
         _attach_canonical_recipe_tags(recipe_pool, canonical_tag_slugs_by_id)
         recipe_by_id = {r.id: r for r in recipe_pool}
         planning_profile = convert_profile(user_profile, days)
+        planning_profile.batch_locks = _load_planning_batch_locks()
 
         if effective_mode == "deterministic":
             result = plan_meals(planning_profile, recipe_pool, days)

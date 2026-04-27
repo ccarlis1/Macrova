@@ -440,7 +440,8 @@ def plan_with_llm_feedback(
                     provider=provider,
                 )
 
-        # Retry planner with the updated recipe pool.
+        # Retry planner with the same profile object so caller-injected batch locks/pins
+        # keep identical precedence across the initial attempt and every feedback retry.
         result = plan_meals(profile, result_recipe_pool, days)
         if result.success:
             _ensure_orchestrator_stats(result)

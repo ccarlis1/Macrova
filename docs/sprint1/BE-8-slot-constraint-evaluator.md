@@ -1,6 +1,6 @@
 # BE-8 — Slot constraint evaluator in planner
 
-**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** BE-2, BE-3, DM-4, DM-6
+**Status:** implemented  ·  **Complexity:** M  ·  **Depends on:** BE-2, BE-3, DM-4, DM-6
 
 ## Summary
 
@@ -14,13 +14,13 @@ Unblocks: FE-10, BE-7.
 
 ## Acceptance criteria
 
-- [ ] Planner evaluates candidates per slot using canonical `SlotAddress = (day_index, slot_index)`.
-- [ ] Slot-level required/preferred slug checks consume canonical per-recipe tags from `recipe_tags.json/tags_by_id` (via planner recipe canonical tag payload), not `Recipe.tags`.
-- [ ] Constraint precedence is deterministic: batch lock > pin > required tags > preferred/scoring.
-- [ ] Hard required-tag checks only use planner-eligible tags (approved/system/user), excluding quarantined LLM `proposed` tags.
-- [ ] If no candidate satisfies slot-level hard constraints, planner emits `FM-TAG-EMPTY` with slot context.
-- [ ] Preferred tags remain soft and flow into scoring only (no hard rejection).
-- [ ] Tests cover: lock+pin conflicts, required-tag-empty slots, and deterministic outcomes for equal seeds.
+- Planner evaluates candidates per slot using canonical `SlotAddress = (day_index, slot_index)`.
+- Slot-level required/preferred slug checks consume canonical per-recipe tags from `recipe_tags.json/tags_by_id` (via planner recipe canonical tag payload), not `Recipe.tags`.
+- Constraint precedence is deterministic: batch lock > pin > required tags > preferred/scoring.
+- Hard required-tag checks only use planner-eligible tags (approved/system/user), excluding quarantined LLM `proposed` tags.
+- If no candidate satisfies slot-level hard constraints, planner emits `FM-TAG-EMPTY` with slot context.
+- Preferred tags remain soft and flow into scoring only (no hard rejection).
+- Tests cover: lock+pin conflicts, required-tag-empty slots, and deterministic outcomes for equal seeds.
 
 ## Implementation notes
 
@@ -31,3 +31,4 @@ Unblocks: FE-10, BE-7.
 
 - Adding new global tag filtering rules (BE-3).
 - Changing meal prep batch persistence format (DM-3).
+

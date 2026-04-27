@@ -286,12 +286,17 @@ def format_result_json(
         "daily_carbs_g": profile.daily_carbs_g,
     }
 
+    report = dict(result.report or {})
+    if not isinstance(report.get("failures"), list):
+        report["failures"] = []
+
     out = {
         "success": result.success,
         "termination_code": result.termination_code,
         "days": D,
         "daily_plans": daily_plans,
         "warnings": result.warning if result.warning else {},
+        "report": report,
         "goals": goals,
     }
     if weekly_totals is not None:

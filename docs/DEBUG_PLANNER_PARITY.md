@@ -113,3 +113,31 @@ curl -sS -o /dev/null -w "%{http_code}\n" \
 3. `planner_run.json` (CLI-side deterministic outcome)
 4. API JSON response for the Flutter request (or `curl` replay body + response)
 5. `api_stderr.log` (or terminal copy) for both runs if possible
+
+---
+
+## Failure modes
+
+Planner/API responses keep a single envelope and include structured failures under:
+
+- `report.failures` (always present; empty list when no actionable failure)
+
+Warnings remain separate (`warnings`) and are not merged with failures.
+
+### FM-TAG-EMPTY
+
+- **When emitted:** Required slot tags reduce candidate recipes to zero.
+- **Details payload:** `{ "missing_tag": "<tag-slug>", "recipe_count": 0 }`
+- **UI purpose:** Explain exactly which required tag blocks planning for that slot and suggest relaxing/filtering action.
+
+### FM-BATCH-CONFLICT
+
+- **When emitted:** Multiple batch locks target the same slot.
+- **Details payload:** `{ "batch_ids": ["<existing>", "<incoming>"], "date": "", "slot_id": "day-<n>-slot-<i>" }`
+- **UI purpose:** Point to conflicting prep assignments so the user can remove one lock.
+
+### FM-MACRO-INFEASIBLE
+
+- **When emitted:** Daily macro validation fails or search exhausts without meeting macro constraints.
+- **Details payload:** `{ "date": "day-<n>|''", "deltas": { ...target-relative macro deltas... }, "constraint": "<macro|exhaustion>" }`
+- **UI purpose:** Show macro infeasibility context and guide users to widen targets or adjust constraints.

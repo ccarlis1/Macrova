@@ -252,6 +252,7 @@ class TestFormatResultMarkdownAndJson:
         assert "days" in data
         assert "daily_plans" in data
         assert "warnings" in data
+        assert "report" in data
         assert "goals" in data
 
     def test_json_structure_and_values(self, sample_meal_plan_result_success, recipe_by_id, sample_planning_profile):
@@ -308,6 +309,17 @@ class TestFormatResultMarkdownAndJson:
         data = format_result_json(result, recipe_by_id, sample_planning_profile, D=1)
         assert data["success"] is False
         assert "sodium_advisory" in data["warnings"] or "sodium" in str(data["warnings"]).lower()
+        assert data["report"]["failures"] == []
+
+    def test_success_with_warnings_keeps_failures_empty(self, sample_meal_plan_result_success, recipe_by_id, sample_planning_profile):
+        from src.output.formatters import format_result_json
+
+        sample_meal_plan_result_success.warning = {"type": "sodium_advisory", "message": "high sodium"}
+        sample_meal_plan_result_success.report = {}
+        data = format_result_json(sample_meal_plan_result_success, recipe_by_id, sample_planning_profile, D=1)
+        assert data["success"] is True
+        assert data["warnings"]["type"] == "sodium_advisory"
+        assert data["report"]["failures"] == []
 
     def test_result_from_failure_exports_closest_plan_to_json(
         self, recipe_by_id, sample_planning_profile

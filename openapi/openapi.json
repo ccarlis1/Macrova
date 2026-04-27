@@ -1,6 +1,25 @@
 {
   "components": {
     "schemas": {
+      "AssignmentInput": {
+        "properties": {
+          "date": {
+            "title": "Date",
+            "type": "string"
+          },
+          "slot_id": {
+            "minimum": 0.0,
+            "title": "Slot Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "date",
+          "slot_id"
+        ],
+        "title": "AssignmentInput",
+        "type": "object"
+      },
       "BudgetLevel": {
         "enum": [
           "cheap",
@@ -9,6 +28,38 @@
         ],
         "title": "BudgetLevel",
         "type": "string"
+      },
+      "CreateMealPrepBatchRequest": {
+        "properties": {
+          "assignments": {
+            "items": {
+              "$ref": "#/components/schemas/AssignmentInput"
+            },
+            "title": "Assignments",
+            "type": "array"
+          },
+          "cook_date": {
+            "title": "Cook Date",
+            "type": "string"
+          },
+          "recipe_id": {
+            "minLength": 1,
+            "title": "Recipe Id",
+            "type": "string"
+          },
+          "total_servings": {
+            "minimum": 1.0,
+            "title": "Total Servings",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "recipe_id",
+          "total_servings",
+          "cook_date"
+        ],
+        "title": "CreateMealPrepBatchRequest",
+        "type": "object"
       },
       "DaySchedule": {
         "additionalProperties": false,
@@ -250,6 +301,21 @@
             "title": "Index",
             "type": "integer"
           },
+          "preferred_tag_slugs": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Preferred tag slugs used as soft ranking hints.",
+            "title": "Preferred Tag Slugs"
+          },
           "preferred_time": {
             "anyOf": [
               {
@@ -261,6 +327,21 @@
             ],
             "description": "Optional \"HH:MM\" clock hint for that meal.",
             "title": "Preferred Time"
+          },
+          "required_tag_slugs": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Required tag slugs that candidate recipes must satisfy.",
+            "title": "Required Tag Slugs"
           },
           "tags": {
             "anyOf": [
@@ -332,6 +413,45 @@
           "ingredients"
         ],
         "title": "NutritionSummaryRequest",
+        "type": "object"
+      },
+      "PlanFailure": {
+        "properties": {
+          "code": {
+            "enum": [
+              "FM-TAG-EMPTY",
+              "FM-BATCH-CONFLICT",
+              "FM-MACRO-INFEASIBLE"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "date": {
+            "title": "Date",
+            "type": "string"
+          },
+          "details": {
+            "additionalProperties": true,
+            "title": "Details",
+            "type": "object"
+          },
+          "fix_hint": {
+            "title": "Fix Hint",
+            "type": "string"
+          },
+          "slot_id": {
+            "title": "Slot Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "slot_id",
+          "date",
+          "details",
+          "fix_hint"
+        ],
+        "title": "PlanFailure",
         "type": "object"
       },
       "PlanFromTextRequest": {
@@ -428,6 +548,20 @@
           "prompt"
         ],
         "title": "PlanFromTextRequest",
+        "type": "object"
+      },
+      "PlanReport": {
+        "additionalProperties": true,
+        "properties": {
+          "failures": {
+            "items": {
+              "$ref": "#/components/schemas/PlanFailure"
+            },
+            "title": "Failures",
+            "type": "array"
+          }
+        },
+        "title": "PlanReport",
         "type": "object"
       },
       "PlanRequest": {
@@ -643,6 +777,89 @@
           "daily_fat_g_max"
         ],
         "title": "PlanRequest",
+        "type": "object"
+      },
+      "PlanResponse": {
+        "additionalProperties": true,
+        "properties": {
+          "daily_plans": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Daily Plans",
+            "type": "array"
+          },
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "goals": {
+            "additionalProperties": true,
+            "title": "Goals",
+            "type": "object"
+          },
+          "plan_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan Status"
+          },
+          "plan_status_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan Status Message"
+          },
+          "report": {
+            "$ref": "#/components/schemas/PlanReport"
+          },
+          "success": {
+            "title": "Success",
+            "type": "boolean"
+          },
+          "termination_code": {
+            "title": "Termination Code",
+            "type": "string"
+          },
+          "warnings": {
+            "additionalProperties": true,
+            "title": "Warnings",
+            "type": "object"
+          },
+          "weekly_totals": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weekly Totals"
+          }
+        },
+        "required": [
+          "success",
+          "termination_code",
+          "days",
+          "daily_plans",
+          "warnings",
+          "report",
+          "goals"
+        ],
+        "title": "PlanResponse",
         "type": "object"
       },
       "PrepTimeBucket": {
@@ -882,6 +1099,70 @@
         "title": "RecipeTagGenerationResponse",
         "type": "object"
       },
+      "TagAliasRequest": {
+        "properties": {
+          "alias_slug": {
+            "minLength": 1,
+            "title": "Alias Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "alias_slug"
+        ],
+        "title": "TagAliasRequest",
+        "type": "object"
+      },
+      "TagCreateRequest": {
+        "properties": {
+          "display": {
+            "minLength": 1,
+            "title": "Display",
+            "type": "string"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug"
+          },
+          "type": {
+            "enum": [
+              "context",
+              "time",
+              "nutrition",
+              "constraint"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "display",
+          "type"
+        ],
+        "title": "TagCreateRequest",
+        "type": "object"
+      },
+      "TagRenameRequest": {
+        "properties": {
+          "display": {
+            "minLength": 1,
+            "title": "Display",
+            "type": "string"
+          }
+        },
+        "required": [
+          "display"
+        ],
+        "title": "TagRenameRequest",
+        "type": "object"
+      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -1049,9 +1330,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Plan Meals Endpoint Api Plan Post",
-                  "type": "object"
+                  "$ref": "#/components/schemas/PlanResponse"
                 }
               }
             },
@@ -1089,9 +1368,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Plan From Text Endpoint Api Plan From Text Post",
-                  "type": "object"
+                  "$ref": "#/components/schemas/PlanResponse"
                 }
               }
             },
@@ -1289,6 +1566,43 @@
       }
     },
     "/api/recipes/{recipe_id}": {
+      "delete": {
+        "operationId": "delete_recipe_endpoint_api_recipes__recipe_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recipe_id",
+            "required": true,
+            "schema": {
+              "title": "Recipe Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Delete Recipe Endpoint Api Recipes  Recipe Id  Delete"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Recipe Endpoint"
+      },
       "put": {
         "description": "Upsert by path id; body [id] must match the path.",
         "operationId": "put_recipe_endpoint_api_recipes__recipe_id__put",
@@ -1520,6 +1834,170 @@
         "summary": "Llm Status Endpoint"
       }
     },
+    "/api/v1/meal_prep_batches": {
+      "get": {
+        "operationId": "list_meal_prep_batches_api_v1_meal_prep_batches_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "active",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Active",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response List Meal Prep Batches Api V1 Meal Prep Batches Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Meal Prep Batches",
+        "tags": [
+          "meal_prep_batches"
+        ]
+      },
+      "post": {
+        "operationId": "create_meal_prep_batch_api_v1_meal_prep_batches_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMealPrepBatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Create Meal Prep Batch Api V1 Meal Prep Batches Post"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Meal Prep Batch",
+        "tags": [
+          "meal_prep_batches"
+        ]
+      }
+    },
+    "/api/v1/meal_prep_batches/{batch_id}": {
+      "delete": {
+        "operationId": "delete_meal_prep_batch_api_v1_meal_prep_batches__batch_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "batch_id",
+            "required": true,
+            "schema": {
+              "title": "Batch Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Delete Meal Prep Batch Api V1 Meal Prep Batches  Batch Id  Delete"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Meal Prep Batch",
+        "tags": [
+          "meal_prep_batches"
+        ]
+      },
+      "get": {
+        "operationId": "get_meal_prep_batch_api_v1_meal_prep_batches__batch_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "batch_id",
+            "required": true,
+            "schema": {
+              "title": "Batch Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Meal Prep Batch Api V1 Meal Prep Batches  Batch Id  Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Meal Prep Batch",
+        "tags": [
+          "meal_prep_batches"
+        ]
+      }
+    },
     "/api/v1/nutrition/summary": {
       "post": {
         "description": "Server-authoritative macro and micro totals for a draft ingredient list.",
@@ -1577,9 +2055,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Plan Meals Endpoint Api V1 Plan Post",
-                  "type": "object"
+                  "$ref": "#/components/schemas/PlanResponse"
                 }
               }
             },
@@ -1617,9 +2093,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Plan From Text Endpoint Api V1 Plan From Text Post",
-                  "type": "object"
+                  "$ref": "#/components/schemas/PlanResponse"
                 }
               }
             },
@@ -1817,6 +2291,43 @@
       }
     },
     "/api/v1/recipes/{recipe_id}": {
+      "delete": {
+        "operationId": "delete_recipe_endpoint_api_v1_recipes__recipe_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recipe_id",
+            "required": true,
+            "schema": {
+              "title": "Recipe Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Delete Recipe Endpoint Api V1 Recipes  Recipe Id  Delete"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Recipe Endpoint"
+      },
       "get": {
         "description": "Full recipe with ingredient lines enriched for the Flutter client.",
         "operationId": "get_recipe_detail_api_v1_recipes__recipe_id__get",
@@ -1902,6 +2413,255 @@
           }
         },
         "summary": "Put Recipe Endpoint"
+      }
+    },
+    "/api/v1/tags": {
+      "get": {
+        "operationId": "list_tags_endpoint_api_v1_tags_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "context",
+                    "time",
+                    "nutrition",
+                    "constraint"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response List Tags Endpoint Api V1 Tags Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Tags Endpoint",
+        "tags": [
+          "tags"
+        ]
+      },
+      "post": {
+        "operationId": "create_tag_endpoint_api_v1_tags_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TagCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Create Tag Endpoint Api V1 Tags Post"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Tag Endpoint",
+        "tags": [
+          "tags"
+        ]
+      }
+    },
+    "/api/v1/tags/{slug}": {
+      "patch": {
+        "operationId": "rename_tag_endpoint_api_v1_tags__slug__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TagRenameRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Rename Tag Endpoint Api V1 Tags  Slug  Patch"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Rename Tag Endpoint",
+        "tags": [
+          "tags"
+        ]
+      }
+    },
+    "/api/v1/tags/{slug}/alias": {
+      "post": {
+        "operationId": "add_alias_endpoint_api_v1_tags__slug__alias_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TagAliasRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Add Alias Endpoint Api V1 Tags  Slug  Alias Post"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Alias Endpoint",
+        "tags": [
+          "tags"
+        ]
+      }
+    },
+    "/api/v1/tags/{src_slug}/merge_into/{dst_slug}": {
+      "post": {
+        "operationId": "merge_tag_endpoint_api_v1_tags__src_slug__merge_into__dst_slug__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "src_slug",
+            "required": true,
+            "schema": {
+              "title": "Src Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "dst_slug",
+            "required": true,
+            "schema": {
+              "title": "Dst Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Merge Tag Endpoint Api V1 Tags  Src Slug  Merge Into  Dst Slug  Post"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Merge Tag Endpoint",
+        "tags": [
+          "tags"
+        ]
       }
     }
   }

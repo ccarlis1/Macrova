@@ -7,6 +7,7 @@ import pytest
 from src.data_layer.models import MicronutrientProfile, NutritionProfile
 from src.planning.phase0_models import MealSlot, PlanningUserProfile, WeeklyTracker
 from src.planning.phase10_reporting import (
+    build_failure,
     build_micronutrient_soft_deficit_warning,
     build_report_fm4,
     result_from_success,
@@ -132,3 +133,27 @@ def test_mixed_nutrients_success_warning_only_soft_band():
     nutrients_soft = {e["nutrient"] for e in soft}
     assert nutrients_soft == {"vitamin_c_mg"}
     assert result.warning.get("type") != "sodium_advisory"
+
+
+def test_macro_infeasible_failure_shape_and_fix_hint_snapshot():
+    failure = build_failure(
+        code="FM-MACRO-INFEASIBLE",
+        slot_id="",
+        date="day-2",
+        details={
+            "date": "day-2",
+            "deltas": {"calories": -250.0, "protein_g": -20.0, "fat_g": -5.0, "carbs_g": -40.0},
+            "constraint": "protein",
+        },
+    )
+    assert failure == {
+        "code": "FM-MACRO-INFEASIBLE",
+        "slot_id": "",
+        "date": "day-2",
+        "details": {
+            "date": "day-2",
+            "deltas": {"calories": -250.0, "protein_g": -20.0, "fat_g": -5.0, "carbs_g": -40.0},
+            "constraint": "protein",
+        },
+        "fix_hint": "Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.",
+    }

@@ -21,6 +21,66 @@ from src.planning.micronutrient_policy import (
 
 
 @dataclass
+class Failure:
+    """Stable UI-actionable failure object carried in MealPlanResult.report.failures."""
+
+    code: str
+    slot_id: str
+    date: str
+    details: Dict[str, Any]
+    fix_hint: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "code": self.code,
+            "slot_id": self.slot_id,
+            "date": self.date,
+            "details": dict(self.details),
+            "fix_hint": self.fix_hint,
+        }
+
+
+_FIX_HINTS: Dict[str, str] = {
+    "FM-TAG-EMPTY": "No recipes match tag `{missing_tag}`. Add one or relax constraints.",
+    "FM-BATCH-CONFLICT": "Batch locks conflict for this slot. Remove one lock so only one batch assignment remains.",
+    "FM-MACRO-INFEASIBLE": "Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.",
+}
+
+
+def fix_hint_for_code(code: str) -> str:
+    return _FIX_HINTS.get(code, "Resolve conflicting planner constraints and retry.")
+
+
+def build_failure(
+    *,
+    code: str,
+    details: Dict[str, Any],
+    slot_id: str = "",
+    date: str = "",
+) -> Dict[str, Any]:
+    failure = Failure(
+        code=str(code),
+        slot_id=str(slot_id),
+        date=str(date),
+        details=dict(details or {}),
+        fix_hint=fix_hint_for_code(str(code)),
+    )
+    if code == "FM-TAG-EMPTY":
+        missing_tag = str((details or {}).get("missing_tag", "")).strip()
+        if missing_tag:
+            failure.fix_hint = failure.fix_hint.replace("{missing_tag}", missing_tag)
+    return failure.to_dict()
+
+
+def ensure_report_failures(report: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    normalized = dict(report or {})
+    failures = normalized.get("failures")
+    if not isinstance(failures, list):
+        normalized["failures"] = []
+    return normalized
+
+
+@dataclass
 class MealPlanResult:
     """Canonical result for both success and failure. Spec Section 10, 11.
 
@@ -37,7 +97,7 @@ class MealPlanResult:
     daily_trackers: Optional[Dict[int, DailyTracker]] = None  # success or best-effort
     weekly_tracker: Optional[WeeklyTracker] = None  # success or best-effort
     warning: Optional[Dict[str, Any]] = None  # e.g. sodium_advisory
-    report: Dict[str, Any] = field(default_factory=dict)  # structured diagnostics
+    report: Dict[str, Any] = field(default_factory=lambda: {"failures": []})  # structured diagnostics
     stats: Optional[Dict[str, Any]] = None  # attempts, backtracks if available
     plan_incomplete_reason: Optional[str] = None  # e.g. "Did not meet weekly targets."
 
@@ -323,7 +383,7 @@ def result_from_success(
         daily_trackers=dict(daily_trackers),
         weekly_tracker=weekly_tracker,
         warning=warning,
-        report={},
+        report=ensure_report_failures({}),
         stats=stats,
     )
 
@@ -380,7 +440,7 @@ def result_from_failure(
         daily_trackers=daily_trackers,
         weekly_tracker=weekly_tracker,
         warning=warning,
-        report=report,
+        report=ensure_report_failures(report),
         stats=st,
         plan_incomplete_reason=plan_incomplete_reason,
     )

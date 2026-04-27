@@ -54,6 +54,7 @@ from src.planning.micronutrient_policy import (
 )
 from src.planning.phase10_reporting import (
     MealPlanResult,
+    build_failure,
     build_plan_snapshot,
     build_report_fm1,
     build_report_fm_tag_empty,
@@ -62,6 +63,7 @@ from src.planning.phase10_reporting import (
     build_report_fm4,
     build_report_fm5,
     build_sodium_warning,
+    ensure_report_failures,
     result_from_failure,
     result_from_success,
 )
@@ -458,6 +460,37 @@ def _daily_validation(
     return True, None
 
 
+def _macro_failure_details(
+    *,
+    day_index: Optional[int],
+    reason: Optional[str],
+    tracker: Optional[DailyTracker],
+    profile: PlanningUserProfile,
+) -> Dict[str, Any]:
+    if tracker is None:
+        deltas = {}
+    else:
+        fat_min, fat_max = profile.daily_fat_g
+        if tracker.fat_consumed < fat_min:
+            fat_delta = tracker.fat_consumed - fat_min
+        elif tracker.fat_consumed > fat_max:
+            fat_delta = tracker.fat_consumed - fat_max
+        else:
+            fat_delta = 0.0
+        deltas = {
+            "calories": float(tracker.calories_consumed - profile.daily_calories),
+            "protein_g": float(tracker.protein_consumed - profile.daily_protein_g),
+            "fat_g": float(fat_delta),
+            "carbs_g": float(tracker.carbs_consumed - profile.daily_carbs_g),
+        }
+    date_value = f"day-{day_index + 1}" if day_index is not None else ""
+    return {
+        "date": date_value,
+        "deltas": deltas,
+        "constraint": str(reason or "exhaustion"),
+    }
+
+
 # --- Weekly validation (Section 6.6) ---
 
 
@@ -712,14 +745,27 @@ def run_meal_plan_search(
                         and cg.candidate_count_before_required > 0
                         and cg.candidate_count_after_required == 0
                     ):
-                        report = build_report_fm_tag_empty(
+                        report = ensure_report_failures(build_report_fm_tag_empty(
                             day_index=day_index,
                             slot_index=slot_index,
                             required_tag_slugs=cg.required_tag_slugs,
                             candidate_count_before=cg.candidate_count_before_required,
                             candidate_count_after=cg.candidate_count_after_required,
                             reason="No planner candidates satisfy required tag slugs for this slot.",
-                        )
+                        ))
+                        missing_tag = str(cg.required_tag_slugs[0]) if cg.required_tag_slugs else ""
+                        slot_id = f"day-{day_index + 1}-slot-{slot_index}"
+                        report["failures"] = [
+                            build_failure(
+                                code="FM-TAG-EMPTY",
+                                slot_id=slot_id,
+                                date="",
+                                details={
+                                    "missing_tag": missing_tag,
+                                    "recipe_count": int(cg.candidate_count_after_required),
+                                },
+                            )
+                        ]
                         return result_from_failure(
                             "TC-2",
                             "FM-TAG-EMPTY",
@@ -814,7 +860,28 @@ def run_meal_plan_search(
                 if stats is not None and stats.enabled:
                     stats._end_time = time.perf_counter()
                     stats.total_attempts = attempt_count
-                report = build_report_fm2(None, "exhaustion", {}, {}, build_plan_snapshot(best_assignments, best_daily_trackers))
+                report = ensure_report_failures(
+                    build_report_fm2(None, "exhaustion", {}, {}, build_plan_snapshot(best_assignments, best_daily_trackers))
+                )
+                failure_day_index = max(best_daily_trackers) if best_daily_trackers else None
+                failure_tracker = (
+                    best_daily_trackers.get(failure_day_index)
+                    if failure_day_index is not None
+                    else None
+                )
+                report["failures"] = [
+                    build_failure(
+                        code="FM-MACRO-INFEASIBLE",
+                        details=_macro_failure_details(
+                            day_index=failure_day_index,
+                            reason="exhaustion",
+                            tracker=failure_tracker,
+                            profile=profile,
+                        ),
+                        slot_id="",
+                        date=f"day-{failure_day_index + 1}" if failure_day_index is not None else "",
+                    )
+                ]
                 return result_from_failure("TC-2", "FM-2", report, best_assignments, best_daily_trackers, attempt_count, backtrack_count, sodium_advisory, _stats_dict)
             if stats is not None and stats.enabled:
                 stats._backtrack_depths.append(i - target)
@@ -870,7 +937,22 @@ def run_meal_plan_search(
                             macro_v["protein_consumed"] = tracker.protein_consumed
                             macro_v["fat_consumed"] = tracker.fat_consumed
                             macro_v["carbs_consumed"] = tracker.carbs_consumed
-                    report = build_report_fm2(day_index, reason, macro_v, ul_v, build_plan_snapshot(assignments, daily_trackers))
+                    report = ensure_report_failures(
+                        build_report_fm2(day_index, reason, macro_v, ul_v, build_plan_snapshot(assignments, daily_trackers))
+                    )
+                    report["failures"] = [
+                        build_failure(
+                            code="FM-MACRO-INFEASIBLE",
+                            details=_macro_failure_details(
+                                day_index=day_index,
+                                reason=reason,
+                                tracker=tracker,
+                                profile=profile,
+                            ),
+                            slot_id="",
+                            date=f"day-{day_index + 1}",
+                        )
+                    ]
                     return result_from_failure("TC-2", "FM-2", report, list(assignments), dict(daily_trackers), attempt_count, backtrack_count, None, _stats_dict)
                 if stats is not None and stats.enabled:
                     stats._backtrack_depths.append(i - target)
@@ -939,7 +1021,26 @@ def run_meal_plan_search(
         stats._end_time = time.perf_counter()
         stats.total_attempts = attempt_count
     _stats_dict = {"attempts": attempt_count, "backtracks": backtrack_count} if stats and stats.enabled else None
-    report = build_report_fm2(None, "exhaustion", {}, {}, build_plan_snapshot(best_assignments, best_daily_trackers))
+    report = ensure_report_failures(build_report_fm2(None, "exhaustion", {}, {}, build_plan_snapshot(best_assignments, best_daily_trackers)))
+    failure_day_index = max(best_daily_trackers) if best_daily_trackers else None
+    failure_tracker = (
+        best_daily_trackers.get(failure_day_index)
+        if failure_day_index is not None
+        else None
+    )
+    report["failures"] = [
+        build_failure(
+            code="FM-MACRO-INFEASIBLE",
+            details=_macro_failure_details(
+                day_index=failure_day_index,
+                reason="exhaustion",
+                tracker=failure_tracker,
+                profile=profile,
+            ),
+            slot_id="",
+            date=f"day-{failure_day_index + 1}" if failure_day_index is not None else "",
+        )
+    ]
     return result_from_failure("TC-2", "FM-2", report, best_assignments, best_daily_trackers, attempt_count, backtrack_count, sodium_advisory, _stats_dict)
 
 

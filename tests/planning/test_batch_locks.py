@@ -98,6 +98,19 @@ def test_batch_lock_conflict_returns_fm_batch_conflict():
     assert result.failure_mode == "FM-BATCH-CONFLICT"
     assert "batch_conflicts" in result.report
     assert len(result.report["batch_conflicts"]) == 1
+    failures = result.report.get("failures", [])
+    assert len(failures) == 1
+    assert failures[0] == {
+        "code": "FM-BATCH-CONFLICT",
+        "slot_id": "day-1-slot-0",
+        "date": "",
+        "details": {
+            "batch_ids": ["batch-a", "batch-b"],
+            "date": "",
+            "slot_id": "day-1-slot-0",
+        },
+        "fix_hint": "Batch locks conflict for this slot. Remove one lock so only one batch assignment remains.",
+    }
 
 
 def test_batch_tag_mismatch_is_warning_not_failure():

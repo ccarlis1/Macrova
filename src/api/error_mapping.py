@@ -29,6 +29,9 @@ RECIPE_NOT_FOUND = "RECIPE_NOT_FOUND"
 RECIPE_NOT_BATCHABLE = "RECIPE_NOT_BATCHABLE"
 BATCH_CONFLICT = "BATCH_CONFLICT"
 BATCH_INVALID = "BATCH_INVALID"
+FM_TAG_EMPTY = "FM-TAG-EMPTY"
+FM_BATCH_CONFLICT = "FM-BATCH-CONFLICT"
+FM_MACRO_INFEASIBLE = "FM-MACRO-INFEASIBLE"
 
 
 class ApiContractError(Exception):
@@ -115,6 +118,8 @@ def map_exception_to_api_error(exc: Exception) -> Tuple[int, Dict[str, Any]]:
         return 400, _payload(exc.code, str(exc))
 
     if isinstance(exc, ApiContractError):
+        if exc.code in {FM_TAG_EMPTY, FM_BATCH_CONFLICT, FM_MACRO_INFEASIBLE}:
+            return 422, _payload(exc.code, str(exc))
         if exc.code == RECIPE_NOT_FOUND:
             return 404, _payload(RECIPE_NOT_FOUND, str(exc))
         if exc.code == RECIPE_NOT_BATCHABLE:

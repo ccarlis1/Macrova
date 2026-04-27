@@ -59,6 +59,20 @@ def test_openapi_plan_request_has_recipe_ids():
     assert "recipe_ids" in props
 
 
+def test_openapi_plan_response_includes_failure_codes():
+    schema = app.openapi()
+    components = schema["components"]["schemas"]
+    assert "PlanFailure" in components
+    failure_schema_text = str(components["PlanFailure"])
+    for code in ("FM-TAG-EMPTY", "FM-BATCH-CONFLICT", "FM-MACRO-INFEASIBLE"):
+        assert code in failure_schema_text
+
+    response_schema = schema["paths"]["/api/v1/plan"]["post"]["responses"]["200"][
+        "content"
+    ]["application/json"]["schema"]
+    assert response_schema["$ref"] == "#/components/schemas/PlanResponse"
+
+
 def test_api_v1_recipes_lists_same_as_legacy(monkeypatch):
     monkeypatch.setattr(
         "src.api.server.RecipeDB",

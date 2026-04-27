@@ -207,6 +207,35 @@ class PlanFromTextRequest(BaseModel):
     ] = None
 
 
+class PlanFailure(BaseModel):
+    code: Literal["FM-TAG-EMPTY", "FM-BATCH-CONFLICT", "FM-MACRO-INFEASIBLE"]
+    slot_id: str
+    date: str
+    details: Dict[str, Any]
+    fix_hint: str
+
+
+class PlanReport(BaseModel):
+    model_config = {"extra": "allow"}
+
+    failures: List[PlanFailure] = Field(default_factory=list)
+
+
+class PlanResponse(BaseModel):
+    model_config = {"extra": "allow"}
+
+    success: bool
+    termination_code: str
+    days: int
+    daily_plans: List[Dict[str, Any]]
+    warnings: Dict[str, Any]
+    report: PlanReport
+    goals: Dict[str, Any]
+    weekly_totals: Optional[Dict[str, Any]] = None
+    plan_status: Optional[str] = None
+    plan_status_message: Optional[str] = None
+
+
 def _normalize_tag_pref_value(value: Any) -> Any:
     """Normalize incoming tag preference values to plain JSON types.
 
@@ -680,8 +709,8 @@ def llm_status_endpoint() -> Dict[str, Any]:
     return {"enabled": bool(settings.enabled)}
 
 
-@app.post("/api/v1/plan")
-@app.post("/api/plan")
+@app.post("/api/v1/plan", response_model=PlanResponse)
+@app.post("/api/plan", response_model=PlanResponse)
 async def plan_meals_endpoint(
     request: Request,
     plan_request: PlanRequest,
@@ -832,8 +861,8 @@ async def plan_meals_endpoint(
         return JSONResponse(status_code=status_code, content=payload)
 
 
-@app.post("/api/v1/plan-from-text")
-@app.post("/api/plan-from-text")
+@app.post("/api/v1/plan-from-text", response_model=PlanResponse)
+@app.post("/api/plan-from-text", response_model=PlanResponse)
 def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
     try:
         llm_settings = load_llm_settings()

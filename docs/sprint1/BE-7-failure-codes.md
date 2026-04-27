@@ -14,7 +14,7 @@ Unblocks: FE-9.
 
 ## Acceptance criteria
 
-- [ ] Planner `report` includes a `failures: List[Failure]` list even on success (empty list). Each `Failure`:
+- Planner `report` includes a `failures: List[Failure]` list even on success (empty list). Each `Failure`:
   ```json
   {
     "code": "FM-TAG-EMPTY",
@@ -24,11 +24,11 @@ Unblocks: FE-9.
     "fix_hint": "No recipes match tag `pre-workout`. Add one or relax constraints."
   }
   ```
-- [ ] `FM-BATCH-CONFLICT` details: `{batch_ids: [..], date, slot_id}`.
-- [ ] `FM-MACRO-INFEASIBLE` details: `{date, deltas: {calories: -300, protein_g: -25, ...}}`.
-- [ ] Codes registered in `src/api/error_mapping.py` and in the OpenAPI component schemas.
-- [ ] Documented in `docs/DEBUG_PLANNER_PARITY.md` (append a "Failure modes" section).
-- [ ] Tests:
+- `FM-BATCH-CONFLICT` details: `{batch_ids: [..], date, slot_id}`.
+- `FM-MACRO-INFEASIBLE` details: `{date, deltas: {calories: -300, protein_g: -25, ...}}`.
+- Codes registered in `src/api/error_mapping.py` and in the OpenAPI component schemas.
+- Documented in `docs/DEBUG_PLANNER_PARITY.md` (append a "Failure modes" section).
+- Tests:
   - Each failure mode is reachable from a crafted input and returns the exact shape.
   - `fix_hint` strings are stable (snapshot test) so UI copy doesn't drift silently.
 
@@ -47,17 +47,20 @@ Unblocks: FE-9.
 ## 🔒 IMPLEMENTATION CONTRACT
 
 **Files to inspect before writing any code:**
-- `src/planning/planner.py` — `plan_meals` return type (`MealPlanResult`); identify the `report` field structure and where `termination_code` is set
+
+- `src/planning/planner.py` — `plan_meals` return type (`MealPlanResult`); identify the `report` field structure and where `termination_code` is set (phase10_reporting.py)
 - `src/planning/orchestrator.py` — `plan_with_llm_feedback` return type; confirm it propagates `MealPlanResult.report` unchanged to the HTTP response
 - `src/api/server.py` — `POST /api/v1/plan` response formatter; this is where `failures` appears in the JSON response
 - `src/api/error_mapping.py` — register `FM-TAG-EMPTY`, `FM-BATCH-CONFLICT`, `FM-MACRO-INFEASIBLE` codes here
 - `docs/DEBUG_PLANNER_PARITY.md` — append a "Failure modes" section
 
 **Entities to reuse:**
+
 - `MealPlanResult.report` from `src/planning/planner.py` — extend it with `failures: List[Failure]`; do not create a separate response envelope
 - Existing `termination_code` field — `"OK"` + non-empty `warnings` is distinct from a `failures` entry; keep this distinction
 
 **Do NOT create:**
+
 - A separate failure-response model outside `MealPlanResult.report`
 - LLM-driven recovery logic
 
@@ -80,10 +83,11 @@ Before writing any code, perform the following in order:
 
 After implementation, verify each of the following:
 
-- [ ] `MealPlanResult.report` has a `failures: List[Failure]` field; it is `[]` on a fully successful plan
-- [ ] `Failure` has `code`, `slot_id`, `date`, `details`, `fix_hint` fields matching the JSON shape in the acceptance criteria
-- [ ] `FM-TAG-EMPTY` details include `{missing_tag, recipe_count}`; `FM-BATCH-CONFLICT` includes `{batch_ids, date, slot_id}`; `FM-MACRO-INFEASIBLE` includes `{date, deltas}`
-- [ ] All three codes are registered in `src/api/error_mapping.py` and appear in OpenAPI component schemas
-- [ ] A plan with `termination_code="OK"` and warnings has `failures: []` — the two lists are not conflated
-- [ ] `docs/DEBUG_PLANNER_PARITY.md` has a new "Failure modes" section
-- [ ] Tests pass: each failure mode is reachable from a crafted input; `fix_hint` strings are snapshot-tested
+- `MealPlanResult.report` has a `failures: List[Failure]` field; it is `[]` on a fully successful plan
+- `Failure` has `code`, `slot_id`, `date`, `details`, `fix_hint` fields matching the JSON shape in the acceptance criteria
+- `FM-TAG-EMPTY` details include `{missing_tag, recipe_count}`; `FM-BATCH-CONFLICT` includes `{batch_ids, date, slot_id}`; `FM-MACRO-INFEASIBLE` includes `{date, deltas}`
+- All three codes are registered in `src/api/error_mapping.py` and appear in OpenAPI component schemas
+- A plan with `termination_code="OK"` and warnings has `failures: []` — the two lists are not conflated
+- `docs/DEBUG_PLANNER_PARITY.md` has a new "Failure modes" section
+- Tests pass: each failure mode is reachable from a crafted input; `fix_hint` strings are snapshot-tested
+

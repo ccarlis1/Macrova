@@ -323,23 +323,62 @@ class TestFailureModes:
         assert result.stats is not None and result.stats.get("attempts", 0) >= 0
         assert "closest_plan" in result.report or "best_plan" in result.report or result.report.get("unfillable_slots")
 
+    def test_fm_tag_empty_emits_stable_failure_shape(self):
+        schedule = [[_make_slot(required_tag_slugs=["high-protein"]), _make_slot()]]
+        profile = _make_profile(schedule)
+        pool = [
+            _make_recipe("r1", 1000.0, 50.0, 32.0, 125.0, canonical_tag_slugs={"quick"}),
+            _make_recipe("r2", 1000.0, 50.0, 32.0, 125.0, canonical_tag_slugs={"comfort"}),
+        ]
+        result = run_meal_plan_search(profile, pool, 1, None)
+        assert result.success is False
+        assert result.failure_mode == "FM-TAG-EMPTY"
+        failures = result.report.get("failures", [])
+        assert len(failures) == 1
+        assert failures[0] == {
+            "code": "FM-TAG-EMPTY",
+            "slot_id": "day-1-slot-0",
+            "date": "",
+            "details": {"missing_tag": "high-protein", "recipe_count": 0},
+            "fix_hint": "No recipes match tag `high-protein`. Add one or relax constraints.",
+        }
+
     def test_fm2_daily_infeasible_exhaustion(self):
         schedule = _make_schedule(ndays=1, slots_per_day=2)
         profile = _make_profile(
             schedule,
+            daily_calories=2000,
             daily_protein_g=100.0,
+            pinned_assignments={(1, 0): "r1", (1, 1): "r2"},
         )
         pool = [
             _make_recipe("r1", 1000.0, 30.0, 32.0, 125.0),
             _make_recipe("r2", 1000.0, 30.0, 32.0, 125.0),
-            _make_recipe("r3", 1000.0, 30.0, 32.0, 125.0),
         ]
         result = run_meal_plan_search(profile, pool, 1, None)
         assert result.success is False
         assert isinstance(result, MealPlanResult)
-        assert result.failure_mode in ("FM-1", "FM-2")
+        assert result.failure_mode == "FM-2"
         assert result.report
         assert result.stats is not None and "attempts" in result.stats
+        failures = result.report.get("failures", [])
+        assert len(failures) == 1
+        assert failures[0] == {
+            "code": "FM-MACRO-INFEASIBLE",
+            "slot_id": "",
+            "date": "day-1",
+            "details": {
+                "date": "day-1",
+                "deltas": {
+                    "calories": 0.0,
+                    "protein_g": -40.0,
+                    "fat_g": 0.0,
+                    "carbs_g": 0.0,
+                },
+                "constraint": "exhaustion",
+            },
+            "fix_hint": "Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.",
+        }
 
     def test_fm5_attempt_limit(self):
         schedule = _make_schedule(ndays=1, slots_per_day=2)

@@ -1,6 +1,6 @@
 # BE-6 — Planner request wiring
 
-**Status:** todo  ·  **Complexity:** S  ·  **Depends on:** BE-2, BE-3, BE-5
+**Status:** implemented  ·  **Complexity:** S  ·  **Depends on:** BE-2, BE-3, BE-5
 
 ## Summary
 
@@ -12,11 +12,11 @@ Parity (G7) requires both entry paths (CLI via `plan_meals.py`, Flutter via `POS
 
 ## Acceptance criteria
 
-- [ ] `POST /api/v1/plan` handler fetches `active_batches = repo.list_active()` before calling the orchestrator.
-- [ ] CLI `plan_meals.py` and `scripts/export_planner_debug_artifacts.py` do the same via a shared helper (e.g. `src/planning/orchestrator.py::build_plan_request_from_profile`).
-- [ ] `cli_plan_request.json` emitted by the export script includes `active_batches` explicitly (empty list is valid).
-- [ ] `DEBUG_PLANNER_PARITY.md` updated with one paragraph + a row in the artifacts table about `active_batches`.
-- [ ] Parity test `tests/integration/test_cli_flutter_parity.py`:
+- `POST /api/v1/plan` handler fetches `active_batches = repo.list_active()` before calling the orchestrator.
+- CLI `plan_meals.py` and `scripts/export_planner_debug_artifacts.py` do the same via a shared helper (e.g. `src/planning/orchestrator.py::build_plan_request_from_profile`).
+- `cli_plan_request.json` emitted by the export script includes `active_batches` explicitly (empty list is valid).
+- `DEBUG_PLANNER_PARITY.md` updated with one paragraph + a row in the artifacts table about `active_batches`.
+- Parity test `tests/integration/test_cli_flutter_parity.py`:
   - Same profile, same `recipes.json`, same batch fixture, same `seed` → identical `recipe_ids_sha256` AND identical sequence of planned meals.
 
 ## Implementation notes
@@ -34,6 +34,7 @@ Parity (G7) requires both entry paths (CLI via `plan_meals.py`, Flutter via `POS
 ## 🔒 IMPLEMENTATION CONTRACT
 
 **Files to inspect before writing any code:**
+
 - `src/api/server.py` — `POST /api/v1/plan` handler; this is where `repo.list_active()` is called and the result is injected before passing to the orchestrator
 - `src/planning/orchestrator.py` — `plan_with_llm_feedback(profile, recipe_pool, days, ...)` signature; confirms how `active_batches` is passed in
 - `src/planning/planner.py` — `plan_meals(...)` signature; confirm if `active_batches` flows here or stays at the orchestrator level
@@ -42,9 +43,11 @@ Parity (G7) requires both entry paths (CLI via `plan_meals.py`, Flutter via `POS
 - `docs/DEBUG_PLANNER_PARITY.md` — append one paragraph + artifacts table row
 
 **Entities to reuse:**
+
 - `plan_with_llm_feedback` or `plan_meals` entry point — the shared helper `build_plan_request_from_profile` wraps these; do not create a second planning entry point
 
 **Do NOT:**
+
 - Accept `active_batches` from the Flutter client — server-populated only; if a client sends them, log a warning and ignore
 - Change the visible shape of `frontend/lib/services/api_service.dart` plan request body
 
@@ -67,9 +70,10 @@ Before writing any code, perform the following in order:
 
 After implementation, verify each of the following:
 
-- [ ] `POST /api/v1/plan` fetches `active_batches = repo.list_active()` before calling the orchestrator — not after
-- [ ] CLI and Flutter paths share the same `build_plan_request_from_profile` (or equivalent) helper — no duplicated orchestration logic
-- [ ] `cli_plan_request.json` emitted by the export script includes `active_batches` (can be `[]`)
-- [ ] If Flutter client sends `active_batches` in its payload, server logs a warning and ignores it
-- [ ] `docs/DEBUG_PLANNER_PARITY.md` has a new "active_batches" row in the artifacts table
-- [ ] Parity test passes: same profile + same `recipes.json` + same batch fixture + same `seed` → identical `recipe_ids_sha256` and meal sequence
+- `POST /api/v1/plan` fetches `active_batches = repo.list_active()` before calling the orchestrator — not after
+- CLI and Flutter paths share the same `build_plan_request_from_profile` (or equivalent) helper — no duplicated orchestration logic
+- `cli_plan_request.json` emitted by the export script includes `active_batches` (can be `[]`)
+- If Flutter client sends `active_batches` in its payload, server logs a warning and ignores it
+- `docs/DEBUG_PLANNER_PARITY.md` has a new "active_batches" row in the artifacts table
+- Parity test passes: same profile + same `recipes.json` + same batch fixture + same `seed` → identical `recipe_ids_sha256` and meal sequence
+

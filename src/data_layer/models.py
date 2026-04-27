@@ -222,6 +222,8 @@ class Recipe:
     cooking_time_minutes: int  # Total cooking time
     instructions: List[str]  # Step-by-step instructions
     default_servings: int = 1
+    # Deprecated compatibility projection only. Canonical planner/filter tags live in
+    # data/recipes/recipe_tags.json -> tags_by_id.
     tags: List[Dict[str, str]] = field(default_factory=list)
 
     @property

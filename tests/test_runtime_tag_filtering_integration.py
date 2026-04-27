@@ -74,13 +74,13 @@ def _base_plan_payload(*, planning_mode: str = "deterministic"):
             "missing_tags_fallback_full_pool",
             {},
             {"cuisine": ["mexican"]},
-            ["r1", "r2"],
+            [],
         ),
         (
             "empty_filter_result_fallback_full_pool",
             {"r1": _tags(cuisine="italian"), "r2": _tags(cuisine="italian")},
             {"cuisine": ["mexican"]},
-            ["r1", "r2"],
+            [],
         ),
         (
             "preserves_recipe_db_order",
@@ -162,6 +162,161 @@ def test_api_plan_tag_filtering_applied_pre_conversion(
     assert resp.status_code == 200
     assert seen["extract_ids"] == expected_recipe_ids
     assert seen["convert_ids"] == expected_recipe_ids
+
+
+def test_api_plan_tag_filtering_preserves_recipe_id_pre_filter_order_with_single_match(
+    monkeypatch,
+):
+    recipes = [SimpleNamespace(id="r1"), SimpleNamespace(id="r2"), SimpleNamespace(id="r3")]
+
+    monkeypatch.setattr("src.api.server.RecipeDB", lambda _: DummyRecipeDB(recipes))
+    monkeypatch.setattr("src.api.server.NutritionDB", lambda _: object())
+    monkeypatch.setattr("src.api.server.LocalIngredientProvider", lambda _: DummyProvider())
+    monkeypatch.setattr(
+        "src.api.server.load_llm_settings",
+        lambda: LLMSettings(
+            api_key="dummy",
+            model="dummy-model",
+            timeout_seconds=1.0,
+            max_retries=0,
+            rate_limit_qps=1.0,
+            enabled=False,
+        ),
+    )
+
+    # Only r2 matches cuisine + pre-filter id subset ordering.
+    monkeypatch.setattr(
+        "src.api.server.load_recipe_tags",
+        lambda _: {
+            "r1": _tags(cuisine="italian"),
+            "r2": _tags(cuisine="mexican"),
+            "r3": _tags(cuisine="italian"),
+        },
+    )
+
+    seen = {}
+
+    def fake_extract_ingredient_names(recipes_in):
+        seen["extract_ids"] = [r.id for r in recipes_in]
+        return ["ingredient-x"]
+
+    def fake_convert_recipes(recipes_in, _calculator):
+        seen["convert_ids"] = [r.id for r in recipes_in]
+        return [SimpleNamespace(id=r.id) for r in recipes_in]
+
+    monkeypatch.setattr("src.api.server.extract_ingredient_names", fake_extract_ingredient_names)
+    monkeypatch.setattr("src.api.server.convert_recipes", fake_convert_recipes)
+    monkeypatch.setattr("src.api.server.NutritionCalculator", lambda _provider: object())
+    monkeypatch.setattr(
+        "src.api.server.plan_meals",
+        lambda _profile, _pool, _days: MealPlanResult(
+            success=True,
+            termination_code="TC-1",
+            plan=[],
+            daily_trackers={},
+            weekly_tracker=None,
+            report={},
+            stats={"attempts": 1, "backtracks": 0},
+        ),
+    )
+    monkeypatch.setattr(
+        "src.api.server.format_result_json",
+        lambda _result, _recipe_by_id, _profile, _days: {"ok": True},
+    )
+
+    client = TestClient(app)
+    payload = _base_plan_payload()
+    payload.update(
+        {
+            "recipe_ids": ["r3", "r2"],  # emulates pinned/preselected precedence
+            "cuisine": ["mexican"],
+        }
+    )
+    resp = client.post("/api/plan", json=payload)
+
+    assert resp.status_code == 200
+    assert seen["extract_ids"] == ["r2"]
+    assert seen["convert_ids"] == ["r2"]
+
+
+def test_api_plan_tag_filtering_does_not_emit_slot_context_fm_tag_empty(monkeypatch):
+    from src.api.server import _apply_recipe_tag_filter_pre_convert
+
+    recipes = [SimpleNamespace(id="r1"), SimpleNamespace(id="r2")]
+    monkeypatch.setattr(
+        "src.api.server.load_recipe_tags",
+        lambda _: {
+            "r1": _tags(cuisine="italian"),
+            "r2": _tags(cuisine="italian"),
+        },
+    )
+
+    request_like = SimpleNamespace(
+        cuisine=["mexican"],
+        cost_level=None,
+        prep_time_bucket=None,
+        dietary_flags=None,
+        schedule_days=[
+            SimpleNamespace(
+                day_index=1,
+                meals=[
+                    SimpleNamespace(index=1, required_tag_slugs=["vegan"]),
+                    SimpleNamespace(index=2, required_tag_slugs=None),
+                ],
+            )
+        ],
+    )
+
+    filtered, filter_log = _apply_recipe_tag_filter_pre_convert(
+        recipes=recipes,
+        request_like=request_like,
+        tag_path="unused.json",
+    )
+    assert filtered == []
+
+    assert "fm_tag_empty" not in filter_log
+
+
+def test_api_plan_be3_ignores_slot_required_tags_and_preserves_preselected(monkeypatch):
+    from src.api.server import _apply_recipe_tag_filter_pre_convert
+
+    recipes = [SimpleNamespace(id="pinned")]
+    load_calls = {"count": 0}
+
+    def _unexpected_load_recipe_tags(_path):
+        load_calls["count"] += 1
+        return {}
+
+    monkeypatch.setattr("src.api.server.load_recipe_tags", _unexpected_load_recipe_tags)
+
+    request_like = SimpleNamespace(
+        cuisine=None,
+        cost_level=None,
+        prep_time_bucket=None,
+        dietary_flags=None,
+        schedule_days=[
+            SimpleNamespace(
+                day_index=1,
+                meals=[
+                    SimpleNamespace(index=1, required_tag_slugs=["high-fiber"]),
+                ],
+            )
+        ],
+    )
+
+    filtered, filter_log = _apply_recipe_tag_filter_pre_convert(
+        recipes=recipes,
+        request_like=request_like,
+        tag_path="unused.json",
+    )
+
+    assert filtered == recipes
+    assert load_calls["count"] == 0
+    assert filter_log == {
+        "filter_applied": False,
+        "input_recipe_count": 1,
+        "output_recipe_count": 1,
+    }
 
 
 def _write_simple_recipe_store(path):
@@ -426,7 +581,7 @@ def test_cli_tag_filtering_missing_tags_fallback_full_pool(
     monkeypatch.setattr("src.cli.resolve_upper_limits", lambda *_args, **_kwargs: {})
     monkeypatch.setattr("src.cli.NutritionCalculator", lambda _provider: object())
 
-    # Simulate "all tags missing" -> fallback to full recipe pool.
+    # Simulate "all tags missing" with explicit constraints -> empty filtered pool.
     monkeypatch.setattr("src.cli.load_recipe_tags", lambda _: {})
 
     seen = {}
@@ -495,8 +650,8 @@ def test_cli_tag_filtering_missing_tags_fallback_full_pool(
     cli.main()
     _ = capsys.readouterr()
 
-    assert seen["extract_ids"] == ["r1", "r2"]
-    assert seen["convert_ids"] == ["r1", "r2"]
+    assert seen["extract_ids"] == []
+    assert seen["convert_ids"] == []
 
 
 def test_cli_tag_filtering_empty_filter_result_fallback_full_pool(
@@ -517,7 +672,7 @@ def test_cli_tag_filtering_empty_filter_result_fallback_full_pool(
     monkeypatch.setattr("src.cli.resolve_upper_limits", lambda *_args, **_kwargs: {})
     monkeypatch.setattr("src.cli.NutritionCalculator", lambda _provider: object())
 
-    # Tags are present, but none match the requested cuisine => fallback.
+    # Tags are present, but none match the requested cuisine => empty filtered pool.
     monkeypatch.setattr(
         "src.cli.load_recipe_tags",
         lambda _: {
@@ -591,8 +746,8 @@ def test_cli_tag_filtering_empty_filter_result_fallback_full_pool(
     cli.main()
     _ = capsys.readouterr()
 
-    assert seen["extract_ids"] == ["r1", "r2"]
-    assert seen["convert_ids"] == ["r1", "r2"]
+    assert seen["extract_ids"] == []
+    assert seen["convert_ids"] == []
 
 
 def test_cli_tag_filtering_preserves_recipe_db_order(

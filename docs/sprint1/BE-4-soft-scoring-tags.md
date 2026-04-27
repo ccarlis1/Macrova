@@ -1,6 +1,6 @@
 # BE-4 — Soft scoring: preferred tags + variety
 
-**Status:** todo  ·  **Complexity:** S  ·  **Depends on:** BE-3
+**Status:** implemented  ·  **Complexity:** S  ·  **Depends on:** BE-3
 
 ## Summary
 
@@ -12,18 +12,18 @@ Hard constraints (BE-3) prune to a pool; BE-4 picks the best from it. Preferred 
 
 ## Acceptance criteria
 
-- [ ] `phase4_scoring.py` gains two contributions, behind weights in a small `ScoringConfig`:
+- `phase4_scoring.py` gains two contributions, behind weights in a small `ScoringConfig`:
   - `preferred_tag_bonus`: `+w_pref * |slot.preferred_tags ∩ recipe.tag_slugs|`.
   - `variety_penalty`: `-w_var` if `recipe.id` appeared in any of the last 3 days' planned meals (meal-prep source exempt).
-- [ ] Deficit-aware nutrition preference is supported as a soft signal: when profile/tracker indicates a micronutrient deficit, matching curated nutrition slugs (for example `high-omega-3`, `high-fiber`, `high-calcium`) increase score via preferred-tag bonus.
-- [ ] Default weights: `w_pref = 1.0`, `w_var = 2.0`. Tuned via tests and adjustable in `ScoringConfig`.
-- [ ] Tie-break order on equal score: `(higher preferred match count, lower recipe.id lexicographic, seeded RNG)`. Documented in a top-of-file comment in `phase4_scoring.py`.
-- [ ] Tests in `tests/planning/test_scoring.py`:
+- Deficit-aware nutrition preference is supported as a soft signal: when profile/tracker indicates a micronutrient deficit, matching curated nutrition slugs (for example `high-omega-3`, `high-fiber`, `high-calcium`) increase score via preferred-tag bonus.
+- Default weights: `w_pref = 1.0`, `w_var = 2.0`. Tuned via tests and adjustable in `ScoringConfig`.
+- Tie-break order on equal score: `(higher preferred match count, lower recipe.id lexicographic, seeded RNG)`. Documented in a top-of-file comment in `phase4_scoring.py`.
+- Tests in `tests/planning/test_scoring.py`:
   - Preferred-tag match actually changes selection when hard pool has 2+ candidates.
   - Variety penalty causes a different pick on day 2 when day 1 used a candidate.
   - Meal-prep batch in day 1 does NOT trigger variety penalty for the same recipe being planned on day 2 by non-batch path (it's allowed).
   - Micronutrient deficit scenario prefers matching `high-*` nutrition tags when candidates are otherwise similar.
-- [ ] Regression: with preferred tags, the chosen recipe carries them > 80 % of the time across a 7-day fixture test.
+- Regression: with preferred tags, the chosen recipe carries them > 80 % of the time across a 7-day fixture test.
 
 ## Implementation notes
 
@@ -43,15 +43,18 @@ Hard constraints (BE-3) prune to a pool; BE-4 picks the best from it. Preferred 
 ## 🔒 IMPLEMENTATION CONTRACT
 
 **Files to inspect before writing any code:**
+
 - `src/planning/planner.py` — identify whether `phase4_scoring.py` is imported here or whether scoring logic lives inline; **the architecture snapshot does not confirm `phase4_scoring.py` as a separate file — verify at implementation time**
 - `src/planning/phase0_models.py` — `PlanningUserProfile` (has `schedule -> List[List[MealSlot]]` with `preferred_tag_slugs` from DM-4) and `PlanningRecipe`; these are the input types to scoring
 - `src/models/schedule.py` — `MealSlot.preferred_tag_slugs` (DM-4 output); the scoring function reads this field
 
 **Entities to reuse:**
+
 - The existing `rng` instance threaded through the orchestrator/planner — do not instantiate a new `random.Random()`
 - "Last N days' planned meals" from the plan state already built — do not re-scan the recipe pool
 
 **Do NOT create:**
+
 - A new `random.Random()` instance anywhere in this task
 - I/O inside the scoring function — keep it pure and unit-testable
 
@@ -76,11 +79,12 @@ Before writing any code, perform the following in order:
 
 After implementation, verify each of the following:
 
-- [ ] `ScoringConfig` with `w_pref = 1.0` and `w_var = 2.0` exists and is the sole source of weight values
-- [ ] `preferred_tag_bonus = w_pref * |slot.preferred_tags ∩ recipe.tag_slugs|` — verify with a unit test
-- [ ] `variety_penalty = w_var` if `recipe.id` appeared in any of the last 3 planned days — **meal-prep-sourced assignments are exempt**
-- [ ] Scoring function has no I/O — pure function, all inputs passed as parameters
-- [ ] The existing `rng` is reused; no `random.Random()` instantiation in this task
-- [ ] Tests pass: preferred-tag match changes selection, variety penalty causes different day-2 pick, meal-prep exemption, micronutrient deficit scenario
-- [ ] Regression: with preferred tags, chosen recipe matches > 80% of the time on a 7-day fixture
-- [ ] Tie-break order documented in a top-of-file comment in the scoring module
+- `ScoringConfig` with `w_pref = 1.0` and `w_var = 2.0` exists and is the sole source of weight values
+- `preferred_tag_bonus = w_pref * |slot.preferred_tags ∩ recipe.tag_slugs|` — verify with a unit test
+- `variety_penalty = w_var` if `recipe.id` appeared in any of the last 3 planned days — **meal-prep-sourced assignments are exempt**
+- Scoring function has no I/O — pure function, all inputs passed as parameters
+- The existing `rng` is reused; no `random.Random()` instantiation in this task
+- Tests pass: preferred-tag match changes selection, variety penalty causes different day-2 pick, meal-prep exemption, micronutrient deficit scenario
+- Regression: with preferred tags, chosen recipe matches > 80% of the time on a 7-day fixture
+- Tie-break order documented in a top-of-file comment in the scoring module
+

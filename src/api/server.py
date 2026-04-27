@@ -1,6 +1,7 @@
 """FastAPI server for the Nutrition Agent meal planning pipeline."""
 
 import json
+import logging
 import os
 import sys
 from pathlib import Path
@@ -73,7 +74,9 @@ from src.models.schedule import DaySchedule, validate_day_schedule
 from src.llm.tag_filtering_service import apply_tag_filtering
 from src.llm.recipe_tagger import tag_recipes
 from src.llm.tag_repository import load_recipe_tags
+from src.llm.tag_repository import load_canonical_recipe_tag_slugs
 from src.llm.tag_repository import upsert_recipe_tags
+from src.api.tag_routes import router as tag_router
 
 
 recipes_path = "data/recipes/recipes.json"
@@ -81,6 +84,8 @@ ingredients_path = "data/ingredients/custom_ingredients.json"
 DEFAULT_TAG_PATH = "data/recipes/recipe_tags.json"
 
 app = FastAPI(title="Nutrition Agent API")
+app.include_router(tag_router, prefix="/api/v1")
+logger = logging.getLogger(__name__)
 
 app.add_middleware(
     CORSMiddleware,
@@ -281,6 +286,14 @@ def _apply_recipe_tag_filter_pre_convert(
     preferences = _extract_tag_preferences(request_like)
     filter_applied = bool(preferences)
     tags_by_id = load_recipe_tags(tag_path) if filter_applied else {}
+    guardrail_warnings: List[str] = []
+    if filter_applied and not tags_by_id:
+        msg = (
+            "Tag filters were requested but canonical recipe tags are missing or empty; "
+            "filtered recipe pool may be empty."
+        )
+        guardrail_warnings.append(msg)
+        logger.warning("%s path=%s preferences=%s", msg, tag_path, preferences)
 
     filtered_recipes = apply_tag_filtering(
         recipes=list(recipes),
@@ -293,7 +306,38 @@ def _apply_recipe_tag_filter_pre_convert(
         "input_recipe_count": input_recipe_count,
         "output_recipe_count": len(filtered_recipes),
     }
+    if guardrail_warnings:
+        log_payload["guardrail_warnings"] = guardrail_warnings
     return filtered_recipes, log_payload
+
+
+def _merge_filter_warnings(
+    out: Dict[str, Any],
+    filter_log: Dict[str, Any],
+) -> None:
+    warnings = filter_log.get("guardrail_warnings")
+    if not isinstance(warnings, list) or not warnings:
+        return
+    existing = out.get("warnings")
+    if not isinstance(existing, list):
+        existing = []
+    for warning in warnings:
+        text = str(warning).strip()
+        if text and text not in existing:
+            existing.append(text)
+    out["warnings"] = existing
+
+
+def _attach_canonical_recipe_tags(
+    recipe_pool: List[Any],
+    canonical_tag_slugs_by_id: Dict[str, set[str]],
+) -> None:
+    """Hydrate planner recipe objects with canonical tag slugs for BE-8."""
+    for recipe in recipe_pool:
+        recipe_id = getattr(recipe, "id", None)
+        if recipe_id is None:
+            continue
+        setattr(recipe, "canonical_tag_slugs", set(canonical_tag_slugs_by_id.get(recipe_id, set())))
 
 
 def _filter_recipes_by_ids(
@@ -653,7 +697,9 @@ def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
         provider.resolve_all(all_ingredient_names)
 
         calculator = NutritionCalculator(provider)
+        canonical_tag_slugs_by_id = load_canonical_recipe_tag_slugs(tag_path)
         recipe_pool = convert_recipes(all_recipes, calculator)
+        _attach_canonical_recipe_tags(recipe_pool, canonical_tag_slugs_by_id)
         recipe_by_id = {r.id: r for r in recipe_pool}
         planning_profile = convert_profile(user_profile, request.days)
 
@@ -718,7 +764,12 @@ def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
             ingredient_names_updated = extract_ingredient_names(all_recipes_updated)
             validation_provider.resolve_all(ingredient_names_updated)
             calculator_updated = NutritionCalculator(validation_provider)
+            canonical_tag_slugs_by_id = load_canonical_recipe_tag_slugs(tag_path)
             recipe_pool_updated = convert_recipes(all_recipes_updated, calculator_updated)
+            _attach_canonical_recipe_tags(
+                recipe_pool_updated,
+                canonical_tag_slugs_by_id,
+            )
             recipe_by_id = {r.id: r for r in recipe_pool_updated}
 
         out = format_result_json(result, recipe_by_id, planning_profile, request.days)
@@ -727,6 +778,7 @@ def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
             sched_warnings,
             deprecated_legacy=request.schedule_days is None and request.schedule is not None,
         )
+        _merge_filter_warnings(out, filter_log)
         return out
     except HTTPException:
         raise
@@ -837,7 +889,9 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
         provider.resolve_all(all_ingredient_names)
 
         calculator = NutritionCalculator(provider)
+        canonical_tag_slugs_by_id = load_canonical_recipe_tag_slugs(tag_path)
         recipe_pool = convert_recipes(all_recipes, calculator)
+        _attach_canonical_recipe_tags(recipe_pool, canonical_tag_slugs_by_id)
         recipe_by_id = {r.id: r for r in recipe_pool}
         planning_profile = convert_profile(user_profile, days)
 
@@ -886,12 +940,17 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
             ingredient_names_updated = extract_ingredient_names(all_recipes_updated)
             validation_provider.resolve_all(ingredient_names_updated)
             calculator_updated = NutritionCalculator(validation_provider)
-            recipe_pool_updated = convert_recipes(
-                all_recipes_updated, calculator_updated
+            canonical_tag_slugs_by_id = load_canonical_recipe_tag_slugs(tag_path)
+            recipe_pool_updated = convert_recipes(all_recipes_updated, calculator_updated)
+            _attach_canonical_recipe_tags(
+                recipe_pool_updated,
+                canonical_tag_slugs_by_id,
             )
             recipe_by_id = {r.id: r for r in recipe_pool_updated}
 
-        return format_result_json(result, recipe_by_id, planning_profile, days)
+        out = format_result_json(result, recipe_by_id, planning_profile, days)
+        _merge_filter_warnings(out, filter_log)
+        return out
     except HTTPException:
         raise
     except Exception as exc:

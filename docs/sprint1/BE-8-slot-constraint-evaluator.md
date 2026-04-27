@@ -15,6 +15,7 @@ Unblocks: FE-10, BE-7.
 ## Acceptance criteria
 
 - [ ] Planner evaluates candidates per slot using canonical `SlotAddress = (day_index, slot_index)`.
+- [ ] Slot-level required/preferred slug checks consume canonical per-recipe tags from `recipe_tags.json/tags_by_id` (via planner recipe canonical tag payload), not `Recipe.tags`.
 - [ ] Constraint precedence is deterministic: batch lock > pin > required tags > preferred/scoring.
 - [ ] Hard required-tag checks only use planner-eligible tags (approved/system/user), excluding quarantined LLM `proposed` tags.
 - [ ] If no candidate satisfies slot-level hard constraints, planner emits `FM-TAG-EMPTY` with slot context.

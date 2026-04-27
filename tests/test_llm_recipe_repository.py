@@ -5,7 +5,15 @@ import pytest
 from src.data_layer.recipe_db import RecipeDB
 from src.llm.schemas import BudgetLevel, PrepTimeBucket, RecipeTagsJson
 from src.llm.repository import append_validated_recipes
-from src.llm.tag_repository import merge, resolve, upsert_recipe_tags
+from src.llm.tag_repository import (
+    add_alias,
+    create,
+    list_by_type,
+    merge,
+    rename_display,
+    resolve,
+    upsert_recipe_tags,
+)
 from src.data_layer.models import Ingredient, Recipe
 from src.llm.types import ValidatedRecipeForPersistence
 
@@ -229,6 +237,47 @@ def test_resolve_alias_valid_and_invalid(tmp_path):
         resolve("not-a-real-alias", str(tags_path))
 
 
+def test_registry_create_rename_alias_and_list_preserve_recipe_tags(tmp_path):
+    tags_path = str(tmp_path / "recipe_tags.json")
+    upsert_recipe_tags(
+        tags_path,
+        {
+            "r1": RecipeTagsJson(
+                cuisine="mexican",
+                cost_level=BudgetLevel.cheap,
+                prep_time_bucket=PrepTimeBucket.quick_meal,
+                dietary_flags=[],
+            )
+        },
+    )
+
+    created = create(
+        path=tags_path,
+        display="High Protein",
+        tag_type="nutrition",
+        source="user",
+    )
+    renamed = rename_display(
+        path=tags_path,
+        slug=created.slug,
+        display="Protein Rich",
+    )
+    aliased = add_alias(
+        path=tags_path,
+        slug=renamed.slug,
+        alias_slug="protein-rich",
+    )
+
+    assert aliased.slug == "high-protein"
+    assert resolve("protein-rich", tags_path).slug == "high-protein"
+    assert resolve("Protein Rich", tags_path).slug == "high-protein"
+    assert "high-protein" in {tag.slug for tag in list_by_type(tags_path, "nutrition")}
+
+    payload = json.loads((tmp_path / "recipe_tags.json").read_text(encoding="utf-8"))
+    assert set(payload["tags_by_id"].keys()) == {"r1"}
+    assert payload["tag_aliases"]["protein-rich"] == "high-protein"
+
+
 def test_merge_updates_registry_and_recipes_without_duplicates(tmp_path):
     recipes_path = tmp_path / "recipes.json"
     recipes_path.write_text(
@@ -370,6 +419,7 @@ def test_recipe_db_roundtrip_tags_stable(tmp_path):
                 cost_level=BudgetLevel.cheap,
                 prep_time_bucket=PrepTimeBucket.quick_meal,
                 dietary_flags=[],
+                tag_slugs_by_type={"nutrition": ["high-fiber"]},
             )
         },
     )

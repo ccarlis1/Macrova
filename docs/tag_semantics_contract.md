@@ -94,8 +94,9 @@ Normative rules:
 Backend (BE):
 
 - `tag_repository.py` is the runtime source for storage, slug normalization, alias resolution, and merge behavior.
-- `recipe_tags.json` is the canonical seed/registry shape for preloaded tags and alias metadata.
+- `recipe_tags.json` is the canonical seed/registry shape for preloaded tags and alias metadata, and `tags_by_id` is the canonical per-recipe planner/filtering tag source.
 - `tag_filtering_service.py` consumes resolved tags for filtering behavior and must interpret eligibility/class booleans using this contract.
+- `Recipe.tags` in `recipes.json` is legacy compatibility projection only and must not be used for hard-filter/planner decision logic.
 
 AI / LLM ingestion:
 

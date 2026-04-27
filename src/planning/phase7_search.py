@@ -728,13 +728,28 @@ def run_meal_plan_search(
                     primary_carb_contribution=r.primary_carb_contribution,
                     primary_carb_source=r.primary_carb_source,
                 )
-                state_view = ScoringStateView(daily_trackers=dict(daily_trackers), weekly_tracker=weekly_tracker, schedule=schedule)
+                # No meal-prep provenance is currently carried in planner runtime state.
+                # Keep this unset so scoring does not infer meal-prep exemptions from unrelated signals.
+                state_view = ScoringStateView(
+                    daily_trackers=dict(daily_trackers),
+                    weekly_tracker=weekly_tracker,
+                    schedule=schedule,
+                    meal_prep_recipe_ids=None,
+                )
                 sc = composite_score(recipe_view, day_index, slot_index, state_view, profile)
                 scored_triples.append((rid, vi, recipe_view, sc))
             ord_state = OrderingStateView(daily_trackers=dict(daily_trackers), weekly_tracker=weekly_tracker)
+            slot = schedule[day_index][slot_index]
             ordered_triples = sorted(
                 scored_triples,
-                key=lambda t: ordering_key((t[2], t[3]), ord_state, profile, day_index),
+                key=lambda t: ordering_key(
+                    (t[2], t[3]),
+                    ord_state,
+                    profile,
+                    day_index,
+                    slot=slot,
+                    tie_break_seed="phase7-search-seed",
+                ),
             )
             ordered_ids = [(rid, vi) for rid, vi, _rv, _sc in ordered_triples]
             cache[key] = _CandidateCacheEntry(

@@ -146,8 +146,8 @@ class TestRecipeDB:
         finally:
             Path(temp_path).unlink()
 
-    def test_save_load_roundtrip_dm2_fields(self):
-        """DM-2 fields should persist through save/load round trip."""
+    def test_save_load_roundtrip_derived_tags_from_canonical(self):
+        """Recipe.tags should be derived from canonical tags on save/load round trip."""
         recipe_data = {
             "recipes": [
                 {
@@ -157,25 +157,50 @@ class TestRecipeDB:
                     "cooking_time_minutes": 10,
                     "instructions": [],
                     "default_servings": 4,
-                    "tags": [{"slug": "high-fiber", "type": "nutrition"}],
                 }
             ]
+        }
+        tag_repo_data = {
+            "tags_by_id": {
+                "recipe_001": {
+                    "cuisine": "mexican",
+                    "cost_level": "cheap",
+                    "prep_time_bucket": "quick_meal",
+                    "dietary_flags": [],
+                    "tag_slugs_by_type": {"nutrition": ["high-fiber"]},
+                }
+            },
+            "tag_registry": {
+                "high-fiber": {
+                    "slug": "high-fiber",
+                    "display": "High Fiber",
+                    "tag_type": "nutrition",
+                    "source": "system",
+                    "created_at": "1970-01-01T00:00:00Z",
+                    "aliases": [],
+                }
+            },
+            "tag_aliases": {},
         }
         with NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(recipe_data, f)
             temp_path = f.name
+        with NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(tag_repo_data, f)
+            tag_path = f.name
 
         try:
-            db = RecipeDB(temp_path)
+            db = RecipeDB(temp_path, tag_repo_path=tag_path)
             db.save()
-            reloaded = RecipeDB(temp_path).get_all_recipes()[0]
+            reloaded = RecipeDB(temp_path, tag_repo_path=tag_path).get_all_recipes()[0]
             assert reloaded.default_servings == 4
             assert reloaded.tags == [{"slug": "high-fiber", "type": "nutrition"}]
         finally:
             Path(temp_path).unlink()
+            Path(tag_path).unlink()
 
-    def test_parse_tags_resolves_against_tag_repository_path(self, monkeypatch):
-        """Tag resolution should use tag repository payload path, not recipes path."""
+    def test_derived_tags_use_canonical_tag_repository_path(self, monkeypatch):
+        """Derived tags should come from canonical tags_by_id and repository path."""
         recipe_data = {
             "recipes": [
                 {
@@ -184,15 +209,30 @@ class TestRecipeDB:
                     "ingredients": [],
                     "cooking_time_minutes": 10,
                     "instructions": [],
-                    "tags": [{"slug": "high-fiber", "type": "nutrition"}],
                 }
             ]
+        }
+        tag_repo_data = {
+            "tags_by_id": {
+                "recipe_001": {
+                    "cuisine": "mexican",
+                    "cost_level": "cheap",
+                    "prep_time_bucket": "quick_meal",
+                    "dietary_flags": [],
+                    "tag_slugs_by_type": {"nutrition": ["high-fiber"]},
+                }
+            },
+            "tag_registry": {},
+            "tag_aliases": {},
         }
         with NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(recipe_data, f)
             temp_path = f.name
+        with NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(tag_repo_data, f)
+            tag_path = f.name
 
-        expected_tag_path = "data/recipes/recipe_tags.json"
+        expected_tag_path = tag_path
         calls = []
 
         class _ResolvedTag:
@@ -210,6 +250,7 @@ class TestRecipeDB:
             assert calls == [("high-fiber", expected_tag_path)]
         finally:
             Path(temp_path).unlink()
+            Path(tag_path).unlink()
 
     def test_is_meal_prep_capable_property(self):
         """Derived meal-prep capability should be computed dynamically."""

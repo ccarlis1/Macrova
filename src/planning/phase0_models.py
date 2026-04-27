@@ -25,6 +25,9 @@ class MealSlot:
     time: str  # HH:MM
     busyness_level: int  # 1-4
     meal_type: str  # e.g. "breakfast", "lunch", "snack", "dinner"
+    # Canonical slot-level tag constraints (DM-4/BE-8 inputs).
+    required_tag_slugs: Optional[List[str]] = None
+    preferred_tag_slugs: Optional[List[str]] = None
 
 
 def validate_schedule_structure(
@@ -119,6 +122,9 @@ class PlanningRecipe:
     nutrition: NutritionProfile
     primary_carb_contribution: Optional[NutritionProfile] = None
     primary_carb_source: Optional[str] = None
+    # Canonical decisioning tags loaded from recipe_tags.json/tags_by_id.
+    # BE-8 slot-level required/preferred matching should use this field.
+    canonical_tag_slugs: Set[str] = field(default_factory=set)
 
 
 # --- Section 3.1 Assignment Sequence ---

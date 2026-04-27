@@ -64,6 +64,9 @@ class TagMetaJson(BaseModel):
     source: TagSource
     created_at: StrictStr
     aliases: List[StrictStr] = Field(default_factory=list)
+    eligibility: Optional[StrictStr] = None
+    hard_filter_allowed: Optional[bool] = None
+    display_only: Optional[bool] = None
 
 
 class RecipeTagsJson(BaseModel):

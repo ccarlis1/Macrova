@@ -2,6 +2,8 @@
 
   
 
+**Specification Signature:** v3
+
 **Scope:** Steps 3 and 4 of NEXT_STEPS.md — micronutrient-aware scoring, daily tracking, validation, pinned meal slots, and multi-day backtracking (up to 7 days).
 
   
@@ -10,7 +12,7 @@
 
   
 
-**Convention:** This document uses "shall" for normative requirements and "should" for recommendations. Items marked **REQUIRES CLARIFICATION** denote underspecified behavior in the authoritative references that must be resolved before implementation.
+**Convention:** This document uses "shall" for normative requirements and "should" for recommendations. Items marked **REQUIRES CLARIFICATION** denote underspecified behavior in the authoritative references that must be resolved before implementation. Planner-facing slot addresses use the canonical `SlotAddress = (day_index, slot_index)`, where both indexes are zero-based. When older mathematical prose uses day ordinals (`d = 1, ..., D`), implementations shall convert to `day_index = d - 1` at API and report boundaries.
 
   
 
@@ -78,7 +80,9 @@ The algorithm is **deterministic**: identical inputs shall produce identical out
 
 | `upper_limits_overrides` | Optional[Dict[str, float]] | Per-nutrient UL overrides (replaces reference value for that nutrient) |
 
-| `pinned_assignments` | Dict[(day, slot), recipe_id] | Meal slots with mandatory recipe assignments (Section 4, HC-6) |
+| `pinned_assignments` | Dict[SlotAddress, recipe_id] | Meal slots with mandatory recipe assignments (Section 4, HC-6). Legacy day-ordinal formats shall be normalized to canonical `(day_index, slot_index)` at the planner boundary. |
+
+| `batch_locks` | List[PlanningBatchLock] | Planner-facing meal-prep locks addressed by canonical `SlotAddress = (day_index, slot_index)`. Locks are normalized into effective pins before search and have precedence over explicit pins. |
 
 | `micronutrient_targets` | Dict[str, float] | Daily RDI targets for each tracked micronutrient, keyed by nutrient name. Only nutrients present in this dictionary participate in scoring, carryover tracking, and weekly validation. Nutrients the user does not wish to track (e.g., Vitamin D if obtained via supplementation) are simply omitted. |
 
@@ -123,6 +127,10 @@ The schedule defines, for each day in the planning horizon, an ordered sequence 
 | `busyness_level` | int (1–4) | Cooking time constraint for this slot |
 
 | `meal_type` | str | Label (e.g., "breakfast", "lunch", "snack", "dinner") |
+
+| `required_tag_slugs` | Optional[List[str]] | Canonical tag slugs that candidates for this slot must satisfy, unless the slot is resolved by a higher-precedence batch lock or pin. |
+
+| `preferred_tag_slugs` | Optional[List[str]] | Canonical tag slugs used as soft scoring/ordering hints only. They shall not hard-reject a candidate. |
 
   
 
@@ -214,6 +222,10 @@ A finite, non-empty set of Recipe objects. Each recipe r ∈ R has:
 
 | `primary_carb_contribution` | Optional[NutritionProfile] | Conditional. Present when `enable_primary_carb_downscaling = true` and the recipe possesses a primary carb source. Stores the precomputed nutritional contribution of the primary carb source ingredient at its original quantity. Used by the scaling operator (Section 6.7.4) for variant nutrition recalculation. |
 
+| `canonical_tag_slugs` | Set[str] | Canonical per-recipe tag slugs loaded from `recipe_tags.json` / `tags_by_id`. This is the planner tag payload; legacy `Recipe.tags` shall not be used for planner decisioning. |
+
+| `hard_eligible_tag_slugs` | Optional[Set[str]] | Subset of `canonical_tag_slugs` eligible for hard slot constraints. When present, required-tag matching shall use this set to exclude quarantined/proposed or rejected LLM tags. |
+
   
 
 **Input Assumption:** All recipe nutrition profiles are pre-computed before the algorithm begins. The algorithm does not perform nutrition calculation during planning; it reads nutrition as a property of each recipe.
@@ -255,6 +267,8 @@ Within a recipe, the **primary carb source** is defined as the single scalable c
   
 
 - **Scalable Carb Source Lists (conditional):** When `enable_primary_carb_downscaling` is `true`, two reference lists — rice variants and potato variants — define which ingredient names are eligible for carb scaling (see Section 2.2, Ingredient Classification for Carb Scaling). These lists are stored in `data/reference/scalable_carb_sources.json` alongside the existing UL demographic data (`data/reference/ul_by_demographic.json`). The file shall contain two keyed arrays (one for rice variants, one for potato variants). Maintenance of these lists is a data concern, not an algorithm concern — the algorithm loads them once at initialization and treats them as immutable for the duration of the search.
+
+- **Canonical Recipe Tags:** Slot-level tag decisions shall consume canonical per-recipe tags from `recipe_tags.json` / `tags_by_id`, hydrated into `PlanningRecipe.canonical_tag_slugs` and, for hard constraints, `PlanningRecipe.hard_eligible_tag_slugs`. `Recipe.tags` is a compatibility projection only and shall not be used for hard filtering or planner decisioning. Hard-eligible tags are: approved tags, or non-LLM user/system tags permitted by the tag semantics contract. LLM tags with lifecycle `proposed` or `rejected` are not hard-eligible.
 
   
 
@@ -374,17 +388,21 @@ The initial state S₀ is constructed as follows:
 
   
 
-1. `assignments` is initialized with all pinned assignments (HC-6). Pinned assignments are inserted at their corresponding positions in the decision order.
+1. Meal-prep `batch_locks` are sorted deterministically and normalized into effective pinned assignments. If a batch lock and an explicit pin target the same canonical `SlotAddress`, the batch lock wins. If two batch locks target the same `SlotAddress` with incompatible recipes, the algorithm shall fail before search with `FM-BATCH-CONFLICT` (Section 11).
 
-2. Daily trackers for days with pinned assignments are initialized with the nutrition from those pinned recipes. `non_workout_recipe_ids` is populated based on whether each pinned slot's `is_workout_slot` is false.
+2. `assignments` is initialized with all effective pinned assignments (HC-6), including batch locks after normalization. Pinned assignments are inserted at their corresponding positions in the decision order.
 
-3. Weekly tracker is initialized at zero, then updated with nutrition from pinned recipes.
+3. Daily trackers for days with pinned assignments are initialized with the nutrition from those pinned recipes. `non_workout_recipe_ids` is populated based on whether each pinned slot's `is_workout_slot` is false.
 
-4. All non-pinned decision points are unassigned.
+4. Weekly tracker is initialized at zero, then updated with nutrition from pinned recipes.
+
+5. All non-pinned decision points are unassigned.
 
   
 
 **Pinned assignment pre-validation:** Before the search begins, all pinned assignments shall be validated against hard constraints. If any pinned recipe violates HC-1 (excluded ingredient), HC-2 (two pinned assignments on the same day use the same recipe ID), HC-3 (cooking time), HC-5 (would single-handedly exceed calorie ceiling), or HC-8 (consecutive-day non-workout repetition with another pinned assignment), the algorithm shall reject immediately with failure mode FM-3 (Section 11) without entering the search.
+
+**Precedence:** Slot resolution is deterministic and shall follow this order: batch lock > explicit pin > required tags > preferred tags/scoring. Required tags participate only in non-pinned candidate generation. Preferred tags are soft-only and may influence scoring or tie-breaking but shall not reject a candidate.
 
   
 
@@ -556,6 +574,8 @@ Pinned assignments are validated before the search begins (Section 3.5). A pinne
 
 (Source: NEXT_STEPS.md, Step 3d — "The algorithm cannot ignore this")
 
+**Batch lock precedence:** Meal-prep batch locks are planner-facing pins addressed by canonical `SlotAddress = (day_index, slot_index)`. Batch locks shall be merged into the effective pinned assignment map before search and shall override explicit user pins for the same slot. A locked slot is assigned directly and is not subject to free candidate generation or scoring. If a locked recipe does not satisfy the slot's required tags, the lock still wins; the result may include a warning, but required tags do not override a batch lock.
+
   
 
 ### HC-7: Preference Shall Not Override Feasibility
@@ -603,6 +623,14 @@ Formally: for all d ∈ {1, ..., D−1}, if `r ∈ T_d.non_workout_recipe_ids`, 
   
 
 **Rationale:** Prevents monotonous plans where the same non-workout meals repeat daily, while allowing workout-timed meals (pre/post-workout) to repeat freely since these recipes are often selected for specific macro profiles (e.g., high-carb pre-workout) where variety is less important than function.
+
+### HC-9: Slot-Level Required Tags
+
+For any non-pinned slot with `required_tag_slugs`, a candidate recipe r shall satisfy all required slugs for that slot. Matching is performed against `r.hard_eligible_tag_slugs` when present; otherwise it falls back to `r.canonical_tag_slugs` only for inputs that do not provide lifecycle metadata.
+
+Required-tag checks shall use only planner-eligible tags. LLM-generated tags in lifecycle state `proposed` or `rejected` are excluded from hard decisioning even when their slug appears in the canonical recipe tag payload. `Recipe.tags` shall not be used for this check.
+
+`preferred_tag_slugs` are not part of HC-9. Missing preferred tags shall never reject a candidate solely for preference mismatch.
 
   
 
@@ -708,7 +736,7 @@ If `deficit(n) > days_left × max_daily_achievable(n)` for any tracked nutrient 
 
   
 
-At each decision point `(d, s)`, after filtering the recipe pool by hard constraints (HC-1, HC-2, HC-3, HC-6, HC-8) and removing recipes already used on day d (HC-2):
+At each decision point `(d, s)`, after filtering the recipe pool by hard constraints (HC-1, HC-2, HC-3, HC-6, HC-8, HC-9) and removing recipes already used on day d (HC-2):
 
   
 
@@ -754,7 +782,9 @@ This defines a total of N = Σ M_d decision points.
 
 At each decision point `(d, s)`:
 
-- If `(d, s)` has a pinned assignment (HC-6): accept the pinned recipe immediately. No scoring is performed. No alternatives are considered. Update state and advance.
+- If `(d, s)` has a batch lock after normalization: accept the locked recipe immediately. No scoring is performed. No alternatives are considered. Update state and advance.
+
+- Else if `(d, s)` has a pinned assignment (HC-6): accept the pinned recipe immediately. No scoring is performed. No alternatives are considered. Update state and advance.
 
 - Otherwise: proceed with candidate generation and scoring.
 
@@ -770,25 +800,29 @@ At each non-pinned decision point `(d, s)`:
 
 1. Start with the full recipe pool R.
 
-2. **Remove** recipes that violate HC-1 (excluded ingredients).
+2. If the slot has `required_tag_slugs`, **remove** recipes that do not satisfy all required slugs using the hard-eligible planner tag set (HC-9). This check uses `PlanningRecipe.hard_eligible_tag_slugs` when available and excludes proposed/rejected LLM tags. It does not use `Recipe.tags`.
 
-3. **Remove** recipes already assigned to day d (HC-2).
+3. **Remove** recipes that violate HC-1 (excluded ingredients).
 
-4. **Remove** recipes whose `cooking_time_minutes` exceeds the slot's `cooking_time_max` (HC-3).
+4. **Remove** recipes already assigned to day d (HC-2).
 
-5. **Remove** recipes that would cause the day's calories to exceed `max_daily_calories` if set (HC-5).
+5. **Remove** recipes whose `cooking_time_minutes` exceeds the slot's `cooking_time_max` (HC-3).
 
-6. If `is_workout_slot = false` for slot s AND d > 1: **Remove** recipes that appear in `T_{d-1}.non_workout_recipe_ids` (HC-8).
+6. **Remove** recipes that would cause the day's calories to exceed `max_daily_calories` if set (HC-5).
 
-7. **Remove** recipes that fail feasibility checks FC-1 through FC-3.
+7. If `is_workout_slot = false` for slot s AND d > 1: **Remove** recipes that appear in `T_{d-1}.non_workout_recipe_ids` (HC-8).
 
-8. **Primary Carb Downscaling augmentation (conditional):** If `U.enable_primary_carb_downscaling = true` AND `sedentary ∈ activity_context` for slot s AND slot s is not a pinned assignment: collect all recipes from R that were removed in step 5 (HC-5 calorie ceiling) or step 7 (FC-1 calorie overflow) **specifically due to calorie excess** and that possess a primary carb source (Section 2.2). Apply the Primary Carb Downscaling operator (Section 6.7) to generate scaled variants of those recipes. Each variant that passes all hard constraints and feasibility checks (evaluated identically to steps 2–7) is added to the candidate pool. If this feature is inactive, this step is skipped.
+8. **Remove** recipes that fail feasibility checks FC-1 through FC-3.
 
-9. The remaining set — original surviving candidates from step 7 plus any valid scaled variants from step 8 — is the **candidate set** `C(d, s)`.
+9. **Primary Carb Downscaling augmentation (conditional):** If `U.enable_primary_carb_downscaling = true` AND `sedentary ∈ activity_context` for slot s AND slot s is not a pinned assignment: collect all recipes from R that were removed in step 6 (HC-5 calorie ceiling) or step 8 (FC-1 calorie overflow) **specifically due to calorie excess** and that possess a primary carb source (Section 2.2). Apply the Primary Carb Downscaling operator (Section 6.7) to generate scaled variants of those recipes. Each variant that passes all hard constraints and feasibility checks (evaluated identically to steps 2–8) is added to the candidate pool. If this feature is inactive, this step is skipped.
+
+10. The remaining set — original surviving candidates from step 8 plus any valid scaled variants from step 9 — is the **candidate set** `C(d, s)`.
 
   
 
 If `C(d, s)` is empty, trigger backtracking (Section 9, BT-1).
+
+If the slot had `required_tag_slugs`, the recipe pool before the required-tag filter was non-empty, and the required-tag filter leaves zero candidates, the terminal failure report shall use `FM-TAG-EMPTY` with `day_index`, `slot_index`, and `required_tag_slugs` (Section 11).
 
   
 
@@ -890,7 +924,7 @@ If weekly validation passes, the algorithm terminates successfully (Section 10, 
 
   
 
-**Placement justification:** This section is placed within the Search Strategy (Section 6) because the operator modifies candidate generation behavior (Section 6.3, step 8). It is not a hard constraint, feasibility check, scoring component, or backtracking rule — it is a bounded search augmentation that generates additional candidates from recipes that would otherwise be discarded due to calorie excess.
+**Placement justification:** This section is placed within the Search Strategy (Section 6) because the operator modifies candidate generation behavior (Section 6.3, step 9). It is not a hard constraint, feasibility check, scoring component, or backtracking rule — it is a bounded search augmentation that generates additional candidates from recipes that would otherwise be discarded due to calorie excess.
 
   
 
@@ -1014,7 +1048,7 @@ Each generated variant is evaluated against all hard constraints and feasibility
 
   
 
-- **HC-1, HC-2, HC-3, HC-6, HC-7, HC-8:** Unaffected by quantity scaling (the ingredient list, recipe identity, cooking time, and assignment constraints are unchanged).
+- **HC-1, HC-2, HC-3, HC-6, HC-7, HC-8, HC-9:** Unaffected by quantity scaling (the ingredient list, recipe identity, cooking time, tag payload, and assignment constraints are unchanged).
 
 - **HC-4 (Daily UL):** Rechecked with the variant's recalculated micronutrient totals. Scaling down a carb source is expected to reduce — not increase — micronutrient contributions, but this must be verified, not assumed.
 
@@ -1054,7 +1088,7 @@ The operator is **deterministic**: given the same recipe, the same configuration
 
   
 
-The operator is evaluated during candidate generation (Section 6.3, step 8), which occurs **before** any backtracking trigger. If the operator produces valid variants that are added to `C(d, s)`, the candidate set is non-empty and backtracking (BT-1) is not triggered. The greedy selection (Section 6.4) then proceeds normally, potentially selecting a scaled variant and avoiding backtracking entirely.
+The operator is evaluated during candidate generation (Section 6.3, step 9), which occurs **before** any backtracking trigger. If the operator produces valid variants that are added to `C(d, s)`, the candidate set is non-empty and backtracking (BT-1) is not triggered. The greedy selection (Section 6.4) then proceeds normally, potentially selecting a scaled variant and avoiding backtracking entirely.
 
   
 
@@ -1082,7 +1116,7 @@ The operator does not introduce additional backtracking triggers. It does not mo
 
 6. **Bounded steps:** At most K variants are generated per recipe per decision point. The operator shall not be applied iteratively to its own output — a variant is never itself an input to another round of scaling.
 
-7. **Hard constraint compliance:** Scaled variants must independently satisfy all hard constraints (HC-1 through HC-8). The operator creates no exceptions.
+7. **Hard constraint compliance:** Scaled variants must independently satisfy all hard constraints (HC-1 through HC-9). The operator creates no exceptions.
 
 8. **Pinned assignment immunity:** Pinned meals shall not be scaled. The operator applies only to non-pinned decision points.
 
@@ -1114,11 +1148,13 @@ If two or more candidates have identical composite scores, ties are broken by th
 
 3. **Liked food presence:** Prefer the recipe that contains more ingredients matching entries in `U.liked_foods`.
 
-4. **Lexicographic recipe ID:** As a final deterministic tie-breaker, prefer the recipe with the lexicographically smaller `id`.
+4. **Preferred tag matches:** Prefer the recipe with more matches against the current slot's `preferred_tag_slugs` and other soft tag-derived scoring hints. This rule is soft only and applies after hard candidate eligibility has already been determined.
+
+5. **Lexicographic recipe ID:** As a final deterministic tie-breaker, prefer the recipe with the lexicographically smaller `id`.
 
   
 
-Rule 4 ensures determinism: no two recipes share the same ID, so ties are always fully resolved.
+Rule 5 ensures determinism: no two recipes share the same ID, so ties are always fully resolved.
 
   
 
@@ -1138,11 +1174,11 @@ The cost function assigns a **score** to each candidate recipe r at decision poi
 
   
 
-`Score(r, d, s, S) = w₁·NutritionMatch + w₂·MicronutrientMatch + w₃·SatietyMatch + w₄·Balance + w₅·ScheduleMatch`
+`Score(r, d, s, S) = w₁·NutritionMatch + w₂·MicronutrientMatch + w₃·SatietyMatch + w₄·Balance + w₅·ScheduleMatch + PreferredTagBonus`
 
   
 
-Each component is normalized to the range [0, 100].
+Each weighted component is normalized to the range [0, 100]. `PreferredTagBonus` is a bounded additive soft bonus derived from slot `preferred_tag_slugs` and tag-derived scoring hints; it is never used as a hard eligibility check.
 
   
 
@@ -1178,7 +1214,7 @@ The normalized weights sum to 1.0. The maximum achievable composite score is 100
 
   
 
-**Note on Preference scoring:** REASONING_LOGIC.md does not define a separate Preference component. Liked-food preference is addressed exclusively through tie-breaking (Section 7.1). Disliked foods are handled by hard exclusion in candidate generation (HC-1). No scoring weight is allocated to preference matching.
+**Note on Preference scoring:** Liked-food preference is addressed through tie-breaking (Section 7.1). Disliked foods are handled by hard exclusion in candidate generation (HC-1). Slot-level preferred tags are soft-only; they may add a bounded score bonus or participate in tie-breaking, but they shall never remove a candidate from `C(d, s)`.
 
   
 
@@ -1474,7 +1510,7 @@ Possible formulations for the limit:
 
   
 
-When the algorithm terminates without a valid plan (TC-2 or TC-3), it shall report a structured failure result. The failure modes are categorized as follows:
+When the algorithm terminates without a valid plan, or rejects input-derived locks before search, it shall report a structured failure result. The failure modes are categorized as follows:
 
   
 
@@ -1482,7 +1518,7 @@ When the algorithm terminates without a valid plan (TC-2 or TC-3), it shall repo
 
   
 
-**Condition:** The recipe pool does not contain enough distinct recipes that pass hard constraint filtering (HC-1, HC-2, HC-3, HC-8) to fill all meal slots for one or more days.
+**Condition:** The recipe pool does not contain enough distinct recipes that pass hard constraint filtering (HC-1, HC-2, HC-3, HC-8, HC-9) to fill all meal slots for one or more days.
 
   
 
@@ -1497,6 +1533,22 @@ When the algorithm terminates without a valid plan (TC-2 or TC-3), it shall repo
 - Which hard constraints are eliminating candidates (e.g., "All recipes with cooking time ≤ 5 minutes contain excluded ingredients" or "All eligible recipes were used in non-workout slots yesterday").
 
 - The number of eligible recipes per slot.
+
+### FM-TAG-EMPTY: Slot Required Tags Cannot Be Satisfied
+
+**Condition:** A non-pinned slot has `required_tag_slugs`, the recipe pool before applying the slot required-tag check is non-empty, and no candidate recipe satisfies all required slugs using planner hard-eligible tags.
+
+**Detection:** Candidate generation at canonical `SlotAddress = (day_index, slot_index)` after applying HC-9. This mode is specific to slot-level required tags and shall not be emitted for preferred-tag mismatch.
+
+**Report shall include:**
+
+- `day_index` and `slot_index` for the affected slot.
+
+- `required_tag_slugs` for that slot.
+
+- Candidate counts before and after the required-tag check when available.
+
+- A stable reason or fix hint explaining that no planner candidates satisfy the slot's required tags.
 
   
 
@@ -1559,6 +1611,20 @@ When the algorithm terminates without a valid plan (TC-2 or TC-3), it shall repo
 - The nutritional budget remaining after pinned assignments.
 
 - Whether the conflict is a hard constraint violation of the pinned recipe itself, or a downstream infeasibility.
+
+### FM-BATCH-CONFLICT: Meal-Prep Batch Lock Conflict
+
+**Condition:** Two or more meal-prep batch locks target the same canonical `SlotAddress` with incompatible locked recipes, or otherwise cannot be normalized into a single deterministic effective pin.
+
+**Detection:** Before search, while normalizing `U.batch_locks` into effective pinned assignments (Section 3.5).
+
+**Report shall include:**
+
+- The canonical `slot_address` with `day_index` and `slot_index`.
+
+- The conflicting batch IDs and recipe IDs.
+
+- Enough context for the caller to remove or revise one of the conflicting locks.
 
   
 
@@ -1646,6 +1712,18 @@ When the algorithm terminates without a valid plan (TC-2 or TC-3), it shall repo
 
 | **Non-workout slot** | A meal slot whose `activity_context` does not include `pre_workout` or `post_workout`. |
 
+| **SlotAddress** | Canonical planner slot coordinate `(day_index, slot_index)`, both zero-based. Used for batch locks, candidate evaluation, and failure reports. |
+
+| **Batch lock** | A meal-prep assignment that locks a recipe to a canonical `SlotAddress`. Batch locks are normalized into effective pins before search and have precedence over explicit pins. |
+
+| **Canonical recipe tags** | Per-recipe tag slugs loaded from `recipe_tags.json` / `tags_by_id` and hydrated into planner recipes. |
+
+| **Hard-eligible tags** | The subset of canonical recipe tags allowed for hard planner constraints: approved tags or non-LLM user/system tags. Proposed/rejected LLM tags are excluded. |
+
+| **Required tag** | A slot-level hard tag constraint from `required_tag_slugs`; applies only during non-pinned candidate generation. |
+
+| **Preferred tag** | A slot-level soft tag hint from `preferred_tag_slugs`; may affect scoring or ordering but never rejects a candidate. |
+
 | **Scalable carb source** | An ingredient classified as a rice variant or potato variant per the reference lists in Section 2.3. Eligible for quantity reduction by the Primary Carb Downscaling operator. |
 
 | **Primary carb source** | The single scalable carb source ingredient in a recipe that contributes the most carbohydrate grams. Only this ingredient may be scaled. |
@@ -1700,3 +1778,7 @@ All open items have been resolved. See Appendix C for the full resolution histor
 | 15 | 2.2 | The Primary Carb Downscaling operator requires per-ingredient nutritional contributions for the primary carb source to be isolatable from the recipe-level total. Whether these are pre-computed and stored, or derived at scaling time from the ingredient quantity and nutrition database, is not prescribed. | **Resolved: Precomputed.** Eligible recipes shall include a stored `primary_carb_contribution` field (type `NutritionProfile`) representing the nutritional vector of the primary carb source at its original quantity, precomputed prior to planner execution. |
 
 | 16 | 2.3 | The scalable carb source reference lists (rice variants, potato variants) require a storage location and maintenance policy. | **Resolved: `data/reference/scalable_carb_sources.json`.** Stored alongside the existing UL demographic data. Contains two keyed arrays (rice variants, potato variants). Loaded once at initialization and treated as immutable during the search. |
+
+| 17 | 2.1.1 / 2.2 / 6.3 | Whether slot-level tag constraints are global filters, soft preferences, or planner-core per-slot checks. | **Resolved: planner-core per-slot checks.** `required_tag_slugs` are hard constraints evaluated per non-pinned slot against hard-eligible canonical recipe tags; `preferred_tag_slugs` are soft-only scoring/ordering hints. |
+
+| 18 | 3.5 / 4 / 6.2 | Precedence among meal-prep locks, explicit pins, required tags, and scoring. | **Resolved: batch lock > explicit pin > required tags > preferred/scoring.** Batch locks are normalized into effective pins before search; required tags apply only to non-pinned candidate generation. |

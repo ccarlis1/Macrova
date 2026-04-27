@@ -247,6 +247,85 @@ def _recipe_tag_slug_set(recipe_tags: RecipeTagsJson) -> set[str]:
     return out
 
 
+def _raw_recipe_tag_slug_set(tag_raw: Any) -> set[str]:
+    """Build canonical slug set from an unparsed recipe tag payload."""
+    if not isinstance(tag_raw, dict):
+        return set()
+
+    out: set[str] = set()
+    slugs_by_type = tag_raw.get("tag_slugs_by_type") or {}
+    if isinstance(slugs_by_type, dict):
+        for slugs in slugs_by_type.values():
+            if not isinstance(slugs, list):
+                continue
+            for raw in slugs:
+                normalized = _normalize_slug(raw)
+                if normalized:
+                    out.add(normalized)
+
+    tag_metadata = tag_raw.get("tag_metadata") or {}
+    if isinstance(tag_metadata, dict):
+        for slug in tag_metadata.keys():
+            normalized = _normalize_slug(slug)
+            if normalized:
+                out.add(normalized)
+
+    aliases = tag_raw.get("aliases") or {}
+    if isinstance(aliases, dict):
+        for canonical in aliases.values():
+            normalized = _normalize_slug(canonical)
+            if normalized:
+                out.add(normalized)
+
+    return out
+
+
+def _raw_registry_metadata(path: str) -> Dict[str, Dict[str, Any]]:
+    """Load raw tag metadata by slug, preserving lifecycle fields not in old schemas."""
+    tags_path = Path(path)
+    payload = _load_tags_json(tags_path)
+    if tags_path.exists():
+        with tags_path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, dict):
+            registry = dict(payload.get("tag_registry", {}))
+            raw_registry = data.get("tag_registry", {})
+            if isinstance(raw_registry, dict):
+                registry.update(raw_registry)
+            payload["tag_registry"] = registry
+
+    raw_registry = payload.get("tag_registry", {})
+    if not isinstance(raw_registry, dict):
+        return {}
+
+    out: Dict[str, Dict[str, Any]] = {}
+    for slug, meta in raw_registry.items():
+        if not isinstance(meta, dict):
+            continue
+        normalized = _normalize_slug(meta.get("slug", slug))
+        if normalized:
+            out[normalized] = dict(meta)
+    return out
+
+
+def _tag_meta_is_hard_eligible(meta: Optional[Dict[str, Any]]) -> bool:
+    """Planner hard constraints may use approved tags or non-LLM user/system tags."""
+    if not meta:
+        return False
+
+    source = str(meta.get("source", "")).strip().lower()
+    lifecycle = str(
+        meta.get("eligibility", meta.get("lifecycle", meta.get("status", "")))
+    ).strip().lower()
+    if lifecycle in {"proposed", "rejected"}:
+        return False
+    if meta.get("display_only") is True or meta.get("hard_filter_allowed") is False:
+        return False
+    if source in {"user", "system"}:
+        return True
+    return source == "llm" and lifecycle == "approved"
+
+
 def load_canonical_recipe_tag_slugs(path: str) -> Dict[str, set[str]]:
     """Load canonical per-recipe slug sets from recipe_tags.json."""
     tags_by_id = load_recipe_tags(path)
@@ -254,6 +333,44 @@ def load_canonical_recipe_tag_slugs(path: str) -> Dict[str, set[str]]:
         recipe_id: _recipe_tag_slug_set(recipe_tags)
         for recipe_id, recipe_tags in tags_by_id.items()
     }
+
+
+def load_hard_eligible_recipe_tag_slugs(path: str) -> Dict[str, set[str]]:
+    """Load per-recipe slugs eligible for planner hard constraints."""
+    tags_path = Path(path)
+    raw = _load_tags_json(tags_path)
+    if tags_path.exists():
+        with tags_path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, dict):
+            raw["tags_by_id"] = data.get("tags_by_id", raw.get("tags_by_id", {}))
+
+    tags_by_id = raw.get("tags_by_id", {})
+    if not isinstance(tags_by_id, dict):
+        return {}
+
+    registry = _raw_registry_metadata(path)
+    out: Dict[str, set[str]] = {}
+    for recipe_id, tag_raw in tags_by_id.items():
+        slugs = _raw_recipe_tag_slug_set(tag_raw)
+        tag_metadata = tag_raw.get("tag_metadata", {}) if isinstance(tag_raw, dict) else {}
+        per_recipe_meta = (
+            {
+                _normalize_slug(slug): meta
+                for slug, meta in tag_metadata.items()
+                if _normalize_slug(slug)
+            }
+            if isinstance(tag_metadata, dict)
+            else {}
+        )
+        hard_eligible: set[str] = set()
+        for slug in slugs:
+            meta_raw = per_recipe_meta.get(slug)
+            meta = meta_raw if isinstance(meta_raw, dict) else registry.get(slug)
+            if _tag_meta_is_hard_eligible(meta):
+                hard_eligible.add(slug)
+        out[str(recipe_id)] = hard_eligible
+    return out
 
 
 def compute_recipe_tag_counts(path: str) -> Dict[str, int]:

@@ -81,6 +81,7 @@ from src.llm.tag_filtering_service import apply_tag_filtering
 from src.llm.recipe_tagger import tag_recipes
 from src.llm.tag_repository import load_recipe_tags
 from src.llm.tag_repository import load_canonical_recipe_tag_slugs
+from src.llm.tag_repository import load_hard_eligible_recipe_tag_slugs
 from src.llm.tag_repository import upsert_recipe_tags
 from src.api.tag_routes import router as tag_router
 from src.api.meal_prep_routes import router as meal_prep_router
@@ -339,6 +340,7 @@ def _merge_filter_warnings(
 def _attach_canonical_recipe_tags(
     recipe_pool: List[Any],
     canonical_tag_slugs_by_id: Dict[str, set[str]],
+    hard_eligible_tag_slugs_by_id: Optional[Dict[str, set[str]]] = None,
 ) -> None:
     """Hydrate planner recipe objects with canonical tag slugs for BE-8."""
     for recipe in recipe_pool:
@@ -346,6 +348,12 @@ def _attach_canonical_recipe_tags(
         if recipe_id is None:
             continue
         setattr(recipe, "canonical_tag_slugs", set(canonical_tag_slugs_by_id.get(recipe_id, set())))
+        if hard_eligible_tag_slugs_by_id is not None:
+            setattr(
+                recipe,
+                "hard_eligible_tag_slugs",
+                set(hard_eligible_tag_slugs_by_id.get(recipe_id, set())),
+            )
 
 
 def _filter_recipes_by_ids(
@@ -715,8 +723,13 @@ async def plan_meals_endpoint(
 
         calculator = NutritionCalculator(provider)
         canonical_tag_slugs_by_id = load_canonical_recipe_tag_slugs(tag_path)
+        hard_eligible_tag_slugs_by_id = load_hard_eligible_recipe_tag_slugs(tag_path)
         recipe_pool = convert_recipes(all_recipes, calculator)
-        _attach_canonical_recipe_tags(recipe_pool, canonical_tag_slugs_by_id)
+        _attach_canonical_recipe_tags(
+            recipe_pool,
+            canonical_tag_slugs_by_id,
+            hard_eligible_tag_slugs_by_id,
+        )
         recipe_by_id = {r.id: r for r in recipe_pool}
         planning_profile = convert_profile(user_profile, plan_request.days)
         active_batches = MealPrepBatchRepository().list_active()
@@ -794,10 +807,12 @@ async def plan_meals_endpoint(
             validation_provider.resolve_all(ingredient_names_updated)
             calculator_updated = NutritionCalculator(validation_provider)
             canonical_tag_slugs_by_id = load_canonical_recipe_tag_slugs(tag_path)
+            hard_eligible_tag_slugs_by_id = load_hard_eligible_recipe_tag_slugs(tag_path)
             recipe_pool_updated = convert_recipes(all_recipes_updated, calculator_updated)
             _attach_canonical_recipe_tags(
                 recipe_pool_updated,
                 canonical_tag_slugs_by_id,
+                hard_eligible_tag_slugs_by_id,
             )
             recipe_by_id = {r.id: r for r in recipe_pool_updated}
 
@@ -919,8 +934,13 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
 
         calculator = NutritionCalculator(provider)
         canonical_tag_slugs_by_id = load_canonical_recipe_tag_slugs(tag_path)
+        hard_eligible_tag_slugs_by_id = load_hard_eligible_recipe_tag_slugs(tag_path)
         recipe_pool = convert_recipes(all_recipes, calculator)
-        _attach_canonical_recipe_tags(recipe_pool, canonical_tag_slugs_by_id)
+        _attach_canonical_recipe_tags(
+            recipe_pool,
+            canonical_tag_slugs_by_id,
+            hard_eligible_tag_slugs_by_id,
+        )
         recipe_by_id = {r.id: r for r in recipe_pool}
         planning_profile = convert_profile(user_profile, days)
         planning_profile.batch_locks = _load_planning_batch_locks()
@@ -971,10 +991,12 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
             validation_provider.resolve_all(ingredient_names_updated)
             calculator_updated = NutritionCalculator(validation_provider)
             canonical_tag_slugs_by_id = load_canonical_recipe_tag_slugs(tag_path)
+            hard_eligible_tag_slugs_by_id = load_hard_eligible_recipe_tag_slugs(tag_path)
             recipe_pool_updated = convert_recipes(all_recipes_updated, calculator_updated)
             _attach_canonical_recipe_tags(
                 recipe_pool_updated,
                 canonical_tag_slugs_by_id,
+                hard_eligible_tag_slugs_by_id,
             )
             recipe_by_id = {r.id: r for r in recipe_pool_updated}
 

@@ -50,6 +50,10 @@ class CandidateGenerationResult:
     trigger_backtrack: bool
     calorie_excess_rejections: Set[str] = field(default_factory=set)  # metadata for Phase 9
     variant_nutritions: Dict[Tuple[str, int], NutritionProfile] = field(default_factory=dict)
+    required_tag_slugs: List[str] = field(default_factory=list)
+    required_tag_filter_applied: bool = False
+    candidate_count_before_required: int = 0
+    candidate_count_after_required: int = 0
 
 
 def _get_slot(
@@ -85,10 +89,19 @@ def _rejected_solely_calorie_fc1(
 
 
 def _matches_slot_required_tags(recipe: PlanningRecipe, slot: MealSlot) -> bool:
-    required = list(getattr(slot, "required_tag_slugs", None) or [])
+    required = [
+        str(slug).strip().lower()
+        for slug in (getattr(slot, "required_tag_slugs", None) or [])
+        if str(slug).strip()
+    ]
     if not required:
         return True
-    recipe_tags = set(getattr(recipe, "canonical_tag_slugs", set()) or set())
+    hard_eligible_raw = getattr(recipe, "hard_eligible_tag_slugs", None)
+    if hard_eligible_raw is None:
+        decision_tags = set(getattr(recipe, "canonical_tag_slugs", set()) or set())
+    else:
+        decision_tags = set(hard_eligible_raw or set())
+    recipe_tags = {str(slug).strip().lower() for slug in decision_tags if str(slug).strip()}
     return set(required).issubset(recipe_tags)
 
 
@@ -103,9 +116,17 @@ def _filter_step_1_through_7(
     resolved_ul: Optional[UpperLimits],
     macro_bounds: MacroBoundsPrecomputation,
     is_workout: bool,
-) -> Tuple[Set[str], Set[str]]:
-    """Apply steps 1–7. Returns (candidate_ids, calorie_excess_rejections)."""
+) -> Tuple[Set[str], Set[str], int, int, List[str], bool]:
+    """Apply steps 1–7 with required-tag metadata."""
     calorie_excess: Set[str] = set()
+    required_tag_slugs = [
+        str(slug).strip().lower()
+        for slug in (getattr(slot, "required_tag_slugs", None) or [])
+        if str(slug).strip()
+    ]
+    required_filter_applied = bool(required_tag_slugs)
+    candidate_count_before_required = len(recipe_pool)
+    candidate_count_after_required = 0
     # Step 1–2: HC-1, HC-2
     surviving: List[PlanningRecipe] = []
     for r in recipe_pool:
@@ -116,6 +137,7 @@ def _filter_step_1_through_7(
         if not check_hc2_no_same_day_reuse(r, slot, day_index, constraint_state, profile, resolved_ul):
             continue
         surviving.append(r)
+    candidate_count_after_required = len(surviving)
 
     # Step 3: HC-3
     surviving = [r for r in surviving if check_hc3_cooking_time_bound(r, slot, day_index, constraint_state, profile, resolved_ul)]
@@ -154,7 +176,14 @@ def _filter_step_1_through_7(
             continue
         candidates.append(r)
 
-    return {r.id for r in candidates}, calorie_excess
+    return (
+        {r.id for r in candidates},
+        calorie_excess,
+        candidate_count_before_required,
+        candidate_count_after_required,
+        required_tag_slugs,
+        required_filter_applied,
+    )
 
 
 def _filter_hard_constraints_only(
@@ -251,6 +280,10 @@ def generate_candidates(
             trigger_backtrack=True,
             calorie_excess_rejections=set(),
             variant_nutritions={},
+            required_tag_slugs=[],
+            required_tag_filter_applied=False,
+            candidate_count_before_required=0,
+            candidate_count_after_required=0,
         )
 
     constraint_state = ConstraintStateView(daily_trackers=daily_trackers)
@@ -266,7 +299,14 @@ def generate_candidates(
     )
     is_workout = is_workout_slot(act_ctx)
 
-    base_candidate_ids, calorie_excess_rejections = _filter_step_1_through_7(
+    (
+        base_candidate_ids,
+        calorie_excess_rejections,
+        candidate_count_before_required,
+        candidate_count_after_required,
+        required_tag_slugs,
+        required_filter_applied,
+    ) = _filter_step_1_through_7(
         recipe_pool,
         day_index,
         slot_index,
@@ -322,4 +362,8 @@ def generate_candidates(
         trigger_backtrack=trigger,
         calorie_excess_rejections=calorie_excess_rejections,
         variant_nutritions=variant_nutritions,
+        required_tag_slugs=required_tag_slugs,
+        required_tag_filter_applied=required_filter_applied,
+        candidate_count_before_required=candidate_count_before_required,
+        candidate_count_after_required=candidate_count_after_required,
     )

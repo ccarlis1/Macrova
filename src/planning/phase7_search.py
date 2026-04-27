@@ -56,6 +56,7 @@ from src.planning.phase10_reporting import (
     MealPlanResult,
     build_plan_snapshot,
     build_report_fm1,
+    build_report_fm_tag_empty,
     build_report_fm2,
     build_report_fm3,
     build_report_fm4,
@@ -705,8 +706,48 @@ def run_meal_plan_search(
                     if stats is not None and stats.enabled:
                         stats._end_time = time.perf_counter()
                         stats.total_attempts = attempt_count
-                    report = build_report_fm1(day_index, slot_index, "Empty candidate set or FC-5", eligible_recipe_count=len(cg.candidates))
-                    return result_from_failure("TC-2", "FM-1", report, list(assignments), dict(daily_trackers), attempt_count, backtrack_count, None, _stats_dict)
+                    if (
+                        not cg.candidates
+                        and cg.required_tag_filter_applied
+                        and cg.candidate_count_before_required > 0
+                        and cg.candidate_count_after_required == 0
+                    ):
+                        report = build_report_fm_tag_empty(
+                            day_index=day_index,
+                            slot_index=slot_index,
+                            required_tag_slugs=cg.required_tag_slugs,
+                            candidate_count_before=cg.candidate_count_before_required,
+                            candidate_count_after=cg.candidate_count_after_required,
+                            reason="No planner candidates satisfy required tag slugs for this slot.",
+                        )
+                        return result_from_failure(
+                            "TC-2",
+                            "FM-TAG-EMPTY",
+                            report,
+                            list(assignments),
+                            dict(daily_trackers),
+                            attempt_count,
+                            backtrack_count,
+                            None,
+                            _stats_dict,
+                        )
+                    report = build_report_fm1(
+                        day_index,
+                        slot_index,
+                        "Empty candidate set or FC-5",
+                        eligible_recipe_count=len(cg.candidates),
+                    )
+                    return result_from_failure(
+                        "TC-2",
+                        "FM-1",
+                        report,
+                        list(assignments),
+                        dict(daily_trackers),
+                        attempt_count,
+                        backtrack_count,
+                        None,
+                        _stats_dict,
+                    )
                 if stats is not None and stats.enabled:
                     stats._backtrack_depths.append(i - target)
                 backtrack_count += 1
@@ -727,6 +768,12 @@ def run_meal_plan_search(
                     nutrition=nut,
                     primary_carb_contribution=r.primary_carb_contribution,
                     primary_carb_source=r.primary_carb_source,
+                    canonical_tag_slugs=set(getattr(r, "canonical_tag_slugs", set()) or set()),
+                    hard_eligible_tag_slugs=(
+                        None
+                        if getattr(r, "hard_eligible_tag_slugs", None) is None
+                        else set(getattr(r, "hard_eligible_tag_slugs", set()) or set())
+                    ),
                 )
                 # No meal-prep provenance is currently carried in planner runtime state.
                 # Keep this unset so scoring does not infer meal-prep exemptions from unrelated signals.

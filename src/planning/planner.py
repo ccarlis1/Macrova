@@ -56,7 +56,12 @@ def _merge_batch_locks_into_pins(
                 required = list(day_slots[slot_address[1]].required_tag_slugs or [])
                 if required:
                     lock_recipe = recipe_by_id.get(str(lock.recipe_id))
-                    recipe_tags = set(lock_recipe.canonical_tag_slugs) if lock_recipe is not None else set()
+                    if lock_recipe is None:
+                        recipe_tags = set()
+                    elif lock_recipe.hard_eligible_tag_slugs is None:
+                        recipe_tags = set(lock_recipe.canonical_tag_slugs)
+                    else:
+                        recipe_tags = set(lock_recipe.hard_eligible_tag_slugs)
                     missing = sorted([slug for slug in required if slug not in recipe_tags])
                     if missing:
                         tag_mismatches.append(

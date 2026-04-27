@@ -139,6 +139,10 @@ class PlanningRecipe:
     # Canonical decisioning tags loaded from recipe_tags.json/tags_by_id.
     # BE-8 slot-level required/preferred matching should use this field.
     canonical_tag_slugs: Set[str] = field(default_factory=set)
+    # Optional hard-constraint eligible tag set.
+    # When present, BE-8 required-tag matching uses this set to exclude
+    # quarantined/proposed tags from hard decisioning.
+    hard_eligible_tag_slugs: Optional[Set[str]] = None
 
 
 # --- Section 3.1 Assignment Sequence ---

@@ -102,6 +102,31 @@ def build_report_fm1(
     }
 
 
+def build_report_fm_tag_empty(
+    *,
+    day_index: int,
+    slot_index: int,
+    required_tag_slugs: List[str],
+    candidate_count_before: int,
+    candidate_count_after: int,
+    reason: str,
+) -> Dict[str, Any]:
+    """FM-TAG-EMPTY: slot-level required-tag empties the candidate set."""
+    return {
+        "tag_empty_slots": [
+            {
+                "code": "FM-TAG-EMPTY",
+                "day_index": day_index,
+                "slot_index": slot_index,
+                "required_tag_slugs": list(required_tag_slugs),
+                "candidate_count_before": int(candidate_count_before),
+                "candidate_count_after": int(candidate_count_after),
+                "reason": str(reason),
+            }
+        ]
+    }
+
+
 def build_report_fm2(
     day_index: Optional[int],
     constraint_detail: Optional[str],

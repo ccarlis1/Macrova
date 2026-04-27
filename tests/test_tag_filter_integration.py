@@ -1,9 +1,12 @@
+from types import SimpleNamespace
+
 from src.llm.schemas import (
     BudgetLevel,
     DietaryFlag,
     PrepTimeBucket,
     RecipeTagsJson,
 )
+from src.llm.tag_filtering_service import apply_tag_filtering
 from src.llm.tag_filter import filter_recipe_ids_by_preferences
 
 
@@ -120,4 +123,29 @@ def test_filter_recipe_ids_requires_multi_slug_intersection_for_dietary_flags():
         preferences={"dietary_flags": ["vegan", "gluten-free"]},
     )
     assert out == ["r1"]
+
+
+def test_apply_tag_filtering_uses_canonical_tags_not_recipe_tags_projection():
+    recipes = [
+        SimpleNamespace(
+            id="r1",
+            tags=[{"slug": "vegan", "type": "constraint"}],
+        )
+    ]
+    tags_by_id = {
+        "r1": _tags(
+            cuisine="mexican",
+            cost_level=BudgetLevel.cheap,
+            prep_time_bucket=PrepTimeBucket.quick_meal,
+            dietary_flags=[],
+        )
+    }
+
+    out = apply_tag_filtering(
+        recipes=recipes,
+        tags_by_id=tags_by_id,
+        preferences={"dietary_flags": ["vegan"]},
+    )
+
+    assert out == []
 

@@ -277,6 +277,48 @@ def test_api_plan_tag_filtering_does_not_emit_slot_context_fm_tag_empty(monkeypa
     assert "fm_tag_empty" not in filter_log
 
 
+def test_api_plan_be3_ignores_slot_required_tags_and_preserves_preselected(monkeypatch):
+    from src.api.server import _apply_recipe_tag_filter_pre_convert
+
+    recipes = [SimpleNamespace(id="pinned")]
+    load_calls = {"count": 0}
+
+    def _unexpected_load_recipe_tags(_path):
+        load_calls["count"] += 1
+        return {}
+
+    monkeypatch.setattr("src.api.server.load_recipe_tags", _unexpected_load_recipe_tags)
+
+    request_like = SimpleNamespace(
+        cuisine=None,
+        cost_level=None,
+        prep_time_bucket=None,
+        dietary_flags=None,
+        schedule_days=[
+            SimpleNamespace(
+                day_index=1,
+                meals=[
+                    SimpleNamespace(index=1, required_tag_slugs=["high-fiber"]),
+                ],
+            )
+        ],
+    )
+
+    filtered, filter_log = _apply_recipe_tag_filter_pre_convert(
+        recipes=recipes,
+        request_like=request_like,
+        tag_path="unused.json",
+    )
+
+    assert filtered == recipes
+    assert load_calls["count"] == 0
+    assert filter_log == {
+        "filter_applied": False,
+        "input_recipe_count": 1,
+        "output_recipe_count": 1,
+    }
+
+
 def _write_simple_recipe_store(path):
     # Two minimal recipes, just enough for `RecipeDB` parsing.
     path.write_text(

@@ -2,13 +2,15 @@
 
 Computes a composite score in [0, 100] from five weighted components.
 No constraints, no feasibility checks, no state mutation. Pure and deterministic.
+Tie-break order is implemented in Phase 5 ordering:
+1) higher preferred-tag match count, 2) lower recipe.id, 3) seeded RNG.
 Reference: MEALPLAN_SPECIFICATION_v1.md Section 8.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Protocol
+from typing import Any, Dict, List, Optional, Protocol, Set
 
 from src.planning.phase0_models import (
     DailyTracker,
@@ -53,10 +55,136 @@ class ScoringStateView:
     daily_trackers: Dict[int, DailyTracker]
     weekly_tracker: WeeklyTracker
     schedule: List[List[MealSlot]]
+    # Optional explicit recipe history keyed by 0-based day index.
+    recent_recipe_ids_by_day: Optional[Dict[int, Set[str]]] = None
+    # Optional recipe ids sourced from meal prep (excluded from variety penalty).
+    meal_prep_recipe_ids: Optional[Set[str]] = None
+
+
+@dataclass(frozen=True)
+class ScoringConfig:
+    """Single source of truth for additive soft scoring contributions."""
+
+    w_pref: float = 1.0
+    w_var: float = 2.0
+
+
+DEFAULT_SCORING_CONFIG = ScoringConfig()
 
 
 def get_daily_tracker(state: ScoringStateView, day_index: int) -> Optional[DailyTracker]:
     return state.daily_trackers.get(day_index)
+
+
+def _normalize_tag_set(tags: Optional[List[str]]) -> Set[str]:
+    if not tags:
+        return set()
+    return {str(t).strip().lower() for t in tags if str(t).strip()}
+
+
+def _recipe_tag_set(recipe: RecipeLike) -> Set[str]:
+    canonical = getattr(recipe, "canonical_tag_slugs", None)
+    if canonical:
+        return {str(t).strip().lower() for t in canonical if str(t).strip()}
+    fallback = getattr(recipe, "tag_slugs", None)
+    return _normalize_tag_set(fallback)
+
+
+def _high_tag_candidates(nutrient_name: str) -> Set[str]:
+    base = nutrient_name.strip().lower()
+    for suffix in ("_mg", "_ug", "_g", "_iu"):
+        if base.endswith(suffix):
+            base = base[: -len(suffix)]
+            break
+    dashed = base.replace("_", "-")
+    return {
+        f"high-{dashed}",
+        f"high_{base}",
+        f"high-{base}",
+    }
+
+
+def _deficit_high_tags(
+    state: ScoringStateView,
+    profile: PlanningUserProfile,
+    day_index: int,
+) -> Set[str]:
+    tracked = profile.micronutrient_targets
+    if not tracked:
+        return set()
+    tracker = get_daily_tracker(state, day_index)
+    consumed = tracker.micronutrients_consumed if tracker else {}
+    w = state.weekly_tracker
+    days_left = w.days_remaining if w.days_remaining > 0 else 1
+    carryover = w.carryover_needs
+    out: Set[str] = set()
+    for nutrient, target in tracked.items():
+        if target <= 0:
+            continue
+        adjusted = adjusted_daily_target(target, carryover.get(nutrient, 0.0), days_left)
+        if consumed.get(nutrient, 0.0) < adjusted:
+            out |= _high_tag_candidates(nutrient)
+    return out
+
+
+def preferred_match_count(
+    recipe: RecipeLike,
+    slot: MealSlot,
+    day_index: int,
+    state: ScoringStateView,
+    profile: PlanningUserProfile,
+) -> int:
+    preferred = _normalize_tag_set(getattr(slot, "preferred_tag_slugs", None))
+    preferred |= _deficit_high_tags(state, profile, day_index)
+    if not preferred:
+        return 0
+    recipe_tags = _recipe_tag_set(recipe)
+    return len(preferred & recipe_tags)
+
+
+def preferred_tag_bonus(
+    recipe: RecipeLike,
+    slot: MealSlot,
+    day_index: int,
+    state: ScoringStateView,
+    profile: PlanningUserProfile,
+    config: ScoringConfig = DEFAULT_SCORING_CONFIG,
+) -> float:
+    return config.w_pref * float(preferred_match_count(recipe, slot, day_index, state, profile))
+
+
+def _recent_recipe_ids(
+    state: ScoringStateView,
+    day_index: int,
+    lookback_days: int = 3,
+) -> Set[str]:
+    start_day = max(0, day_index - lookback_days)
+    out: Set[str] = set()
+    by_day = state.recent_recipe_ids_by_day or {}
+    for d in range(start_day, day_index):
+        if d in by_day:
+            out |= set(by_day[d])
+            continue
+        tracker = state.daily_trackers.get(d)
+        if tracker:
+            out |= set(tracker.used_recipe_ids)
+    return out
+
+
+def variety_penalty(
+    recipe: RecipeLike,
+    day_index: int,
+    state: ScoringStateView,
+    config: ScoringConfig = DEFAULT_SCORING_CONFIG,
+) -> float:
+    recent = _recent_recipe_ids(state, day_index, lookback_days=3)
+    if not recent:
+        return 0.0
+    meal_prep_ids = state.meal_prep_recipe_ids or set()
+    effective_recent = {rid for rid in recent if rid not in meal_prep_ids}
+    if recipe.id in effective_recent:
+        return config.w_var
+    return 0.0
 
 
 # --- Recipe-like protocol ---
@@ -281,6 +409,7 @@ def composite_score(
     slot_index: int,
     state: ScoringStateView,
     profile: PlanningUserProfile,
+    config: ScoringConfig = DEFAULT_SCORING_CONFIG,
 ) -> float:
     """Composite score in [0, 100]. Spec 8.1. Deterministic; no mutation."""
     if day_index < 0 or day_index >= len(state.schedule):
@@ -318,4 +447,6 @@ def composite_score(
         + W_BALANCE * bal
         + W_SCHEDULE * sched
     )
+    composite += preferred_tag_bonus(recipe, slot, day_index, state, profile, config)
+    composite -= variety_penalty(recipe, day_index, state, config)
     return _clamp_score(composite)

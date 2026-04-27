@@ -1,6 +1,6 @@
 # BE-3 — Extend `recipe_tag_filtering` for required slot slugs
 
-**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** DM-2, DM-4, DM-5
+**Status:** implemented  ·  **Complexity:** M  ·  **Depends on:** DM-2, DM-4, DM-5
 
 ## Summary
 

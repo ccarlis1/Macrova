@@ -239,8 +239,8 @@ def test_api_plan_tag_filtering_preserves_recipe_id_pre_filter_order_with_single
     assert seen["convert_ids"] == ["r2"]
 
 
-def test_api_plan_tag_filtering_emits_fm_tag_empty_with_required_slot_context(monkeypatch):
-    from src.api.server import _apply_recipe_tag_filter_pre_convert, _merge_filter_report
+def test_api_plan_tag_filtering_does_not_emit_slot_context_fm_tag_empty(monkeypatch):
+    from src.api.server import _apply_recipe_tag_filter_pre_convert
 
     recipes = [SimpleNamespace(id="r1"), SimpleNamespace(id="r2")]
     monkeypatch.setattr(
@@ -274,14 +274,7 @@ def test_api_plan_tag_filtering_emits_fm_tag_empty_with_required_slot_context(mo
     )
     assert filtered == []
 
-    out = {"warnings": []}
-    _merge_filter_report(out, filter_log)
-    fm_tag_empty = out["report"]["fm_tag_empty"]
-    assert fm_tag_empty["code"] == "FM-TAG-EMPTY"
-    assert fm_tag_empty["required_tag_slugs"] == ["vegan"]
-    assert fm_tag_empty["required_tag_slots"] == [
-        {"day_index": 1, "slot_index": 1, "required_tag_slugs": ["vegan"]}
-    ]
+    assert "fm_tag_empty" not in filter_log
 
 
 def _write_simple_recipe_store(path):

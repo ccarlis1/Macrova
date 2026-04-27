@@ -301,36 +301,6 @@ def _apply_recipe_tag_filter_pre_convert(
         preferences=preferences,
     )
 
-    fm_tag_empty = None
-    if filter_applied and len(filtered_recipes) == 0:
-        required_tag_slots: List[Dict[str, Any]] = []
-        schedule_days = getattr(request_like, "schedule_days", None)
-        if isinstance(schedule_days, list):
-            for day in schedule_days:
-                day_index = getattr(day, "day_index", None)
-                meals = getattr(day, "meals", None)
-                if not isinstance(meals, list):
-                    continue
-                for meal in meals:
-                    required = list(getattr(meal, "required_tag_slugs", None) or [])
-                    if not required:
-                        continue
-                    slot_index = getattr(meal, "index", None)
-                    required_tag_slots.append(
-                        {
-                            "day_index": day_index,
-                            "slot_index": slot_index,
-                            "required_tag_slugs": required,
-                        }
-                    )
-        fm_tag_empty = {
-            "code": "FM-TAG-EMPTY",
-            "required_tag_slots": required_tag_slots,
-            "required_tag_slugs": sorted(
-                {slug for slot in required_tag_slots for slug in slot["required_tag_slugs"]}
-            ),
-        }
-
     log_payload = {
         "filter_applied": filter_applied,
         "input_recipe_count": input_recipe_count,
@@ -338,8 +308,6 @@ def _apply_recipe_tag_filter_pre_convert(
     }
     if guardrail_warnings:
         log_payload["guardrail_warnings"] = guardrail_warnings
-    if fm_tag_empty is not None:
-        log_payload["fm_tag_empty"] = fm_tag_empty
     return filtered_recipes, log_payload
 
 
@@ -358,20 +326,6 @@ def _merge_filter_warnings(
         if text and text not in existing:
             existing.append(text)
     out["warnings"] = existing
-
-
-def _merge_filter_report(
-    out: Dict[str, Any],
-    filter_log: Dict[str, Any],
-) -> None:
-    fm_tag_empty = filter_log.get("fm_tag_empty")
-    if not isinstance(fm_tag_empty, dict):
-        return
-    report = out.get("report")
-    if not isinstance(report, dict):
-        report = {}
-    report["fm_tag_empty"] = fm_tag_empty
-    out["report"] = report
 
 
 def _attach_canonical_recipe_tags(
@@ -825,7 +779,6 @@ def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
             deprecated_legacy=request.schedule_days is None and request.schedule is not None,
         )
         _merge_filter_warnings(out, filter_log)
-        _merge_filter_report(out, filter_log)
         return out
     except HTTPException:
         raise
@@ -997,7 +950,6 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
 
         out = format_result_json(result, recipe_by_id, planning_profile, days)
         _merge_filter_warnings(out, filter_log)
-        _merge_filter_report(out, filter_log)
         return out
     except HTTPException:
         raise

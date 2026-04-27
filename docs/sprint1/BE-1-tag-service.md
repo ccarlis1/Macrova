@@ -1,6 +1,6 @@
 # BE-1 — TagService (CRUD + normalize)
 
-**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** DM-1
+**Status:** implemented  ·  **Complexity:** M  ·  **Depends on:** DM-1
 
 ## Summary
 
@@ -14,18 +14,18 @@ Unblocks: AI-3, FE-5, FE-8.
 
 ## Acceptance criteria
 
-- [ ] `src/api/tag_routes.py` with:
+- `src/api/tag_routes.py` with:
   - `GET /api/v1/tags?type=context|time|nutrition|constraint` → list of tags with recipe counts.
   - `POST /api/v1/tags` → create user-sourced tag. Body: `{slug?, display, type}`. 409 if slug exists.
   - `PATCH /api/v1/tags/{slug}` → rename display only.
   - `POST /api/v1/tags/{slug}/alias` → add alias. Body: `{alias_slug}`. 409 on conflict.
   - `POST /api/v1/tags/{src_slug}/merge_into/{dst_slug}` → merge: rewrite all recipes using `src_slug` to `dst_slug`, register alias, remove `src_slug`.
-- [ ] Service layer `src/llm/tag_repository.py` extended (or new `src/services/tag_service.py`) so LLM code calls the same logic, not the HTTP layer.
-- [ ] Merge operation is transactional: on failure, no partial recipe updates.
-- [ ] Recipe-count aggregation reads from `RecipeDB` — do not cache stale counts.
-- [ ] Nutrition-tag create path supports curated micronutrient starter slugs (for example `high-omega-3`, `high-fiber`, `high-calcium`) and keeps nutrition slugs normalized through the same registry controls as other tag types.
-- [ ] OpenAPI (`openapi/`) regenerated.
-- [ ] Integration tests (`tests/api/test_tag_routes.py`) cover create, duplicate, alias, merge, and `GET` filtering.
+- Service layer `src/llm/tag_repository.py` extended (or new `src/services/tag_service.py`) so LLM code calls the same logic, not the HTTP layer.
+- Merge operation is transactional: on failure, no partial recipe updates.
+- Recipe-count aggregation reads from `RecipeDB` — do not cache stale counts.
+- Nutrition-tag create path supports curated micronutrient starter slugs (for example `high-omega-3`, `high-fiber`, `high-calcium`) and keeps nutrition slugs normalized through the same registry controls as other tag types.
+- OpenAPI (`openapi/`) regenerated.
+- Integration tests (`tests/api/test_tag_routes.py`) cover create, duplicate, alias, merge, and `GET` filtering.
 
 ## Implementation notes
 
@@ -45,6 +45,7 @@ Unblocks: AI-3, FE-5, FE-8.
 ## 🔒 IMPLEMENTATION CONTRACT
 
 **Files to inspect before writing any code:**
+
 - `src/llm/tag_repository.py` — `TagRegistry` (DM-1); `merge()`, `resolve()`, `create()` must already exist; the service layer wraps this, it does not re-implement it
 - `src/api/server.py` — existing FastAPI app instance and route mounting pattern (e.g., `app.include_router(...)`)
 - `src/api/recipe_sync.py` — error-mapping pattern to replicate in `tag_routes.py`
@@ -53,10 +54,12 @@ Unblocks: AI-3, FE-5, FE-8.
 - Existing endpoint `POST /api/v1/recipes/tags/generate` in `server.py` — confirm it does not conflict with the new `/api/v1/tags` namespace
 
 **Entities to reuse:**
+
 - `TagRegistry` from `src/llm/tag_repository.py` — all mutation goes through this; `tag_routes.py` is HTTP glue only
 - `RecipeDB` from `src/data_layer/` — for recipe-count aggregation; read current pattern for instantiation
 
 **Do NOT create:**
+
 - A parallel tag registry or tag model separate from DM-1's `tag_repository.py`
 - Direct file I/O in `tag_routes.py` — all persistence goes through `TagRegistry`
 - Any frontend/Flutter code
@@ -80,11 +83,12 @@ Before writing any code, perform the following in order:
 
 After implementation, verify each of the following:
 
-- [ ] `src/api/tag_routes.py` exists and is mounted on the existing `/api/v1` prefix in `server.py` — no duplicate prefix
-- [ ] All five endpoints work: `GET /api/v1/tags`, `POST /api/v1/tags`, `PATCH /api/v1/tags/{slug}`, `POST /api/v1/tags/{slug}/alias`, `POST /api/v1/tags/{src_slug}/merge_into/{dst_slug}`
-- [ ] `POST /api/v1/tags` returns 409 when slug already exists; response body matches `TAG_CONFLICT` from `error_mapping.py`
-- [ ] Merge operation is transactional: on failure mid-rewrite, no partial recipe updates
-- [ ] Recipe counts in `GET` response come from live `RecipeDB` reads — not hardcoded or cached
-- [ ] `src/api/error_mapping.py` has the three new codes; no other file defines them redundantly
-- [ ] OpenAPI spec regenerated
-- [ ] Integration tests in `tests/api/test_tag_routes.py` pass for: create, duplicate, alias, merge, `GET` filtering
+- `src/api/tag_routes.py` exists and is mounted on the existing `/api/v1` prefix in `server.py` — no duplicate prefix
+- All five endpoints work: `GET /api/v1/tags`, `POST /api/v1/tags`, `PATCH /api/v1/tags/{slug}`, `POST /api/v1/tags/{slug}/alias`, `POST /api/v1/tags/{src_slug}/merge_into/{dst_slug}`
+- `POST /api/v1/tags` returns 409 when slug already exists; response body matches `TAG_CONFLICT` from `error_mapping.py`
+- Merge operation is transactional: on failure mid-rewrite, no partial recipe updates
+- Recipe counts in `GET` response come from live `RecipeDB` reads — not hardcoded or cached
+- `src/api/error_mapping.py` has the three new codes; no other file defines them redundantly
+- OpenAPI spec regenerated
+- Integration tests in `tests/api/test_tag_routes.py` pass for: create, duplicate, alias, merge, `GET` filtering
+

@@ -25,6 +25,18 @@ API_ERROR = "error"
 TAG_NOT_FOUND = "TAG_NOT_FOUND"
 TAG_CONFLICT = "TAG_CONFLICT"
 TAG_INVALID = "TAG_INVALID"
+RECIPE_NOT_FOUND = "RECIPE_NOT_FOUND"
+RECIPE_NOT_BATCHABLE = "RECIPE_NOT_BATCHABLE"
+BATCH_CONFLICT = "BATCH_CONFLICT"
+BATCH_INVALID = "BATCH_INVALID"
+
+
+class ApiContractError(Exception):
+    """Typed API-layer contract error with deterministic code mapping."""
+
+    def __init__(self, code: str, message: str):
+        super().__init__(message)
+        self.code = code
 
 
 def _payload(code: str, message: str) -> Dict[str, Any]:
@@ -100,6 +112,17 @@ def map_exception_to_api_error(exc: Exception) -> Tuple[int, Dict[str, Any]]:
             return 409, _payload(TAG_CONFLICT, str(exc))
         if exc.code == TAG_INVALID:
             return 400, _payload(TAG_INVALID, str(exc))
+        return 400, _payload(exc.code, str(exc))
+
+    if isinstance(exc, ApiContractError):
+        if exc.code == RECIPE_NOT_FOUND:
+            return 404, _payload(RECIPE_NOT_FOUND, str(exc))
+        if exc.code == RECIPE_NOT_BATCHABLE:
+            return 422, _payload(RECIPE_NOT_BATCHABLE, str(exc))
+        if exc.code == BATCH_CONFLICT:
+            return 409, _payload(BATCH_CONFLICT, str(exc))
+        if exc.code == BATCH_INVALID:
+            return 400, _payload(BATCH_INVALID, str(exc))
         return 400, _payload(exc.code, str(exc))
 
     # Unknown/unexpected failures

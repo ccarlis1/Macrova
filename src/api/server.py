@@ -79,6 +79,7 @@ from src.llm.tag_repository import load_recipe_tags
 from src.llm.tag_repository import load_canonical_recipe_tag_slugs
 from src.llm.tag_repository import upsert_recipe_tags
 from src.api.tag_routes import router as tag_router
+from src.api.meal_prep_routes import router as meal_prep_router
 
 
 recipes_path = "data/recipes/recipes.json"
@@ -87,6 +88,7 @@ DEFAULT_TAG_PATH = "data/recipes/recipe_tags.json"
 
 app = FastAPI(title="Nutrition Agent API")
 app.include_router(tag_router, prefix="/api/v1")
+app.include_router(meal_prep_router, prefix="/api/v1")
 logger = logging.getLogger(__name__)
 
 app.add_middleware(
@@ -1348,6 +1350,38 @@ def get_recipe_detail(recipe_id: str) -> Any:
             "cooking_time_minutes": recipe.cooking_time_minutes,
             "instructions": recipe.instructions,
             "ingredients": ingredients_json,
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        status_code, payload = map_exception_to_api_error(exc)
+        return JSONResponse(status_code=status_code, content=payload)
+
+
+@app.delete("/api/v1/recipes/{recipe_id}")
+@app.delete("/api/recipes/{recipe_id}")
+def delete_recipe_endpoint(recipe_id: str) -> Any:
+    try:
+        recipe_db = RecipeDB(recipes_path)
+        recipe = recipe_db.get_recipe_by_id(recipe_id)
+        if recipe is None:
+            return JSONResponse(
+                status_code=404,
+                content={
+                    "error": {
+                        "code": "RECIPE_NOT_FOUND",
+                        "message": f"No recipe with id {recipe_id!r}",
+                    }
+                },
+            )
+
+        recipe_db._recipes = [r for r in recipe_db._recipes if r.id != recipe_id]  # noqa: SLF001
+        recipe_db.save()
+
+        orphaned_count = MealPrepBatchRepository().mark_orphaned_for_recipe(recipe_id)
+        return {
+            "deleted_id": recipe_id,
+            "orphaned_batches": orphaned_count,
         }
     except HTTPException:
         raise

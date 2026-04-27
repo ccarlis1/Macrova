@@ -92,10 +92,12 @@ class MealPrepBatchRepository:
         )
 
     def _batch_to_dict(self, batch: MealPrepBatch) -> Dict[str, object]:
-        # Persist only canonical status to avoid storing stale derived transitions.
-        persisted_status: Literal["planned", "orphaned"]
+        # Persist only canonical status to avoid storing stale active transitions.
+        persisted_status: Literal["planned", "consumed", "orphaned"]
         if batch.status == "orphaned":
             persisted_status = "orphaned"
+        elif batch.status == "consumed":
+            persisted_status = "consumed"
         else:
             persisted_status = "planned"
         return {
@@ -117,6 +119,8 @@ class MealPrepBatchRepository:
     def _effective_status(self, batch: MealPrepBatch) -> Literal["planned", "active", "consumed", "orphaned"]:
         if batch.status == "orphaned":
             return "orphaned"
+        if batch.status == "consumed":
+            return "consumed"
         if batch.servings_remaining == 0:
             return "consumed"
         if batch.cook_date <= date.today().isoformat():
@@ -165,6 +169,9 @@ class MealPrepBatchRepository:
             if self._effective_status(batch) in {"planned", "active"}
         ]
 
+    def list_all(self) -> List[MealPrepBatch]:
+        return [self._with_effective_status(batch) for batch in self._batches]
+
     def get(self, batch_id: str) -> Optional[MealPrepBatch]:
         for batch in self._batches:
             if batch.id == batch_id:
@@ -176,9 +183,11 @@ class MealPrepBatchRepository:
         batch_id = batch.id.strip() if batch.id else ""
         if not batch_id:
             batch_id = uuid4().hex
-        persisted_status: Literal["planned", "orphaned"]
+        persisted_status: Literal["planned", "consumed", "orphaned"]
         if batch.status == "orphaned":
             persisted_status = "orphaned"
+        elif batch.status == "consumed":
+            persisted_status = "consumed"
         else:
             persisted_status = "planned"
         batch = MealPrepBatch(
@@ -209,6 +218,18 @@ class MealPrepBatchRepository:
         if deleted:
             self._save()
         return deleted
+
+    def cancel(self, batch_id: str) -> bool:
+        for index, batch in enumerate(self._batches):
+            if batch.id != batch_id:
+                continue
+            if len(batch.assignments) == 0:
+                self._batches.pop(index)
+            else:
+                batch.status = "consumed"
+            self._save()
+            return True
+        return False
 
     def mark_orphaned_for_recipe(self, recipe_id: str) -> int:
         changed = 0

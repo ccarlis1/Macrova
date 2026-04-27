@@ -194,3 +194,46 @@ def test_status_transitions_computed_on_read(tmp_path):
     assert active.id in active_ids
     assert planned.id in active_ids
     assert consumed.id not in active_ids
+
+
+def test_list_all_includes_inactive_batches(tmp_path):
+    db_path = tmp_path / "data" / "meal_prep" / "batches.json"
+    repo = MealPrepBatchRepository(str(db_path))
+    active = repo.create(_batch(total_servings=3))
+    consumed = repo.create(
+        _batch(
+            total_servings=2,
+            assignments=[
+                BatchAssignment(day_index=0, slot_index=0, servings=1.0),
+                BatchAssignment(day_index=0, slot_index=1, servings=1.0),
+            ],
+        )
+    )
+
+    all_ids = {b.id for b in repo.list_all()}
+
+    assert active.id in all_ids
+    assert consumed.id in all_ids
+
+
+def test_cancel_soft_deletes_assigned_batch(tmp_path):
+    db_path = tmp_path / "data" / "meal_prep" / "batches.json"
+    repo = MealPrepBatchRepository(str(db_path))
+    created = repo.create(_batch(total_servings=3))
+
+    assert repo.cancel(created.id) is True
+
+    cancelled = MealPrepBatchRepository(str(db_path)).get(created.id)
+    assert cancelled is not None
+    assert cancelled.status == "consumed"
+    assert created.id not in {b.id for b in MealPrepBatchRepository(str(db_path)).list_active()}
+
+
+def test_cancel_hard_deletes_unassigned_batch(tmp_path):
+    db_path = tmp_path / "data" / "meal_prep" / "batches.json"
+    repo = MealPrepBatchRepository(str(db_path))
+    created = repo.create(_batch(total_servings=3, assignments=[]))
+
+    assert repo.cancel(created.id) is True
+
+    assert MealPrepBatchRepository(str(db_path)).get(created.id) is None

@@ -1,6 +1,6 @@
 # BE-10 — Pin assignment API contract
 
-**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** BE-9
+**Status:** implemented  ·  **Complexity:** M  ·  **Depends on:** BE-9
 
 ## Summary
 

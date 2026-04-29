@@ -29,6 +29,7 @@ RECIPE_NOT_FOUND = "RECIPE_NOT_FOUND"
 RECIPE_NOT_BATCHABLE = "RECIPE_NOT_BATCHABLE"
 BATCH_CONFLICT = "BATCH_CONFLICT"
 BATCH_INVALID = "BATCH_INVALID"
+PROFILE_PIN_INVALID = "PROFILE_PIN_INVALID"
 FM_TAG_EMPTY = "FM-TAG-EMPTY"
 FM_BATCH_CONFLICT = "FM-BATCH-CONFLICT"
 FM_MACRO_INFEASIBLE = "FM-MACRO-INFEASIBLE"
@@ -129,6 +130,14 @@ def map_exception_to_api_error(exc: Exception) -> Tuple[int, Dict[str, Any]]:
         if exc.code == BATCH_INVALID:
             return 400, _payload(BATCH_INVALID, str(exc))
         return 400, _payload(exc.code, str(exc))
+
+    # Profile pin validation errors currently surface as ValueError prefixed with
+    # PROFILE_PIN_INVALID in user_profile pin helpers.
+    if isinstance(exc, ValueError):
+        text = str(exc)
+        if text.startswith(f"{PROFILE_PIN_INVALID}:"):
+            message = text.split(":", 1)[1].strip() or "Invalid profile pin."
+            return 400, _payload(PROFILE_PIN_INVALID, message)
 
     # Unknown/unexpected failures
     return 500, _payload("PIPELINE_EXECUTION_ERROR", str(exc))

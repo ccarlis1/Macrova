@@ -291,8 +291,20 @@ class UserProfile:
     # derived meal-only (1–4) for legacy planner paths.
     schedule_days: Optional[List[DaySchedule]] = None
 
+    # Canonical slot pins persisted in profile storage.
+    pins: Optional[List["ProfilePin"]] = None
+
     # Future (post-MVP)
     # meal_prep_meals: List[Meal]
+
+
+@dataclass(frozen=True)
+class ProfilePin:
+    """Canonical persisted profile pin."""
+
+    day_index: int
+    slot_index: int
+    recipe_id: str
 
 
 @dataclass

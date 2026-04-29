@@ -264,6 +264,12 @@ def convert_profile(
             schedule.append(slots_d)
 
     micronutrient_targets = dict(user_profile.daily_micronutrient_targets or {})
+    # Hydration boundary: canonical persisted (day_index, slot_index) enters planner
+    # as (day_1based, slot_index) pinned_assignments.
+    pinned_assignments = {
+        (int(pin.day_index) + 1, int(pin.slot_index)): str(pin.recipe_id)
+        for pin in (user_profile.pins or [])
+    }
 
     return PlanningUserProfile(
         daily_calories=user_profile.daily_calories,
@@ -276,7 +282,7 @@ def convert_profile(
         liked_foods=list(user_profile.liked_foods),
         demographic="adult_male",
         upper_limits_overrides=None,
-        pinned_assignments={},
+        pinned_assignments=pinned_assignments,
         micronutrient_targets=micronutrient_targets,
         micronutrient_weekly_min_fraction=user_profile.micronutrient_weekly_min_fraction,
         activity_schedule={},

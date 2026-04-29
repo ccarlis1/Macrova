@@ -4,11 +4,11 @@ import sys
 import tempfile
 import yaml
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Tuple
 
 from src.llm.schemas import BudgetLevel, PlannerConfigJson
 
-from src.data_layer.models import MicronutrientProfile, UserProfile
+from src.data_layer.models import MicronutrientProfile, ProfilePin, UserProfile
 from src.models.legacy_schedule_migration import (
     canonical_day_to_meal_only_legacy_dict,
     legacy_schedule_dict_to_day_schedule,
@@ -20,6 +20,161 @@ from src.planning.converters import _expand_schedule_days
 from src.planning.micronutrient_policy import validate_micronutrient_weekly_min_fraction
 
 DEFAULT_USER_PROFILE_PATH = Path("config/user_profile.yaml")
+
+
+def _resolve_profile_path(yaml_path: str | Path | None = None) -> Path:
+    if yaml_path is not None:
+        return Path(yaml_path)
+    return Path(os.environ.get("NUTRITION_USER_PROFILE_PATH", str(DEFAULT_USER_PROFILE_PATH)))
+
+
+def _read_profile_yaml(target_path: Path) -> Dict[str, Any]:
+    if not target_path.exists():
+        return {}
+    with open(target_path, "r", encoding="utf-8") as f:
+        loaded = yaml.safe_load(f) or {}
+    if not isinstance(loaded, dict):
+        raise ValueError("User profile YAML root must be a mapping object.")
+    return dict(loaded)
+
+
+def _atomic_write_profile_yaml(target_path: Path, payload: Dict[str, Any]) -> None:
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        suffix=".yaml",
+        prefix="user_profile.",
+        dir=str(target_path.parent),
+        delete=False,
+        encoding="utf-8",
+    ) as tmp:
+        yaml.safe_dump(payload, tmp, sort_keys=False)
+        temp_path = Path(tmp.name)
+    temp_path.replace(target_path)
+
+
+def _validate_persisted_pin_row(row: Any, index: int) -> ProfilePin:
+    if not isinstance(row, dict):
+        raise ValueError(f"PROFILE_PIN_INVALID: pins[{index}] must be an object")
+    for key in row.keys():
+        if key not in {"day_index", "slot_index", "recipe_id"}:
+            raise ValueError(f"PROFILE_PIN_INVALID: pins[{index}].{key} is not allowed")
+    if "day_index" not in row or "slot_index" not in row or "recipe_id" not in row:
+        raise ValueError(f"PROFILE_PIN_INVALID: pins[{index}] missing required fields")
+    day_index = row["day_index"]
+    slot_index = row["slot_index"]
+    recipe_id = str(row["recipe_id"]).strip()
+    if not isinstance(day_index, int) or day_index < 0:
+        raise ValueError(f"PROFILE_PIN_INVALID: pins[{index}].day_index must be int >= 0")
+    if not isinstance(slot_index, int) or slot_index < 0:
+        raise ValueError(f"PROFILE_PIN_INVALID: pins[{index}].slot_index must be int >= 0")
+    if not recipe_id:
+        raise ValueError(f"PROFILE_PIN_INVALID: pins[{index}].recipe_id must be non-empty")
+    return ProfilePin(day_index=day_index, slot_index=slot_index, recipe_id=recipe_id)
+
+
+def _normalize_profile_pins(pins: List[ProfilePin]) -> List[ProfilePin]:
+    # Last write wins for equivalent canonical address.
+    by_key: Dict[Tuple[int, int], ProfilePin] = {}
+    for pin in pins:
+        by_key[(int(pin.day_index), int(pin.slot_index))] = ProfilePin(
+            day_index=int(pin.day_index),
+            slot_index=int(pin.slot_index),
+            recipe_id=str(pin.recipe_id).strip(),
+        )
+    return [by_key[key] for key in sorted(by_key.keys())]
+
+
+def _pins_to_storage_rows(pins: List[ProfilePin]) -> List[Dict[str, Any]]:
+    return [
+        {
+            "day_index": int(pin.day_index),
+            "slot_index": int(pin.slot_index),
+            "recipe_id": str(pin.recipe_id),
+        }
+        for pin in _normalize_profile_pins(pins)
+    ]
+
+
+def _validate_pin_against_schedule(pin: ProfilePin, profile_doc: Dict[str, Any]) -> None:
+    raw_days = profile_doc.get("schedule_days")
+    if raw_days is None:
+        return
+    if not isinstance(raw_days, list):
+        raise ValueError("PROFILE_PIN_INVALID: profile schedule_days must be a list")
+    if pin.day_index >= len(raw_days):
+        raise ValueError("PROFILE_PIN_INVALID: day_index outside persisted schedule")
+    day_payload = raw_days[pin.day_index]
+    if not isinstance(day_payload, dict):
+        raise ValueError("PROFILE_PIN_INVALID: persisted schedule_days row must be an object")
+    raw_meals = day_payload.get("meals", [])
+    if not isinstance(raw_meals, list):
+        raise ValueError("PROFILE_PIN_INVALID: persisted meals must be a list")
+    if pin.slot_index >= len(raw_meals):
+        raise ValueError("PROFILE_PIN_INVALID: slot_index outside persisted schedule day")
+
+
+def load_profile_pins(*, yaml_path: str | Path | None = None) -> List[ProfilePin]:
+    target_path = _resolve_profile_path(yaml_path)
+    profile_doc = _read_profile_yaml(target_path)
+    raw_pins = profile_doc.get("pins", [])
+    if raw_pins is None:
+        return []
+    if not isinstance(raw_pins, list):
+        raise ValueError("PROFILE_PIN_INVALID: pins must be a list")
+    parsed = [_validate_persisted_pin_row(row, idx) for idx, row in enumerate(raw_pins)]
+    return _normalize_profile_pins(parsed)
+
+
+def upsert_profile_pin(
+    *,
+    day_index: int,
+    slot_index: int,
+    recipe_id: str,
+    yaml_path: str | Path | None = None,
+) -> ProfilePin:
+    target_path = _resolve_profile_path(yaml_path)
+    profile_doc = _read_profile_yaml(target_path)
+    existing_pins = load_profile_pins(yaml_path=target_path)
+    updated_pin = ProfilePin(day_index=int(day_index), slot_index=int(slot_index), recipe_id=str(recipe_id).strip())
+    _validate_pin_against_schedule(updated_pin, profile_doc)
+    normalized = _normalize_profile_pins(existing_pins + [updated_pin])
+    profile_doc["pins"] = _pins_to_storage_rows(normalized)
+    _atomic_write_profile_yaml(target_path, profile_doc)
+    return next(
+        pin for pin in normalized if pin.day_index == updated_pin.day_index and pin.slot_index == updated_pin.slot_index
+    )
+
+
+def clear_profile_pin(
+    *,
+    day_index: int,
+    slot_index: int,
+    yaml_path: str | Path | None = None,
+) -> Tuple[bool, Optional[ProfilePin]]:
+    target_path = _resolve_profile_path(yaml_path)
+    profile_doc = _read_profile_yaml(target_path)
+    existing_pins = load_profile_pins(yaml_path=target_path)
+    removed: Optional[ProfilePin] = None
+    kept: List[ProfilePin] = []
+    for pin in existing_pins:
+        if pin.day_index == day_index and pin.slot_index == slot_index:
+            removed = pin
+            continue
+        kept.append(pin)
+    profile_doc["pins"] = _pins_to_storage_rows(kept)
+    _atomic_write_profile_yaml(target_path, profile_doc)
+    return removed is not None, removed
+
+
+def clear_all_profile_pins(*, yaml_path: str | Path | None = None) -> int:
+    target_path = _resolve_profile_path(yaml_path)
+    profile_doc = _read_profile_yaml(target_path)
+    existing = load_profile_pins(yaml_path=target_path)
+    count = len(existing)
+    profile_doc["pins"] = []
+    _atomic_write_profile_yaml(target_path, profile_doc)
+    return count
 
 
 def _normalize_schedule_days_for_storage(
@@ -43,36 +198,15 @@ def persist_profile_schedule_days(
     yaml_path: str | Path | None = None,
 ) -> List[Dict[str, Any]]:
     """Persist canonical schedule_days into the existing profile YAML document."""
-    target_path = Path(yaml_path) if yaml_path is not None else Path(
-        os.environ.get("NUTRITION_USER_PROFILE_PATH", str(DEFAULT_USER_PROFILE_PATH))
-    )
-    target_path.parent.mkdir(parents=True, exist_ok=True)
-
-    existing: Dict[str, Any] = {}
-    if target_path.exists():
-        with open(target_path, "r", encoding="utf-8") as f:
-            loaded = yaml.safe_load(f) or {}
-            if not isinstance(loaded, dict):
-                raise ValueError("User profile YAML root must be a mapping object.")
-            existing = dict(loaded)
+    target_path = _resolve_profile_path(yaml_path)
+    existing = _read_profile_yaml(target_path)
 
     normalized_days = _normalize_schedule_days_for_storage(schedule_days)
     existing["schedule_days"] = normalized_days
     # Remove legacy schedule to avoid conflicting representations.
     existing.pop("schedule", None)
 
-    with tempfile.NamedTemporaryFile(
-        mode="w",
-        suffix=".yaml",
-        prefix="user_profile.",
-        dir=str(target_path.parent),
-        delete=False,
-        encoding="utf-8",
-    ) as tmp:
-        yaml.safe_dump(existing, tmp, sort_keys=False)
-        temp_path = Path(tmp.name)
-
-    temp_path.replace(target_path)
+    _atomic_write_profile_yaml(target_path, existing)
     return normalized_days
 
 
@@ -181,6 +315,7 @@ class UserProfileLoader:
             daily_micronutrient_targets=daily_micro or None,
             micronutrient_weekly_min_fraction=micronutrient_weekly_min_fraction,
             schedule_days=schedule_days,
+            pins=load_profile_pins(yaml_path=self.yaml_path),
         )
 
 
@@ -308,5 +443,6 @@ def user_profile_from_planner_config(cfg: PlannerConfigJson) -> UserProfile:
         daily_micronutrient_targets=None,
         micronutrient_weekly_min_fraction=1.0,
         schedule_days=expanded,
+        pins=None,
     )
 

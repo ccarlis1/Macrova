@@ -19,7 +19,7 @@ if _env_file.exists():
             os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import FastAPI, HTTPException, Path as FastApiPath, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -54,6 +54,7 @@ from src.output.formatters import format_result_json
 from src.providers.api_provider import APIIngredientProvider
 from src.config.llm_settings import load_llm_settings
 from src.api.error_mapping import map_exception_to_api_error
+from src.api.error_mapping import ApiContractError, RECIPE_NOT_FOUND
 from src.api.recipe_sync import (
     RecipeSyncItem,
     RecipeSyncRequest,
@@ -70,7 +71,11 @@ from src.llm.ingredient_matcher import (
 )
 from src.llm.schemas import BudgetLevel, DietaryFlag, PrepTimeBucket, PlannerConfigJson
 from src.data_layer.user_profile import (
+    clear_all_profile_pins,
+    clear_profile_pin,
+    load_profile_pins,
     persist_profile_schedule_days,
+    upsert_profile_pin,
     user_profile_from_planner_config,
 )
 from src.models.legacy_schedule_migration import (
@@ -212,6 +217,16 @@ class PlanFromTextRequest(BaseModel):
 
 class ProfileScheduleWriteResponse(BaseModel):
     schedule_days: List[Dict[str, Any]]
+
+
+class ProfilePinUpsertRequest(BaseModel):
+    recipe_id: constr(strip_whitespace=True, min_length=1)  # type: ignore[valid-type]
+
+
+class ProfilePinDto(BaseModel):
+    day_index: int = Field(..., ge=0)
+    slot_index: int = Field(..., ge=0)
+    recipe_id: str
 
 
 class PlanFailure(BaseModel):
@@ -573,7 +588,11 @@ def _local_ingredient_to_resolve_payload(data: Dict[str, Any]) -> Dict[str, Any]
     }
 
 
-def _build_user_profile(request: PlanRequest) -> tuple[UserProfile, List[str]]:
+def _build_user_profile(
+    request: PlanRequest,
+    *,
+    persisted_pins: Optional[List[Any]] = None,
+) -> tuple[UserProfile, List[str]]:
     daily_fat_g = (request.daily_fat_g_min, request.daily_fat_g_max)
     median_fat_g = (daily_fat_g[0] + daily_fat_g[1]) / 2
     daily_carbs_g = (
@@ -612,8 +631,23 @@ def _build_user_profile(request: PlanRequest) -> tuple[UserProfile, List[str]]:
         daily_micronutrient_targets=request.micronutrient_goals,
         micronutrient_weekly_min_fraction=request.micronutrient_weekly_min_fraction,
         schedule_days=schedule_days,
+        pins=list(persisted_pins or []),
     )
     return profile, warnings
+
+
+def _profile_pin_to_dict(pin: Any) -> Dict[str, Any]:
+    return {
+        "day_index": int(pin.day_index),
+        "slot_index": int(pin.slot_index),
+        "recipe_id": str(pin.recipe_id),
+    }
+
+
+def _validate_recipe_exists(recipe_id: str) -> None:
+    recipe = RecipeDB(recipes_path).get_recipe_by_id(recipe_id)
+    if recipe is None:
+        raise ApiContractError(RECIPE_NOT_FOUND, f"No recipe with id {recipe_id!r}")
 
 
 def build_llm_client() -> LLMClient:
@@ -859,7 +893,11 @@ async def plan_meals_endpoint(
                 "Ignoring client-supplied active_batches in /api/v1/plan payload."
             )
 
-        user_profile, sched_warnings = _build_user_profile(plan_request)
+        persisted_pins = load_profile_pins()
+        user_profile, sched_warnings = _build_user_profile(
+            plan_request,
+            persisted_pins=persisted_pins,
+        )
 
         recipe_db = RecipeDB(recipes_path)
         all_recipes = recipe_db.get_all_recipes()
@@ -1647,6 +1685,58 @@ async def put_profile_schedule_endpoint(request: Request) -> Any:
 
     normalized_days = persist_profile_schedule_days(schedule_days)
     return {"schedule_days": normalized_days}
+
+
+@app.put("/api/v1/profile/pins/{day_index}/{slot_index}")
+def put_profile_pin_endpoint(
+    day_index: int = FastApiPath(..., ge=0),
+    slot_index: int = FastApiPath(..., ge=0),
+    body: ProfilePinUpsertRequest = ...,
+) -> Any:
+    try:
+        recipe_id = body.recipe_id.strip()
+        _validate_recipe_exists(recipe_id)
+        pin = upsert_profile_pin(day_index=day_index, slot_index=slot_index, recipe_id=recipe_id)
+        return {"pin": _profile_pin_to_dict(pin)}
+    except Exception as exc:
+        status_code, payload = map_exception_to_api_error(exc)
+        return JSONResponse(status_code=status_code, content=payload)
+
+
+@app.get("/api/v1/profile/pins")
+def list_profile_pins_endpoint() -> Any:
+    try:
+        pins = load_profile_pins()
+        return {"pins": [_profile_pin_to_dict(pin) for pin in pins]}
+    except Exception as exc:
+        status_code, payload = map_exception_to_api_error(exc)
+        return JSONResponse(status_code=status_code, content=payload)
+
+
+@app.delete("/api/v1/profile/pins/{day_index}/{slot_index}")
+def delete_profile_pin_endpoint(
+    day_index: int = FastApiPath(..., ge=0),
+    slot_index: int = FastApiPath(..., ge=0),
+) -> Any:
+    try:
+        deleted, pin = clear_profile_pin(day_index=day_index, slot_index=slot_index)
+        return {
+            "deleted": bool(deleted),
+            "pin": _profile_pin_to_dict(pin) if pin is not None else None,
+        }
+    except Exception as exc:
+        status_code, payload = map_exception_to_api_error(exc)
+        return JSONResponse(status_code=status_code, content=payload)
+
+
+@app.delete("/api/v1/profile/pins")
+def clear_profile_pins_endpoint() -> Any:
+    try:
+        cleared_count = clear_all_profile_pins()
+        return {"cleared_count": int(cleared_count)}
+    except Exception as exc:
+        status_code, payload = map_exception_to_api_error(exc)
+        return JSONResponse(status_code=status_code, content=payload)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 # DM-7 — Canonical recipe tag seed data
 
-**Status:** todo  ·  **Complexity:** S  ·  **Depends on:** DM-1
+**Status:** implemented  ·  **Complexity:** S  ·  **Depends on:** DM-1
 
 ## Summary
 
@@ -25,9 +25,12 @@ Unblocks: BE-11, BE-13, BE-15.
 - Keep this as Option C: extend existing `recipe_tags.json` flow; do not add a second registry path.
 - Keep seed scope minimal and frontend-critical.
 - Preserve compatibility with BE-1 merge/alias behavior.
+- Required-type coverage (`context`, `time`, `nutrition`, `constraint`) is satisfied by a minimal canonical seed set; avoid broad taxonomy growth in this DM.
+- Existing hardcoded fallback seeds in `tag_repository.py` may still include additional legacy nutrition slugs (for example `high-omega-3`, `high-calcium`) to preserve runtime compatibility.
 
 ## Out of scope
 
 - Full taxonomy expansion.
 - Recipe corpus retagging/migration coverage work.
 - Frontend tag management behavior.
+

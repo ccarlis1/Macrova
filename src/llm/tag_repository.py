@@ -19,9 +19,11 @@ from src.llm.schemas import (
 
 _SEED_CREATED_AT = "1970-01-01T00:00:00Z"
 _SEED_TAGS: Dict[str, Dict[str, str]] = {
+    "meal-prep": {"display": "Meal Prep", "tag_type": "context"},
     "high-omega-3": {"display": "High Omega 3", "tag_type": "nutrition"},
     "high-fiber": {"display": "High Fiber", "tag_type": "nutrition"},
     "high-calcium": {"display": "High Calcium", "tag_type": "nutrition"},
+    "no-shellfish": {"display": "No Shellfish", "tag_type": "constraint"},
     "time-0": {"display": "Instant / No Prep", "tag_type": "time"},
     "time-1": {"display": "Quick", "tag_type": "time"},
     "time-2": {"display": "Fast", "tag_type": "time"},

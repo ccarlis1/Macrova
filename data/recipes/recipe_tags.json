@@ -1,0 +1,76 @@
+{
+  "tag_aliases": {
+    "batch-cook": "meal-prep"
+  },
+  "tag_registry": {
+    "high-fiber": {
+      "aliases": [
+        "fiber-rich"
+      ],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "High Fiber",
+      "slug": "high-fiber",
+      "source": "system",
+      "tag_type": "nutrition"
+    },
+    "meal-prep": {
+      "aliases": [
+        "batch-cook"
+      ],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "Meal Prep",
+      "slug": "meal-prep",
+      "source": "system",
+      "tag_type": "context"
+    },
+    "no-shellfish": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "No Shellfish",
+      "slug": "no-shellfish",
+      "source": "system",
+      "tag_type": "constraint"
+    },
+    "time-0": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "Instant / No Prep",
+      "slug": "time-0",
+      "source": "system",
+      "tag_type": "time"
+    },
+    "time-1": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "Quick",
+      "slug": "time-1",
+      "source": "system",
+      "tag_type": "time"
+    },
+    "time-2": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "Fast",
+      "slug": "time-2",
+      "source": "system",
+      "tag_type": "time"
+    },
+    "time-3": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "Medium",
+      "slug": "time-3",
+      "source": "system",
+      "tag_type": "time"
+    },
+    "time-4": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "Long",
+      "slug": "time-4",
+      "source": "system",
+      "tag_type": "time"
+    }
+  },
+  "tags_by_id": {}
+}

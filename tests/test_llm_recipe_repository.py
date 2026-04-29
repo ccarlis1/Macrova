@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import pytest
 
@@ -429,4 +430,62 @@ def test_recipe_db_roundtrip_tags_stable(tmp_path):
     reloaded = RecipeDB(str(recipes_path), tag_repo_path=str(tags_path)).get_all_recipes()[0]
     assert reloaded.default_servings == 3
     assert reloaded.tags == [{"slug": "high-fiber", "type": "nutrition"}]
+
+
+def test_default_seed_path_loads_required_slugs_and_aliases():
+    tags_path = "data/recipes/recipe_tags.json"
+    required_slugs = {
+        "meal-prep",
+        "time-0",
+        "time-1",
+        "time-2",
+        "time-3",
+        "time-4",
+    }
+
+    for slug in required_slugs:
+        assert resolve(slug, tags_path).slug == slug
+    assert resolve("batch-cook", tags_path).slug == "meal-prep"
+
+
+def test_empty_user_store_still_includes_system_seed_tags(tmp_path):
+    tags_path = tmp_path / "recipe_tags.json"
+    tags_path.write_text(
+        json.dumps({"tags_by_id": {}, "tag_registry": {}, "tag_aliases": {}}, indent=2),
+        encoding="utf-8",
+    )
+
+    assert resolve("meal-prep", str(tags_path)).slug == "meal-prep"
+    assert resolve("time-0", str(tags_path)).slug == "time-0"
+    assert resolve("high-fiber", str(tags_path)).slug == "high-fiber"
+    assert resolve("no-shellfish", str(tags_path)).slug == "no-shellfish"
+
+
+def test_seeded_tags_have_required_fields_and_unique_slugs():
+    payload = json.loads(Path("data/recipes/recipe_tags.json").read_text(encoding="utf-8"))
+    registry = payload["tag_registry"]
+    required_slugs = {
+        "meal-prep",
+        "time-0",
+        "time-1",
+        "time-2",
+        "time-3",
+        "time-4",
+    }
+
+    assert required_slugs.issubset(set(registry.keys()))
+    assert set(payload.keys()) == {"tags_by_id", "tag_registry", "tag_aliases"}
+    assert isinstance(payload["tags_by_id"], dict)
+    assert isinstance(payload["tag_aliases"], dict)
+
+    slugs = [meta["slug"] for meta in registry.values()]
+    assert len(slugs) == len(set(slugs))
+
+    for slug in required_slugs:
+        meta = registry[slug]
+        assert isinstance(meta["slug"], str) and meta["slug"]
+        assert isinstance(meta["display"], str) and meta["display"]
+        assert isinstance(meta["tag_type"], str) and meta["tag_type"]
+        assert isinstance(meta["source"], str) and meta["source"]
+        assert isinstance(meta["aliases"], list)
 

@@ -1,6 +1,6 @@
 # BE-13 — Meal prep API contract stabilization
 
-**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** DM-3, BE-5, BE-11
+**Status:** implemented  ·  **Complexity:** M  ·  **Depends on:** DM-3, BE-5, BE-11
 
 ## Summary
 

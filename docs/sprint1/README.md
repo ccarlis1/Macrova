@@ -47,6 +47,7 @@ Week 2 buffer focus: AI-3..AI-5, FE-4, FE-7, and polish/stabilization.
 - [DM-4 — Extend canonical `MealSlot` + `DaySchedule`](./DM-4-userprofile-slots.md)
 - [DM-5 — Busyness → time-* tag migration](./DM-5-busyness-time-migration.md)
 - [DM-6 — Tag semantics contract](./DM-6-tag-semantics-contract.md)
+- [DM-7 — Canonical recipe tag seed data](./DM-7-canonical-recipe-tag-seed-data.md)
 
 ### Backend
 - [BE-1 — TagService (CRUD + normalize)](./BE-1-tag-service.md)
@@ -58,6 +59,12 @@ Week 2 buffer focus: AI-3..AI-5, FE-4, FE-7, and polish/stabilization.
 - [BE-7 — Failure-code surfacing](./BE-7-failure-codes.md)
 - [BE-8 — Slot constraint evaluator in planner](./BE-8-slot-constraint-evaluator.md)
 - [BE-9 — Profile schedule write contract](./BE-9-profile-schedule-write-contract.md)
+- [BE-10 — Pin assignment API contract](./BE-10-pin-assignment-api-contract.md)
+- [BE-11 — Recipe tag/default serving round-trip API](./BE-11-recipe-tag-default-serving-roundtrip-api.md)
+- [BE-12 — Stable planner failure report contract](./BE-12-stable-planner-failure-report-contract.md)
+- [BE-13 — Meal prep API contract stabilization](./BE-13-meal-prep-api-contract-stabilization.md)
+- [BE-14 — Planner meal metadata output](./BE-14-planner-meal-metadata-output.md)
+- [BE-15 — Backend readiness contract tests](./BE-15-backend-readiness-contract-tests.md)
 
 ### AI / LLM
 - [AI-1 — LLM.suggest_recipes(query, k)](./AI-1-llm-suggest.md)

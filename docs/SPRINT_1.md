@@ -521,6 +521,7 @@ Complexity: **S** ≤ 0.5 day, **M** 0.5–1.5 days, **L** 1.5–3 days.
 | [DM-4](./sprint1/DM-4-userprofile-slots.md)       | Extend `MealSlot` + schedules            | Add optional `required_tag_slugs` / `preferred_tag_slugs` on `src/models/schedule.py::MealSlot`; migrate legacy YAML via `legacy_schedule_migration`.             | Valid `DaySchedule` invariants; workouts use `WorkoutSlot` only. | M   |
 | [DM-5](./sprint1/DM-5-busyness-time-migration.md) | Recipe `time-`* migration                | Script from `cooking_time_minutes` only.                                                                                                                          | Every recipe has exactly one `time-`* slug.                      | S   |
 | [DM-6](./sprint1/DM-6-tag-semantics-contract.md)  | Tag semantics contract                   | Define semantic classes and filterability rules for canonical tags (`capability`, `meal_role`, `exclusion`, `nutrition_claim`, `identity_hint`, `effort_system`). | Planner/LLM/UI semantics are explicit and testable.              | S   |
+| [DM-7](./sprint1/DM-7-canonical-recipe-tag-seed-data.md) | Canonical recipe tag seed data           | Commit canonical `data/recipes/recipe_tags.json` (Option C) or deterministic equivalent seed path consumed by `tag_repository.py`.                                  | Stable system tags load even with empty user-created tag store.  | S   |
 
 
 ## Backend
@@ -537,6 +538,12 @@ Complexity: **S** ≤ 0.5 day, **M** 0.5–1.5 days, **L** 1.5–3 days.
 | [BE-5](./sprint1/BE-5-meal-prep-endpoints.md)             | Meal-prep REST                       | Additive endpoints.                                                                                                                                                            | Integration tests.                                    | M   |
 | [BE-6](./sprint1/BE-6-plan-request-wiring.md)             | Plan request hydration               | Server loads batches + seeds consistently for CLI/API.                                                                                                                         | Parity artifacts per DEBUG doc.                       | S   |
 | [BE-7](./sprint1/BE-7-failure-codes.md)                   | Structured failures                  | Extend `MealPlanResult.report` / API envelope additively.                                                                                                                      | Schema tests.                                         | S   |
+| [BE-10](./sprint1/BE-10-pin-assignment-api-contract.md)   | Pin assignment API contract          | Expose pin CRUD contract using canonical slot addresses and hydrate into existing `pinned_assignments`.                                                                        | Pins persist and affect `/api/v1/plan` deterministically. | M   |
+| [BE-11](./sprint1/BE-11-recipe-tag-default-serving-roundtrip-api.md) | Recipe tag/default serving round-trip API | Make typed tags + `default_servings` round-trip through create/update/sync/detail routes.                                                                                     | Route contract supports recipe tagging and batchability. | M   |
+| [BE-12](./sprint1/BE-12-stable-planner-failure-report-contract.md) | Stable planner failure report contract | Stabilize `plan_status` and `report.failures[]` for frontend-consumable planner errors.                                                                                       | Structured failures are stable across key planner modes. | M   |
+| [BE-13](./sprint1/BE-13-meal-prep-api-contract-stabilization.md) | Meal prep API contract stabilization | Complete batch request/response fields for inventory-safe meal-prep CRUD.                                                                                                      | Batch payloads expose assignments + remaining servings. | M   |
+| [BE-14](./sprint1/BE-14-planner-meal-metadata-output.md)  | Planner meal metadata output         | Add optional `slot_index`/`source`/`batch_id`/`servings` to planned meals without breaking existing consumers.                                                               | Metadata distinguishes planner, batch, and pinned meals. | S   |
+| [BE-15](./sprint1/BE-15-backend-readiness-contract-tests.md) | Backend readiness contract tests      | Add high-value API/contract tests for pin, tag round-trip, failure payloads, and meal-prep lock output.                                                                      | Frontend-critical contracts are locked by tests.      | M   |
 
 
 ## AI / LLM
@@ -633,4 +640,245 @@ Complexity: **S** ≤ 0.5 day, **M** 0.5–1.5 days, **L** 1.5–3 days.
 5. **Additive API and DTO evolution** for meal metadata and failures; no breaking renames.
 6. **G7** anchored to DEBUG parity artifacts and export script.
 7. **REQUIRES_VERIFICATION** only where code signature must be confirmed during implementation (`plan_meals` batch injection, architecture snapshot updates for phase files).
+
+---
+
+# 9. Backend Readiness Plan (Sprint Extension)
+
+This extension translates the backend readiness audit into minimal backend-only work needed before dependent frontend implementation. It does not replace the Sprint 1 tasks above; it sharpens the missing frontend-facing contracts that are currently partial or blocked.
+
+## Blocking vs Non-Blocking Gaps
+
+**Blocking gaps**
+
+- Pin contract is missing from public API/request/persistence, even though `pinned_assignments` exists internally.
+- Recipe typed tags and `default_servings` do not round-trip through recipe create/sync/detail APIs.
+- Canonical tag seed data is absent because `data/recipes/recipe_tags.json` is not committed or equivalently seeded.
+- Planner failure/report response shape is not stable enough for rich frontend failure handling.
+- Meal-prep API and planner output omit metadata needed to render assigned batch meals and inventory safely.
+
+**Non-blocking follow-ups**
+
+- Route-level tag API tests.
+- Field-level validation details for `/api/v1/plan`.
+- Planner failure taxonomy cleanup beyond the stable frontend contract.
+- OpenAPI regeneration/checks if frontend codegen depends on it.
+
+## Phase A — Contract Stabilization (BLOCKING)
+
+### BE-10 — Pin Assignment API Contract
+
+**Summary**
+
+Expose a minimal public contract for creating, reading, updating, and clearing recipe pins keyed by `(day_index, slot_index)`, and hydrate those pins into the existing planner `pinned_assignments` path.
+
+**Context**
+
+The planner already supports `pinned_assignments` internally, but the audit blocks pinned assignment UI because no frontend-facing request or persistence contract exposes it.
+
+**Acceptance Criteria**
+
+- API accepts pinned assignments using canonical slot addressing: `day_index`, `slot_index`, and `recipe_id`.
+- Pins are persisted with the profile or an existing profile-adjacent store; no second planner-only source of truth is introduced.
+- `POST /api/v1/plan` hydrates persisted pins into `PlanningUserProfile.pinned_assignments`.
+- Clearing a pin removes it from future plan requests.
+- Missing recipe IDs return a structured `RECIPE_NOT_FOUND` error.
+- Conflicts with active meal-prep locks preserve existing precedence: batch lock > pin > required tags > planner search.
+
+**Implementation Notes**
+
+- Reuse `PlanningUserProfile.pinned_assignments`; do not add a parallel pin model inside the planner.
+- Keep pin validation at the API/profile boundary and existing planner validation where already present.
+- Keep payloads additive and slot-address based; do not introduce frontend-only slot IDs.
+
+**Out of Scope**
+
+- Drag-and-drop behavior, Flutter state management, or UI conflict modals.
+- New recurrence semantics for pins.
+- Reworking planner precedence.
+
+### BE-11 — Recipe Tag and Default Serving Round-Trip API
+
+**Summary**
+
+Extend recipe create, update, sync, and detail responses so typed tag slugs and `default_servings` can be written and read consistently.
+
+**Context**
+
+Recipe tagging UI and meal-prep creation are blocked because recipe APIs only round-trip recipe basics. `is_meal_prep_capable` depends on `context:meal-prep` plus `default_servings >= 2`, but current sync paths cannot reliably write both inputs.
+
+**Acceptance Criteria**
+
+- `POST /api/v1/recipes`, `PUT /api/v1/recipes/{id}`, and recipe sync accept typed tag slugs grouped by canonical type.
+- `GET /api/v1/recipes/{id}` returns typed tags, `default_servings`, and derived `is_meal_prep_capable`.
+- Recipe list responses include only the minimal fields needed by existing consumers unless an existing enriched/list-detail pattern already exists.
+- Unknown tag slugs are normalized through `tag_repository.py` or rejected with a structured tag error; behavior is deterministic.
+- `default_servings` is validated as an integer `>= 1`; meal-prep capability requires `default_servings >= 2` and approved `context:meal-prep`.
+
+**Implementation Notes**
+
+- Build on DM-2 and BE-1 rather than creating a separate recipe-tag store.
+- Preserve existing recipe basics for compatibility.
+- Keep tag eligibility rules aligned with DM-6; unapproved/proposed tags must not become hard-filter eligible.
+
+**Out of Scope**
+
+- Recipe builder UI.
+- LLM tag generation quality improvements.
+- Bulk corpus retagging beyond what is needed for the round-trip contract.
+
+### DM-7 — Canonical Recipe Tag Seed Data
+
+**Summary**
+
+Commit the canonical `data/recipes/recipe_tags.json` registry or provide an equivalent deterministic seeded data path used by `tag_repository.py`.
+
+**Context**
+
+The audit found runtime tags are effectively empty unless created manually, making tag selector, recipe tagging, and tag-driven planner behavior unstable.
+
+**Acceptance Criteria**
+
+- A canonical registry is present in repo data and loaded by the existing tag repository path.
+- Seeded tags include the Sprint 1 required types: `context`, `time`, `nutrition`, and `constraint`.
+- Required system tags include at least `meal-prep` and `time-0` through `time-4`.
+- Each seeded tag has stable `slug`, `display`, `type`, `source`, and `aliases` fields.
+- Loading an empty user-created tag store still produces deterministic system tags.
+
+**Implementation Notes**
+
+- Treat this as Option C: `recipe_tags.json` remains the canonical source, extended rather than replaced.
+- Keep seed content small and frontend-critical; avoid building a full taxonomy in this task.
+- Do not infer tag display labels at runtime when they can be explicit in the registry.
+
+**Out of Scope**
+
+- Tag management UI.
+- Large nutrition taxonomy design.
+- Migrating every recipe to 95% coverage; that remains covered by the existing corpus migration tasks.
+
+### BE-12 — Stable Planner Failure Report Contract
+
+**Summary**
+
+Define and expose a first-class `report.failures[]` and `plan_status` shape in `PlanResponse` for planner failures that the frontend must render.
+
+**Context**
+
+The backend returns a report today, but failure shapes vary across `FM-TAG-EMPTY`, batch conflicts, macro infeasibility, and legacy planner failures. The frontend cannot build reliable rich failure surfaces until the response contract is stable.
+
+**Acceptance Criteria**
+
+- `PlanResponse` includes stable `plan_status` values such as `success`, `partial`, and `failed`.
+- `report.failures[]` is always present as a list, even when empty.
+- Each failure object includes stable `code`, `message`, and, when slot-specific, `day_index` and `slot_index`.
+- `FM-TAG-EMPTY`, `FM-BATCH-CONFLICT`, and `FM-MACRO-INFEASIBLE` emit structured failure objects.
+- Legacy `FM-1`, `FM-3`, `FM-4`, and `FM-5` are mapped to the stable object shape without requiring a full taxonomy rewrite.
+- FastAPI validation errors may remain generic for this task, but planner-originated failures must use the stable report shape.
+
+**Implementation Notes**
+
+- Extend BE-7 additively; do not remove existing fields consumed by current clients.
+- Keep failure creation near planner reporting/API translation boundaries.
+- Prefer canonical slot coordinates over generated `day-N-slot-M` identifiers for frontend-critical fields.
+
+**Out of Scope**
+
+- Frontend parser/model implementation.
+- Comprehensive error-code taxonomy cleanup.
+- Field-path validation for every request error.
+
+## Phase B — Contract Completion (STILL REQUIRED)
+
+### BE-13 — Meal Prep API Contract Stabilization
+
+**Summary**
+
+Stabilize meal-prep batch request and response fields so the frontend can create, list, inspect, and delete batches without guessing inventory or assignment state.
+
+**Context**
+
+Meal-prep CRUD exists, but the audit marks the UI blocked because batchability depends on missing recipe data and responses omit useful inventory metadata.
+
+**Acceptance Criteria**
+
+- `POST /api/v1/meal_prep_batches` validates `recipe_id`, `total_servings`, `cook_date`, and explicit slot assignments.
+- Responses include `id`, `recipe_id`, recipe display name if already available through existing joins, `total_servings`, assigned servings, remaining servings, `cook_date`, `assignments`, and `status`.
+- Assignment servings cannot exceed `total_servings`.
+- Recipes must be meal-prep capable using BE-11 fields before batch creation succeeds.
+- Deleted or missing recipes produce a stable orphan or not-found response consistent with existing batch rules.
+
+**Implementation Notes**
+
+- Build on DM-3 and BE-5; do not introduce batch assignment ownership outside `MealPrepBatch`.
+- Keep inventory arithmetic server-side and deterministic.
+- Keep `(day_index, slot_index)` as the only persisted slot address.
+
+**Out of Scope**
+
+- Meal-prep tray UI.
+- Auto-allocation of leftovers.
+- Recurring batches or cross-week inventory.
+
+### BE-14 — Planner Meal Metadata Output
+
+**Summary**
+
+Attach minimal source metadata to planned meals so frontend screens can distinguish planner-selected meals, meal-prep batch servings, and pinned assignments.
+
+**Context**
+
+Meal-prep locks are loaded server-side and merged before search, but plan output does not label meals with `source`, `batch_id`, `slot_index`, or `servings`.
+
+**Acceptance Criteria**
+
+- Planned meal output includes optional `slot_index`, `source`, `batch_id`, and `servings`.
+- `source` is one of `planner`, `meal_prep_batch`, or `pinned_assignment`.
+- Meals assigned from active batches include `batch_id` and serving count.
+- Pinned meals include `source: pinned_assignment` without pretending they are batch meals.
+- Existing clients that ignore these fields continue to parse the response.
+
+**Implementation Notes**
+
+- Extend the existing `Meal` / API DTO shape additively as described in §2.1 and §3.2.
+- Metadata attachment should happen after planner assignment resolution, not by bypassing planner phases.
+- Preserve BE-3 vs BE-8 separation: global tag filtering remains pool-level; slot-level decisions remain planner/search-level.
+
+**Out of Scope**
+
+- UI rendering of badges or icons.
+- Historical plan auditing.
+- New planner optimization behavior.
+
+## Phase C — Contract Tests
+
+### BE-15 — Backend Readiness Contract Tests
+
+**Summary**
+
+Add focused route and integration tests for the backend contracts that unblock frontend implementation.
+
+**Context**
+
+The audit lists missing tests around plan failures, meal-prep flow-through, tag CRUD, recipe tag round-trips, and future pin contracts. These tests are high-value because they pin the API shapes the frontend will depend on.
+
+**Acceptance Criteria**
+
+- `/api/v1/plan` test covers `schedule_days.required_tag_slugs` producing `FM-TAG-EMPTY` in `report.failures[]`.
+- `/api/v1/plan` test covers an active meal-prep batch producing locked meal output with `source`, `batch_id`, `slot_index`, and `servings`.
+- Tag route tests cover create, duplicate slug handling, alias normalization, merge, and list.
+- Recipe route tests prove typed tags and `default_servings` round-trip through create/update/sync/detail.
+- Pin contract tests cover create, read, clear, missing recipe, and batch-lock conflict precedence once BE-10 exists.
+
+**Implementation Notes**
+
+- Keep these as backend/API tests only; frontend parser tests belong with FE-9 and are not part of this backend extension.
+- Prefer contract-level assertions over implementation-detail assertions.
+- Use seeded canonical tags from DM-7 in tests rather than hand-building unrelated fixtures.
+
+**Out of Scope**
+
+- Exhaustive planner determinism testing beyond the frontend-critical contract payloads.
+- OpenAPI/codegen checks unless frontend codegen is actively adopted.
+- Broad validation-error refactors.
 

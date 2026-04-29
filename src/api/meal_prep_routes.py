@@ -77,10 +77,14 @@ def _assignment_to_api(batch: MealPrepBatch, item: BatchAssignment) -> Dict[str,
 
 
 def _batch_to_api(batch: MealPrepBatch) -> Dict[str, Any]:
+    assigned_servings = float(sum(item.servings for item in batch.assignments))
+    remaining_servings = float(batch.servings_remaining)
     return {
         "id": batch.id,
         "recipe_id": batch.recipe_id,
         "total_servings": int(batch.total_servings),
+        "assigned_servings": assigned_servings,
+        "remaining_servings": remaining_servings,
         "cook_date": batch.cook_date,
         "status": batch.status,
         "assignments": [_assignment_to_api(batch, item) for item in batch.assignments],

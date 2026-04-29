@@ -101,6 +101,10 @@ def test_create_meal_prep_batch_happy_path(monkeypatch):
     body = res.json()
     assert body["id"] == "batch-created-1"
     assert body["recipe_id"] == "r1"
+    assert body["total_servings"] == 3
+    assert body["assigned_servings"] == 2.0
+    assert body["remaining_servings"] == 1.0
+    assert body["cook_date"] == "2026-04-27"
     assert body["status"] == "planned"
     assert body["assignments"] == [
         {"date": "2026-04-27", "slot_id": 0},
@@ -223,11 +227,19 @@ def test_list_get_delete_meal_prep_batches(monkeypatch):
     c = _client()
     list_res = c.get("/api/v1/meal_prep_batches")
     assert list_res.status_code == 200
-    assert list_res.json()["batches"][0]["id"] == "b1"
+    list_body = list_res.json()["batches"][0]
+    assert list_body["id"] == "b1"
+    assert list_body["total_servings"] == 2
+    assert list_body["assigned_servings"] == 1.0
+    assert list_body["remaining_servings"] == 1.0
 
     get_res = c.get("/api/v1/meal_prep_batches/b1")
     assert get_res.status_code == 200
-    assert get_res.json()["id"] == "b1"
+    get_body = get_res.json()
+    assert get_body["id"] == "b1"
+    assert get_body["total_servings"] == 2
+    assert get_body["assigned_servings"] == 1.0
+    assert get_body["remaining_servings"] == 1.0
 
     del_res = c.delete("/api/v1/meal_prep_batches/b1")
     assert del_res.status_code == 200
@@ -261,6 +273,38 @@ def test_list_meal_prep_batches_active_false_includes_inactive(monkeypatch):
 
     assert res.status_code == 200
     assert {item["id"] for item in res.json()["batches"]} == {"active", "consumed"}
+
+
+def test_create_meal_prep_batch_invalid_when_assigned_servings_exceed_total(monkeypatch):
+    class _RepoRejectingAssignedOverTotal(_MealPrepRepoStub):
+        def create(self, _batch: MealPrepBatch):
+            raise ValueError("sum of assignment servings cannot exceed total_servings")
+
+    monkeypatch.setattr(
+        "src.api.meal_prep_routes.MealPrepBatchRepository",
+        lambda: _RepoRejectingAssignedOverTotal(),
+    )
+    monkeypatch.setattr(
+        "src.api.meal_prep_routes.RecipeDB",
+        lambda *_a, **_k: _RecipeDBStub(_RecipeStub(id="r1", is_meal_prep_capable=True)),
+    )
+
+    res = _client().post(
+        "/api/v1/meal_prep_batches",
+        json={
+            "recipe_id": "r1",
+            "total_servings": 2,
+            "cook_date": "2026-04-27",
+            "assignments": [
+                {"date": "2026-04-27", "slot_id": 0},
+                {"date": "2026-04-28", "slot_id": 1},
+            ],
+        },
+    )
+    assert res.status_code == 400
+    body = res.json()
+    assert body["error"]["code"] == "BATCH_INVALID"
+    assert "sum of assignment servings cannot exceed total_servings" in body["error"]["message"]
 
 
 def test_recipe_delete_endpoint_orphans_batches(monkeypatch):

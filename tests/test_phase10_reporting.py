@@ -7,8 +7,10 @@ import pytest
 from src.data_layer.models import MicronutrientProfile, NutritionProfile
 from src.planning.phase0_models import MealSlot, PlanningUserProfile, WeeklyTracker
 from src.planning.phase10_reporting import (
+    append_batch_tag_mismatch_warning,
     build_failure,
     build_micronutrient_soft_deficit_warning,
+    build_report_fm_batch_conflict,
     build_report_fm4,
     result_from_success,
 )
@@ -156,4 +158,73 @@ def test_macro_infeasible_failure_shape_and_fix_hint_snapshot():
             "constraint": "protein",
         },
         "fix_hint": "Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.",
+    }
+
+
+def test_batch_conflict_report_shape_and_fix_hint_snapshot():
+    report = build_report_fm_batch_conflict(
+        [
+            {
+                "slot_address": {"day_index": 0, "slot_index": 2},
+                "existing_batch_id": "batch-a",
+                "existing_recipe_id": "r1",
+                "incoming_batch_id": "batch-b",
+                "incoming_recipe_id": "r2",
+            }
+        ]
+    )
+
+    assert report == {
+        "failure_mode": "FM-BATCH-CONFLICT",
+        "batch_conflicts": [
+            {
+                "slot_address": {"day_index": 0, "slot_index": 2},
+                "existing_batch_id": "batch-a",
+                "existing_recipe_id": "r1",
+                "incoming_batch_id": "batch-b",
+                "incoming_recipe_id": "r2",
+            }
+        ],
+        "failures": [
+            {
+                "code": "FM-BATCH-CONFLICT",
+                "slot_id": "day-1-slot-2",
+                "date": "",
+                "details": {
+                    "batch_ids": ["batch-a", "batch-b"],
+                    "date": "",
+                    "slot_id": "day-1-slot-2",
+                },
+                "fix_hint": "Batch locks conflict for this slot. Remove one lock so only one batch assignment remains.",
+            }
+        ],
+    }
+
+
+def test_batch_tag_mismatch_warning_appends_without_dropping_existing_report():
+    report = append_batch_tag_mismatch_warning(
+        {"failures": [], "warnings": [{"code": "EXISTING"}]},
+        [
+            {
+                "batch_id": "batch-a",
+                "recipe_id": "r1",
+                "slot_address": {"day_index": 0, "slot_index": 0},
+                "missing_required_tag_slugs": ["portable"],
+            }
+        ],
+    )
+
+    assert report["failures"] == []
+    assert report["warnings"][0] == {"code": "EXISTING"}
+    assert report["warnings"][1] == {
+        "code": "BATCH_TAG_MISMATCH",
+        "message": "Batch lock recipe does not satisfy slot required tags.",
+        "details": [
+            {
+                "batch_id": "batch-a",
+                "recipe_id": "r1",
+                "slot_address": {"day_index": 0, "slot_index": 0},
+                "missing_required_tag_slugs": ["portable"],
+            }
+        ],
     }

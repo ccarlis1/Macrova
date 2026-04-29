@@ -314,6 +314,7 @@ def _apply_recipe_tag_filter_pre_convert(
     recipes: List[Any],
     request_like: Any,
     tag_path: str,
+    protected_recipe_ids: Optional[List[str]] = None,
 ) -> tuple[List[Any], Dict[str, Any]]:
     """Optionally filter recipes deterministically based on strict tag metadata."""
 
@@ -330,6 +331,7 @@ def _apply_recipe_tag_filter_pre_convert(
 
     preferences = _extract_tag_preferences(request_like)
     filter_applied = bool(preferences)
+    protected_ids = {str(rid) for rid in (protected_recipe_ids or []) if str(rid).strip()}
     tags_by_id = load_recipe_tags(tag_path) if filter_applied else {}
     guardrail_warnings: List[str] = []
     if filter_applied and not tags_by_id:
@@ -346,11 +348,23 @@ def _apply_recipe_tag_filter_pre_convert(
         preferences=preferences,
     )
 
+    if protected_ids and filter_applied:
+        filtered_ids = {str(getattr(recipe, "id", "")) for recipe in filtered_recipes}
+        protected_recipes = [
+            recipe
+            for recipe in recipes
+            if str(getattr(recipe, "id", "")) in protected_ids
+            and str(getattr(recipe, "id", "")) not in filtered_ids
+        ]
+        filtered_recipes = list(filtered_recipes) + protected_recipes
+
     log_payload = {
         "filter_applied": filter_applied,
         "input_recipe_count": input_recipe_count,
         "output_recipe_count": len(filtered_recipes),
     }
+    if protected_ids:
+        log_payload["protected_recipe_count"] = len(protected_ids)
     if guardrail_warnings:
         log_payload["guardrail_warnings"] = guardrail_warnings
     return filtered_recipes, log_payload
@@ -364,12 +378,15 @@ def _merge_filter_warnings(
     if not isinstance(warnings, list) or not warnings:
         return
     existing = out.get("warnings")
-    if not isinstance(existing, list):
-        existing = []
+    if not isinstance(existing, dict):
+        existing = {}
+    existing_filter_warnings = list(existing.get("tag_filtering", []))
     for warning in warnings:
         text = str(warning).strip()
-        if text and text not in existing:
-            existing.append(text)
+        if text and text not in existing_filter_warnings:
+            existing_filter_warnings.append(text)
+    if existing_filter_warnings:
+        existing["tag_filtering"] = existing_filter_warnings
     out["warnings"] = existing
 
 
@@ -847,12 +864,19 @@ async def plan_meals_endpoint(
         recipe_db = RecipeDB(recipes_path)
         all_recipes = recipe_db.get_all_recipes()
         all_recipes = _filter_recipes_by_ids(all_recipes, plan_request.recipe_ids)
+        active_batches = MealPrepBatchRepository().list_active()
+        protected_recipe_ids = [
+            str(getattr(batch, "recipe_id"))
+            for batch in active_batches
+            if getattr(batch, "recipe_id", None)
+        ]
 
         tag_path = getattr(plan_request, "recipe_tags_path", None) or DEFAULT_TAG_PATH
         all_recipes, filter_log = _apply_recipe_tag_filter_pre_convert(
             recipes=all_recipes,
             request_like=plan_request,
             tag_path=tag_path,
+            protected_recipe_ids=protected_recipe_ids,
         )
         print(
             json.dumps(filter_log, sort_keys=True, ensure_ascii=True),
@@ -881,7 +905,6 @@ async def plan_meals_endpoint(
         )
         recipe_by_id = {r.id: r for r in recipe_pool}
         planning_profile = convert_profile(user_profile, plan_request.days)
-        active_batches = MealPrepBatchRepository().list_active()
         effective_plan_request = build_plan_request_from_profile(
             user_profile,
             all_recipes,

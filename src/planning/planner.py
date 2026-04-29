@@ -10,7 +10,11 @@ from src.planning.phase7_search import (
     SearchStats,
     DEFAULT_ATTEMPT_LIMIT,
 )
-from src.planning.phase10_reporting import MealPlanResult, build_failure, ensure_report_failures
+from src.planning.phase10_reporting import (
+    MealPlanResult,
+    append_batch_tag_mismatch_warning,
+    build_report_fm_batch_conflict,
+)
 
 
 def _merge_batch_locks_into_pins(
@@ -74,38 +78,12 @@ def _merge_batch_locks_into_pins(
                         )
 
     if conflicts:
-        failures = []
-        for item in conflicts:
-            slot_address = item.get("slot_address", {}) or {}
-            day_index = int(slot_address.get("day_index", 0))
-            slot_index = int(slot_address.get("slot_index", 0))
-            slot_id = f"day-{day_index + 1}-slot-{slot_index}"
-            batch_ids = [
-                str(item.get("existing_batch_id", "")),
-                str(item.get("incoming_batch_id", "")),
-            ]
-            failures.append(
-                build_failure(
-                    code="FM-BATCH-CONFLICT",
-                    slot_id=slot_id,
-                    date="",
-                    details={
-                        "batch_ids": batch_ids,
-                        "date": "",
-                        "slot_id": slot_id,
-                    },
-                )
-            )
         return (
             MealPlanResult(
                 success=False,
                 termination_code="TC-3",
                 failure_mode="FM-BATCH-CONFLICT",
-                report=ensure_report_failures({
-                    "failure_mode": "FM-BATCH-CONFLICT",
-                    "batch_conflicts": conflicts,
-                    "failures": failures,
-                }),
+                report=build_report_fm_batch_conflict(conflicts),
                 stats={"attempts": 0, "backtracks": 0},
             ),
             effective_pins,
@@ -162,14 +140,5 @@ def plan_meals(
         stats,
     )
     if tag_mismatches:
-        result.report = dict(result.report or {})
-        warnings = list(result.report.get("warnings", []))
-        warnings.append(
-            {
-                "code": "BATCH_TAG_MISMATCH",
-                "message": "Batch lock recipe does not satisfy slot required tags.",
-                "details": tag_mismatches,
-            }
-        )
-        result.report["warnings"] = warnings
+        result.report = append_batch_tag_mismatch_warning(result.report, tag_mismatches)
     return result

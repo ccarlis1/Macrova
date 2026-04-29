@@ -55,6 +55,18 @@ def _base_plan_payload(*, planning_mode: str = "deterministic"):
     }
 
 
+def _valid_plan_response():
+    return {
+        "success": True,
+        "termination_code": "TC-1",
+        "days": 1,
+        "daily_plans": [],
+        "warnings": {},
+        "report": {"failures": []},
+        "goals": {},
+    }
+
+
 @pytest.mark.parametrize(
     "scenario,tags_by_id,request_overrides,expected_recipe_ids",
     [
@@ -151,7 +163,7 @@ def test_api_plan_tag_filtering_applied_pre_conversion(
     )
     monkeypatch.setattr(
         "src.api.server.format_result_json",
-        lambda _result, _recipe_by_id, _profile, _days: {"ok": True},
+        lambda _result, _recipe_by_id, _profile, _days: _valid_plan_response(),
     )
 
     client = TestClient(app)
@@ -221,7 +233,7 @@ def test_api_plan_tag_filtering_preserves_recipe_id_pre_filter_order_with_single
     )
     monkeypatch.setattr(
         "src.api.server.format_result_json",
-        lambda _result, _recipe_by_id, _profile, _days: {"ok": True},
+        lambda _result, _recipe_by_id, _profile, _days: _valid_plan_response(),
     )
 
     client = TestClient(app)
@@ -316,6 +328,40 @@ def test_api_plan_be3_ignores_slot_required_tags_and_preserves_preselected(monke
         "filter_applied": False,
         "input_recipe_count": 1,
         "output_recipe_count": 1,
+    }
+
+
+def test_api_plan_tag_filtering_preserves_protected_batch_recipes(monkeypatch):
+    from src.api.server import _apply_recipe_tag_filter_pre_convert
+
+    recipes = [SimpleNamespace(id="batch-r"), SimpleNamespace(id="matching-r")]
+    monkeypatch.setattr(
+        "src.api.server.load_recipe_tags",
+        lambda _: {
+            "batch-r": _tags(cuisine="italian"),
+            "matching-r": _tags(cuisine="mexican"),
+        },
+    )
+    request_like = SimpleNamespace(
+        cuisine=["mexican"],
+        cost_level=None,
+        prep_time_bucket=None,
+        dietary_flags=None,
+    )
+
+    filtered, filter_log = _apply_recipe_tag_filter_pre_convert(
+        recipes=recipes,
+        request_like=request_like,
+        tag_path="unused.json",
+        protected_recipe_ids=["batch-r"],
+    )
+
+    assert [recipe.id for recipe in filtered] == ["matching-r", "batch-r"]
+    assert filter_log == {
+        "filter_applied": True,
+        "input_recipe_count": 2,
+        "output_recipe_count": 2,
+        "protected_recipe_count": 1,
     }
 
 
@@ -991,7 +1037,10 @@ def test_api_and_cli_use_shared_apply_tag_filtering(monkeypatch, tmp_path):
             stats={"attempts": 1, "backtracks": 0},
         ),
     )
-    monkeypatch.setattr("src.api.server.format_result_json", lambda *_args, **_kwargs: {"ok": True})
+    monkeypatch.setattr(
+        "src.api.server.format_result_json",
+        lambda *_args, **_kwargs: _valid_plan_response(),
+    )
 
     client = TestClient(app)
     payload = _base_plan_payload()

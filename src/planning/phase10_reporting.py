@@ -220,6 +220,59 @@ def build_report_fm3(
     }
 
 
+def build_report_fm_batch_conflict(
+    conflicts: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """FM-BATCH-CONFLICT: two meal-prep batch locks target the same slot."""
+    failures = []
+    for item in conflicts:
+        slot_address = item.get("slot_address", {}) or {}
+        day_index = int(slot_address.get("day_index", 0))
+        slot_index = int(slot_address.get("slot_index", 0))
+        slot_id = f"day-{day_index + 1}-slot-{slot_index}"
+        batch_ids = [
+            str(item.get("existing_batch_id", "")),
+            str(item.get("incoming_batch_id", "")),
+        ]
+        failures.append(
+            build_failure(
+                code="FM-BATCH-CONFLICT",
+                slot_id=slot_id,
+                date="",
+                details={
+                    "batch_ids": batch_ids,
+                    "date": "",
+                    "slot_id": slot_id,
+                },
+            )
+        )
+    return ensure_report_failures(
+        {
+            "failure_mode": "FM-BATCH-CONFLICT",
+            "batch_conflicts": list(conflicts),
+            "failures": failures,
+        }
+    )
+
+
+def append_batch_tag_mismatch_warning(
+    report: Optional[Dict[str, Any]],
+    tag_mismatches: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """Attach non-fatal batch-lock required-tag mismatch diagnostics."""
+    normalized = dict(report or {})
+    warnings = list(normalized.get("warnings", []))
+    warnings.append(
+        {
+            "code": "BATCH_TAG_MISMATCH",
+            "message": "Batch lock recipe does not satisfy slot required tags.",
+            "details": list(tag_mismatches),
+        }
+    )
+    normalized["warnings"] = warnings
+    return normalized
+
+
 def _deficient_nutrients_list(
     weekly_tracker: WeeklyTracker,
     profile: PlanningUserProfile,

@@ -106,7 +106,15 @@ def test_map_exception_to_api_error_unit_mapping():
     assert status == 500
     assert payload["error"]["code"] == "VALIDATION_EXCEPTION"
 
-    for code in ("FM-TAG-EMPTY", "FM-BATCH-CONFLICT", "FM-MACRO-INFEASIBLE"):
+    for code in (
+        "FM-TAG-EMPTY",
+        "FM-BATCH-CONFLICT",
+        "FM-MACRO-INFEASIBLE",
+        "FM-1",
+        "FM-3",
+        "FM-4",
+        "FM-5",
+    ):
         status, payload = map_exception_to_api_error(ApiContractError(code, "planner failure"))
         assert status == 422
         assert payload["error"]["code"] == code

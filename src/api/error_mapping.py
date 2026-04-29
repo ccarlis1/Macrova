@@ -33,6 +33,10 @@ PROFILE_PIN_INVALID = "PROFILE_PIN_INVALID"
 FM_TAG_EMPTY = "FM-TAG-EMPTY"
 FM_BATCH_CONFLICT = "FM-BATCH-CONFLICT"
 FM_MACRO_INFEASIBLE = "FM-MACRO-INFEASIBLE"
+FM_1 = "FM-1"
+FM_3 = "FM-3"
+FM_4 = "FM-4"
+FM_5 = "FM-5"
 
 
 class ApiContractError(Exception):
@@ -119,7 +123,15 @@ def map_exception_to_api_error(exc: Exception) -> Tuple[int, Dict[str, Any]]:
         return 400, _payload(exc.code, str(exc))
 
     if isinstance(exc, ApiContractError):
-        if exc.code in {FM_TAG_EMPTY, FM_BATCH_CONFLICT, FM_MACRO_INFEASIBLE}:
+        if exc.code in {
+            FM_TAG_EMPTY,
+            FM_BATCH_CONFLICT,
+            FM_MACRO_INFEASIBLE,
+            FM_1,
+            FM_3,
+            FM_4,
+            FM_5,
+        }:
             return 422, _payload(exc.code, str(exc))
         if exc.code == RECIPE_NOT_FOUND:
             return 404, _payload(RECIPE_NOT_FOUND, str(exc))

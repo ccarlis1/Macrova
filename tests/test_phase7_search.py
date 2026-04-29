@@ -337,6 +337,9 @@ class TestFailureModes:
         assert len(failures) == 1
         assert failures[0] == {
             "code": "FM-TAG-EMPTY",
+            "message": "No recipes satisfy required tag `high-protein` for this slot.",
+            "day_index": 0,
+            "slot_index": 0,
             "slot_id": "day-1-slot-0",
             "date": "",
             "details": {"missing_tag": "high-protein", "recipe_count": 0},
@@ -365,6 +368,7 @@ class TestFailureModes:
         assert len(failures) == 1
         assert failures[0] == {
             "code": "FM-MACRO-INFEASIBLE",
+            "message": "Macro targets are infeasible under current constraints.",
             "slot_id": "",
             "date": "day-1",
             "details": {

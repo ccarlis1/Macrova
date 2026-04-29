@@ -64,13 +64,23 @@ def test_openapi_plan_response_includes_failure_codes():
     components = schema["components"]["schemas"]
     assert "PlanFailure" in components
     failure_schema_text = str(components["PlanFailure"])
-    for code in ("FM-TAG-EMPTY", "FM-BATCH-CONFLICT", "FM-MACRO-INFEASIBLE"):
+    for code in (
+        "FM-TAG-EMPTY",
+        "FM-BATCH-CONFLICT",
+        "FM-MACRO-INFEASIBLE",
+        "FM-1",
+        "FM-3",
+        "FM-4",
+        "FM-5",
+    ):
         assert code in failure_schema_text
 
     response_schema = schema["paths"]["/api/v1/plan"]["post"]["responses"]["200"][
         "content"
     ]["application/json"]["schema"]
     assert response_schema["$ref"] == "#/components/schemas/PlanResponse"
+    plan_response = components["PlanResponse"]
+    assert plan_response["properties"]["plan_status"]["enum"] == ["success", "partial", "failed"]
 
 
 def test_api_v1_recipes_lists_same_as_legacy(monkeypatch):

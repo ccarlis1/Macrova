@@ -10,7 +10,7 @@ from src.planning.phase0_models import (
     Assignment,
     micronutrient_profile_to_dict,
 )
-from src.planning.phase10_reporting import MealPlanResult
+from src.planning.phase10_reporting import MealPlanResult, normalize_planner_report
 
 
 # Human-readable names for micronutrients in markdown output
@@ -286,13 +286,23 @@ def format_result_json(
         "daily_carbs_g": profile.daily_carbs_g,
     }
 
-    report = dict(result.report or {})
-    if not isinstance(report.get("failures"), list):
-        report["failures"] = []
+    report = normalize_planner_report(
+        failure_mode=getattr(result, "failure_mode", None),
+        report=result.report,
+    )
+    has_failures = bool(report.get("failures"))
+    has_usable_plan = bool(daily_plans)
+    if result.success and not has_failures and not result.plan_incomplete_reason:
+        plan_status = "success"
+    elif has_usable_plan:
+        plan_status = "partial"
+    else:
+        plan_status = "failed"
 
     out = {
         "success": result.success,
         "termination_code": result.termination_code,
+        "plan_status": plan_status,
         "days": D,
         "daily_plans": daily_plans,
         "warnings": result.warning if result.warning else {},
@@ -302,7 +312,6 @@ def format_result_json(
     if weekly_totals is not None:
         out["weekly_totals"] = weekly_totals
     if result.plan_incomplete_reason:
-        out["plan_status"] = "incomplete"
         out["plan_status_message"] = result.plan_incomplete_reason
     return out
 

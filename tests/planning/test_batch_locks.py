@@ -102,6 +102,9 @@ def test_batch_lock_conflict_returns_fm_batch_conflict():
     assert len(failures) == 1
     assert failures[0] == {
         "code": "FM-BATCH-CONFLICT",
+        "message": "Batch locks conflict for this slot.",
+        "day_index": 0,
+        "slot_index": 0,
         "slot_id": "day-1-slot-0",
         "date": "",
         "details": {

@@ -1,6 +1,6 @@
 # BE-12 — Stable planner failure report contract
 
-**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** BE-7
+**Status:** implemented  ·  **Complexity:** M  ·  **Depends on:** BE-7
 
 ## Summary
 

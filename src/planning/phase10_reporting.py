@@ -55,9 +55,14 @@ def build_failure(
     *,
     code: str,
     details: Dict[str, Any],
+    message: Optional[str] = None,
+    day_index: Optional[int] = None,
+    slot_index: Optional[int] = None,
     slot_id: str = "",
     date: str = "",
 ) -> Dict[str, Any]:
+    resolved_day_index = day_index if day_index is not None else _as_int_or_none((details or {}).get("day_index"))
+    resolved_slot_index = slot_index if slot_index is not None else _as_int_or_none((details or {}).get("slot_index"))
     failure = Failure(
         code=str(code),
         slot_id=str(slot_id),
@@ -65,11 +70,27 @@ def build_failure(
         details=dict(details or {}),
         fix_hint=fix_hint_for_code(str(code)),
     )
+    resolved_message = str(message or "").strip()
+    if not resolved_message:
+        resolved_message = f"Planner failure: {code}."
     if code == "FM-TAG-EMPTY":
         missing_tag = str((details or {}).get("missing_tag", "")).strip()
         if missing_tag:
             failure.fix_hint = failure.fix_hint.replace("{missing_tag}", missing_tag)
-    return failure.to_dict()
+        if message is None:
+            resolved_message = f"No recipes satisfy required tag `{missing_tag}` for this slot."
+    if code == "FM-BATCH-CONFLICT" and message is None:
+        resolved_message = "Batch locks conflict for this slot."
+    if code == "FM-MACRO-INFEASIBLE" and message is None:
+        resolved_message = "Macro targets are infeasible under current constraints."
+    return normalize_failure_object(
+        {
+            **failure.to_dict(),
+            "message": resolved_message,
+            "day_index": resolved_day_index,
+            "slot_index": resolved_slot_index,
+        }
+    )
 
 
 def ensure_report_failures(report: Optional[Dict[str, Any]]) -> Dict[str, Any]:
@@ -77,6 +98,175 @@ def ensure_report_failures(report: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     failures = normalized.get("failures")
     if not isinstance(failures, list):
         normalized["failures"] = []
+    return normalized
+
+
+def _as_int_or_none(value: Any) -> Optional[int]:
+    try:
+        if value is None:
+            return None
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def normalize_failure_object(raw_failure: Any) -> Dict[str, Any]:
+    """Normalize arbitrary failure objects into the stable additive API shape."""
+    item = dict(raw_failure or {}) if isinstance(raw_failure, dict) else {}
+    code = str(item.get("code", "")).strip()
+    details = item.get("details")
+    if not isinstance(details, dict):
+        details = {}
+    message = str(item.get("message", "")).strip()
+    if not message:
+        message = "Planner constraints could not be satisfied for this slot."
+
+    normalized: Dict[str, Any] = {
+        "code": code,
+        "message": message,
+    }
+
+    day_index = _as_int_or_none(item.get("day_index"))
+    slot_index = _as_int_or_none(item.get("slot_index"))
+    if day_index is not None:
+        normalized["day_index"] = day_index
+    if slot_index is not None:
+        normalized["slot_index"] = slot_index
+
+    slot_id = item.get("slot_id")
+    if isinstance(slot_id, str):
+        normalized["slot_id"] = slot_id
+    date = item.get("date")
+    if isinstance(date, str):
+        normalized["date"] = date
+    normalized["details"] = dict(details)
+
+    fix_hint = item.get("fix_hint")
+    if isinstance(fix_hint, str) and fix_hint.strip():
+        normalized["fix_hint"] = fix_hint
+    return normalized
+
+
+def _fm1_failures_from_report(report: Dict[str, Any]) -> List[Dict[str, Any]]:
+    out: List[Dict[str, Any]] = []
+    for slot in report.get("unfillable_slots", []) or []:
+        if not isinstance(slot, dict):
+            continue
+        day_index = _as_int_or_none(slot.get("day"))
+        slot_index = _as_int_or_none(slot.get("slot_index"))
+        details = {
+            "eligible_recipe_count": int(slot.get("eligible_recipe_count", 0)),
+            "blocking_constraints": list(slot.get("blocking_constraints", []) or []),
+        }
+        out.append(
+            normalize_failure_object(
+                {
+                    "code": "FM-1",
+                    "message": "No feasible recipe candidates for this slot.",
+                    "day_index": day_index,
+                    "slot_index": slot_index,
+                    "details": details,
+                    "date": "" if day_index is None else f"day-{day_index + 1}",
+                    "slot_id": (
+                        ""
+                        if day_index is None or slot_index is None
+                        else f"day-{day_index + 1}-slot-{slot_index}"
+                    ),
+                }
+            )
+        )
+    return out
+
+
+def _fm3_failures_from_report(report: Dict[str, Any]) -> List[Dict[str, Any]]:
+    out: List[Dict[str, Any]] = []
+    remaining_budget = report.get("remaining_budget", {})
+    for conflict in report.get("pinned_conflicts", []) or []:
+        if not isinstance(conflict, dict):
+            continue
+        day_index = _as_int_or_none(conflict.get("day"))
+        slot_index = _as_int_or_none(conflict.get("slot_index"))
+        details = {
+            "recipe_id": conflict.get("recipe_id"),
+            "violation_type": conflict.get("violation_type"),
+            "remaining_budget": remaining_budget if isinstance(remaining_budget, dict) else {},
+        }
+        out.append(
+            normalize_failure_object(
+                {
+                    "code": "FM-3",
+                    "message": "Pinned assignment conflicts with planner constraints.",
+                    "day_index": day_index,
+                    "slot_index": slot_index,
+                    "details": details,
+                    "date": "" if day_index is None else f"day-{day_index + 1}",
+                    "slot_id": (
+                        ""
+                        if day_index is None or slot_index is None
+                        else f"day-{day_index + 1}-slot-{slot_index}"
+                    ),
+                }
+            )
+        )
+    return out
+
+
+def _fm4_failures_from_report(report: Dict[str, Any]) -> List[Dict[str, Any]]:
+    deficient = list(report.get("deficient_nutrients", []) or [])
+    return [
+        normalize_failure_object(
+            {
+                "code": "FM-4",
+                "message": "Weekly micronutrient targets are infeasible with current constraints.",
+                "details": {"deficient_nutrients": deficient},
+            }
+        )
+    ] if deficient else []
+
+
+def _fm5_failures_from_report(report: Dict[str, Any]) -> List[Dict[str, Any]]:
+    details = {
+        "attempts": int(report.get("attempts", 0)),
+        "backtracks": int(report.get("backtracks", 0)),
+        "search_exhaustive": bool(report.get("search_exhaustive", False)),
+        "best_plan_violations": dict(report.get("best_plan_violations", {}) or {}),
+    }
+    if details["attempts"] <= 0 and not details["best_plan_violations"]:
+        return []
+    return [
+        normalize_failure_object(
+            {
+                "code": "FM-5",
+                "message": "Planner stopped after reaching attempt limits.",
+                "details": details,
+            }
+        )
+    ]
+
+
+def normalize_planner_report(
+    *,
+    failure_mode: Optional[str],
+    report: Optional[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """Ensure planner report always has stable `failures[]` entries."""
+    normalized = ensure_report_failures(report)
+    raw_failures = normalized.get("failures", [])
+    failures: List[Dict[str, Any]] = []
+    if isinstance(raw_failures, list):
+        failures = [normalize_failure_object(item) for item in raw_failures]
+
+    if not failures:
+        if failure_mode == "FM-1":
+            failures = _fm1_failures_from_report(normalized)
+        elif failure_mode == "FM-3":
+            failures = _fm3_failures_from_report(normalized)
+        elif failure_mode == "FM-4":
+            failures = _fm4_failures_from_report(normalized)
+        elif failure_mode == "FM-5":
+            failures = _fm5_failures_from_report(normalized)
+
+    normalized["failures"] = failures
     return normalized
 
 
@@ -237,6 +427,8 @@ def build_report_fm_batch_conflict(
         failures.append(
             build_failure(
                 code="FM-BATCH-CONFLICT",
+                day_index=day_index,
+                slot_index=slot_index,
                 slot_id=slot_id,
                 date="",
                 details={
@@ -436,7 +628,7 @@ def result_from_success(
         daily_trackers=dict(daily_trackers),
         weekly_tracker=weekly_tracker,
         warning=warning,
-        report=ensure_report_failures({}),
+        report=normalize_planner_report(failure_mode=None, report={}),
         stats=stats,
     )
 
@@ -493,7 +685,7 @@ def result_from_failure(
         daily_trackers=daily_trackers,
         weekly_tracker=weekly_tracker,
         warning=warning,
-        report=ensure_report_failures(report),
+        report=normalize_planner_report(failure_mode=failure_mode, report=report),
         stats=st,
         plan_incomplete_reason=plan_incomplete_reason,
     )

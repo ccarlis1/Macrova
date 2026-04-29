@@ -1,6 +1,6 @@
 # BE-11 — Recipe tag/default serving round-trip API
 
-**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** DM-2, DM-7, BE-1
+**Status:** implemented  ·  **Complexity:** M  ·  **Depends on:** DM-2, DM-7, BE-1
 
 ## Summary
 

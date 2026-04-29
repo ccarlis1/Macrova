@@ -230,11 +230,23 @@ class ProfilePinDto(BaseModel):
 
 
 class PlanFailure(BaseModel):
-    code: Literal["FM-TAG-EMPTY", "FM-BATCH-CONFLICT", "FM-MACRO-INFEASIBLE"]
-    slot_id: str
-    date: str
-    details: Dict[str, Any]
-    fix_hint: str
+    code: Literal[
+        "FM-1",
+        "FM-2",
+        "FM-3",
+        "FM-4",
+        "FM-5",
+        "FM-TAG-EMPTY",
+        "FM-BATCH-CONFLICT",
+        "FM-MACRO-INFEASIBLE",
+    ]
+    message: str
+    day_index: Optional[int] = None
+    slot_index: Optional[int] = None
+    slot_id: Optional[str] = None
+    date: Optional[str] = None
+    details: Dict[str, Any] = Field(default_factory=dict)
+    fix_hint: Optional[str] = None
 
 
 class PlanReport(BaseModel):
@@ -254,7 +266,7 @@ class PlanResponse(BaseModel):
     report: PlanReport
     goals: Dict[str, Any]
     weekly_totals: Optional[Dict[str, Any]] = None
-    plan_status: Optional[str] = None
+    plan_status: Literal["success", "partial", "failed"]
     plan_status_message: Optional[str] = None
 
 
@@ -1494,6 +1506,7 @@ def sync_recipes_endpoint(body: RecipeSyncRequest) -> Any:
         synced_ids = atomic_upsert_recipes_by_id(
             path=recipes_path,
             items=body.recipes,
+            tag_path=DEFAULT_TAG_PATH,
         )
         return RecipeSyncResponse(synced_ids=synced_ids)
     except HTTPException:
@@ -1511,6 +1524,7 @@ def create_recipe_endpoint(item: RecipeSyncItem) -> Any:
         synced_ids = atomic_upsert_recipes_by_id(
             path=recipes_path,
             items=[item],
+            tag_path=DEFAULT_TAG_PATH,
         )
         return RecipeSyncResponse(synced_ids=synced_ids)
     except HTTPException:
@@ -1538,6 +1552,7 @@ def put_recipe_endpoint(recipe_id: str, item: RecipeSyncItem) -> Any:
         synced_ids = atomic_upsert_recipes_by_id(
             path=recipes_path,
             items=[item],
+            tag_path=DEFAULT_TAG_PATH,
         )
         return RecipeSyncResponse(synced_ids=synced_ids)
     except HTTPException:
@@ -1577,13 +1592,27 @@ def get_recipe_detail(recipe_id: str) -> Any:
         nutrition_db = NutritionDB(ingredients_path)
         calculator = NutritionCalculator(LocalIngredientProvider(nutrition_db))
         ingredients_json = _flutter_ingredient_entries(recipe, calculator)
+        canonical_tags = load_recipe_tags(DEFAULT_TAG_PATH)
+        recipe_tags = canonical_tags.get(recipe_id)
+        tag_slugs_by_type = dict((recipe_tags.tag_slugs_by_type or {}) if recipe_tags else {})
+        hard_eligible_by_id = load_hard_eligible_recipe_tag_slugs(DEFAULT_TAG_PATH)
+        context_slugs = set(tag_slugs_by_type.get("context", []))
+        hard_eligible = hard_eligible_by_id.get(recipe_id, set())
+        is_meal_prep_capable = (
+            int(recipe.default_servings) >= 2
+            and "meal-prep" in context_slugs
+            and "meal-prep" in hard_eligible
+        )
         return {
             "id": recipe.id,
             "name": recipe.name,
-            "servings": 1,
+            "servings": int(recipe.default_servings),
+            "default_servings": int(recipe.default_servings),
             "cooking_time_minutes": recipe.cooking_time_minutes,
             "instructions": recipe.instructions,
             "ingredients": ingredients_json,
+            "tag_slugs_by_type": tag_slugs_by_type,
+            "is_meal_prep_capable": is_meal_prep_capable,
         }
     except HTTPException:
         raise

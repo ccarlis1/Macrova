@@ -12,6 +12,7 @@ from src.planning.phase10_reporting import (
     build_micronutrient_soft_deficit_warning,
     build_report_fm_batch_conflict,
     build_report_fm4,
+    normalize_planner_report,
     result_from_success,
 )
 from src.planning.phase0_models import Assignment
@@ -150,6 +151,7 @@ def test_macro_infeasible_failure_shape_and_fix_hint_snapshot():
     )
     assert failure == {
         "code": "FM-MACRO-INFEASIBLE",
+        "message": "Macro targets are infeasible under current constraints.",
         "slot_id": "",
         "date": "day-2",
         "details": {
@@ -188,6 +190,9 @@ def test_batch_conflict_report_shape_and_fix_hint_snapshot():
         "failures": [
             {
                 "code": "FM-BATCH-CONFLICT",
+                "message": "Batch locks conflict for this slot.",
+                "day_index": 0,
+                "slot_index": 2,
                 "slot_id": "day-1-slot-2",
                 "date": "",
                 "details": {
@@ -199,6 +204,41 @@ def test_batch_conflict_report_shape_and_fix_hint_snapshot():
             }
         ],
     }
+
+
+def test_normalize_planner_report_maps_legacy_codes():
+    fm1 = normalize_planner_report(
+        failure_mode="FM-1",
+        report={"unfillable_slots": [{"day": 0, "slot_index": 1, "eligible_recipe_count": 0}]},
+    )
+    assert fm1["failures"][0]["code"] == "FM-1"
+    assert fm1["failures"][0]["message"]
+    assert fm1["failures"][0]["day_index"] == 0
+    assert fm1["failures"][0]["slot_index"] == 1
+
+    fm3 = normalize_planner_report(
+        failure_mode="FM-3",
+        report={
+            "pinned_conflicts": [{"day": 0, "slot_index": 0, "recipe_id": "r1", "violation_type": "HC-1"}],
+            "remaining_budget": {"calories": 0},
+        },
+    )
+    assert fm3["failures"][0]["code"] == "FM-3"
+    assert fm3["failures"][0]["details"]["recipe_id"] == "r1"
+
+    fm4 = normalize_planner_report(
+        failure_mode="FM-4",
+        report={"deficient_nutrients": [{"nutrient": "iron_mg", "deficit": 1.0}]},
+    )
+    assert fm4["failures"][0]["code"] == "FM-4"
+    assert fm4["failures"][0]["details"]["deficient_nutrients"][0]["nutrient"] == "iron_mg"
+
+    fm5 = normalize_planner_report(
+        failure_mode="FM-5",
+        report={"attempts": 5, "backtracks": 2, "best_plan_violations": {"macro": True}},
+    )
+    assert fm5["failures"][0]["code"] == "FM-5"
+    assert fm5["failures"][0]["details"]["attempts"] == 5
 
 
 def test_batch_tag_mismatch_warning_appends_without_dropping_existing_report():

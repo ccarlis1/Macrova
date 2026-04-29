@@ -262,6 +262,7 @@ class TestFormatResultMarkdownAndJson:
         assert data["termination_code"] == "TC-1"
         assert data["days"] == 1
         assert len(data["daily_plans"]) == 1
+        assert data["plan_status"] == "success"
         assert data["daily_plans"][0]["day"] == 1
         assert len(data["daily_plans"][0]["meals"]) == 2
         assert data["daily_plans"][0]["totals"]["calories"] == 600.0
@@ -308,6 +309,7 @@ class TestFormatResultMarkdownAndJson:
         )
         data = format_result_json(result, recipe_by_id, sample_planning_profile, D=1)
         assert data["success"] is False
+        assert data["plan_status"] == "failed"
         assert "sodium_advisory" in data["warnings"] or "sodium" in str(data["warnings"]).lower()
         assert data["report"]["failures"] == []
 
@@ -318,6 +320,7 @@ class TestFormatResultMarkdownAndJson:
         sample_meal_plan_result_success.report = {}
         data = format_result_json(sample_meal_plan_result_success, recipe_by_id, sample_planning_profile, D=1)
         assert data["success"] is True
+        assert data["plan_status"] == "success"
         assert data["warnings"]["type"] == "sodium_advisory"
         assert data["report"]["failures"] == []
 
@@ -349,6 +352,7 @@ class TestFormatResultMarkdownAndJson:
         assert result.plan is not None and len(result.plan) == 1
         assert result.daily_trackers is not None and 0 in result.daily_trackers
         data = format_result_json(result, recipe_by_id, sample_planning_profile, D=1)
+        assert data["plan_status"] == "partial"
         assert len(data["daily_plans"]) == 1
         meal = data["daily_plans"][0]["meals"][0]
         assert meal["nutrition"]["calories"] == 350.0
@@ -433,4 +437,23 @@ class TestFormatResultMarkdownAndJson:
             "iron_mg": 3.0,
             "vitamin_c_mg": 15.0,
         }
+
+    def test_format_result_json_maps_legacy_failure_mode_to_normalized_failure(
+        self, sample_planning_profile
+    ):
+        from src.planning.phase10_reporting import MealPlanResult
+        from src.output.formatters import format_result_json
+
+        result = MealPlanResult(
+            success=False,
+            termination_code="TC-2",
+            failure_mode="FM-1",
+            report={"unfillable_slots": [{"day": 0, "slot_index": 1, "eligible_recipe_count": 0}]},
+        )
+        data = format_result_json(result, {}, sample_planning_profile, D=1)
+        assert data["plan_status"] == "failed"
+        assert data["report"]["failures"][0]["code"] == "FM-1"
+        assert data["report"]["failures"][0]["message"]
+        assert data["report"]["failures"][0]["day_index"] == 0
+        assert data["report"]["failures"][0]["slot_index"] == 1
 

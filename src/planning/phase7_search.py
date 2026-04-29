@@ -758,6 +758,8 @@ def run_meal_plan_search(
                         report["failures"] = [
                             build_failure(
                                 code="FM-TAG-EMPTY",
+                                day_index=day_index,
+                                slot_index=slot_index,
                                 slot_id=slot_id,
                                 date="",
                                 details={

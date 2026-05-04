@@ -168,7 +168,18 @@ def test_plan_from_text_planning_mode_deterministic_routes_to_plan_meals(
 
     monkeypatch.setattr(
         "src.api.server.format_result_json",
-        lambda *_args, **_kwargs: {"ok": True},
+        lambda *_a, **_k: {
+            "success": True,
+            "termination_code": "TC-1",
+            "days": 1,
+            "daily_plans": [],
+            "warnings": {},
+            "report": {"failures": []},
+            "goals": {},
+            "weekly_totals": None,
+            "plan_status": "success",
+            "plan_status_message": None,
+        },
     )
 
     dummy_provider = DummyProvider()
@@ -240,7 +251,18 @@ def test_plan_from_text_planning_mode_assisted_cached_routes_to_orchestrator(
 
     monkeypatch.setattr(
         "src.api.server.format_result_json",
-        lambda *_args, **_kwargs: {"ok": True},
+        lambda *_a, **_k: {
+            "success": True,
+            "termination_code": "TC-1",
+            "days": 1,
+            "daily_plans": [],
+            "warnings": {},
+            "report": {"failures": []},
+            "goals": {},
+            "weekly_totals": None,
+            "plan_status": "success",
+            "plan_status_message": None,
+        },
     )
 
     dummy_provider = DummyProvider()

@@ -47,6 +47,7 @@ from src.planning.planner import plan_meals
 from src.planning.orchestrator import (
     LLMPlanningModeError,
     build_plan_request_from_profile,
+    build_planned_meal_metadata_index,
     planning_batch_locks_from_batches,
     plan_with_llm_feedback,
 )
@@ -1038,7 +1039,17 @@ async def plan_meals_endpoint(
             )
             recipe_by_id = {r.id: r for r in recipe_pool_updated}
 
-        out = format_result_json(result, recipe_by_id, planning_profile, plan_request.days)
+        meal_metadata_by_slot = build_planned_meal_metadata_index(
+            active_batches,
+            persisted_pins,
+        )
+        out = format_result_json(
+            result,
+            recipe_by_id,
+            planning_profile,
+            plan_request.days,
+            meal_metadata_by_slot,
+        )
         merge_schedule_warnings_into_result(
             out,
             sched_warnings,
@@ -1165,7 +1176,8 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
         )
         recipe_by_id = {r.id: r for r in recipe_pool}
         planning_profile = convert_profile(user_profile, days)
-        planning_profile.batch_locks = _load_planning_batch_locks()
+        active_batches = MealPrepBatchRepository().list_active()
+        planning_profile.batch_locks = planning_batch_locks_from_batches(active_batches)
 
         if effective_mode == "deterministic":
             result = plan_meals(planning_profile, recipe_pool, days)
@@ -1222,7 +1234,18 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
             )
             recipe_by_id = {r.id: r for r in recipe_pool_updated}
 
-        out = format_result_json(result, recipe_by_id, planning_profile, days)
+        persisted_pins = load_profile_pins()
+        meal_metadata_by_slot = build_planned_meal_metadata_index(
+            active_batches,
+            persisted_pins,
+        )
+        out = format_result_json(
+            result,
+            recipe_by_id,
+            planning_profile,
+            days,
+            meal_metadata_by_slot,
+        )
         _merge_filter_warnings(out, filter_log)
         return out
     except HTTPException:

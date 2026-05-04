@@ -128,7 +128,21 @@ def test_api_plan_ignores_client_active_batches(monkeypatch):
     monkeypatch.setattr("src.api.server.convert_recipes", lambda *_args, **_kwargs: [])
     monkeypatch.setattr("src.api.server.load_canonical_recipe_tag_slugs", lambda *_args, **_kwargs: {})
     monkeypatch.setattr("src.api.server.plan_meals", _fake_plan_meals)
-    monkeypatch.setattr("src.api.server.format_result_json", lambda *_args, **_kwargs: {"ok": True})
+    monkeypatch.setattr(
+        "src.api.server.format_result_json",
+        lambda *_a, **_k: {
+            "success": True,
+            "termination_code": "TC-1",
+            "days": 1,
+            "daily_plans": [],
+            "warnings": {},
+            "report": {"failures": []},
+            "goals": {},
+            "weekly_totals": None,
+            "plan_status": "success",
+            "plan_status_message": None,
+        },
+    )
     monkeypatch.setattr(
         "src.api.server.MealPrepBatchRepository",
         lambda: type("Repo", (), {"list_active": lambda self: []})(),

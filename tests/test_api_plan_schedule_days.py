@@ -57,7 +57,21 @@ def test_api_plan_schedule_days_wires_workout_gaps(monkeypatch):
         )
 
     monkeypatch.setattr("src.api.server.plan_meals", _fake_plan_meals)
-    monkeypatch.setattr("src.api.server.format_result_json", lambda *args, **kwargs: {"ok": True})
+    monkeypatch.setattr(
+        "src.api.server.format_result_json",
+        lambda *_a, **_k: {
+            "success": True,
+            "termination_code": "TC-1",
+            "days": 1,
+            "daily_plans": [],
+            "warnings": {},
+            "report": {"failures": []},
+            "goals": {},
+            "weekly_totals": None,
+            "plan_status": "success",
+            "plan_status_message": None,
+        },
+    )
 
     payload = {
         "daily_calories": 2400,

@@ -46,7 +46,18 @@ def test_api_plan_feature_flag_routes(monkeypatch, llm_enabled):
 
     monkeypatch.setattr(
         "src.api.server.format_result_json",
-        lambda result, recipe_by_id, profile, days: {"success": result.success},
+        lambda *args, **kwargs: {
+            "success": args[0].success,
+            "termination_code": "TC-1",
+            "days": 1,
+            "daily_plans": [],
+            "warnings": {},
+            "report": {"failures": []},
+            "goals": {},
+            "weekly_totals": None,
+            "plan_status": "success",
+            "plan_status_message": None,
+        },
     )
 
     monkeypatch.setattr(

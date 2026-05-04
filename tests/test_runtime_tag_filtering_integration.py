@@ -64,6 +64,9 @@ def _valid_plan_response():
         "warnings": {},
         "report": {"failures": []},
         "goals": {},
+        "weekly_totals": None,
+        "plan_status": "success",
+        "plan_status_message": None,
     }
 
 
@@ -163,7 +166,7 @@ def test_api_plan_tag_filtering_applied_pre_conversion(
     )
     monkeypatch.setattr(
         "src.api.server.format_result_json",
-        lambda _result, _recipe_by_id, _profile, _days: _valid_plan_response(),
+        lambda *_args, **_kwargs: _valid_plan_response(),
     )
 
     client = TestClient(app)
@@ -233,7 +236,7 @@ def test_api_plan_tag_filtering_preserves_recipe_id_pre_filter_order_with_single
     )
     monkeypatch.setattr(
         "src.api.server.format_result_json",
-        lambda _result, _recipe_by_id, _profile, _days: _valid_plan_response(),
+        lambda *_args, **_kwargs: _valid_plan_response(),
     )
 
     client = TestClient(app)

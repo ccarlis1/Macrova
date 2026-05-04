@@ -78,6 +78,8 @@ def test_planner_regression_llm_disabled_golden_json(monkeypatch):
                             "carbs_g": 100.0,
                         },
                         "busyness_level": 2,
+                        "slot_index": 0,
+                        "source": "planner",
                     },
                     {
                         "recipe_id": "r1",
@@ -92,6 +94,8 @@ def test_planner_regression_llm_disabled_golden_json(monkeypatch):
                             "carbs_g": 100.0,
                         },
                         "busyness_level": 3,
+                        "slot_index": 1,
+                        "source": "planner",
                     },
                 ],
                 "totals": {
@@ -111,6 +115,7 @@ def test_planner_regression_llm_disabled_golden_json(monkeypatch):
                 ),
             },
         },
+        "report": {"failures": []},
         "goals": {
             "daily_calories": 2400,
             "daily_protein_g": 150.0,
@@ -118,6 +123,9 @@ def test_planner_regression_llm_disabled_golden_json(monkeypatch):
             "daily_fat_g_max": 100.0,
             "daily_carbs_g": 281.25,
         },
+        "weekly_totals": None,
+        "plan_status": "success",
+        "plan_status_message": None,
     }
 
     monkeypatch.setattr("src.api.server.RecipeDB", DummyRecipeDB)

@@ -18,6 +18,7 @@ from src.ingestion.ingredient_cache import CachedIngredientLookup
 from src.ingestion.usda_client import USDAClient
 from src.llm.types import ValidatedRecipeForPersistence
 from src.nutrition.calculator import NutritionCalculator
+from src.data_layer.models import ProfilePin
 from src.planning.phase0_models import PlanningBatchLock, PlanningRecipe, PlanningUserProfile
 from src.planning.phase10_reporting import MealPlanResult
 from src.planning.converters import convert_recipes, extract_ingredient_names
@@ -117,6 +118,39 @@ def planning_batch_locks_from_batches(batches: List[Any]) -> List[PlanningBatchL
                 )
             )
     return locks
+
+
+def build_planned_meal_metadata_index(
+    active_batches: List[Any],
+    persisted_pins: List[ProfilePin],
+) -> Dict[Tuple[int, int], Dict[str, Any]]:
+    """Index slot addresses to batch vs pin provenance for API meal metadata.
+
+    Batch assignments take precedence over pins on the same slot (mirrors
+    ``_merge_batch_locks_into_pins``). Keys use ``(day_index, slot_index)``
+    matching :class:`Assignment` and persisted pins.
+    """
+    index: Dict[Tuple[int, int], Dict[str, Any]] = {}
+    for batch in sorted(active_batches, key=lambda b: str(getattr(b, "id", ""))):
+        rid = str(getattr(batch, "recipe_id", ""))
+        bid = str(getattr(batch, "id", ""))
+        for item in getattr(batch, "assignments", []) or []:
+            day_i = int(getattr(item, "day_index", 0))
+            slot_i = int(getattr(item, "slot_index", 0))
+            index[(day_i, slot_i)] = {
+                "kind": "batch",
+                "recipe_id": rid,
+                "batch_id": bid,
+                "servings": float(getattr(item, "servings", 1.0)),
+            }
+    for pin in persisted_pins:
+        key = (int(pin.day_index), int(pin.slot_index))
+        if key not in index:
+            index[key] = {
+                "kind": "pin",
+                "recipe_id": str(pin.recipe_id),
+            }
+    return index
 
 
 class LLMFeedbackOrchestratorError(RuntimeError):

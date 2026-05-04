@@ -1,6 +1,6 @@
 # BE-14 — Planner meal metadata output
 
-**Status:** todo  ·  **Complexity:** S  ·  **Depends on:** BE-2, BE-8, BE-10, BE-13
+**Status:** implemented  ·  **Complexity:** S  ·  **Depends on:** BE-2, BE-8, BE-10, BE-13
 
 ## Summary
 

@@ -265,6 +265,11 @@ class TestFormatResultMarkdownAndJson:
         assert data["plan_status"] == "success"
         assert data["daily_plans"][0]["day"] == 1
         assert len(data["daily_plans"][0]["meals"]) == 2
+        assert data["daily_plans"][0]["meals"][0]["slot_index"] == 0
+        assert data["daily_plans"][0]["meals"][0]["source"] == "planner"
+        assert data["daily_plans"][0]["meals"][1]["slot_index"] == 1
+        assert data["daily_plans"][0]["meals"][1]["source"] == "planner"
+        assert "batch_id" not in data["daily_plans"][0]["meals"][0]
         assert data["daily_plans"][0]["totals"]["calories"] == 600.0
         assert data["goals"]["daily_calories"] == 2400
 
@@ -357,6 +362,92 @@ class TestFormatResultMarkdownAndJson:
         meal = data["daily_plans"][0]["meals"][0]
         assert meal["nutrition"]["calories"] == 350.0
         assert meal["busyness_level"] == 2
+        assert meal["slot_index"] == 0
+        assert meal["source"] == "planner"
+
+    def test_format_result_json_metadata_defaults_without_index(self, sample_meal_plan_result_success, recipe_by_id, sample_planning_profile):
+        """Without metadata index: slot_index + source=planner only; no batch fields."""
+        from src.output.formatters import format_result_json
+
+        data = format_result_json(sample_meal_plan_result_success, recipe_by_id, sample_planning_profile, D=1)
+        for m in data["daily_plans"][0]["meals"]:
+            assert m["source"] == "planner"
+            assert "batch_id" not in m
+            assert "servings" not in m
+
+    def test_format_result_json_metadata_batch(self, sample_meal_plan_result_success, recipe_by_id, sample_planning_profile):
+        from src.output.formatters import format_result_json
+
+        meta = {
+            (0, 0): {
+                "kind": "batch",
+                "recipe_id": "r1",
+                "batch_id": "batch-abc",
+                "servings": 2.0,
+            }
+        }
+        data = format_result_json(
+            sample_meal_plan_result_success,
+            recipe_by_id,
+            sample_planning_profile,
+            D=1,
+            meal_metadata_by_slot=meta,
+        )
+        m0 = data["daily_plans"][0]["meals"][0]
+        assert m0["source"] == "meal_prep_batch"
+        assert m0["batch_id"] == "batch-abc"
+        assert m0["servings"] == 2.0
+        assert m0["slot_index"] == 0
+        m1 = data["daily_plans"][0]["meals"][1]
+        assert m1["source"] == "planner"
+        assert "batch_id" not in m1
+
+    def test_format_result_json_metadata_pin(self, sample_meal_plan_result_success, recipe_by_id, sample_planning_profile):
+        from src.output.formatters import format_result_json
+
+        meta = {
+            (0, 1): {
+                "kind": "pin",
+                "recipe_id": "r2",
+            }
+        }
+        data = format_result_json(
+            sample_meal_plan_result_success,
+            recipe_by_id,
+            sample_planning_profile,
+            D=1,
+            meal_metadata_by_slot=meta,
+        )
+        m1 = data["daily_plans"][0]["meals"][1]
+        assert m1["source"] == "pinned_assignment"
+        assert m1["slot_index"] == 1
+        assert "batch_id" not in m1
+        assert "servings" not in m1
+
+    def test_format_result_json_metadata_recipe_mismatch_fallback(
+        self, sample_meal_plan_result_success, recipe_by_id, sample_planning_profile
+    ):
+        """Batch row for slot but assignment recipe differs → planner, no batch_id."""
+        from src.output.formatters import format_result_json
+
+        meta = {
+            (0, 0): {
+                "kind": "batch",
+                "recipe_id": "other-recipe",
+                "batch_id": "batch-xyz",
+                "servings": 1.0,
+            }
+        }
+        data = format_result_json(
+            sample_meal_plan_result_success,
+            recipe_by_id,
+            sample_planning_profile,
+            D=1,
+            meal_metadata_by_slot=meta,
+        )
+        m0 = data["daily_plans"][0]["meals"][0]
+        assert m0["source"] == "planner"
+        assert "batch_id" not in m0
 
     def test_format_result_json_contains_micronutrients(self):
         """Verify JSON output includes micronutrients in recipe nutrition, day totals, and weekly totals."""
@@ -423,6 +514,8 @@ class TestFormatResultMarkdownAndJson:
             stats=None,
         )
         data = format_result_json(result, recipe_by_id, profile, D=1)
+        assert data["daily_plans"][0]["meals"][0]["slot_index"] == 0
+        assert data["daily_plans"][0]["meals"][0]["source"] == "planner"
         assert data["daily_plans"][0]["meals"][0]["nutrition"].get("micronutrients") == {
             "iron_mg": 3.0,
             "vitamin_c_mg": 15.0,

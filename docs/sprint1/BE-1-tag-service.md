@@ -1,6 +1,6 @@
 # BE-1 — TagService (CRUD + normalize)
 
-**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** DM-1
+**Status:** done  ·  **Complexity:** M  ·  **Depends on:** DM-1
 
 ## Summary
 
@@ -14,18 +14,18 @@ Unblocks: AI-3, FE-5, FE-8.
 
 ## Acceptance criteria
 
-- [ ] `src/api/tag_routes.py` with:
+- [x] `src/api/tag_routes.py` with:
   - `GET /api/v1/tags?type=context|time|nutrition|constraint` → list of tags with recipe counts.
   - `POST /api/v1/tags` → create user-sourced tag. Body: `{slug?, display, type}`. 409 if slug exists.
   - `PATCH /api/v1/tags/{slug}` → rename display only.
   - `POST /api/v1/tags/{slug}/alias` → add alias. Body: `{alias_slug}`. 409 on conflict.
   - `POST /api/v1/tags/{src_slug}/merge_into/{dst_slug}` → merge: rewrite all recipes using `src_slug` to `dst_slug`, register alias, remove `src_slug`.
-- [ ] Service layer `src/llm/tag_repository.py` extended (or new `src/services/tag_service.py`) so LLM code calls the same logic, not the HTTP layer.
-- [ ] Merge operation is transactional: on failure, no partial recipe updates.
-- [ ] Recipe-count aggregation reads from `RecipeDB` — do not cache stale counts.
-- [ ] Nutrition-tag create path supports curated micronutrient starter slugs (for example `high-omega-3`, `high-fiber`, `high-calcium`) and keeps nutrition slugs normalized through the same registry controls as other tag types.
-- [ ] OpenAPI (`openapi/`) regenerated.
-- [ ] Integration tests (`tests/api/test_tag_routes.py`) cover create, duplicate, alias, merge, and `GET` filtering.
+- [x] Service layer `src/llm/tag_repository.py` extended (or new `src/services/tag_service.py`) so LLM code calls the same logic, not the HTTP layer.
+- [x] Merge operation is transactional: on failure, no partial recipe updates.
+- [x] Recipe-count aggregation reads from `RecipeDB` — do not cache stale counts.
+- [x] Nutrition-tag create path supports curated micronutrient starter slugs (for example `high-omega-3`, `high-fiber`, `high-calcium`) and keeps nutrition slugs normalized through the same registry controls as other tag types.
+- [x] OpenAPI (`openapi/`) regenerated.
+- [x] Integration tests (`tests/test_api_tag_routes.py`) cover create, duplicate, alias, merge, and `GET` filtering.
 
 ## Implementation notes
 
@@ -80,11 +80,11 @@ Before writing any code, perform the following in order:
 
 After implementation, verify each of the following:
 
-- [ ] `src/api/tag_routes.py` exists and is mounted on the existing `/api/v1` prefix in `server.py` — no duplicate prefix
-- [ ] All five endpoints work: `GET /api/v1/tags`, `POST /api/v1/tags`, `PATCH /api/v1/tags/{slug}`, `POST /api/v1/tags/{slug}/alias`, `POST /api/v1/tags/{src_slug}/merge_into/{dst_slug}`
-- [ ] `POST /api/v1/tags` returns 409 when slug already exists; response body matches `TAG_CONFLICT` from `error_mapping.py`
-- [ ] Merge operation is transactional: on failure mid-rewrite, no partial recipe updates
-- [ ] Recipe counts in `GET` response come from live `RecipeDB` reads — not hardcoded or cached
-- [ ] `src/api/error_mapping.py` has the three new codes; no other file defines them redundantly
-- [ ] OpenAPI spec regenerated
-- [ ] Integration tests in `tests/api/test_tag_routes.py` pass for: create, duplicate, alias, merge, `GET` filtering
+- [x] `src/api/tag_routes.py` exists and is mounted on the existing `/api/v1` prefix in `server.py` — no duplicate prefix
+- [x] All five endpoints work: `GET /api/v1/tags`, `POST /api/v1/tags`, `PATCH /api/v1/tags/{slug}`, `POST /api/v1/tags/{slug}/alias`, `POST /api/v1/tags/{src_slug}/merge_into/{dst_slug}`
+- [x] `POST /api/v1/tags` returns 409 when slug already exists; response body matches `TAG_CONFLICT` from `error_mapping.py`
+- [x] Merge operation is transactional: on failure mid-rewrite, no partial recipe updates
+- [x] Recipe counts in `GET` response come from live `RecipeDB` reads — not hardcoded or cached
+- [x] `src/api/error_mapping.py` has the three new codes; no other file defines them redundantly
+- [x] OpenAPI spec regenerated
+- [x] Integration tests in `tests/test_api_tag_routes.py` pass for: create, duplicate, alias, merge, `GET` filtering

@@ -700,6 +700,13 @@
             "title": "Accepted Count",
             "type": "integer"
           },
+          "duplicate_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Duplicate Ids",
+            "type": "array"
+          },
           "failures": {
             "items": {
               "$ref": "#/components/schemas/RecipeGenerationFailure"
@@ -717,6 +724,13 @@
           "rejected_count": {
             "title": "Rejected Count",
             "type": "integer"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
           }
         },
         "required": [
@@ -880,6 +894,124 @@
           "tagged_recipe_count"
         ],
         "title": "RecipeTagGenerationResponse",
+        "type": "object"
+      },
+      "TagAliasRequest": {
+        "properties": {
+          "alias_slug": {
+            "title": "Alias Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "alias_slug"
+        ],
+        "title": "TagAliasRequest",
+        "type": "object"
+      },
+      "TagCreateRequest": {
+        "properties": {
+          "display": {
+            "title": "Display",
+            "type": "string"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug"
+          },
+          "type": {
+            "enum": [
+              "context",
+              "time",
+              "nutrition",
+              "constraint"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "display",
+          "type"
+        ],
+        "title": "TagCreateRequest",
+        "type": "object"
+      },
+      "TagRenameRequest": {
+        "properties": {
+          "display": {
+            "title": "Display",
+            "type": "string"
+          }
+        },
+        "required": [
+          "display"
+        ],
+        "title": "TagRenameRequest",
+        "type": "object"
+      },
+      "TagResponse": {
+        "properties": {
+          "aliases": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Aliases",
+            "type": "array"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "display": {
+            "title": "Display",
+            "type": "string"
+          },
+          "eligibility": {
+            "title": "Eligibility",
+            "type": "string"
+          },
+          "recipe_count": {
+            "default": 0,
+            "title": "Recipe Count",
+            "type": "integer"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "context",
+              "time",
+              "nutrition",
+              "constraint"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug",
+          "display",
+          "type",
+          "source",
+          "created_at",
+          "aliases",
+          "eligibility"
+        ],
+        "title": "TagResponse",
         "type": "object"
       },
       "ValidationError": {
@@ -1902,6 +2034,242 @@
           }
         },
         "summary": "Put Recipe Endpoint"
+      }
+    },
+    "/api/v1/tags": {
+      "get": {
+        "operationId": "list_tags_api_v1_tags_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "context",
+                    "time",
+                    "nutrition",
+                    "constraint"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TagResponse"
+                  },
+                  "title": "Response List Tags Api V1 Tags Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Tags"
+      },
+      "post": {
+        "operationId": "create_tag_api_v1_tags_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TagCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Tag"
+      }
+    },
+    "/api/v1/tags/{slug}": {
+      "patch": {
+        "operationId": "rename_tag_api_v1_tags__slug__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TagRenameRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Rename Tag"
+      }
+    },
+    "/api/v1/tags/{slug}/alias": {
+      "post": {
+        "operationId": "add_tag_alias_api_v1_tags__slug__alias_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TagAliasRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Tag Alias"
+      }
+    },
+    "/api/v1/tags/{src_slug}/merge_into/{dst_slug}": {
+      "post": {
+        "operationId": "merge_tag_api_v1_tags__src_slug__merge_into__dst_slug__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "src_slug",
+            "required": true,
+            "schema": {
+              "title": "Src Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "dst_slug",
+            "required": true,
+            "schema": {
+              "title": "Dst Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Merge Tag"
       }
     }
   }

@@ -3,10 +3,16 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any, Dict, List, Literal, Optional, TypeVar
 
-from pydantic import BaseModel, ConfigDict, Field, StrictStr, ValidationError, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictStr,
+    ValidationError,
+    model_validator,
+)
 
 from src.models.schedule import DaySchedule
-
 
 SUPPORTED_UNITS: List[str] = [
     "g",
@@ -44,6 +50,23 @@ class DietaryFlag(str, Enum):
     dairy_free = "dairy_free"
 
 
+TagType = Literal["context", "time", "nutrition", "constraint"]
+TagSource = Literal["user", "llm", "system"]
+TagEligibility = Literal["approved", "proposed", "rejected"]
+
+
+class TagMeta(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    slug: StrictStr
+    display: StrictStr
+    type: TagType
+    source: TagSource
+    created_at: StrictStr
+    aliases: List[StrictStr] = Field(default_factory=list)
+    eligibility: TagEligibility = "approved"
+
+
 def _unit_is_supported(unit: str) -> bool:
     return unit in SUPPORTED_UNITS
 
@@ -70,9 +93,7 @@ class RecipeIngredientDraft(BaseModel):
     def _validate_unit_and_quantity(self) -> "RecipeIngredientDraft":
         if not _unit_is_supported(self.unit):
             supported = ", ".join(SUPPORTED_UNITS)
-            raise ValueError(
-                f"unit must be one of [{supported}]; got {self.unit!r}"
-            )
+            raise ValueError(f"unit must be one of [{supported}]; got {self.unit!r}")
 
         if self.unit == "to taste":
             if self.quantity != 0:
@@ -138,7 +159,9 @@ class PlannerConfigJson(BaseModel):
     @model_validator(mode="after")
     def _schedule_days_non_empty_when_present(self) -> "PlannerConfigJson":
         if self.schedule_days is not None and len(self.schedule_days) == 0:
-            raise ValueError("schedule_days must be omitted or contain at least one day")
+            raise ValueError(
+                "schedule_days must be omitted or contain at least one day"
+            )
         return self
 
 
@@ -184,4 +207,3 @@ def parse_llm_json(schema_cls: type[T], raw: Dict[str, Any]) -> T | ValidationFa
             message="LLM JSON did not match the expected schema.",
             field_errors=field_errors,
         )
-

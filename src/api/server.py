@@ -53,6 +53,7 @@ from src.api.recipe_sync import (
     RecipeSyncResponse,
     atomic_upsert_recipes_by_id,
 )
+from src.api.tag_routes import configure_tag_routes, router as tag_router
 from src.llm.client import LLMClient
 from src.llm.constraint_parser import PlannerConfigParsingError, parse_nl_config
 from src.llm.pipeline import generate_validate_persist_recipes
@@ -81,6 +82,11 @@ ingredients_path = "data/ingredients/custom_ingredients.json"
 DEFAULT_TAG_PATH = "data/recipes/recipe_tags.json"
 
 app = FastAPI(title="Nutrition Agent API")
+configure_tag_routes(
+    tag_path_getter=lambda: DEFAULT_TAG_PATH,
+    recipes_path_getter=lambda: recipes_path,
+)
+app.include_router(tag_router, prefix="/api/v1")
 
 app.add_middleware(
     CORSMiddleware,
@@ -531,6 +537,8 @@ class RecipeGenerationResponse(BaseModel):
     rejected_count: int
     recipe_ids: List[str]
     failures: List[RecipeGenerationFailure]
+    duplicate_ids: List[str] = Field(default_factory=list)
+    warnings: List[str] = Field(default_factory=list)
 
 
 class IngredientMatchRequest(BaseModel):
@@ -968,12 +976,14 @@ def generate_validated_recipes_endpoint(
                 )
             )
 
-        recipe_ids = summary.get("persisted_ids", [])
+        recipe_ids = summary.get("recipe_ids", summary.get("persisted_ids", []))
         return RecipeGenerationResponse(
             accepted_count=len(recipe_ids),
             rejected_count=len(rejected),
             recipe_ids=list(recipe_ids),
             failures=failures,
+            duplicate_ids=list(summary.get("duplicate_ids", [])),
+            warnings=list(summary.get("warnings", [])),
         )
     except HTTPException:
         raise

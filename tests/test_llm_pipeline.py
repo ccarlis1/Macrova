@@ -75,6 +75,61 @@ def test_generate_validate_persist_recipes_happy_path(tmp_path):
     assert len(data["recipes"]) == 1
 
 
+def test_generate_validate_persist_recipes_returns_duplicate_without_append(tmp_path):
+    recipes_path = tmp_path / "recipes.json"
+    recipes_path.write_text(
+        json.dumps(
+            {
+                "recipes": [
+                    {
+                        "id": "existing_recipe",
+                        "name": "chicken and rice bowl",
+                        "ingredients": [
+                            {"name": "rice", "quantity": 100.0, "unit": "g"},
+                        ],
+                        "cooking_time_minutes": 20,
+                        "instructions": ["Cook rice."],
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    raw = {
+        "drafts": [
+            {
+                "name": "Chicken Rice Bowl",
+                "ingredients": [
+                    {"name": "chicken breast", "quantity": 200.0, "unit": "g"},
+                ],
+                "instructions": ["Cook it."],
+            }
+        ]
+    }
+
+    provider = FakeProvider(ingredient_info_by_name={"chicken breast": _nutrition_dict()})
+    client = DummyLLMClient(raw_response=raw)
+
+    summary = generate_validate_persist_recipes(
+        context={},
+        count=1,
+        recipes_path=str(recipes_path),
+        provider=provider,
+        client=client,
+    )
+
+    assert summary["accepted"] == 1
+    assert summary["persisted_ids"] == []
+    assert summary["duplicate_ids"] == ["existing_recipe"]
+    assert summary["recipe_ids"] == ["existing_recipe"]
+    assert summary["warnings"] == ["duplicate_of: existing_recipe"]
+
+    data = json.loads(recipes_path.read_text(encoding="utf-8"))
+    assert len(data["recipes"]) == 1
+    assert data["recipes"][0]["id"] == "existing_recipe"
+
+
 def test_generate_validate_persist_recipes_partial_acceptance(tmp_path):
     recipes_path = str(tmp_path / "recipes.json")
 

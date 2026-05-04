@@ -34,6 +34,10 @@ def test_openapi_includes_v1_contract_paths():
         "/api/v1/recipes/{recipe_id}",
         "/api/v1/recipes/generate-validated",
         "/api/v1/recipes/tags/generate",
+        "/api/v1/tags",
+        "/api/v1/tags/{slug}",
+        "/api/v1/tags/{slug}/alias",
+        "/api/v1/tags/{src_slug}/merge_into/{dst_slug}",
         "/api/v1/ingredients/match",
         "/api/v1/ingredients/search",
         "/api/v1/ingredients/resolve",
@@ -202,7 +206,9 @@ def test_recipe_sync_writes_json_and_plan_sees_recipe(tmp_path, monkeypatch):
     assert "cream of rice" in data
 
     def _stub_plan_meals(planning_profile, recipe_pool, days):
-        assert any(r.id == rid for r in recipe_pool), "synced recipe missing from planner pool"
+        assert any(
+            r.id == rid for r in recipe_pool
+        ), "synced recipe missing from planner pool"
         tracker = DailyTracker(
             calories_consumed=350.0,
             protein_consumed=7.5,

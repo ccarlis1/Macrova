@@ -1,6 +1,6 @@
 # DM-1 — Unify tag registry with `tag_repository`
 
-**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** —
+**Status:** done  ·  **Complexity:** M  ·  **Depends on:** —
 
 ## Summary
 
@@ -14,13 +14,13 @@ Unblocks: DM-2, BE-1, BE-3, AI-3, FE-5.
 
 ## Acceptance criteria
 
-- [ ] Typed slug model: `TagType = Literal["context", "time", "nutrition", "constraint"]`, `TagSource = Literal["user", "llm", "system"]`, canonical `slug`, `display`, `created_at`.
-- [ ] Slug normalization: lowercased, whitespace → `-`, non-`[a-z0-9-]` stripped.
-- [ ] `resolve(slug_or_display) -> TagMeta`; `merge(src_slug, dst_slug)` transactional across recipes.
-- [ ] Aliases stored in the same persistence story as `recipe_tags.json` (extend schema; avoid a forked `data/tags/*.json` unless it is clearly the single backing file adopted by `tag_repository`).
-- [ ] Curated starter nutrition slug set present in registry (at minimum `high-omega-3`, `high-fiber`, `high-calcium`) to support deficit-recovery scoring without uncontrolled tag sprawl.
+- [x] Typed slug model: `TagType = Literal["context", "time", "nutrition", "constraint"]`, `TagSource = Literal["user", "llm", "system"]`, canonical `slug`, `display`, `created_at`.
+- [x] Slug normalization: lowercased, whitespace → `-`, non-`[a-z0-9-]` stripped.
+- [x] `resolve(slug_or_display) -> TagMeta`; `merge(src_slug, dst_slug)` transactional across recipes.
+- [x] Aliases stored in the same persistence story as `recipe_tags.json` (extend schema; avoid a forked `data/tags/*.json` unless it is clearly the single backing file adopted by `tag_repository`).
+- [x] Curated starter nutrition slug set present in registry (at minimum `high-omega-3`, `high-fiber`, `high-calcium`) to support deficit-recovery scoring without uncontrolled tag sprawl.
 - [ ] `apply_tag_filtering` / planner reads **only** this registry + per-recipe slug lists post-migration.
-- [ ] Unit tests: normalization, alias resolution, merge, unknown slug behavior.
+- [x] Unit tests: normalization, alias resolution, merge, unknown slug behavior.
 
 ## Implementation notes
 
@@ -73,11 +73,11 @@ Before writing any code, perform the following in order:
 
 After implementation, verify each of the following before marking done:
 
-- [ ] `src/llm/tag_repository.py` is the **only** file with tag load/save logic; no parallel module was created
-- [ ] `RecipeTagsJson` in `schemas.py` is extended (not replaced) and existing fields remain intact
-- [ ] `tag_filtering_service.py` and `tag_filter.py` require **zero** changes to remain functional
-- [ ] `resolve(slug_or_display)` and `merge(src_slug, dst_slug)` exist and are importable from `tag_repository.py`
-- [ ] Slug normalization: `"High Fiber"` → `"high-fiber"`, `"high fiber!"` → `"high-fiber"` (run the unit tests)
-- [ ] Curated nutrition slugs (`high-omega-3`, `high-fiber`, `high-calcium`) present in seed data, verifiable without an HTTP call
-- [ ] All unit tests (normalization, alias resolution, merge, unknown slug) pass
+- [x] `src/llm/tag_repository.py` is the **only** file with tag load/save logic; no parallel module was created
+- [x] `RecipeTagsJson` in `schemas.py` is extended (not replaced) and existing fields remain intact
+- [x] `tag_filtering_service.py` and `tag_filter.py` require **zero** changes to remain functional
+- [x] `resolve(slug_or_display)` and `merge(src_slug, dst_slug)` exist and are importable from `tag_repository.py`
+- [x] Slug normalization: `"High Fiber"` → `"high-fiber"`, `"high fiber!"` → `"high-fiber"` (run the unit tests)
+- [x] Curated nutrition slugs (`high-omega-3`, `high-fiber`, `high-calcium`) present in seed data, verifiable without an HTTP call
+- [x] All unit tests (normalization, alias resolution, merge, unknown slug) pass
 - [ ] No new files were introduced beyond what is specified in the acceptance criteria

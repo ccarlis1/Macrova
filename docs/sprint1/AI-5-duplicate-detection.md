@@ -1,6 +1,6 @@
 # AI-5 — Duplicate detection
 
-**Status:** todo  ·  **Complexity:** S  ·  **Depends on:** AI-2
+**Status:** done  ·  **Complexity:** S  ·  **Depends on:** AI-2
 
 ## Summary
 
@@ -12,11 +12,11 @@ LLM generation is non-deterministic and users will frequently query variations t
 
 ## Acceptance criteria
 
-- [ ] `src/llm/duplicate_check.py` exposing `find_duplicate(name: str, recipes: List[Recipe]) -> Optional[Recipe]`.
-- [ ] Similarity = `rapidfuzz.fuzz.token_sort_ratio(name_a, name_b) / 100.0`, threshold 0.85, compared after lowercasing both sides.
-- [ ] Called from `generate(suggestion_id)` (AI-2) right before persistence.
-- [ ] On duplicate hit: do not save the new recipe; return the existing recipe id with `warning: "duplicate_of: <id>"`.
-- [ ] Tests:
+- [x] `src/llm/duplicate_check.py` exposing `find_duplicate(name: str, recipes: List[Recipe]) -> Optional[Recipe]`.
+- [x] Similarity = `rapidfuzz.fuzz.token_sort_ratio(name_a, name_b) / 100.0`, threshold 0.85, compared after lowercasing both sides.
+- [x] Called from the current pipeline equivalent (`generate_validate_persist_recipes`) right before persistence. `generate(suggestion_id)` is not present yet from AI-2.
+- [x] On duplicate hit: do not save the new recipe; return the existing recipe id with `warning: "duplicate_of: <id>"`.
+- [x] Tests:
   - `"Chicken Rice Bowl"` vs existing `"chicken and rice bowl"` → duplicate (`ratio >= 0.85`).
   - `"Shrimp Pasta"` vs existing `"Chicken Pasta"` → not a duplicate.
 
@@ -68,9 +68,9 @@ Before writing any code, perform the following in order:
 
 After implementation, verify each of the following:
 
-- [ ] `src/llm/duplicate_check.py` exposes `find_duplicate(name: str, recipes: List[Recipe]) -> Optional[Recipe]`
-- [ ] Similarity uses `rapidfuzz.fuzz.token_sort_ratio(a.lower(), b.lower()) / 100.0`; threshold read from `DUPLICATE_THRESHOLD` env var (default `0.85`)
-- [ ] Called from `generate()` in `src/llm/pipeline.py` right before `RecipeDB.save()` — not before AI-4's guardrail, not after save
-- [ ] On duplicate hit: new recipe is NOT saved; response includes `warning: "duplicate_of: <id>"` with the existing recipe id
-- [ ] `rapidfuzz` added to `requirements.txt` (no duplicates)
-- [ ] Tests pass: `"Chicken Rice Bowl"` vs `"chicken and rice bowl"` → duplicate; `"Shrimp Pasta"` vs `"Chicken Pasta"` → not a duplicate
+- [x] `src/llm/duplicate_check.py` exposes `find_duplicate(name: str, recipes: List[Recipe]) -> Optional[Recipe]`
+- [x] Similarity uses `rapidfuzz.fuzz.token_sort_ratio(a.lower(), b.lower()) / 100.0`; threshold read from `DUPLICATE_THRESHOLD` env var (default `0.85`)
+- [x] Called from the current `src/llm/pipeline.py` generation path right before `append_validated_recipes()` — not before validation, not after save
+- [x] On duplicate hit: new recipe is NOT saved; response includes `warning: "duplicate_of: <id>"` with the existing recipe id
+- [x] `rapidfuzz` added to `requirements.txt` (no duplicates)
+- [x] Tests pass: `"Chicken Rice Bowl"` vs `"chicken and rice bowl"` → duplicate; `"Shrimp Pasta"` vs `"Chicken Pasta"` → not a duplicate

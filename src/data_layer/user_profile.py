@@ -16,7 +16,7 @@ from src.models.legacy_schedule_migration import (
     schedule_days_to_meal_only_legacy_dict,
 )
 from src.models.schedule import DaySchedule
-from src.planning.converters import _expand_schedule_days
+from src.planning.converters import _expand_schedule_days, normalize_schedule_days_for_api
 from src.planning.micronutrient_policy import validate_micronutrient_weekly_min_fraction
 
 DEFAULT_USER_PROFILE_PATH = Path("config/user_profile.yaml")
@@ -177,21 +177,6 @@ def clear_all_profile_pins(*, yaml_path: str | Path | None = None) -> int:
     return count
 
 
-def _normalize_schedule_days_for_storage(
-    schedule_days: List[DaySchedule],
-) -> List[Dict[str, Any]]:
-    normalized: List[Dict[str, Any]] = []
-    for day in sorted(schedule_days, key=lambda d: d.day_index):
-        day_payload = day.model_dump(mode="json", exclude_none=True)
-        day_payload["meals"] = sorted(day_payload.get("meals", []), key=lambda m: m["index"])
-        day_payload["workouts"] = sorted(
-            day_payload.get("workouts", []),
-            key=lambda w: (w["after_meal_index"], w["type"]),
-        )
-        normalized.append(day_payload)
-    return normalized
-
-
 def persist_profile_schedule_days(
     schedule_days: List[DaySchedule],
     *,
@@ -201,13 +186,31 @@ def persist_profile_schedule_days(
     target_path = _resolve_profile_path(yaml_path)
     existing = _read_profile_yaml(target_path)
 
-    normalized_days = _normalize_schedule_days_for_storage(schedule_days)
+    normalized_days = normalize_schedule_days_for_api(schedule_days)
     existing["schedule_days"] = normalized_days
     # Remove legacy schedule to avoid conflicting representations.
     existing.pop("schedule", None)
 
     _atomic_write_profile_yaml(target_path, existing)
     return normalized_days
+
+
+def load_normalized_profile_schedule_days(
+    *, yaml_path: str | Path | None = None
+) -> List[Dict[str, Any]]:
+    """Load persisted schedule_days and return the same canonical shape as PUT writes."""
+
+    target_path = _resolve_profile_path(yaml_path)
+    profile_doc = _read_profile_yaml(target_path)
+    raw_days = profile_doc.get("schedule_days")
+    if raw_days is None:
+        return []
+    if not isinstance(raw_days, list):
+        raise ValueError("User profile schedule_days must be a list when present.")
+    if not raw_days:
+        return []
+    schedule_days = [DaySchedule.model_validate(d) for d in raw_days]
+    return normalize_schedule_days_for_api(schedule_days)
 
 
 class UserProfileLoader:

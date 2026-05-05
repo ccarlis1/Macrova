@@ -5,7 +5,7 @@ Pure functions only. No I/O, no provider access. Deterministic.
 
 import json
 import logging
-from typing import Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 
 from src.data_layer.models import (
     Recipe,
@@ -30,6 +30,26 @@ _DEFAULT_MEAL_CLOCKS: tuple[str, ...] = (
     "20:00",
     "21:00",
 )
+
+
+def normalize_schedule_days_for_api(
+    schedule_days: List[CanonicalDaySchedule],
+) -> List[Dict[str, Any]]:
+    """Canonical JSON for persisted/API schedule_days (matches PUT /profile/schedule output).
+
+    Deterministic ordering: days by day_index, meals by index, workouts by gap then type.
+    """
+
+    normalized: List[Dict[str, Any]] = []
+    for day in sorted(schedule_days, key=lambda d: d.day_index):
+        day_payload = day.model_dump(mode="json", exclude_none=True)
+        day_payload["meals"] = sorted(day_payload.get("meals", []), key=lambda m: m["index"])
+        day_payload["workouts"] = sorted(
+            day_payload.get("workouts", []),
+            key=lambda w: (w["after_meal_index"], w["type"]),
+        )
+        normalized.append(day_payload)
+    return normalized
 
 
 def _expand_schedule_days(

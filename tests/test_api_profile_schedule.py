@@ -128,6 +128,79 @@ def test_put_profile_schedule_is_idempotent(tmp_path, monkeypatch):
     assert first.json() == second.json()
 
 
+def test_get_profile_schedule_matches_put_round_trip(tmp_path, monkeypatch):
+    profile_path = tmp_path / "user_profile.yaml"
+    profile_path.write_text(
+        yaml.safe_dump(
+            {
+                "nutrition_goals": {
+                    "daily_calories": 2200,
+                    "daily_protein_g": 140,
+                    "daily_fat_g": {"min": 60, "max": 90},
+                },
+                "preferences": {"liked_foods": [], "disliked_foods": [], "allergies": []},
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("NUTRITION_USER_PROFILE_PATH", str(profile_path))
+    monkeypatch.setattr(
+        "src.llm.tag_repository.resolve",
+        lambda slug, path: _ResolvedTag(str(slug)),
+    )
+
+    client = TestClient(app)
+    put_resp = client.put("/api/v1/profile/schedule", json=_payload())
+    assert put_resp.status_code == 200
+    put_body = put_resp.json()
+
+    get_resp = client.get("/api/v1/profile/schedule")
+    assert get_resp.status_code == 200
+    assert get_resp.json() == put_body
+
+
+def test_get_profile_schedule_after_double_put_is_idempotent(tmp_path, monkeypatch):
+    profile_path = tmp_path / "user_profile.yaml"
+    profile_path.write_text(yaml.safe_dump({"preferences": {}, "nutrition_goals": {}}), encoding="utf-8")
+    monkeypatch.setenv("NUTRITION_USER_PROFILE_PATH", str(profile_path))
+    monkeypatch.setattr(
+        "src.llm.tag_repository.resolve",
+        lambda slug, path: _ResolvedTag(str(slug)),
+    )
+
+    client = TestClient(app)
+    first_put = client.put("/api/v1/profile/schedule", json=_payload())
+    assert first_put.status_code == 200
+    client.put("/api/v1/profile/schedule", json=_payload())
+    get_resp = client.get("/api/v1/profile/schedule")
+    assert get_resp.status_code == 200
+    assert get_resp.json() == first_put.json()
+
+
+def test_get_profile_schedule_field_integrity(tmp_path, monkeypatch):
+    profile_path = tmp_path / "user_profile.yaml"
+    profile_path.write_text(yaml.safe_dump({"preferences": {}, "nutrition_goals": {}}), encoding="utf-8")
+    monkeypatch.setenv("NUTRITION_USER_PROFILE_PATH", str(profile_path))
+    monkeypatch.setattr(
+        "src.llm.tag_repository.resolve",
+        lambda slug, path: _ResolvedTag(str(slug)),
+    )
+
+    client = TestClient(app)
+    assert client.put("/api/v1/profile/schedule", json=_payload()).status_code == 200
+    body = client.get("/api/v1/profile/schedule").json()
+    meal_1 = body["schedule_days"][0]["meals"][0]
+    assert meal_1["required_tag_slugs"] == ["high-protein"]
+    assert meal_1["preferred_tag_slugs"] == ["quick-meal"]
+    assert meal_1["preferred_time"] == "07:30"
+    assert meal_1["busyness_level"] == 2
+    assert meal_1["index"] == 1
+    assert body["schedule_days"][0]["meals"][1]["busyness_level"] == 3
+    assert body["schedule_days"][0]["workouts"] == [
+        {"after_meal_index": 1, "type": "PM", "intensity": "moderate"}
+    ]
+
+
 def test_put_profile_schedule_rejects_unknown_fields(tmp_path, monkeypatch):
     profile_path = tmp_path / "user_profile.yaml"
     profile_path.write_text(yaml.safe_dump({"preferences": {}, "nutrition_goals": {}}), encoding="utf-8")

@@ -74,6 +74,7 @@ from src.llm.schemas import BudgetLevel, DietaryFlag, PrepTimeBucket, PlannerCon
 from src.data_layer.user_profile import (
     clear_all_profile_pins,
     clear_profile_pin,
+    load_normalized_profile_schedule_days,
     load_profile_pins,
     persist_profile_schedule_days,
     upsert_profile_pin,
@@ -1715,6 +1716,17 @@ def nutrition_summary_endpoint(request: NutritionSummaryRequest) -> Any:
         }
     except HTTPException:
         raise
+    except Exception as exc:
+        status_code, payload = map_exception_to_api_error(exc)
+        return JSONResponse(status_code=status_code, content=payload)
+
+
+@app.get("/api/v1/profile/schedule", response_model=ProfileScheduleWriteResponse)
+def get_profile_schedule_endpoint() -> Any:
+    """Return the authoritative persisted schedule in the same shape as PUT writes."""
+    try:
+        normalized_days = load_normalized_profile_schedule_days()
+        return {"schedule_days": normalized_days}
     except Exception as exc:
         status_code, payload = map_exception_to_api_error(exc)
         return JSONResponse(status_code=status_code, content=payload)

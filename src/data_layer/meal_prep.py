@@ -151,6 +151,8 @@ class MealPrepBatchRepository:
             raise ValueError("assignments count cannot exceed total_servings")
         if any(a.servings <= 0 for a in batch.assignments):
             raise ValueError("all assignment servings must be > 0")
+        if any(a.day_index < 0 or a.slot_index < 0 for a in batch.assignments):
+            raise ValueError("day_index and slot_index must be >= 0")
 
         seen: set[SlotAddress] = set()
         for assignment in batch.assignments:

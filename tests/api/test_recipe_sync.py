@@ -1,3 +1,9 @@
+"""BE-11 / BE-15: ``POST /api/v1/recipes/sync`` HTTP contracts.
+
+- Sync typed tags + ``default_servings`` → ``test_sync_roundtrip_tags_and_default_servings``
+- Unknown tag → ``test_sync_unknown_tag_is_rejected``
+"""
+
 from fastapi.testclient import TestClient
 
 from src.api.server import app

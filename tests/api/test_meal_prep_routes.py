@@ -1,3 +1,10 @@
+"""BE-15: ``/api/v1/meal_prep_batches`` stabilized response fields + validation.
+
+Create/list/get responses assert ``id``, ``recipe_id``, ``total_servings``,
+``assigned_servings``, ``remaining_servings``, ``cook_date``, ``assignments``, ``status``.
+Assignment servings vs ``total_servings`` → ``test_create_meal_prep_batch_invalid_when_assigned_servings_exceed_total``.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -107,8 +114,20 @@ def test_create_meal_prep_batch_happy_path(monkeypatch):
     assert body["cook_date"] == "2026-04-27"
     assert body["status"] == "planned"
     assert body["assignments"] == [
-        {"date": "2026-04-27", "slot_id": 0},
-        {"date": "2026-04-28", "slot_id": 1},
+        {
+            "day_index": 0,
+            "slot_index": 0,
+            "servings": 1.0,
+            "date": "2026-04-27",
+            "slot_id": 0,
+        },
+        {
+            "day_index": 1,
+            "slot_index": 1,
+            "servings": 1.0,
+            "date": "2026-04-28",
+            "slot_id": 1,
+        },
     ]
 
 
@@ -187,7 +206,7 @@ def test_create_meal_prep_batch_conflict(monkeypatch):
             recipe_id="r-existing",
             total_servings=2,
             cook_date="2026-04-27",
-            assignments=[BatchAssignment(day_index=1, slot_index=2, servings=1.0)],
+            assignments=[BatchAssignment(day_index=0, slot_index=2, servings=1.0)],
             status="planned",
         )
     )
@@ -217,7 +236,7 @@ def test_list_get_delete_meal_prep_batches(monkeypatch):
         recipe_id="r1",
         total_servings=2,
         cook_date="2026-04-27",
-        assignments=[BatchAssignment(day_index=1, slot_index=0, servings=1.0)],
+        assignments=[BatchAssignment(day_index=0, slot_index=0, servings=1.0)],
         status="planned",
     )
     repo._active.append(batch)
@@ -253,7 +272,7 @@ def test_list_meal_prep_batches_active_false_includes_inactive(monkeypatch):
         recipe_id="r1",
         total_servings=2,
         cook_date="2026-04-27",
-        assignments=[BatchAssignment(day_index=1, slot_index=0, servings=1.0)],
+        assignments=[BatchAssignment(day_index=0, slot_index=0, servings=1.0)],
         status="planned",
     )
     consumed = MealPrepBatch(
@@ -261,7 +280,7 @@ def test_list_meal_prep_batches_active_false_includes_inactive(monkeypatch):
         recipe_id="r1",
         total_servings=2,
         cook_date="2026-04-27",
-        assignments=[BatchAssignment(day_index=1, slot_index=1, servings=1.0)],
+        assignments=[BatchAssignment(day_index=0, slot_index=1, servings=1.0)],
         status="consumed",
     )
     repo._active.append(active)
@@ -336,6 +355,70 @@ def test_recipe_delete_endpoint_orphans_batches(monkeypatch):
     res = _client().delete("/api/v1/recipes/r1")
     assert res.status_code == 200
     assert res.json() == {"deleted_id": "r1", "orphaned_batches": 3}
+
+
+def test_create_meal_prep_batch_canonical_coordinates(monkeypatch):
+    repo = _MealPrepRepoStub()
+    monkeypatch.setattr("src.api.meal_prep_routes.MealPrepBatchRepository", lambda: repo)
+    monkeypatch.setattr(
+        "src.api.meal_prep_routes.RecipeDB",
+        lambda *_a, **_k: _RecipeDBStub(_RecipeStub(id="r1", is_meal_prep_capable=True)),
+    )
+
+    res = _client().post(
+        "/api/v1/meal_prep_batches",
+        json={
+            "recipe_id": "r1",
+            "total_servings": 3,
+            "cook_date": "2026-04-27",
+            "assignments": [
+                {"day_index": 0, "slot_index": 1, "servings": 1.5},
+                {"day_index": 2, "slot_index": 0, "servings": 1.0},
+            ],
+        },
+    )
+    assert res.status_code == 200
+    body = res.json()
+    assert body["assignments"] == [
+        {
+            "day_index": 0,
+            "slot_index": 1,
+            "servings": 1.5,
+            "date": "2026-04-27",
+            "slot_id": 1,
+        },
+        {
+            "day_index": 2,
+            "slot_index": 0,
+            "servings": 1.0,
+            "date": "2026-04-29",
+            "slot_id": 0,
+        },
+    ]
+    created = repo._by_id[body["id"]]
+    assert [(a.day_index, a.slot_index, a.servings) for a in created.assignments] == [
+        (0, 1, 1.5),
+        (2, 0, 1.0),
+    ]
+
+
+def test_create_meal_prep_batch_rejects_mixed_assignment_shape(monkeypatch):
+    monkeypatch.setattr(
+        "src.api.meal_prep_routes.RecipeDB",
+        lambda *_a, **_k: _RecipeDBStub(_RecipeStub(id="r1", is_meal_prep_capable=True)),
+    )
+    monkeypatch.setattr("src.api.meal_prep_routes.MealPrepBatchRepository", lambda: _MealPrepRepoStub())
+    res = _client().post(
+        "/api/v1/meal_prep_batches",
+        json={
+            "recipe_id": "r1",
+            "total_servings": 2,
+            "cook_date": "2026-04-27",
+            "assignments": [{"day_index": 0, "slot_index": 0, "date": "2026-04-27"}],
+        },
+    )
+    assert res.status_code == 400
+    assert res.json()["error"]["code"] == "INVALID_REQUEST"
 
 
 def test_recipe_delete_endpoint_returns_404(monkeypatch):

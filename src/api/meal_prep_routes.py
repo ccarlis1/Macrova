@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from datetime import date as dt_date, timedelta
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from src.api.error_mapping import (
     BATCH_CONFLICT,
@@ -23,17 +23,47 @@ router = APIRouter(prefix="/meal_prep_batches", tags=["meal_prep_batches"])
 
 
 class AssignmentInput(BaseModel):
-    date: str
-    slot_id: int = Field(..., ge=0)
+    """Canonical planner coordinates ``(day_index, slot_index)`` or legacy ``(date, slot_id)``.
+
+    Legacy input is normalized at the route boundary; persistence uses only canonical fields.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    day_index: Optional[int] = None
+    slot_index: Optional[int] = None
+    date: Optional[str] = None
+    slot_id: Optional[int] = None
+    servings: float = Field(default=1.0, gt=0)
 
     @field_validator("date")
     @classmethod
-    def _valid_date(cls, value: str) -> str:
+    def _valid_date(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return value
         try:
             dt_date.fromisoformat(value)
         except ValueError as exc:
             raise ValueError("date must be ISO format YYYY-MM-DD") from exc
         return value
+
+    @model_validator(mode="after")
+    def _shape(self) -> AssignmentInput:
+        has_canonical = self.day_index is not None and self.slot_index is not None
+        has_legacy = self.date is not None and self.slot_id is not None
+        if has_canonical and has_legacy:
+            raise ValueError(
+                "assignment cannot mix canonical (day_index, slot_index) with legacy (date, slot_id)"
+            )
+        if not has_canonical and not has_legacy:
+            raise ValueError(
+                "assignment requires either (day_index, slot_index) or (date, slot_id)"
+            )
+        if has_canonical and (self.date is not None or self.slot_id is not None):
+            raise ValueError("canonical assignment must not include date or slot_id")
+        if has_legacy and (self.day_index is not None or self.slot_index is not None):
+            raise ValueError("legacy assignment must not include day_index or slot_index")
+        return self
 
 
 class CreateMealPrepBatchRequest(BaseModel):
@@ -60,17 +90,43 @@ class CreateMealPrepBatchRequest(BaseModel):
         return value
 
 
-def _assignment_to_slot(assignment_date: str, cook_date: str, slot_id: int) -> BatchAssignment:
-    base = dt_date.fromisoformat(cook_date)
-    target = dt_date.fromisoformat(assignment_date)
-    day_index = (target - base).days + 1
-    return BatchAssignment(day_index=day_index, slot_index=int(slot_id), servings=1.0)
+def _assignment_input_to_batch(
+    body: CreateMealPrepBatchRequest, item: AssignmentInput
+) -> BatchAssignment:
+    if item.day_index is not None and item.slot_index is not None:
+        if int(item.day_index) < 0 or int(item.slot_index) < 0:
+            raise ApiContractError(
+                BATCH_INVALID, "day_index and slot_index must be >= 0"
+            )
+        return BatchAssignment(
+            day_index=int(item.day_index),
+            slot_index=int(item.slot_index),
+            servings=float(item.servings),
+        )
+    assert item.date is not None and item.slot_id is not None
+    if int(item.slot_id) < 0:
+        raise ApiContractError(BATCH_INVALID, "slot_id must be >= 0")
+    base = dt_date.fromisoformat(body.cook_date)
+    target = dt_date.fromisoformat(item.date)
+    delta = (target - base).days
+    if delta < 0:
+        raise ApiContractError(
+            BATCH_INVALID, "assignment date must be on or after cook_date"
+        )
+    return BatchAssignment(
+        day_index=delta,
+        slot_index=int(item.slot_id),
+        servings=float(item.servings),
+    )
 
 
 def _assignment_to_api(batch: MealPrepBatch, item: BatchAssignment) -> Dict[str, Any]:
     base = dt_date.fromisoformat(batch.cook_date)
-    assignment_date = (base + timedelta(days=int(item.day_index) - 1)).isoformat()
+    assignment_date = (base + timedelta(days=int(item.day_index))).isoformat()
     return {
+        "day_index": int(item.day_index),
+        "slot_index": int(item.slot_index),
+        "servings": float(item.servings),
         "date": assignment_date,
         "slot_id": int(item.slot_index),
     }
@@ -103,36 +159,39 @@ def _validate_recipe(recipe_id: str) -> None:
         )
 
 
-def _validate_assignments(body: CreateMealPrepBatchRequest) -> None:
-    if body.total_servings < 2:
+def _validate_assignments(
+    total_servings: int, normalized: List[BatchAssignment]
+) -> None:
+    if total_servings < 2:
         raise ApiContractError(BATCH_INVALID, "total_servings must be >= 2")
-    if len(body.assignments) > body.total_servings:
+    if len(normalized) > total_servings:
         raise ApiContractError(
             BATCH_INVALID, "assignments count cannot exceed total_servings"
         )
 
-    seen: set[Tuple[str, int]] = set()
-    for item in body.assignments:
-        slot = (item.date, int(item.slot_id))
+    seen: set[Tuple[int, int]] = set()
+    for item in normalized:
+        slot = (int(item.day_index), int(item.slot_index))
         if slot in seen:
-            raise ApiContractError(BATCH_INVALID, "duplicate (date, slot_id) in assignments")
+            raise ApiContractError(
+                BATCH_INVALID, "duplicate (day_index, slot_index) in assignments"
+            )
         seen.add(slot)
 
 
-def _validate_conflicts(body: CreateMealPrepBatchRequest, repo: MealPrepBatchRepository) -> None:
-    requested_slots: set[Tuple[str, int]] = {
-        (item.date, int(item.slot_id)) for item in body.assignments
+def _validate_conflicts(
+    normalized: List[BatchAssignment], repo: MealPrepBatchRepository
+) -> None:
+    requested_slots: set[Tuple[int, int]] = {
+        (int(a.day_index), int(a.slot_index)) for a in normalized
     }
     for batch in repo.list_active():
         for existing in batch.assignments:
-            existing_slot = (
-                _assignment_to_api(batch, existing)["date"],
-                int(existing.slot_index),
-            )
-            if existing_slot in requested_slots:
+            key = (int(existing.day_index), int(existing.slot_index))
+            if key in requested_slots:
                 raise ApiContractError(
                     BATCH_CONFLICT,
-                    f"Slot conflict at date={existing_slot[0]!r}, slot_id={existing_slot[1]}",
+                    f"Slot conflict at day_index={key[0]}, slot_index={key[1]}",
                 )
 
 
@@ -140,14 +199,17 @@ def _validate_conflicts(body: CreateMealPrepBatchRequest, repo: MealPrepBatchRep
 def create_meal_prep_batch(body: CreateMealPrepBatchRequest) -> Any:
     try:
         _validate_recipe(body.recipe_id)
-        _validate_assignments(body)
+        try:
+            assignments = [
+                _assignment_input_to_batch(body, item) for item in body.assignments
+            ]
+        except ApiContractError:
+            raise
+        except ValueError as exc:
+            raise ApiContractError(BATCH_INVALID, str(exc)) from exc
+        _validate_assignments(body.total_servings, assignments)
         repo = MealPrepBatchRepository()
-        _validate_conflicts(body, repo)
-
-        assignments = [
-            _assignment_to_slot(item.date, body.cook_date, item.slot_id)
-            for item in body.assignments
-        ]
+        _validate_conflicts(assignments, repo)
         try:
             created = repo.create(
                 MealPrepBatch(

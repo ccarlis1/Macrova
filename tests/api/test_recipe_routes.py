@@ -1,3 +1,15 @@
+"""BE-11 / BE-15: ``/api/v1/recipes`` HTTP contracts.
+
+Maps to sprint docs:
+
+- Create typed tags + ``default_servings`` → ``test_create_roundtrip_returns_typed_tags_and_default_servings``
+- Update typed tags + ``default_servings`` → ``test_put_roundtrip_updates_default_servings_and_derivation``
+- Detail includes typed tags, ``default_servings``, ``is_meal_prep_capable`` → same create + detail assertions
+- Invalid ``default_servings`` → ``test_default_servings_invalid_values_return_invalid_request``
+- Unknown tag → ``test_unknown_tag_is_rejected_with_structured_error`` (``TAG_NOT_FOUND``)
+- Unknown tag repeatability → ``test_unknown_tag_error_is_stable_across_requests``
+"""
+
 from fastapi.testclient import TestClient
 
 from src.api.server import app
@@ -86,6 +98,21 @@ def test_unknown_tag_is_rejected_with_structured_error(monkeypatch, tmp_path):
     )
     assert res.status_code == 404
     assert res.json()["error"]["code"] == "TAG_NOT_FOUND"
+
+
+def test_unknown_tag_error_is_stable_across_requests(monkeypatch, tmp_path):
+    """Unknown slug resolves deterministically to the same structured ``TAG_NOT_FOUND``."""
+    _configure_paths(monkeypatch, tmp_path)
+    client = TestClient(app)
+    base = {
+        "name": "Unknown Tag Stable",
+        "ingredients": [{"name": "cream of rice", "quantity": 100, "unit": "g"}],
+        "tag_slugs_by_type": {"context": ["not-a-real-tag"]},
+    }
+    first = client.post("/api/v1/recipes", json={**base, "id": "r-unk-a"})
+    second = client.post("/api/v1/recipes", json={**base, "id": "r-unk-b"})
+    assert first.status_code == second.status_code == 404
+    assert first.json()["error"]["code"] == second.json()["error"]["code"] == "TAG_NOT_FOUND"
 
 
 def test_default_servings_invalid_values_return_invalid_request(monkeypatch, tmp_path):

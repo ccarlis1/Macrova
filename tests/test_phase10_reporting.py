@@ -12,6 +12,7 @@ from src.planning.phase10_reporting import (
     build_micronutrient_soft_deficit_warning,
     build_report_fm_batch_conflict,
     build_report_fm4,
+    fix_hint_for_code,
     normalize_planner_report,
     result_from_success,
 )
@@ -211,10 +212,16 @@ def test_normalize_planner_report_maps_legacy_codes():
         failure_mode="FM-1",
         report={"unfillable_slots": [{"day": 0, "slot_index": 1, "eligible_recipe_count": 0}]},
     )
-    assert fm1["failures"][0]["code"] == "FM-1"
-    assert fm1["failures"][0]["message"]
-    assert fm1["failures"][0]["day_index"] == 0
-    assert fm1["failures"][0]["slot_index"] == 1
+    assert fm1["failures"][0] == {
+        "code": "FM-1",
+        "message": "No feasible recipe candidates for this slot.",
+        "day_index": 0,
+        "slot_index": 1,
+        "slot_id": "day-1-slot-1",
+        "date": "day-1",
+        "details": {"eligible_recipe_count": 0, "blocking_constraints": []},
+        "fix_hint": fix_hint_for_code("FM-1"),
+    }
 
     fm3 = normalize_planner_report(
         failure_mode="FM-3",
@@ -223,22 +230,133 @@ def test_normalize_planner_report_maps_legacy_codes():
             "remaining_budget": {"calories": 0},
         },
     )
-    assert fm3["failures"][0]["code"] == "FM-3"
-    assert fm3["failures"][0]["details"]["recipe_id"] == "r1"
+    assert fm3["failures"][0] == {
+        "code": "FM-3",
+        "message": "Pinned assignment conflicts with planner constraints.",
+        "day_index": 0,
+        "slot_index": 0,
+        "slot_id": "day-1-slot-0",
+        "date": "day-1",
+        "details": {
+            "recipe_id": "r1",
+            "violation_type": "HC-1",
+            "remaining_budget": {"calories": 0},
+        },
+        "fix_hint": fix_hint_for_code("FM-3"),
+    }
 
     fm4 = normalize_planner_report(
         failure_mode="FM-4",
         report={"deficient_nutrients": [{"nutrient": "iron_mg", "deficit": 1.0}]},
     )
-    assert fm4["failures"][0]["code"] == "FM-4"
-    assert fm4["failures"][0]["details"]["deficient_nutrients"][0]["nutrient"] == "iron_mg"
+    assert fm4["failures"][0] == {
+        "code": "FM-4",
+        "message": "Weekly micronutrient targets are infeasible with current constraints.",
+        "details": {"deficient_nutrients": [{"nutrient": "iron_mg", "deficit": 1.0}]},
+        "fix_hint": fix_hint_for_code("FM-4"),
+    }
 
     fm5 = normalize_planner_report(
         failure_mode="FM-5",
         report={"attempts": 5, "backtracks": 2, "best_plan_violations": {"macro": True}},
     )
-    assert fm5["failures"][0]["code"] == "FM-5"
-    assert fm5["failures"][0]["details"]["attempts"] == 5
+    assert fm5["failures"][0] == {
+        "code": "FM-5",
+        "message": "Planner stopped after reaching attempt limits.",
+        "details": {
+            "attempts": 5,
+            "backtracks": 2,
+            "search_exhaustive": False,
+            "best_plan_violations": {"macro": True},
+        },
+        "fix_hint": fix_hint_for_code("FM-5"),
+    }
+
+
+def test_success_result_report_always_has_failures_list():
+    D = 1
+    profile = _profile(1.0, {"iron_mg": 10.0})
+    wt = _week_tracker(MicronutrientProfile(iron_mg=10.0))
+    result = result_from_success(
+        [Assignment(0, 0, "r1")],
+        {},
+        wt,
+        profile,
+        D,
+    )
+    assert result.report.get("failures") == []
+    assert isinstance(result.report["failures"], list)
+
+
+def test_modern_failure_codes_stable_shape_snapshots():
+    """Contract: code, message, details, fix_hint; slot fields when scoped."""
+    tag_empty = build_failure(
+        code="FM-TAG-EMPTY",
+        day_index=0,
+        slot_index=2,
+        slot_id="day-1-slot-2",
+        date="",
+        details={"missing_tag": "keto", "recipe_count": 0},
+    )
+    assert tag_empty == {
+        "code": "FM-TAG-EMPTY",
+        "message": "No recipes satisfy required tag `keto` for this slot.",
+        "day_index": 0,
+        "slot_index": 2,
+        "slot_id": "day-1-slot-2",
+        "date": "",
+        "details": {"missing_tag": "keto", "recipe_count": 0},
+        "fix_hint": "No recipes match tag `keto`. Add one or relax constraints.",
+    }
+
+    batch_report = build_report_fm_batch_conflict(
+        [
+            {
+                "slot_address": {"day_index": 1, "slot_index": 0},
+                "existing_batch_id": "b1",
+                "existing_recipe_id": "r1",
+                "incoming_batch_id": "b2",
+                "incoming_recipe_id": "r2",
+            }
+        ]
+    )
+    assert batch_report["failures"][0] == {
+        "code": "FM-BATCH-CONFLICT",
+        "message": "Batch locks conflict for this slot.",
+        "day_index": 1,
+        "slot_index": 0,
+        "slot_id": "day-2-slot-0",
+        "date": "",
+        "details": {
+            "batch_ids": ["b1", "b2"],
+            "date": "",
+            "slot_id": "day-2-slot-0",
+        },
+        "fix_hint": fix_hint_for_code("FM-BATCH-CONFLICT"),
+    }
+
+    macro = build_failure(
+        code="FM-MACRO-INFEASIBLE",
+        slot_id="",
+        date="day-3",
+        details={
+            "date": "day-3",
+            "deltas": {"calories": -100.0},
+            "constraint": "protein",
+        },
+    )
+    assert macro == {
+        "code": "FM-MACRO-INFEASIBLE",
+        "message": "Macro targets are infeasible under current constraints.",
+        "slot_id": "",
+        "date": "day-3",
+        "details": {
+            "date": "day-3",
+            "deltas": {"calories": -100.0},
+            "constraint": "protein",
+        },
+        "fix_hint": fix_hint_for_code("FM-MACRO-INFEASIBLE"),
+    }
 
 
 def test_batch_tag_mismatch_warning_appends_without_dropping_existing_report():

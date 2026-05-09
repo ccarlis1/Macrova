@@ -41,6 +41,10 @@ class Failure:
 
 
 _FIX_HINTS: Dict[str, str] = {
+    "FM-1": "No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.",
+    "FM-3": "A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.",
+    "FM-4": "Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.",
+    "FM-5": "Planning hit the attempt limit. Simplify the schedule, widen macro targets, or reduce constraints.",
     "FM-TAG-EMPTY": "No recipes match tag `{missing_tag}`. Add one or relax constraints.",
     "FM-BATCH-CONFLICT": "Batch locks conflict for this slot. Remove one lock so only one batch assignment remains.",
     "FM-MACRO-INFEASIBLE": "Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.",
@@ -143,7 +147,14 @@ def normalize_failure_object(raw_failure: Any) -> Dict[str, Any]:
 
     fix_hint = item.get("fix_hint")
     if isinstance(fix_hint, str) and fix_hint.strip():
-        normalized["fix_hint"] = fix_hint
+        normalized["fix_hint"] = fix_hint.strip()
+    else:
+        hint = fix_hint_for_code(code)
+        if code == "FM-TAG-EMPTY":
+            missing_tag = str(details.get("missing_tag", "")).strip()
+            if missing_tag:
+                hint = hint.replace("{missing_tag}", missing_tag)
+        normalized["fix_hint"] = hint
     return normalized
 
 

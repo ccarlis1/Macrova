@@ -7,7 +7,7 @@ import pytest
 from src.data_layer.models import Ingredient, MicronutrientProfile, NutritionProfile, UpperLimits
 from src.planning.phase0_models import MealSlot, PlanningRecipe, PlanningUserProfile
 from src.planning.phase0_models import Assignment
-from src.planning.phase10_reporting import MealPlanResult
+from src.planning.phase10_reporting import MealPlanResult, fix_hint_for_code
 from src.planning.phase7_search import (
     DEFAULT_ATTEMPT_LIMIT,
     PlannerStateError,
@@ -320,6 +320,22 @@ class TestFailureModes:
         assert result.failure_mode == "FM-1"
         unfillable = result.report.get("unfillable_slots", [])
         assert len(unfillable) >= 1
+        failures = result.report.get("failures", [])
+        assert isinstance(failures, list) and len(failures) >= 1
+        slot0 = unfillable[0]
+        assert failures[0] == {
+            "code": "FM-1",
+            "message": "No feasible recipe candidates for this slot.",
+            "day_index": int(slot0["day"]),
+            "slot_index": int(slot0["slot_index"]),
+            "slot_id": f"day-{int(slot0['day']) + 1}-slot-{int(slot0['slot_index'])}",
+            "date": f"day-{int(slot0['day']) + 1}",
+            "details": {
+                "eligible_recipe_count": int(slot0.get("eligible_recipe_count", 0)),
+                "blocking_constraints": list(slot0.get("blocking_constraints", []) or []),
+            },
+            "fix_hint": fix_hint_for_code("FM-1"),
+        }
         assert result.stats is not None and result.stats.get("attempts", 0) >= 0
         assert "closest_plan" in result.report or "best_plan" in result.report or result.report.get("unfillable_slots")
 
@@ -398,6 +414,12 @@ class TestFailureModes:
         assert result.stats is not None and result.stats.get("attempts") == 1
         assert result.report.get("search_exhaustive") is False
         assert "attempts" in result.report and result.report["attempts"] == 1
+        fm5 = result.report["failures"][0]
+        assert fm5["code"] == "FM-5"
+        assert fm5["message"] == "Planner stopped after reaching attempt limits."
+        assert fm5["details"]["attempts"] == 1
+        assert fm5["fix_hint"] == fix_hint_for_code("FM-5")
+        assert "day_index" not in fm5 and "slot_index" not in fm5
 
     def test_fm4_weekly_validation_failure(self):
         schedule = _make_schedule(ndays=2, slots_per_day=2)

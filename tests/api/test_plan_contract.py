@@ -468,6 +468,9 @@ def test_plan_fm_batch_conflict_two_active_batches_same_slot(tmp_path, monkeypat
     failure = next(
         f for f in body["report"]["failures"] if f.get("code") == "FM-BATCH-CONFLICT"
     )
+    assert failure["message"] == "Batch locks conflict for this slot."
+    assert failure["fix_hint"]
+    assert isinstance(failure["details"], dict)
     assert failure["day_index"] == 0
     assert failure["slot_index"] == 0
     assert set(failure["details"]["batch_ids"]) == {"batch-a", "batch-b"}

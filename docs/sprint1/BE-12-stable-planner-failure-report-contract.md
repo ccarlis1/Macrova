@@ -25,6 +25,7 @@ Unblocks: FE-9, BE-15.
 - Extend BE-7 additively; preserve existing response fields consumed by clients.
 - Keep canonical slot coordinates for frontend consumption.
 - Keep planner-originated failures distinct from generic FastAPI request validation errors.
+- **`fix_hint`:** Every entry in `report.failures` includes a non-null `fix_hint` string. Server-authored hints come from `fix_hint_for_code` in `phase10_reporting.py`, with `FM-TAG-EMPTY` substituting `{missing_tag}` from `details.missing_tag` when present. Unknown codes fall back to a generic planner-constraints message.
 
 ## Out of scope
 

@@ -545,8 +545,12 @@ class TestFormatResultMarkdownAndJson:
         )
         data = format_result_json(result, {}, sample_planning_profile, D=1)
         assert data["plan_status"] == "failed"
-        assert data["report"]["failures"][0]["code"] == "FM-1"
-        assert data["report"]["failures"][0]["message"]
-        assert data["report"]["failures"][0]["day_index"] == 0
-        assert data["report"]["failures"][0]["slot_index"] == 1
+        f0 = data["report"]["failures"][0]
+        assert f0["code"] == "FM-1"
+        assert f0["message"]
+        assert f0["day_index"] == 0
+        assert f0["slot_index"] == 1
+        assert f0["details"] == {"eligible_recipe_count": 0, "blocking_constraints": []}
+        assert f0["fix_hint"]
+        assert "failures" in data["report"] and data["report"]["failures"] is not None
 

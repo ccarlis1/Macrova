@@ -8,22 +8,26 @@ This guide explains how to test the spec-aligned meal planner (phases 0–7) for
 
 ## Quick reference: how to run tests
 
-From the **repo root**:
+From the **repo root**, use the canonical test runner (do not run bare `pytest`):
+
+```bash
+python3 scripts/run_pytest.py
+```
 
 | What you want | Command |
 |---------------|---------|
-| **All planning tests** | `pytest tests/ -v` or `pytest tests/test_phase*.py -v` |
-| **Single phase** | `pytest tests/test_phase7_search.py -v` |
-| **Theoretical Perfect Week suite** | `pytest tests/test_theoretical_perfect_week.py -v` |
-| **One test class** | `pytest tests/test_phase7_search.py::TestSearchSuccessNoPins -v` |
-| **One test** | `pytest tests/test_phase7_search.py::TestSearchSuccessNoPins::test_d1_two_slots_success -v` |
-| **With stats printed** | `pytest tests/test_phase7_search.py -v -s` |
-| **Faster (no capture)** | `pytest tests/test_phase7_search.py -q` |
+| **All planning tests** | `python3 scripts/run_pytest.py tests/ -v` or `python3 scripts/run_pytest.py tests/test_phase*.py -v` |
+| **Single phase** | `python3 scripts/run_pytest.py tests/test_phase7_search.py -v` |
+| **Theoretical Perfect Week suite** | `python3 scripts/run_pytest.py tests/test_theoretical_perfect_week.py -v` |
+| **One test class** | `python3 scripts/run_pytest.py tests/test_phase7_search.py::TestSearchSuccessNoPins -v` |
+| **One test** | `python3 scripts/run_pytest.py tests/test_phase7_search.py::TestSearchSuccessNoPins::test_d1_two_slots_success -v` |
+| **With stats printed** | `python3 scripts/run_pytest.py tests/test_phase7_search.py -v -s` |
+| **Faster (no capture)** | `python3 scripts/run_pytest.py tests/test_phase7_search.py -q` |
 
-Use `python3` if `pytest` is not on PATH:
+Lower-level alternative (uses `.venv/` directly):
 
 ```bash
-python3 -m pytest tests/test_phase7_search.py -v
+.venv/bin/python -m pytest tests/test_phase7_search.py -v
 ```
 
 ---
@@ -34,13 +38,13 @@ The phase 0–7 pipeline is covered by pytest. Run all planning tests:
 
 ```bash
 # From repo root
-pytest tests/test_phase0_meal_plan_foundation.py tests/test_phase1_state.py tests/test_phase2_constraints.py tests/test_phase3_feasibility.py tests/test_phase4_scoring.py tests/test_phase5_ordering.py tests/test_phase6_candidates.py tests/test_phase7_search.py -v
+python3 scripts/run_pytest.py tests/test_phase0_meal_plan_foundation.py tests/test_phase1_state.py tests/test_phase2_constraints.py tests/test_phase3_feasibility.py tests/test_phase4_scoring.py tests/test_phase5_ordering.py tests/test_phase6_candidates.py tests/test_phase7_search.py -v
 ```
 
 Or run only the full-search integration tests (phase 7):
 
 ```bash
-pytest tests/test_phase7_search.py -v
+python3 scripts/run_pytest.py tests/test_phase7_search.py -v
 ```
 
 **What this verifies:**
@@ -57,7 +61,7 @@ pytest tests/test_phase7_search.py -v
 **Theoretical Perfect Week suite** (clean-room correctness):
 
 ```bash
-pytest tests/test_theoretical_perfect_week.py -v
+python3 scripts/run_pytest.py tests/test_theoretical_perfect_week.py -v
 ```
 
 Covers: identical meals (Variant A), multiple perfect daily combinations / determinism stress (Variant B), cross-day micronutrient assembly (Variant C), and large pool sparse perfect cover (Variant D). See docstrings in that file for what each variant catches.
@@ -222,7 +226,7 @@ Then call `run_meal_plan_search(profile, planning_recipe_list, D, resolved_ul, s
 
 | Goal                    | Action |
 |-------------------------|--------|
-| **Functionality**       | `pytest tests/test_phase7_search.py` (and other phase tests). |
+| **Functionality**       | `python3 scripts/run_pytest.py tests/test_phase7_search.py` (and other phase tests). |
 | **Run time / attempts** | Use `SearchStats(enabled=True)` in `run_meal_plan_search`; read `total_runtime()`, `total_attempts`, `time_per_attempt()`, `day_runtimes`. |
 | **Output (success)**    | Check `plan` length and shape, `daily_trackers`, `weekly_tracker.days_completed`, determinism. |
 | **Output (failure)**    | Check `failure_mode`, `report`, `stats` (attempts/backtracks). |

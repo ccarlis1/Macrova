@@ -179,7 +179,7 @@ Your Flutter frontend and Python backend are completely separate. They communica
 ```
 my-project/
 ├── backend/        ← Your Python backend
-│   └── venv/       ← Python virtual environment
+│   └── .venv/      ← Python virtual environment
 └── frontend/       ← Your Flutter app
 ```
 
@@ -188,7 +188,7 @@ my-project/
 Activate your Python venv when working on the backend:
 
 ```bash
-source venv/bin/activate
+source .venv/bin/activate
 ```
 
 Deactivate when you're done or when running Flutter/Ruby commands:
@@ -212,7 +212,7 @@ deactivate
 | `flutter run -d android` | Run app on Android Emulator |
 | `pod --version` | Check if CocoaPods is installed |
 | `ruby --version` | Check Ruby version (should be 3.x+) |
-| `source venv/bin/activate` | Activate Python virtual environment |
+| `source .venv/bin/activate` | Activate Python virtual environment |
 | `deactivate` | Deactivate Python virtual environment |
 
 ---

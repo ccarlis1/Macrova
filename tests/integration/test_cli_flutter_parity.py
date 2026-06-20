@@ -105,11 +105,14 @@ def _apply_cli_style_setup(
     return planning_profile, copy.deepcopy(_planning_recipes())
 
 
-def test_cli_and_http_request_builder_parity_for_batches_and_seed():
-    profile = _profile_with_pins(pins=[])
+def test_cli_and_http_request_builder_parity_for_batches_pins_and_seed():
+    """E-blocker: same profile + batches + persisted pins + seed → identical meal sequence."""
+    persisted_pins = [ProfilePin(day_index=0, slot_index=1, recipe_id="r_other")]
+    profile = _profile_with_pins(pins=persisted_pins)
     recipes = _planning_recipes()
     active_batches = _active_batch_fixture()
     seed = 7
+    expected_sequence = [(0, 0, "r_batch"), (0, 1, "r_other")]
 
     http_payload = build_plan_request_from_profile(profile, recipes, active_batches, seed)
     cli_payload = build_plan_request_from_profile(profile, recipes, active_batches, seed)
@@ -121,17 +124,19 @@ def test_cli_and_http_request_builder_parity_for_batches_and_seed():
     http_profile, http_recipes = _apply_api_style_setup(
         copy.deepcopy(profile),
         active_batches=active_batches,
-        persisted_pins=[],
+        persisted_pins=persisted_pins,
     )
     cli_profile, cli_recipes = _apply_cli_style_setup(
         copy.deepcopy(profile),
         active_batches=active_batches,
-        persisted_pins=[],
+        persisted_pins=persisted_pins,
     )
 
     http_result = plan_meals(http_profile, http_recipes, days=1)
     cli_result = plan_meals(cli_profile, cli_recipes, days=1)
 
+    assert _planned_meal_sequence(http_result) == expected_sequence
+    assert _planned_meal_sequence(cli_result) == expected_sequence
     assert _planned_meal_sequence(http_result) == _planned_meal_sequence(cli_result)
 
 

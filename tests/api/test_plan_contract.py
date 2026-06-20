@@ -1,4 +1,8 @@
-"""BE-15: HTTP contract tests for ``POST /api/v1/plan`` (failures + meal-prep metadata)."""
+"""E-blocker / BE-15: HTTP contract tests for ``POST /api/v1/plan``.
+
+Covers FM-BATCH-CONFLICT shape, meal-prep create → plan metadata
+(``source``, ``batch_id``, ``slot_index``, ``servings``), and FM-TAG-EMPTY failures.
+"""
 
 from __future__ import annotations
 
@@ -465,9 +469,11 @@ def test_plan_fm_batch_conflict_two_active_batches_same_slot(tmp_path, monkeypat
     body = resp.json()
     assert body["success"] is False
     assert body["plan_status"] == "failed"
+    assert isinstance(body["report"]["failures"], list)
     failure = next(
         f for f in body["report"]["failures"] if f.get("code") == "FM-BATCH-CONFLICT"
     )
+    assert failure["code"] == "FM-BATCH-CONFLICT"
     assert failure["message"] == "Batch locks conflict for this slot."
     assert failure["fix_hint"]
     assert isinstance(failure["details"], dict)

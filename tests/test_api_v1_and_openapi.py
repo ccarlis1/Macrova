@@ -195,6 +195,10 @@ def test_openapi_plan_response_includes_failure_codes():
     schema = app.openapi()
     components = schema["components"]["schemas"]
     assert "PlanFailure" in components
+    failure_props = components["PlanFailure"]["properties"]
+    for field in ("code", "message", "details", "fix_hint", "day_index", "slot_index"):
+        assert field in failure_props
+
     failure_schema_text = str(components["PlanFailure"])
     for code in (
         "FM-TAG-EMPTY",
@@ -206,6 +210,9 @@ def test_openapi_plan_response_includes_failure_codes():
         "FM-5",
     ):
         assert code in failure_schema_text
+
+    report_props = components["PlanReport"]["properties"]
+    assert "failures" in report_props
 
     response_schema = schema["paths"]["/api/v1/plan"]["post"]["responses"]["200"][
         "content"

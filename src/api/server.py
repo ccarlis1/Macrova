@@ -948,8 +948,8 @@ def llm_status_endpoint() -> Dict[str, Any]:
     return {"enabled": bool(settings.enabled)}
 
 
-@app.post("/api/v1/plan", response_model=PlanResponse)
-@app.post("/api/plan", response_model=PlanResponse)
+@app.post("/api/v1/plan", response_model=PlanResponse, response_model_exclude_none=True)
+@app.post("/api/plan", response_model=PlanResponse, response_model_exclude_none=True)
 async def plan_meals_endpoint(
     request: Request,
     plan_request: PlanRequest,
@@ -1122,8 +1122,8 @@ async def plan_meals_endpoint(
         return JSONResponse(status_code=status_code, content=payload)
 
 
-@app.post("/api/v1/plan-from-text", response_model=PlanResponse)
-@app.post("/api/plan-from-text", response_model=PlanResponse)
+@app.post("/api/v1/plan-from-text", response_model=PlanResponse, response_model_exclude_none=True)
+@app.post("/api/plan-from-text", response_model=PlanResponse, response_model_exclude_none=True)
 def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
     try:
         llm_settings = load_llm_settings()

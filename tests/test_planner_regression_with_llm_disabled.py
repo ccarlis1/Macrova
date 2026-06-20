@@ -69,6 +69,8 @@ def test_planner_regression_llm_disabled_golden_json(monkeypatch):
                         "recipe_id": "r1",
                         "name": "Test Chicken",
                         "meal_type": "breakfast",
+                        "slot_index": 0,
+                        "source": "planner",
                         "cooking_time_minutes": 10,
                         "ingredients": ["100 g chicken breast"],
                         "nutrition": {
@@ -78,13 +80,13 @@ def test_planner_regression_llm_disabled_golden_json(monkeypatch):
                             "carbs_g": 100.0,
                         },
                         "busyness_level": 2,
-                        "slot_index": 0,
-                        "source": "planner",
                     },
                     {
                         "recipe_id": "r1",
                         "name": "Test Chicken",
                         "meal_type": "lunch",
+                        "slot_index": 1,
+                        "source": "planner",
                         "cooking_time_minutes": 10,
                         "ingredients": ["100 g chicken breast"],
                         "nutrition": {
@@ -94,8 +96,6 @@ def test_planner_regression_llm_disabled_golden_json(monkeypatch):
                             "carbs_g": 100.0,
                         },
                         "busyness_level": 3,
-                        "slot_index": 1,
-                        "source": "planner",
                     },
                 ],
                 "totals": {
@@ -123,9 +123,7 @@ def test_planner_regression_llm_disabled_golden_json(monkeypatch):
             "daily_fat_g_max": 100.0,
             "daily_carbs_g": 281.25,
         },
-        "weekly_totals": None,
         "plan_status": "success",
-        "plan_status_message": None,
     }
 
     monkeypatch.setattr("src.api.server.RecipeDB", DummyRecipeDB)

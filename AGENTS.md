@@ -1,89 +1,98 @@
 # AGENTS.md
 
-## Project: Macrova Nutrition Agent
+Canonical instruction source for AI coding agents working in the **Macrova** (`nutrition-agent`) repository. Read this before making changes. It is intended to be useful every session, not a sprint log.
 
-Macrova is a deterministic nutrition and meal-planning app with optional LLM assistance. The backend is Python/FastAPI. The frontend is Flutter. The planner must remain deterministic by default, with LLM features used only for assistance such as recipe generation, ingredient matching, natural-language config parsing, tagging, and planner feedback.
+---
 
-This file is the canonical instruction source for coding agents working in this repository.
+## Project Overview
+
+Macrova is a deterministic nutrition and meal-planning system with optional LLM assistance.
+
+- **Backend:** Python / FastAPI (`src/`). Core is a deterministic, phase-based meal planner with backtracking search, rule-based recipe scoring, and structured macro + micronutrient nutrition calculations.
+- **Frontend:** Flutter app (`frontend/`) using `provider` for state management.
+- **Interfaces:** CLI (`plan_meals.py` / `python3 -m src.cli`) and an optional REST API (`src/api/server.py`).
+- **Core principle:** The planner is deterministic by default. LLM features are optional assistants (recipe generation, ingredient matching, natural-language config parsing, tagging, planner feedback) and must never bypass validation or become the authority for planning.
+
+Ingredient nutrition comes from a provider abstraction: a local JSON database (default) or the USDA FoodData Central API (`--ingredient-source api`, requires `USDA_API_KEY`). No network/API calls happen during planning — ingredient resolution is completed up front.
+
+---
+
+## How to Use This File
+
+1. Read this file first.
+2. Before editing a system (backend, planner, LLM, tagging, frontend), read the relevant source and the deeper docs noted in **When to Read Deeper Docs**.
+3. Prefer extending existing patterns over adding parallel abstractions.
+4. Run the canonical tests after substantive backend changes and report results honestly.
+5. If a doc conflicts with current code/scripts, trust code/scripts and report the conflict — do not guess.
+
+---
+
+## Source of Truth Hierarchy
+
+When information conflicts, prefer sources in this order:
+
+1. **Current source code** (`src/`, `frontend/lib/`)
+2. **Current scripts and tests** (`scripts/`, `tests/`, `Makefile`, `pytest.ini`)
+3. **`.cursor/architecture.json`** (machine-readable map of entities, features, APIs, UI, and known unknowns)
+4. **Current docs** (`docs/`, `README.md`, `USAGE.md`, `QUICK_START.md`)
+5. **Existing agent instructions** (this file)
+6. **Historical notes / sprint docs / code comments** (`docs/sprint1/`, older prose)
+
+If docs conflict with code/scripts, do not invent behavior. Preserve working behavior, follow the source/scripts, and report the conflict in your summary. Several older docs are known to be stale (see **Documentation Rules**).
 
 ---
 
 ## Canonical Commands
 
-Use these commands from the repository root.
+Run all commands from the repository root unless noted.
 
-### Python tests
-
-Always run backend Python tests with:
+### Backend Tests
 
 ```bash
 python3 scripts/run_pytest.py
 ```
 
-Do not run bare `pytest`.
+Do **not** run bare `pytest`, `python -m pytest`, or `python3 -m pytest` (except for an explicit one-off diagnostic the user requests). `scripts/run_pytest.py` ensures `.venv` exists, installs/validates `requirements.txt`, and runs `python -m pytest` inside that venv. `pytest.ini` sets `pythonpath = .` and `testpaths = tests`.
 
-Do not run:
+`make test` is a convenience alias and must delegate to `python3 scripts/run_pytest.py`.
+
+### OpenAPI Export
+
+The snapshot lives at `openapi/openapi.json`. `scripts/export_openapi.py` imports `src.api.server.app`, which requires FastAPI/uvicorn and other deps from `requirements.txt`.
+
+Use the wrapper (canonical), which runs the export inside `.venv`:
 
 ```bash
-pytest
-python -m pytest
-python3 -m pytest
+python3 scripts/run_export_openapi.py            # export/write openapi/openapi.json
+python3 scripts/run_export_openapi.py --check    # fail if the snapshot is stale
 ```
 
-unless the user explicitly asks for a one-off diagnostic comparison.
+`make openapi` and `make openapi-check` delegate to the wrapper.
 
-The test runner is responsible for selecting the correct virtual environment and test configuration.
+Do **not** run bare `python3 scripts/export_openapi.py` on the system interpreter unless it already has all deps installed. If you must call the export script directly, use `.venv/bin/python scripts/export_openapi.py`. The script itself prints this remediation when deps are missing.
 
-### OpenAPI export / contract check
+### Frontend Commands
 
-Export or verify the OpenAPI snapshot with:
-
-```bash
-python3 scripts/run_export_openapi.py
-python3 scripts/run_export_openapi.py --check
-```
-
-Do not run bare `python3 scripts/export_openapi.py` on the system interpreter — it imports `src.api.server`, which requires `uvicorn` and other deps from `requirements.txt`.
-
-### Flutter commands
-
-Run Flutter commands from the Flutter app directory, not from the repo root unless the repo structure explicitly supports it.
-
-Common commands:
+Run from the Flutter app directory (`frontend/`), not the repo root:
 
 ```bash
+cd frontend
 flutter pub get
 flutter analyze
 flutter test
 ```
 
-Before changing Flutter code, inspect the existing app structure, providers, DTOs, screens, and routing. Do not create parallel state-management patterns.
+Inspect existing providers, DTOs, screens, and routing before changing Flutter code. Do not create parallel state-management patterns.
 
 ---
 
 ## Python Environment Rules
 
-The canonical virtual environment directory is:
+- Canonical virtualenv directory: **`.venv/`**. Do not use or document `venv/`.
+- Python is pinned by `.python-version` to **3.12**. Prefer 3.12.
+- If `.venv/pyvenv.cfg` does not match the intended interpreter, recommend recreating `.venv/` cleanly rather than patching it.
 
-```text
-.venv/
-```
-
-Do not use:
-
-```text
-venv/
-```
-
-If documentation, scripts, comments, or setup instructions mention `venv/`, update them to `.venv/`.
-
-The project should pin Python with a root `.python-version` file. Prefer Python `3.12` unless the repository already clearly standardizes on another supported version.
-
-Agents must avoid creating mismatched virtual environments with whatever system Python happens to be installed.
-
-If `.venv/pyvenv.cfg` does not match the intended interpreter version, recommend recreating `.venv/` cleanly rather than patching it manually.
-
-Recommended clean recreation flow:
+Clean recreation flow:
 
 ```bash
 rm -rf .venv
@@ -92,299 +101,238 @@ python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
 ```
 
-If the project uses additional requirements files, install those too after inspecting the repository.
+`scripts/_venv.py` is the shared helper for the script runners; it auto-creates `.venv` and installs `requirements.txt` on demand. Treat `scripts/run_pytest.py` as the single source of truth for backend test execution.
 
 ---
 
-## Testing Rules
+## Repository Map
 
-The canonical Python test command is:
+### Backend (`src/`)
 
-```bash
-python3 scripts/run_pytest.py
-```
+- `src/api/` — FastAPI app. `server.py` is the main app (routes, request/response models). `recipe_sync.py`, `tag_routes.py`, `meal_prep_routes.py` are routers included under `/api/v1`. `error_mapping.py` maps exceptions to structured API errors.
+- `src/planning/` — Deterministic planner. Phase-based pipeline `phase0_models.py` … `phase7_search.py` plus `phase9_carb_scaling.py` and `phase10_reporting.py`. Public API is `planner.py` (`plan_meals`). `orchestrator.py` wraps planning with optional LLM feedback (`plan_with_llm_feedback`). `converters.py` bridges data-layer models into planning models.
+- `src/data_layer/` — Domain models (`models.py`), recipe/ingredient/nutrition DBs, `user_profile.py`, `meal_prep.py` (meal-prep batch repository), `upper_limits.py`.
+- `src/nutrition/` — `calculator.py`, `aggregator.py` (macro/micro computation and aggregation).
+- `src/scoring/` — Rule-based `recipe_scorer.py`.
+- `src/ingestion/` — Ingredient parsing/normalization, USDA client, ingredient cache, nutrient mapping, nutrition profile building.
+- `src/providers/` — Ingredient data providers: `local_provider.py`, `api_provider.py`, `summary_hybrid_provider.py` (behind `ingredient_provider.py` abstraction).
+- `src/llm/` — Optional LLM assistance: `client.py`, `pipeline.py` (generate → validate → persist), `recipe_generator.py`, `recipe_validator.py`, `recipe_tagger.py`, `tag_repository.py`, `tag_filter.py`, `tag_filtering_service.py`, `ingredient_matcher.py`, `constraint_parser.py` (NL config), `schemas.py`.
+- `src/models/` — Schedule models and legacy schedule migration.
+- `src/output/` — `formatters.py` (Markdown/JSON output, `format_result_json`).
+- `src/config/` — `llm_settings.py`.
 
-All docs, setup guides, agent instructions, Cursor rules, and Makefile/justfile tasks should point to this command.
+### Frontend (`frontend/lib/`)
 
-A root `Makefile` or `justfile` may expose a convenience alias, but it must delegate to the canonical runner.
+- `main.dart` — Boot/wiring. `widgets/app_shell.dart` — sidebar nav + `IndexedStack` of screens.
+- `screens/` — Profile, Ingredient Hub, Recipe Builder, Recipe Library, Planner Config, Meal Plan View.
+- `features/agent/` — Agent pane, setup, API, models, and `LlmConfigProvider`.
+- `providers/` — `ProfileProvider`, `MealPlanProvider`, `RecipeProvider`, `IngredientProvider`, `RecipeBuilderCoordinator` (`LlmConfigProvider` lives under `features/agent/`).
+- `models/`, `services/` (`api_service.dart`, `storage_service.dart`), `widgets/`.
 
-Example:
+### Tests (`tests/`)
 
-```make
-test:
-	python3 scripts/run_pytest.py
-```
+Pytest suite, no network required (USDA-dependent tests use mocks). Includes per-phase planner tests, API/contract tests (`tests/api/`, `tests/test_api_v1_and_openapi.py`), integration tests (`tests/integration/`), and `tests/conftest.py`.
 
-The test runner should be treated as the single source of truth for backend test execution.
+### Scripts (`scripts/`)
 
-When modifying `scripts/run_pytest.py`, preserve these goals:
+`run_pytest.py`, `run_export_openapi.py`, `export_openapi.py`, `_venv.py`, plus migration/benchmark/export utilities (`migrate_recipes_tags.py`, `migrate_recipes_time_tags.py`, `benchmark_meal_plan_search.py`, `export_planner_debug_artifacts.py`, `load_ingredients_by_id.py`, `export_flutter_cached_ingredients_bundle.py`).
 
-1. It should be safe to run from the repository root.
-2. It should use the intended virtual environment.
-3. It should fail clearly when dependencies are missing.
-4. It should not silently use the wrong Python interpreter.
-5. It should not only check for `pytest`; it should verify that project requirements are installed or provide a clear remediation message.
+### Documentation (`docs/`)
 
----
-
-## Documentation Consistency Rules
-
-When updating documentation, make terminology consistent across the repo.
-
-Required replacements:
-
-* Use `python3 scripts/run_pytest.py` instead of bare `pytest`.
-* Use `.venv/` instead of `venv/`.
-* Prefer `.venv/bin/python -m pytest` only as a lower-level explanation, not as the primary command.
-* The primary command shown to users and agents should remain `python3 scripts/run_pytest.py`.
-
-Files that likely need checking:
-
-```text
-docs/MEAL_PLANNER_TESTING_GUIDE.md
-FLUTTER_SETUP_README.md
-README.md
-AGENTS.md
-CLAUDE.md
-.cursor/rules/*.mdc
-```
-
-Do not blindly replace text without reading surrounding context.
-
----
-
-## Cursor / Agent Rule
-
-If `.cursor/rules/` exists, add or update a testing rule.
-
-Recommended file:
-
-```text
-.cursor/rules/testing.mdc
-```
-
-Recommended rule:
-
-````md
----
-description: Testing commands for Macrova
-globs:
-  - "**/*.py"
-  - "requirements*.txt"
-  - "scripts/*.py"
-alwaysApply: true
----
-
-Never run bare `pytest`.
-
-Always run backend Python tests from the repository root with:
-
-```bash
-python3 scripts/run_pytest.py
-````
-
-Use `.venv/` as the Python virtual environment directory. Do not create or document `venv/`.
-
-````
-
-If `.cursor/rules/` does not exist, create it only if this repository uses Cursor rules or the user explicitly requested the optional Cursor rule.
+`ARCHITECTURE.md`, `TECHNICAL_DESIGN.md`, `SYSTEM_RULES.md`, `REASONING_LOGIC.md`, `MEALPLAN_SPECIFICATION_v3.md`, `tag_semantics_contract.md`, `DEBUG_PLANNER_PARITY.md`, `LLM_ROADMAP.md`, `MEAL_PLANNER_TESTING_GUIDE.md`, and `docs/sprint1/` (historical per-ticket specs).
 
 ---
 
 ## Backend Architecture Rules
 
-Backend areas may include:
-
-```text
-src/planning
-src/data_layer
-src/nutrition
-src/ingestion
-src/llm
-src/api
-scripts
-tests
-````
-
 Before editing backend code:
 
 1. Inspect existing models, DTOs, routes, and tests.
-2. Prefer extending existing patterns over adding new parallel abstractions.
+2. Prefer extending existing patterns over adding parallel abstractions.
 3. Preserve deterministic planner behavior.
 4. Do not let LLM outputs bypass validation.
 5. Do not persist generated recipes unless nutrition validation and ingredient resolution pass.
-6. Do not write planner constraints in UI-only logic if they belong in backend planner contracts.
-
-Planner priorities:
-
-1. Meal-prep batch lock
-2. Pin
-3. Required tags
-4. Preferred scoring
-
-Known planner failure concepts include:
-
-```text
-FM-TAG-EMPTY
-FM-BATCH-CONFLICT
-FM-MACRO-INFEASIBLE
-```
-
-Preserve or improve structured failure reporting when touching planner code.
+6. Keep planner constraints in backend planner contracts, not in UI-only logic.
+7. Keep API request/response models, the OpenAPI snapshot, and frontend DTOs aligned. After changing API shapes, re-run `python3 scripts/run_export_openapi.py` and the contract tests.
 
 ---
 
-## Frontend Architecture Rules
+## Planner Rules and Invariants
 
-The frontend is Flutter.
+- The planner is **deterministic by default**: deterministic backtracking search over `(day, slot)` assignments, with stable ordering and tie-breaking. Do not introduce nondeterminism into the default path.
+- No API/network calls occur during planning. Ingredient resolution (`extract_ingredient_names` → `provider.resolve_all`) happens up front, then `convert_profile` / `convert_recipes` build planning models.
+- Single result type: `MealPlanResult` (in `phase10_reporting.py`) carries `success`, `termination_code`, `plan`, trackers, warnings, and `report`. Success-with-warnings (`termination_code="OK"` + `report.warnings`) is distinct from a failure the user must act on — keep these separate.
+- Constraint precedence (highest first): **meal-prep batch lock → pin → required tags → preferred scoring**. `planner.py` normalizes batch locks into pinned assignments before search.
+- Preserve structured failure reporting. Known failure codes include `FM-1`…`FM-5` and the user-actionable modes `FM-TAG-EMPTY`, `FM-BATCH-CONFLICT`, `FM-MACRO-INFEASIBLE`, each with a stable `fix_hint`. Codes are registered in `src/api/error_mapping.py` and surfaced in OpenAPI schemas. Do not hide planner failures behind generic UI errors.
+- Multi-day horizon is 1–7 days; weekly trackers and micronutrient deficit carryover apply when days > 1. Daily upper limits (ULs) are enforced per-day, never averaged.
 
-Known active screens include:
-
-```text
-Profile
-Ingredient Hub
-Recipe Builder
-Recipe Library
-Planner Config
-Meal Plan View
-Agent Pane
-```
-
-Known providers include:
-
-```text
-ProfileProvider
-MealPlanProvider
-RecipeProvider
-IngredientProvider
-RecipeBuilderCoordinator
-LlmConfigProvider
-```
-
-Backend-ready features include:
-
-```text
-Planner generation
-Recipe sync/list/detail
-Nutrition summary
-Ingredient search/resolve
-Agent plan-from-text/match/generate
-```
-
-Partial or mock-only areas may include:
-
-```text
-Planner calendar view
-Planner tag constraints UI
-Pinned meal assignment UI
-Meal-prep batching UI
-Rich planner failure explanation
-Advanced recipe/tag filtering
-```
-
-Do not wire incomplete backend features as if they are production-ready. Surface honest placeholder states when backend support is missing.
-
-When redesigning the frontend:
-
-1. Preserve existing functionality before visual polish.
-2. Reuse existing providers and DTOs.
-3. Avoid mock data once real backend endpoints exist.
-4. Keep UI state, API DTOs, and backend contracts aligned.
-5. Add loading, empty, and error states for wired endpoints.
-
----
-
-## Tagging System Rules
-
-Canonical tag data should flow through the tag repository.
-
-Recipe-level tags should be treated as a derived projection unless the current repository code explicitly says otherwise.
-
-Do not create another tag source of truth.
-
-When working with tags:
-
-1. Inspect the canonical tag registry.
-2. Preserve slug normalization rules.
-3. Avoid duplicate slug normalization implementations.
-4. Keep required tags and preferred tags separate.
-5. Required slot tags are hard constraints.
-6. Preferred tags affect scoring only.
+When touching planner code, read `docs/MEALPLAN_SPECIFICATION_v3.md`, `docs/DEBUG_PLANNER_PARITY.md`, and the relevant `phaseN_*.py` file(s).
 
 ---
 
 ## LLM Feature Rules
 
-LLM features are optional assistants, not the authority for deterministic planning.
+LLM features are optional assistants, not the authority for deterministic planning. LLM outputs must be validated before use.
 
-LLM outputs must be validated before use.
-
-Recipe generation must follow this principle:
+Recipe generation must follow:
 
 ```text
 generate draft -> parse strict schema -> resolve ingredients -> recompute nutrition -> persist only if validated
 ```
 
-Ingredient matching should validate against the ingredient provider.
+This is implemented by `src/llm/pipeline.py` (`generate_validate_persist_recipes`): it asserts a USDA-capable provider, generates drafts, validates against provider-backed checks, and only persists accepted recipes.
 
-Planner feedback should explain why planning failed and suggest targeted changes, not silently change constraints.
-
-Natural-language config parsing should map into explicit planner config objects before planning.
+- Ingredient matching validates against the ingredient provider.
+- Natural-language config parsing (`constraint_parser.py`) must map text into explicit planner config objects before planning.
+- Planner feedback should explain why planning failed and suggest targeted changes, not silently mutate constraints.
+- The frontend gates LLM/assisted planning modes behind an LLM-ready check; assisted modes fall back to deterministic when the gate is not ready.
 
 ---
 
-## File Editing Rules
+## Tagging Rules
 
-Make small, focused changes.
+There is one canonical tag source of truth. Do not create another.
+
+- `src/llm/tag_repository.py` is the runtime source for tag storage, slug normalization, alias resolution, and merge behavior.
+- `recipe_tags.json` (default path `data/recipes/recipe_tags.json`, referenced by `DEFAULT_TAG_PATH` in `server.py`) is the canonical seed/registry shape; `tags_by_id` is the canonical per-recipe planner/filtering tag source.
+- `Recipe.tags` in `recipes.json` is a **legacy compatibility projection only** — never use it for hard-filter/planner decisions, and do not turn it into a second write path.
+- Keep required tags (hard constraints) and preferred tags (scoring only) separate. Preserve slug normalization rules; do not duplicate slug-normalization logic.
+- All LLM-produced tags enter as `proposed`, pass strict schema validation first, then semantic eligibility gating; only `approved` (or non-LLM user/system) tags may act as hard constraints. See `docs/tag_semantics_contract.md` for the canonical semantic-class table and lifecycle.
+
+---
+
+## Data and Persistence Rules
+
+- Recipe/ingredient data are not committed; copy from `*.example` files (`config/user_profile.yaml.example`, `data/recipes/recipes.json.example`, `data/ingredients/custom_ingredients.json.example`).
+- Ingredient nutrition flows through the provider abstraction into internal `NutritionProfile` / `MicronutrientProfile` objects.
+- Upper-limit reference data lives under `data/reference/` and is enforced per-day.
+- Do not persist generated recipes unless nutrition validation and ingredient resolution pass.
+- Treat the recipe/tag/meal-prep file stores as backed by their repositories (`recipe_db.py`, `tag_repository.py`, `meal_prep.py`); do not add duplicate write paths around them.
+- Environment: none required for local mode. For USDA API mode, copy `.env.example` to `.env` and set `USDA_API_KEY`. The CLI and `server.py` both load repo-root `.env`.
+
+---
+
+## API and OpenAPI Rules
+
+- The FastAPI app is `src/api/server.py`; routes are served under `/api/v1` (plan, plan-from-text, recipes CRUD/sync, recipe generation/tagging, ingredient search/resolve/match, nutrition summary, LLM status), plus tag and meal-prep routers.
+- `openapi/openapi.json` is a committed snapshot. After changing any API model or route, regenerate it with `python3 scripts/run_export_openapi.py` and verify with `--check`; keep contract tests passing.
+- Do not invent API contracts. Confirm request/response shapes from `server.py` and the corresponding Pydantic models / `recipe_sync.py`.
+
+---
+
+## Frontend Architecture Rules
+
+Screens: Profile, Ingredient Hub, Recipe Builder, Recipe Library, Planner Config, Meal Plan View, Agent Pane (+ Agent Setup). Providers: `ProfileProvider`, `MealPlanProvider`, `RecipeProvider`, `IngredientProvider`, `RecipeBuilderCoordinator`, `LlmConfigProvider`.
+
+When working on the frontend:
+
+1. Preserve existing functionality before visual polish.
+2. Reuse existing providers and DTOs; do not add duplicate models/providers.
+3. Avoid mock data once real backend endpoints exist; surface honest placeholder/loading/empty/error states where backend support is missing.
+4. Keep UI state, API DTOs, and backend contracts aligned.
+5. Do not wire incomplete backend features as production-ready (see **Known Partial or Mock Areas**).
+
+---
+
+## Testing Rules
+
+- Canonical command: `python3 scripts/run_pytest.py` (from repo root). Never run bare `pytest`.
+- The runner selects the correct `.venv` and validates dependencies; fail clearly if deps are missing.
+- Tests require no network; USDA-dependent paths use mocks.
+- For frontend, use `flutter test` from `frontend/`.
+- Report test results honestly. Do not claim success if tests were not run.
+
+When modifying `scripts/run_pytest.py`, preserve: safe to run from repo root; uses the intended `.venv`; fails clearly when deps are missing; never silently uses the wrong interpreter; verifies project requirements (not just that `pytest` exists).
+
+---
+
+## Documentation Rules
+
+When updating docs, keep terminology consistent across the repo:
+
+- Use `python3 scripts/run_pytest.py` instead of bare `pytest`.
+- Use `.venv/` instead of `venv/`.
+- `.venv/bin/python -m pytest` is a lower-level explanation only, not the primary command.
+
+Read surrounding context before replacing text. Some docs are known stale relative to source and should not be trusted over code:
+
+- `docs/DIRECTORY_STRUCTURE.md` lists files/dirs that no longer exist (e.g. `nutrition_fetcher.py`, `scoring/llm_reasoner.py`, `src/utils/`); the real planner module names are `phase0_models.py`…`phase10_reporting.py`.
+- `README.md` describes LLM integration as "coming soon" and links specs (`docs/planner_architecture.md`, `MEALPLAN_SPECIFICATION_v1.md`) that do not exist; the current spec is `docs/MEALPLAN_SPECIFICATION_v3.md` and LLM assistance is already implemented under `src/llm/`.
+
+There is no `CLAUDE.md` in this repo at present; this `AGENTS.md` is the canonical agent instruction file.
+
+---
+
+## Cursor / Agent Rules
+
+- `.cursor/architecture.json` is the machine-readable architecture map (entities, features, APIs, UI components, and an `unknowns` list). Inspect it before broad backend/frontend/planner/API changes, but treat it as **below source code** in the hierarchy — parts of its `unknowns`/`missing` notes are now stale (see **Known Partial or Mock Areas**).
+- `.cursor/rules/` does not currently exist. If the project adopts Cursor rules, add a testing rule that enforces: never run bare `pytest`; always use `python3 scripts/run_pytest.py`; use `.venv/`, never `venv/`.
+
+---
+
+## Safe Editing Workflow
 
 Before editing:
 
-1. Search for existing conventions.
-2. Read the relevant files.
-3. Identify the narrowest change that solves the issue.
+1. Search for existing conventions and read the relevant files.
+2. Consult `.cursor/architecture.json` and the deeper doc(s) for the system you are touching.
+3. Identify the narrowest change that solves the problem.
 
 After editing:
 
-1. Run the canonical tests where relevant.
-2. Report exactly what changed.
-3. Mention any files that still need manual review.
-4. Do not claim success if tests were not run.
+1. Run the canonical tests where relevant (`python3 scripts/run_pytest.py`; `flutter test` for frontend).
+2. If you changed API shapes, regenerate/check OpenAPI.
+3. Check linter/analyzer output and fix issues you introduced.
+4. Report exactly what changed, what you ran, and any files needing manual review.
+5. Make small, focused changes. Avoid broad rewrites when targeted fixes suffice.
 
 ---
 
-## Dependency Rules
+## Known Partial or Mock Areas
 
-Do not add new dependencies unless necessary.
+Verify current status against source before treating any of these as production-ready:
 
-Before adding a dependency:
-
-1. Check whether the project already has an equivalent utility.
-2. Explain why the dependency is needed.
-3. Add it to the correct requirements file.
-4. Ensure `scripts/run_pytest.py` can detect/install/validate it appropriately.
+- **Meal-plan calendar view** — UI has a calendar toggle that renders a placeholder (`meal_plan_view_screen.dart`).
+- **Ingredient Hub "add to recipe"** — currently shows a snackbar instructing the user to use Recipe Builder (`ingredient_hub_screen.dart`).
+- **Frontend `PlanRequest` tag fields** — `frontend/lib/models/models.dart` may not carry all backend tag-filter fields present in `server.py`'s `PlanRequest`; confirm before relying on end-to-end tag filtering from the UI.
+- **`MealPrepReference` / meal-prep batching** — marked `partial` in architecture.json. NOTE: meal-prep is further along in source than the architecture.json `unknowns` claim — `src/data_layer/meal_prep.py` and `src/api/meal_prep_routes.py` now exist and the router is wired into `server.py`. Trust the source; treat the architecture.json "missing meal-prep" notes as stale and verify behavior directly.
 
 ---
 
-## Expected Agent Behavior
+## When to Read Deeper Docs
 
-Agents should be conservative and repository-aware.
+- **Planner / search / failure modes:** `docs/MEALPLAN_SPECIFICATION_v3.md`, `docs/DEBUG_PLANNER_PARITY.md`, `src/planning/phaseN_*.py`, `src/planning/planner.py`.
+- **Overall architecture / data flow:** `docs/ARCHITECTURE.md`, `docs/TECHNICAL_DESIGN.md`, `docs/SYSTEM_RULES.md`, and `.cursor/architecture.json`.
+- **Tagging:** `docs/tag_semantics_contract.md`, `src/llm/tag_repository.py`, `src/llm/tag_filtering_service.py`.
+- **LLM features / roadmap:** `docs/LLM_ROADMAP.md`, `src/llm/pipeline.py`.
+- **API contracts:** `src/api/server.py`, `openapi/openapi.json`, `tests/api/`.
+- **Frontend:** `frontend/lib/main.dart`, `frontend/lib/widgets/app_shell.dart`, `FLUTTER_SETUP_README.md`.
+- **Per-feature history (use cautiously, lowest priority):** `docs/sprint1/`.
 
-Do:
+Always inspect the relevant `architecture.json` entries and the deeper doc before broad changes; reconcile any conflict in favor of current source and report it.
 
-* Use `python3 scripts/run_pytest.py`.
-* Use `.venv/`.
-* Read before editing.
-* Prefer existing architecture.
-* Keep deterministic planner logic intact.
-* Update docs when commands or setup rules change.
-* Explain test results honestly.
+---
 
-Do not:
+## Agent Do / Do Not Checklist
 
-* Run bare `pytest`.
-* Create `venv/`.
-* Invent backend API contracts.
-* Add duplicate frontend models/providers.
-* Hide planner failures behind generic UI errors.
-* Treat LLM output as trusted data.
-* Make broad rewrites when targeted fixes are enough.
+**Do**
+
+- Use `python3 scripts/run_pytest.py` and `.venv/`.
+- Read source and the relevant deeper docs before editing.
+- Preserve deterministic planner behavior and structured failure reporting.
+- Validate LLM output before persistence; keep one canonical tag source.
+- Reuse existing providers, DTOs, screens, models.
+- Regenerate/check OpenAPI after API changes.
+- Update docs when commands or setup rules change; report stale docs.
+- Report test results and conflicts honestly.
+
+**Do Not**
+
+- Run bare `pytest`, `python -m pytest`, or `python3 -m pytest` (except an explicit one-off diagnostic).
+- Create or document `venv/`.
+- Run `python3 scripts/export_openapi.py` on the bare system interpreter.
+- Invent backend API contracts or planner behavior.
+- Add duplicate frontend models/providers or a second tag/recipe write path.
+- Let LLM output bypass validation or drive deterministic planning.
+- Hide planner failures behind generic UI errors.
+- Make broad rewrites when targeted fixes are enough.

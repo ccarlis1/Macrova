@@ -8,13 +8,16 @@ from fastapi.testclient import TestClient
 
 from src.api.server import app
 from src.data_layer.meal_prep import BatchAssignment, MealPrepBatch
-from src.data_layer.models import NutritionProfile, UserProfile
+from src.data_layer.models import NutritionProfile, ProfilePin, UserProfile
 from src.planning.converters import convert_profile
 from src.planning.orchestrator import (
+    apply_persisted_pins_to_profile,
     build_plan_request_from_profile,
+    hydrate_parity_plan_context,
+    parity_diagnostics_payload,
     planning_batch_locks_from_batches,
 )
-from src.planning.phase0_models import MealSlot, PlanningRecipe
+from src.planning.phase0_models import PlanningRecipe
 from src.planning.planner import plan_meals
 from src.planning.phase10_reporting import MealPlanResult
 
@@ -51,8 +54,8 @@ def _planning_recipes() -> list[PlanningRecipe]:
     ]
 
 
-def test_cli_and_http_request_builder_parity_for_batches_and_seed():
-    profile = UserProfile(
+def _profile_with_pins(*, pins: list[ProfilePin]) -> UserProfile:
+    return UserProfile(
         daily_calories=1000,
         daily_protein_g=100.0,
         daily_fat_g=(40.0, 60.0),
@@ -61,9 +64,12 @@ def test_cli_and_http_request_builder_parity_for_batches_and_seed():
         liked_foods=[],
         disliked_foods=[],
         allergies=[],
+        pins=list(pins),
     )
-    recipes = _planning_recipes()
-    active_batches = [
+
+
+def _active_batch_fixture() -> list[MealPrepBatch]:
+    return [
         MealPrepBatch(
             id="batch-1",
             recipe_id="r_batch",
@@ -73,23 +79,116 @@ def test_cli_and_http_request_builder_parity_for_batches_and_seed():
             status="active",
         )
     ]
+
+
+def _apply_api_style_setup(
+    profile: UserProfile,
+    *,
+    active_batches: list[MealPrepBatch],
+    persisted_pins: list[ProfilePin],
+) -> tuple[object, list[PlanningRecipe]]:
+    apply_persisted_pins_to_profile(profile, persisted_pins)
+    planning_profile = convert_profile(profile, days=1)
+    planning_profile.batch_locks = planning_batch_locks_from_batches(active_batches)
+    return planning_profile, copy.deepcopy(_planning_recipes())
+
+
+def _apply_cli_style_setup(
+    profile: UserProfile,
+    *,
+    active_batches: list[MealPrepBatch],
+    persisted_pins: list[ProfilePin],
+) -> tuple[object, list[PlanningRecipe]]:
+    apply_persisted_pins_to_profile(profile, persisted_pins)
+    planning_profile = convert_profile(profile, days=1)
+    planning_profile.batch_locks = planning_batch_locks_from_batches(active_batches)
+    return planning_profile, copy.deepcopy(_planning_recipes())
+
+
+def test_cli_and_http_request_builder_parity_for_batches_and_seed():
+    profile = _profile_with_pins(pins=[])
+    recipes = _planning_recipes()
+    active_batches = _active_batch_fixture()
     seed = 7
 
     http_payload = build_plan_request_from_profile(profile, recipes, active_batches, seed)
     cli_payload = build_plan_request_from_profile(profile, recipes, active_batches, seed)
 
     assert http_payload["active_batches"] == cli_payload["active_batches"]
+    assert http_payload["seed"] == cli_payload["seed"] == 7
     assert _recipe_ids_sha256(http_payload) == _recipe_ids_sha256(cli_payload)
 
-    http_profile = convert_profile(profile, days=1)
-    cli_profile = convert_profile(profile, days=1)
-    http_profile.batch_locks = planning_batch_locks_from_batches(active_batches)
-    cli_profile.batch_locks = planning_batch_locks_from_batches(active_batches)
+    http_profile, http_recipes = _apply_api_style_setup(
+        copy.deepcopy(profile),
+        active_batches=active_batches,
+        persisted_pins=[],
+    )
+    cli_profile, cli_recipes = _apply_cli_style_setup(
+        copy.deepcopy(profile),
+        active_batches=active_batches,
+        persisted_pins=[],
+    )
 
-    http_result = plan_meals(http_profile, copy.deepcopy(recipes), days=1)
-    cli_result = plan_meals(cli_profile, copy.deepcopy(recipes), days=1)
+    http_result = plan_meals(http_profile, http_recipes, days=1)
+    cli_result = plan_meals(cli_profile, cli_recipes, days=1)
 
     assert _planned_meal_sequence(http_result) == _planned_meal_sequence(cli_result)
+
+
+def test_persisted_pins_seed_and_meal_sequence_parity():
+    persisted_pins = [ProfilePin(day_index=0, slot_index=1, recipe_id="r_other")]
+    profile = _profile_with_pins(pins=persisted_pins)
+    active_batches = _active_batch_fixture()
+    seed = 7
+
+    api_profile, api_recipes = _apply_api_style_setup(
+        copy.deepcopy(profile),
+        active_batches=active_batches,
+        persisted_pins=persisted_pins,
+    )
+    cli_profile, cli_recipes = _apply_cli_style_setup(
+        copy.deepcopy(profile),
+        active_batches=active_batches,
+        persisted_pins=persisted_pins,
+    )
+
+    api_payload = build_plan_request_from_profile(profile, _planning_recipes(), active_batches, seed)
+    cli_payload = build_plan_request_from_profile(profile, _planning_recipes(), active_batches, seed)
+    assert api_payload["seed"] == cli_payload["seed"] == 7
+
+    first = plan_meals(api_profile, api_recipes, days=1)
+    second = plan_meals(cli_profile, cli_recipes, days=1)
+    third = plan_meals(api_profile, copy.deepcopy(_planning_recipes()), days=1)
+
+    expected_sequence = [(0, 0, "r_batch"), (0, 1, "r_other")]
+    assert _planned_meal_sequence(first) == expected_sequence
+    assert _planned_meal_sequence(second) == expected_sequence
+    assert _planned_meal_sequence(third) == expected_sequence
+
+
+def test_parity_diagnostics_payload_includes_batches_pins_and_seed(monkeypatch):
+    active_batches = _active_batch_fixture()
+    persisted_pins = [ProfilePin(day_index=0, slot_index=1, recipe_id="r_other")]
+
+    class _Repo:
+        def list_active(self):
+            return active_batches
+
+    monkeypatch.setattr("src.planning.orchestrator.MealPrepBatchRepository", lambda: _Repo())
+    monkeypatch.setattr(
+        "src.planning.orchestrator.load_profile_pins",
+        lambda **_kwargs: persisted_pins,
+    )
+
+    context = hydrate_parity_plan_context(seed=7)
+    payload = parity_diagnostics_payload(context)
+
+    assert payload["seed"] == 7
+    assert payload["active_batches"][0]["id"] == "batch-1"
+    assert payload["persisted_pins"] == [
+        {"day_index": 0, "slot_index": 1, "recipe_id": "r_other"}
+    ]
+    assert len(context.batch_locks) == 1
 
 
 def test_api_plan_ignores_client_active_batches(monkeypatch):
@@ -144,8 +243,17 @@ def test_api_plan_ignores_client_active_batches(monkeypatch):
         },
     )
     monkeypatch.setattr(
-        "src.api.server.MealPrepBatchRepository",
-        lambda: type("Repo", (), {"list_active": lambda self: []})(),
+        "src.api.server.hydrate_parity_plan_context",
+        lambda **_kwargs: type(
+            "Ctx",
+            (),
+            {
+                "active_batches": [],
+                "persisted_pins": [],
+                "seed": None,
+                "batch_locks": [],
+            },
+        )(),
     )
 
     client = TestClient(app)

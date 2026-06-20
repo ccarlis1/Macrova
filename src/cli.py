@@ -10,16 +10,17 @@ import os
 from src.data_layer.user_profile import UserProfileLoader
 from src.data_layer.recipe_db import RecipeDB
 from src.data_layer.nutrition_db import NutritionDB
-from src.data_layer.meal_prep import MealPrepBatchRepository
 from src.nutrition.calculator import NutritionCalculator
 from src.ingestion.usda_client import USDAClient
 from src.ingestion.ingredient_cache import CachedIngredientLookup
 from src.planning.converters import convert_recipes, convert_profile, extract_ingredient_names
 from src.planning.planner import plan_meals
 from src.planning.orchestrator import (
+    apply_persisted_pins_to_profile,
     build_plan_request_from_profile,
+    hydrate_parity_plan_context,
+    parity_diagnostics_payload,
     plan_with_llm_feedback,
-    planning_batch_locks_from_batches,
 )
 from src.output.formatters import format_result_markdown, format_result_json_string
 from src.providers.local_provider import LocalIngredientProvider
@@ -352,6 +353,8 @@ def main():
         print(f"Loading user profile from {profile_path}...", file=sys.stderr)
         profile_loader = UserProfileLoader(str(profile_path))
         user_profile = profile_loader.load()
+        parity_ctx = hydrate_parity_plan_context(seed=None, yaml_path=str(profile_path))
+        apply_persisted_pins_to_profile(user_profile, parity_ctx.persisted_pins)
         
         # Load recipes
         print(f"Loading recipes from {recipes_path}...", file=sys.stderr)
@@ -394,18 +397,24 @@ def main():
         recipe_pool = convert_recipes(all_recipes, calculator)
         recipe_by_id = {r.id: r for r in recipe_pool}
         planning_profile = convert_profile(user_profile, args.days)
-        active_batches = MealPrepBatchRepository().list_active()
         effective_plan_request = build_plan_request_from_profile(
             user_profile,
             all_recipes,
-            active_batches,
-            seed=None,
+            parity_ctx.active_batches,
+            parity_ctx.seed,
         )
         print(
-            f"Built effective plan request with keys={sorted(effective_plan_request.keys())}",
+            json.dumps(
+                {
+                    "effective_plan_request_keys": sorted(effective_plan_request.keys()),
+                    **parity_diagnostics_payload(parity_ctx),
+                },
+                sort_keys=True,
+                ensure_ascii=True,
+            ),
             file=sys.stderr,
         )
-        planning_profile.batch_locks = planning_batch_locks_from_batches(active_batches)
+        planning_profile.batch_locks = parity_ctx.batch_locks
 
 
         loader = UpperLimitsLoader("data/reference/ul_by_demographic.json")

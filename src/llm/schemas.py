@@ -64,8 +64,12 @@ class TagMetaJson(BaseModel):
     source: TagSource
     created_at: StrictStr
     aliases: List[StrictStr] = Field(default_factory=list)
+    #: DM-6 lifecycle state: proposed | approved | rejected.
     eligibility: Optional[StrictStr] = None
+    #: DM-6 semantic class (capability, meal_role, exclusion, etc.).
+    semantic_class: Optional[StrictStr] = None
     hard_filter_allowed: Optional[bool] = None
+    soft_score_allowed: Optional[bool] = None
     display_only: Optional[bool] = None
 
 

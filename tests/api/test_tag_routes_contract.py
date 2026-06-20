@@ -99,6 +99,36 @@ def test_merge_src_into_dst_updates_registry(tmp_path, monkeypatch):
     assert "be15-merge-dst" in slugs
 
 
+def test_list_tags_includes_dm6_runtime_metadata(tmp_path, monkeypatch):
+    c = _client(tmp_path, monkeypatch)
+    listed = c.get("/api/v1/tags").json()["tags"]
+    hi = next(t for t in listed if t["slug"] == "high-fiber")
+    assert hi["semantic_class"] == "nutrition_claim"
+    assert hi["hard_filter_allowed"] is False
+    assert hi["soft_score_allowed"] is True
+    assert hi["display_only"] is False
+    assert hi["planner_hard_eligible"] is False
+
+
+def test_create_tag_returns_dm6_runtime_metadata(tmp_path, monkeypatch):
+    c = _client(tmp_path, monkeypatch)
+    res = c.post(
+        "/api/v1/tags",
+        json={
+            "display": "Portable Lunch",
+            "type": "context",
+            "slug": "portable-lunch",
+        },
+    )
+    assert res.status_code == 200
+    tag = res.json()["tag"]
+    assert tag["semantic_class"] == "capability"
+    assert tag["hard_filter_allowed"] is True
+    assert tag["soft_score_allowed"] is True
+    assert tag["display_only"] is False
+    assert tag["planner_hard_eligible"] is True
+
+
 def test_list_tags_includes_dm7_seed_slugs(tmp_path, monkeypatch):
     c = _client(tmp_path, monkeypatch)
     slugs = {t["slug"] for t in c.get("/api/v1/tags").json()["tags"]}

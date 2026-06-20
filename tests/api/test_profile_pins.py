@@ -158,7 +158,7 @@ def test_plan_meal_source_batch_lock_overrides_pin_on_same_slot(tmp_path, monkey
         def list_active(self):
             return [batch]
 
-    monkeypatch.setattr("src.api.server.MealPrepBatchRepository", lambda *_a, **_k: _Repo())
+    monkeypatch.setattr("src.planning.orchestrator.MealPrepBatchRepository", lambda *_a, **_k: _Repo())
     monkeypatch.setattr(
         "src.api.server.plan_meals",
         lambda *_a, **_k: MealPlanResult(

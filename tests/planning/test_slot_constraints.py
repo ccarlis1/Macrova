@@ -254,6 +254,30 @@ def test_repository_hard_eligible_tags_exclude_proposed_llm_tags(tmp_path):
     assert result.plan[0].recipe_id == "z-approved-tag"
 
 
+def test_rejected_tag_excluded_from_hard_matching():
+    profile = _profile(schedule=[[_slot(required=["high-protein"])]])
+    result = plan_meals(
+        profile,
+        [
+            _recipe(
+                "a-rejected-tag",
+                tags={"high-protein"},
+                hard_eligible_tags=set(),
+            ),
+            _recipe(
+                "z-eligible-tag",
+                tags={"high-protein"},
+                hard_eligible_tags={"high-protein"},
+            ),
+        ],
+        days=1,
+    )
+
+    assert result.success is True
+    assert result.plan is not None
+    assert result.plan[0].recipe_id == "z-eligible-tag"
+
+
 def test_equal_seed_deterministic_outcome():
     profile = _profile(schedule=[[_slot(required=["quick"])], [_slot(required=["slow"])]])
     recipes = [

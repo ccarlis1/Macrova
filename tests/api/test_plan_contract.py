@@ -125,7 +125,7 @@ def test_plan_fm_tag_empty_failure_shape_on_schedule_days(tmp_path, monkeypatch)
         "src.api.server.LocalIngredientProvider", lambda *_a, **_k: _DummyProvider()
     )
     monkeypatch.setattr(
-        "src.api.server.MealPrepBatchRepository", lambda *_a, **_k: type(
+        "src.planning.orchestrator.MealPrepBatchRepository", lambda *_a, **_k: type(
             "_E", (), {"list_active": lambda self: []}
         )()
     )
@@ -250,7 +250,7 @@ def test_plan_response_meal_metadata_meal_prep_batch_contract(tmp_path, monkeypa
         def list_active(self):
             return [batch]
 
-    monkeypatch.setattr("src.api.server.MealPrepBatchRepository", lambda *_a, **_k: _BatchRepo())
+    monkeypatch.setattr("src.planning.orchestrator.MealPrepBatchRepository", lambda *_a, **_k: _BatchRepo())
 
     # Deterministic planning output; metadata formatting stays live via ``format_result_json``.
     monkeypatch.setattr(
@@ -313,7 +313,7 @@ def test_meal_prep_api_create_persists_canonical_and_plan_lock_round_trip(
         return MealPrepBatchRepository(str(batches_path))
 
     monkeypatch.setattr("src.api.meal_prep_routes.MealPrepBatchRepository", _repo)
-    monkeypatch.setattr("src.api.server.MealPrepBatchRepository", _repo)
+    monkeypatch.setattr("src.planning.orchestrator.MealPrepBatchRepository", _repo)
     monkeypatch.setattr("src.api.meal_prep_routes.RecipeDB", _RecipeDBForMealPrepCreate)
     monkeypatch.setattr("src.api.server.RecipeDB", _RecipeDBWithKnown)
     monkeypatch.setattr("src.api.server.NutritionDB", lambda *_a, **_k: object())
@@ -441,7 +441,7 @@ def test_plan_fm_batch_conflict_two_active_batches_same_slot(tmp_path, monkeypat
     )
 
     monkeypatch.setattr(
-        "src.api.server.MealPrepBatchRepository",
+        "src.planning.orchestrator.MealPrepBatchRepository",
         lambda *_a, **_k: MealPrepBatchRepository(str(batches_path)),
     )
 
@@ -500,7 +500,7 @@ def test_plan_response_meal_metadata_slot_index_matches_batch_assignment(tmp_pat
         def list_active(self):
             return [batch]
 
-    monkeypatch.setattr("src.api.server.MealPrepBatchRepository", lambda *_a, **_k: _BatchRepo())
+    monkeypatch.setattr("src.planning.orchestrator.MealPrepBatchRepository", lambda *_a, **_k: _BatchRepo())
     monkeypatch.setattr(
         "src.api.server.plan_meals",
         lambda *_a, **_k: MealPlanResult(

@@ -31,14 +31,21 @@ class TagAliasRequest(BaseModel):
     alias_slug: str = Field(..., min_length=1)
 
 def _to_payload(meta: Any, recipe_count: int) -> Dict[str, Any]:
+    enriched = tag_repository.enrich_tag_meta(meta)
     return {
-        "slug": meta.slug,
-        "display": meta.display,
-        "type": meta.tag_type,
-        "source": meta.source,
-        "created_at": meta.created_at,
-        "aliases": list(meta.aliases),
+        "slug": enriched.slug,
+        "display": enriched.display,
+        "type": enriched.tag_type,
+        "source": enriched.source,
+        "created_at": enriched.created_at,
+        "aliases": list(enriched.aliases),
         "recipe_count": recipe_count,
+        "semantic_class": enriched.semantic_class,
+        "eligibility": enriched.eligibility,
+        "hard_filter_allowed": enriched.hard_filter_allowed,
+        "soft_score_allowed": enriched.soft_score_allowed,
+        "display_only": enriched.display_only,
+        "planner_hard_eligible": tag_repository.is_planner_hard_eligible(enriched),
     }
 
 

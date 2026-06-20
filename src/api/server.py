@@ -46,9 +46,10 @@ from src.planning.converters import convert_recipes, convert_profile, extract_in
 from src.planning.planner import plan_meals
 from src.planning.orchestrator import (
     LLMPlanningModeError,
+    apply_persisted_pins_to_profile,
     build_plan_request_from_profile,
     build_planned_meal_metadata_index,
-    planning_batch_locks_from_batches,
+    hydrate_parity_plan_context,
     plan_with_llm_feedback,
 )
 from src.output.formatters import format_result_json
@@ -907,16 +908,17 @@ async def plan_meals_endpoint(
                 "Ignoring client-supplied active_batches in /api/v1/plan payload."
             )
 
-        persisted_pins = load_profile_pins()
+        parity_ctx = hydrate_parity_plan_context(seed=None)
         user_profile, sched_warnings = _build_user_profile(
             plan_request,
-            persisted_pins=persisted_pins,
+            persisted_pins=parity_ctx.persisted_pins,
         )
+        apply_persisted_pins_to_profile(user_profile, parity_ctx.persisted_pins)
 
         recipe_db = RecipeDB(recipes_path)
         all_recipes = recipe_db.get_all_recipes()
         all_recipes = _filter_recipes_by_ids(all_recipes, plan_request.recipe_ids)
-        active_batches = MealPrepBatchRepository().list_active()
+        active_batches = parity_ctx.active_batches
         protected_recipe_ids = [
             str(getattr(batch, "recipe_id"))
             for batch in active_batches
@@ -961,13 +963,14 @@ async def plan_meals_endpoint(
             user_profile,
             all_recipes,
             active_batches,
-            seed=None,
+            parity_ctx.seed,
         )
         logger.debug(
-            "Built effective plan request for /api/v1/plan with keys=%s",
+            "Built effective plan request for /api/v1/plan with keys=%s seed=%s",
             sorted(effective_plan_request.keys()),
+            parity_ctx.seed,
         )
-        planning_profile.batch_locks = planning_batch_locks_from_batches(active_batches)
+        planning_profile.batch_locks = parity_ctx.batch_locks
 
         llm_settings = load_llm_settings()
         planning_mode_provided = plan_request.planning_mode is not None
@@ -1042,7 +1045,7 @@ async def plan_meals_endpoint(
 
         meal_metadata_by_slot = build_planned_meal_metadata_index(
             active_batches,
-            persisted_pins,
+            parity_ctx.persisted_pins,
         )
         out = format_result_json(
             result,
@@ -1176,9 +1179,11 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
             hard_eligible_tag_slugs_by_id,
         )
         recipe_by_id = {r.id: r for r in recipe_pool}
+        parity_ctx = hydrate_parity_plan_context(seed=None)
+        apply_persisted_pins_to_profile(user_profile, parity_ctx.persisted_pins)
         planning_profile = convert_profile(user_profile, days)
-        active_batches = MealPrepBatchRepository().list_active()
-        planning_profile.batch_locks = planning_batch_locks_from_batches(active_batches)
+        planning_profile.batch_locks = parity_ctx.batch_locks
+        active_batches = parity_ctx.active_batches
 
         if effective_mode == "deterministic":
             result = plan_meals(planning_profile, recipe_pool, days)
@@ -1235,10 +1240,9 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
             )
             recipe_by_id = {r.id: r for r in recipe_pool_updated}
 
-        persisted_pins = load_profile_pins()
         meal_metadata_by_slot = build_planned_meal_metadata_index(
             active_batches,
-            persisted_pins,
+            parity_ctx.persisted_pins,
         )
         out = format_result_json(
             result,

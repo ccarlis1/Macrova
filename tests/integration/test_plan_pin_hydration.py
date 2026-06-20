@@ -155,7 +155,7 @@ def test_plan_response_meal_metadata_pinned_assignment(tmp_path, monkeypatch):
         def list_active(self):
             return []
 
-    monkeypatch.setattr("src.api.server.MealPrepBatchRepository", lambda *_a, **_k: _EmptyBatches())
+    monkeypatch.setattr("src.planning.orchestrator.MealPrepBatchRepository", lambda *_a, **_k: _EmptyBatches())
 
     def _fake_plan_meals(_profile, _pool, _days):
         return MealPlanResult(
@@ -210,7 +210,7 @@ def test_plan_response_meal_metadata_meal_prep_batch(tmp_path, monkeypatch):
         def list_active(self):
             return [batch]
 
-    monkeypatch.setattr("src.api.server.MealPrepBatchRepository", lambda *_a, **_k: _BatchRepo())
+    monkeypatch.setattr("src.planning.orchestrator.MealPrepBatchRepository", lambda *_a, **_k: _BatchRepo())
 
     def _fake_plan_meals(_profile, _pool, _days):
         return MealPlanResult(

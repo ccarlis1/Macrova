@@ -54,7 +54,6 @@ if _env_file.exists():
             os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
 
 from src.data_layer.nutrition_db import NutritionDB
-from src.data_layer.meal_prep import MealPrepBatchRepository
 from src.data_layer.recipe_db import RecipeDB
 from src.data_layer.user_profile import UserProfileLoader
 from src.ingestion.ingredient_cache import CachedIngredientLookup
@@ -62,8 +61,10 @@ from src.ingestion.usda_client import USDAClient
 from src.nutrition.calculator import NutritionCalculator
 from src.planning.converters import convert_profile, convert_recipes, extract_ingredient_names
 from src.planning.orchestrator import (
+    apply_persisted_pins_to_profile,
     build_plan_request_from_profile,
-    planning_batch_locks_from_batches,
+    hydrate_parity_plan_context,
+    parity_diagnostics_payload,
 )
 from src.planning.planner import plan_meals
 from src.providers.api_provider import APIIngredientProvider
@@ -91,15 +92,17 @@ def _user_profile_to_plan_request(
     ingredient_source: str,
     planning_mode: Optional[str],
     recipe_ids: Optional[List[str]],
+    seed: Optional[int],
 ) -> Dict[str, Any]:
     user = UserProfileLoader(loader_path).load()
+    parity_ctx = hydrate_parity_plan_context(seed=seed, yaml_path=loader_path)
+    apply_persisted_pins_to_profile(user, parity_ctx.persisted_pins)
     all_recipes = RecipeDB(recipes_path).get_all_recipes()
-    active_batches = MealPrepBatchRepository().list_active()
     body: Dict[str, Any] = build_plan_request_from_profile(
         user,
         all_recipes,
-        active_batches,
-        seed=None,
+        parity_ctx.active_batches,
+        parity_ctx.seed,
     )
     body["days"] = days
     body["ingredient_source"] = ingredient_source
@@ -164,11 +167,13 @@ def _run_planner(
     ingredients_path: str,
     days: int,
     ingredient_source: str,
+    seed: Optional[int],
 ) -> Dict[str, Any]:
     user = UserProfileLoader(profile_yaml).load()
+    parity_ctx = hydrate_parity_plan_context(seed=seed, yaml_path=profile_yaml)
+    apply_persisted_pins_to_profile(user, parity_ctx.persisted_pins)
     planning_profile = convert_profile(user, days)
-    active_batches = MealPrepBatchRepository().list_active()
-    planning_profile.batch_locks = planning_batch_locks_from_batches(active_batches)
+    planning_profile.batch_locks = parity_ctx.batch_locks
 
     recipe_db = RecipeDB(recipes_path)
     all_recipes = recipe_db.get_all_recipes()
@@ -199,6 +204,7 @@ def _run_planner(
         "plan_assignment_count": len(result.plan or []),
         "planning_profile": _planning_profile_summary(planning_profile),
         "recipe_pool_count": len(recipe_pool),
+        "parity_context": parity_diagnostics_payload(parity_ctx),
     }
 
 
@@ -218,6 +224,12 @@ def main() -> None:
         "--recipe-ids",
         default=None,
         help="Comma-separated ids to include in cli_plan_request.json (optional).",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="Optional explicit planner parity seed for diagnostic artifacts.",
     )
     parser.add_argument(
         "--out-dir",
@@ -240,9 +252,16 @@ def main() -> None:
         ingredient_source=args.ingredient_source,
         planning_mode=args.planning_mode,
         recipe_ids=recipe_ids,
+        seed=args.seed,
     )
     (out / "cli_plan_request.json").write_text(
         json.dumps(plan_request, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    parity_ctx = hydrate_parity_plan_context(seed=args.seed, yaml_path=args.profile)
+    (out / "planner_parity_context.json").write_text(
+        json.dumps(parity_diagnostics_payload(parity_ctx), indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
 
@@ -258,6 +277,7 @@ def main() -> None:
         ingredients_path=args.ingredients,
         days=args.days,
         ingredient_source=args.ingredient_source,
+        seed=args.seed,
     )
     (out / "planner_run.json").write_text(
         json.dumps(run, indent=2, sort_keys=True) + "\n",
@@ -271,6 +291,7 @@ def main() -> None:
         "out_dir": str(out.resolve()),
         "written": [
             "cli_plan_request.json",
+            "planner_parity_context.json",
             "recipe_pool_snapshot.json",
             "planner_run.json",
         ],

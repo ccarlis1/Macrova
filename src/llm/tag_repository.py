@@ -33,6 +33,55 @@ _SEED_TAGS: Dict[str, Dict[str, str]] = {
 
 _VALID_TAG_TYPES = {"context", "time", "nutrition", "constraint"}
 _VALID_SOURCES = {"user", "llm", "system"}
+_VALID_ELIGIBILITY = {"proposed", "approved", "rejected"}
+_VALID_SEMANTIC_CLASSES = {
+    "capability",
+    "meal_role",
+    "exclusion",
+    "nutrition_claim",
+    "identity_hint",
+    "effort_system",
+}
+# Default DM-6 semantic class per legacy tag_type when not stored on disk.
+_DEFAULT_SEMANTIC_CLASS_BY_TAG_TYPE: Dict[str, str] = {
+    "context": "capability",
+    "time": "effort_system",
+    "nutrition": "nutrition_claim",
+    "constraint": "exclusion",
+}
+# DM-6 semantic-class capability booleans (authoritative defaults).
+_SEMANTIC_CLASS_DEFAULTS: Dict[str, Dict[str, bool]] = {
+    "capability": {
+        "hard_filter_allowed": True,
+        "soft_score_allowed": True,
+        "display_only": False,
+    },
+    "meal_role": {
+        "hard_filter_allowed": True,
+        "soft_score_allowed": True,
+        "display_only": False,
+    },
+    "exclusion": {
+        "hard_filter_allowed": True,
+        "soft_score_allowed": False,
+        "display_only": False,
+    },
+    "nutrition_claim": {
+        "hard_filter_allowed": False,
+        "soft_score_allowed": True,
+        "display_only": False,
+    },
+    "identity_hint": {
+        "hard_filter_allowed": False,
+        "soft_score_allowed": True,
+        "display_only": True,
+    },
+    "effort_system": {
+        "hard_filter_allowed": True,
+        "soft_score_allowed": True,
+        "display_only": False,
+    },
+}
 
 
 @dataclass(frozen=True)
@@ -139,7 +188,7 @@ def _parse_tag_registry(raw: Any) -> Dict[str, TagMetaJson]:
             continue
         meta_slug = _normalize_slug(parsed.slug)
         canonical = meta_slug or normalized_slug
-        out[canonical] = parsed.model_copy(update={"slug": canonical})
+        out[canonical] = enrich_tag_meta(parsed.model_copy(update={"slug": canonical}))
     return out
 
 
@@ -163,13 +212,15 @@ def _ensure_seed_data(
     aliases = dict(tag_aliases)
     for slug, seed in _SEED_TAGS.items():
         if slug not in registry:
-            registry[slug] = TagMetaJson(
-                slug=slug,
-                display=seed["display"],
-                tag_type=seed["tag_type"],
-                source="system",
-                created_at=_SEED_CREATED_AT,
-                aliases=[],
+            registry[slug] = enrich_tag_meta(
+                TagMetaJson(
+                    slug=slug,
+                    display=seed["display"],
+                    tag_type=seed["tag_type"],
+                    source="system",
+                    created_at=_SEED_CREATED_AT,
+                    aliases=[],
+                )
             )
     for meta in registry.values():
         for alias_raw in meta.aliases:
@@ -310,22 +361,78 @@ def _raw_registry_metadata(path: str) -> Dict[str, Dict[str, Any]]:
     return out
 
 
+def _assert_eligibility(eligibility: Optional[str]) -> Optional[str]:
+    if eligibility is None:
+        return None
+    normalized = str(eligibility).strip().lower()
+    if normalized not in _VALID_ELIGIBILITY:
+        raise TagRepositoryError("TAG_INVALID", "Invalid tag eligibility.")
+    return normalized
+
+
+def _assert_semantic_class(semantic_class: Optional[str]) -> Optional[str]:
+    if semantic_class is None:
+        return None
+    normalized = str(semantic_class).strip().lower()
+    if normalized not in _VALID_SEMANTIC_CLASSES:
+        raise TagRepositoryError("TAG_INVALID", "Invalid semantic class.")
+    return normalized
+
+
+def _default_semantic_class_for_tag_type(tag_type: str) -> str:
+    return _DEFAULT_SEMANTIC_CLASS_BY_TAG_TYPE.get(tag_type, "capability")
+
+
+def enrich_tag_meta(meta: TagMetaJson) -> TagMetaJson:
+    """Apply DM-6 defaults to canonical tag records without overwriting explicit values."""
+    semantic_class = meta.semantic_class or _default_semantic_class_for_tag_type(meta.tag_type)
+    class_defaults = _SEMANTIC_CLASS_DEFAULTS.get(
+        semantic_class, _SEMANTIC_CLASS_DEFAULTS["capability"]
+    )
+    updates: Dict[str, Any] = {"semantic_class": semantic_class}
+    if meta.hard_filter_allowed is None:
+        updates["hard_filter_allowed"] = class_defaults["hard_filter_allowed"]
+    if meta.soft_score_allowed is None:
+        updates["soft_score_allowed"] = class_defaults["soft_score_allowed"]
+    if meta.display_only is None:
+        updates["display_only"] = class_defaults["display_only"]
+    if meta.source == "llm" and meta.eligibility is None:
+        updates["eligibility"] = "proposed"
+    return meta.model_copy(update=updates)
+
+
+def is_planner_hard_eligible(meta: TagMetaJson) -> bool:
+    """True when a canonical tag may satisfy planner required-tag hard constraints."""
+    enriched = enrich_tag_meta(meta)
+    lifecycle = str(enriched.eligibility or "").strip().lower()
+    if lifecycle in {"proposed", "rejected"}:
+        return False
+    if enriched.display_only is True or enriched.hard_filter_allowed is False:
+        return False
+    if enriched.source in {"user", "system"}:
+        return True
+    return enriched.source == "llm" and lifecycle == "approved"
+
+
 def _tag_meta_is_hard_eligible(meta: Optional[Dict[str, Any]]) -> bool:
     """Planner hard constraints may use approved tags or non-LLM user/system tags."""
     if not meta:
         return False
 
-    source = str(meta.get("source", "")).strip().lower()
-    lifecycle = str(
-        meta.get("eligibility", meta.get("lifecycle", meta.get("status", "")))
-    ).strip().lower()
-    if lifecycle in {"proposed", "rejected"}:
-        return False
-    if meta.get("display_only") is True or meta.get("hard_filter_allowed") is False:
-        return False
-    if source in {"user", "system"}:
-        return True
-    return source == "llm" and lifecycle == "approved"
+    parsed = parse_llm_json(TagMetaJson, meta)
+    if isinstance(parsed, ValidationFailure):
+        source = str(meta.get("source", "")).strip().lower()
+        lifecycle = str(
+            meta.get("eligibility", meta.get("lifecycle", meta.get("status", "")))
+        ).strip().lower()
+        if lifecycle in {"proposed", "rejected"}:
+            return False
+        if meta.get("display_only") is True or meta.get("hard_filter_allowed") is False:
+            return False
+        if source in {"user", "system"}:
+            return True
+        return source == "llm" and lifecycle == "approved"
+    return is_planner_hard_eligible(enrich_tag_meta(parsed))
 
 
 def load_canonical_recipe_tag_slugs(path: str) -> Dict[str, set[str]]:
@@ -506,13 +613,16 @@ def create(
     if canonical_slug in tag_registry or canonical_slug in tag_aliases:
         raise TagRepositoryError("TAG_CONFLICT", "Tag slug already exists.")
 
-    meta = TagMetaJson(
-        slug=canonical_slug,
-        display=normalized_display,
-        tag_type=normalized_tag_type,  # type: ignore[arg-type]
-        source=normalized_source,  # type: ignore[arg-type]
-        created_at=_now_utc_iso(),
-        aliases=[],
+    meta = enrich_tag_meta(
+        TagMetaJson(
+            slug=canonical_slug,
+            display=normalized_display,
+            tag_type=normalized_tag_type,  # type: ignore[arg-type]
+            source=normalized_source,  # type: ignore[arg-type]
+            created_at=_now_utc_iso(),
+            aliases=[],
+            eligibility="proposed" if normalized_source == "llm" else None,
+        )
     )
     tag_registry[canonical_slug] = meta
     _write_tags_payload(

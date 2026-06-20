@@ -5,10 +5,14 @@ import copy
 import hashlib
 import os
 import sys
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from src.config.llm_settings import load_llm_settings
+from src.data_layer.meal_prep import MealPrepBatchRepository
 from src.data_layer.recipe_db import RecipeDB
+from src.data_layer.user_profile import load_profile_pins
 from src.llm.client import LLMClient
 from src.llm.planner_assistant import build_feedback_context, suggest_targeted_recipe_drafts
 from src.llm.recipe_validator import validate_recipe_drafts
@@ -70,6 +74,64 @@ def _serialize_active_batches(batches: List[Any]) -> List[Dict[str, Any]]:
             }
         )
     return rows
+
+
+def _serialize_persisted_pins(pins: List[ProfilePin]) -> List[Dict[str, Any]]:
+    """Serialize persisted profile pins to a stable diagnostic shape."""
+    rows: List[Dict[str, Any]] = []
+    for pin in sorted(
+        pins,
+        key=lambda item: (int(item.day_index), int(item.slot_index), str(item.recipe_id)),
+    ):
+        rows.append(
+            {
+                "day_index": int(pin.day_index),
+                "slot_index": int(pin.slot_index),
+                "recipe_id": str(pin.recipe_id),
+            }
+        )
+    return rows
+
+
+@dataclass(frozen=True)
+class ParityPlanContext:
+    """Canonical parity-critical planner context hydrated from backend state."""
+
+    active_batches: List[Any]
+    persisted_pins: List[ProfilePin]
+    seed: Optional[int]
+    batch_locks: List[PlanningBatchLock]
+
+
+def hydrate_parity_plan_context(
+    *,
+    seed: Optional[int] = None,
+    yaml_path: str | Path | None = None,
+) -> ParityPlanContext:
+    """Load active batches and persisted pins from canonical backend state."""
+    active_batches = MealPrepBatchRepository().list_active()
+    persisted_pins = load_profile_pins(yaml_path=yaml_path)
+    explicit_seed = int(seed) if seed is not None else None
+    return ParityPlanContext(
+        active_batches=list(active_batches),
+        persisted_pins=list(persisted_pins),
+        seed=explicit_seed,
+        batch_locks=planning_batch_locks_from_batches(active_batches),
+    )
+
+
+def parity_diagnostics_payload(context: ParityPlanContext) -> Dict[str, Any]:
+    """Build parity-critical diagnostic fields for CLI/export artifacts."""
+    return {
+        "active_batches": _serialize_active_batches(context.active_batches),
+        "persisted_pins": _serialize_persisted_pins(context.persisted_pins),
+        "seed": context.seed,
+    }
+
+
+def apply_persisted_pins_to_profile(user_profile: Any, persisted_pins: List[ProfilePin]) -> None:
+    """Ensure ``UserProfile.pins`` reflects canonical persisted pin state."""
+    user_profile.pins = list(persisted_pins)
 
 
 def build_plan_request_from_profile(

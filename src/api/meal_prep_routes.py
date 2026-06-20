@@ -90,6 +90,33 @@ class CreateMealPrepBatchRequest(BaseModel):
         return value
 
 
+class MealPrepAssignmentResponse(BaseModel):
+    day_index: int
+    slot_index: int
+    servings: float
+    date: str
+    slot_id: int
+
+
+class MealPrepBatchResponse(BaseModel):
+    id: str
+    recipe_id: str
+    total_servings: int
+    assigned_servings: float
+    remaining_servings: float
+    cook_date: str
+    status: str
+    assignments: List[MealPrepAssignmentResponse]
+
+
+class MealPrepBatchListResponse(BaseModel):
+    batches: List[MealPrepBatchResponse]
+
+
+class MealPrepBatchCancelResponse(BaseModel):
+    cancelled_id: str
+
+
 def _assignment_input_to_batch(
     body: CreateMealPrepBatchRequest, item: AssignmentInput
 ) -> BatchAssignment:
@@ -195,7 +222,7 @@ def _validate_conflicts(
                 )
 
 
-@router.post("")
+@router.post("", response_model=MealPrepBatchResponse)
 def create_meal_prep_batch(body: CreateMealPrepBatchRequest) -> Any:
     try:
         _validate_recipe(body.recipe_id)
@@ -229,7 +256,7 @@ def create_meal_prep_batch(body: CreateMealPrepBatchRequest) -> Any:
         return JSONResponse(status_code=status_code, content=payload)
 
 
-@router.get("")
+@router.get("", response_model=MealPrepBatchListResponse)
 def list_meal_prep_batches(
     active: bool = Query(True),  # noqa: FBT001, FBT002
 ) -> Any:
@@ -242,7 +269,7 @@ def list_meal_prep_batches(
         return JSONResponse(status_code=status_code, content=payload)
 
 
-@router.get("/{batch_id}")
+@router.get("/{batch_id}", response_model=MealPrepBatchResponse)
 def get_meal_prep_batch(batch_id: str) -> Any:
     try:
         repo = MealPrepBatchRepository()
@@ -263,7 +290,7 @@ def get_meal_prep_batch(batch_id: str) -> Any:
         return JSONResponse(status_code=status_code, content=payload)
 
 
-@router.delete("/{batch_id}")
+@router.delete("/{batch_id}", response_model=MealPrepBatchCancelResponse)
 def delete_meal_prep_batch(batch_id: str) -> Any:
     try:
         repo = MealPrepBatchRepository()

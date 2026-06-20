@@ -23,7 +23,7 @@ from fastapi import FastAPI, HTTPException, Path as FastApiPath, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field, ValidationError, constr, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, constr, model_validator
 from dataclasses import fields as dc_fields
 
 from src.ingestion.nutrient_mapper import MappedNutrition, NutrientMapper
@@ -232,6 +232,59 @@ class ProfilePinDto(BaseModel):
     recipe_id: str
 
 
+class ProfilePinListResponse(BaseModel):
+    pins: List[ProfilePinDto]
+
+
+class ProfilePinUpsertResponse(BaseModel):
+    pin: ProfilePinDto
+
+
+class ProfilePinDeleteResponse(BaseModel):
+    deleted: bool
+    pin: Optional[ProfilePinDto] = None
+
+
+class ProfilePinsClearResponse(BaseModel):
+    cleared_count: int
+
+
+class PlannedMeal(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    recipe_id: Optional[str] = None
+    name: Optional[str] = None
+    meal_type: Optional[str] = None
+    slot_index: Optional[int] = None
+    source: Optional[
+        Literal["meal_prep_batch", "pinned_assignment", "planner"]
+    ] = None
+    batch_id: Optional[str] = None
+    servings: Optional[float] = None
+
+
+class DailyPlan(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    day: int
+    meals: List[PlannedMeal] = Field(default_factory=list)
+    totals: Optional[Dict[str, Any]] = None
+
+
+class RecipeDetailResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    id: str
+    name: str
+    servings: int
+    default_servings: int
+    cooking_time_minutes: int
+    instructions: List[str]
+    ingredients: List[Dict[str, Any]]
+    tag_slugs_by_type: Dict[str, List[str]] = Field(default_factory=dict)
+    is_meal_prep_capable: bool
+
+
 class PlanFailure(BaseModel):
     code: Literal[
         "FM-1",
@@ -259,12 +312,12 @@ class PlanReport(BaseModel):
 
 
 class PlanResponse(BaseModel):
-    model_config = {"extra": "allow"}
+    model_config = ConfigDict(extra="allow")
 
     success: bool
     termination_code: str
     days: int
-    daily_plans: List[Dict[str, Any]]
+    daily_plans: List[DailyPlan]
     warnings: Dict[str, Any]
     report: PlanReport
     goals: Dict[str, Any]
@@ -1601,7 +1654,7 @@ def list_recipes() -> List[Dict[str, str]]:
         return JSONResponse(status_code=status_code, content=payload)
 
 
-@app.get("/api/v1/recipes/{recipe_id}")
+@app.get("/api/v1/recipes/{recipe_id}", response_model=RecipeDetailResponse)
 def get_recipe_detail(recipe_id: str) -> Any:
     """Full recipe with ingredient lines enriched for the Flutter client."""
     try:
@@ -1755,7 +1808,10 @@ async def put_profile_schedule_endpoint(request: Request) -> Any:
     return {"schedule_days": normalized_days}
 
 
-@app.put("/api/v1/profile/pins/{day_index}/{slot_index}")
+@app.put(
+    "/api/v1/profile/pins/{day_index}/{slot_index}",
+    response_model=ProfilePinUpsertResponse,
+)
 def put_profile_pin_endpoint(
     day_index: int = FastApiPath(..., ge=0),
     slot_index: int = FastApiPath(..., ge=0),
@@ -1771,7 +1827,7 @@ def put_profile_pin_endpoint(
         return JSONResponse(status_code=status_code, content=payload)
 
 
-@app.get("/api/v1/profile/pins")
+@app.get("/api/v1/profile/pins", response_model=ProfilePinListResponse)
 def list_profile_pins_endpoint() -> Any:
     try:
         pins = load_profile_pins()
@@ -1781,7 +1837,10 @@ def list_profile_pins_endpoint() -> Any:
         return JSONResponse(status_code=status_code, content=payload)
 
 
-@app.delete("/api/v1/profile/pins/{day_index}/{slot_index}")
+@app.delete(
+    "/api/v1/profile/pins/{day_index}/{slot_index}",
+    response_model=ProfilePinDeleteResponse,
+)
 def delete_profile_pin_endpoint(
     day_index: int = FastApiPath(..., ge=0),
     slot_index: int = FastApiPath(..., ge=0),
@@ -1797,7 +1856,7 @@ def delete_profile_pin_endpoint(
         return JSONResponse(status_code=status_code, content=payload)
 
 
-@app.delete("/api/v1/profile/pins")
+@app.delete("/api/v1/profile/pins", response_model=ProfilePinsClearResponse)
 def clear_profile_pins_endpoint() -> Any:
     try:
         cleared_count = clear_all_profile_pins()

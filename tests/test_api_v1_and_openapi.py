@@ -1,5 +1,8 @@
 """v1 route parity, OpenAPI contract paths, recipe_ids, deterministic ingredients."""
 
+import subprocess
+import sys
+from pathlib import Path
 from unittest.mock import MagicMock
 
 from fastapi.testclient import TestClient
@@ -8,6 +11,135 @@ from src.api.server import PlanRequest, _filter_recipes_by_ids, app
 from src.ingestion.usda_client import FoodDetailsResult, USDAClient
 from src.planning.phase0_models import Assignment, DailyTracker
 from src.planning.phase10_reporting import MealPlanResult
+
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+
+
+def _openapi_components():
+    return app.openapi()["components"]["schemas"]
+
+
+def _schema_ref_name(schema: dict) -> str:
+    if "$ref" in schema:
+        return schema["$ref"].split("/")[-1]
+    return ""
+
+
+def test_openapi_export_check_passes_when_snapshot_current():
+    result = subprocess.run(
+        [sys.executable, "scripts/export_openapi.py", "--check"],
+        cwd=_REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr or result.stdout
+
+
+def test_openapi_includes_v1_contract_paths():
+    schema = app.openapi()
+    paths = schema["paths"]
+    required = [
+        "/api/v1/plan",
+        "/api/v1/plan-from-text",
+        "/api/v1/recipes",
+        "/api/v1/recipes/sync",
+        "/api/v1/recipes/{recipe_id}",
+        "/api/v1/recipes/generate-validated",
+        "/api/v1/recipes/tags/generate",
+        "/api/v1/ingredients/match",
+        "/api/v1/ingredients/search",
+        "/api/v1/ingredients/resolve",
+        "/api/v1/nutrition/summary",
+        "/api/v1/llm/status",
+        "/api/v1/profile/schedule",
+        "/api/v1/profile/pins",
+        "/api/v1/profile/pins/{day_index}/{slot_index}",
+        "/api/v1/meal_prep_batches",
+        "/api/v1/meal_prep_batches/{batch_id}",
+    ]
+    missing = [p for p in required if p not in paths]
+    assert not missing, f"missing paths: {missing}"
+
+
+def test_openapi_profile_schedule_uses_schedule_days_response():
+    schema = app.openapi()
+    schedule = schema["paths"]["/api/v1/profile/schedule"]
+    for method in ("get", "put"):
+        response = schedule[method]["responses"]["200"]["content"]["application/json"]["schema"]
+        assert response["$ref"] == "#/components/schemas/ProfileScheduleWriteResponse"
+    props = _openapi_components()["ProfileScheduleWriteResponse"]["properties"]
+    assert "schedule_days" in props
+
+
+def test_openapi_profile_pins_contracts():
+    schema = app.openapi()
+    components = _openapi_components()
+    pins = schema["paths"]["/api/v1/profile/pins"]
+    assert (
+        pins["get"]["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
+        == "#/components/schemas/ProfilePinListResponse"
+    )
+    assert "pins" in components["ProfilePinListResponse"]["properties"]
+
+    slot = schema["paths"]["/api/v1/profile/pins/{day_index}/{slot_index}"]
+    assert (
+        slot["put"]["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
+        == "#/components/schemas/ProfilePinUpsertResponse"
+    )
+    pin_props = components["ProfilePinDto"]["properties"]
+    for field in ("day_index", "slot_index", "recipe_id"):
+        assert field in pin_props
+
+
+def test_openapi_recipe_sync_and_detail_typed_fields():
+    components = _openapi_components()
+    sync_props = components["RecipeSyncItem"]["properties"]
+    assert "default_servings" in sync_props
+    assert "tag_slugs_by_type" in sync_props
+
+    detail_props = components["RecipeDetailResponse"]["properties"]
+    for field in ("default_servings", "tag_slugs_by_type", "is_meal_prep_capable"):
+        assert field in detail_props
+
+
+def test_openapi_planned_meal_metadata_fields():
+    components = _openapi_components()
+    meal_props = components["PlannedMeal"]["properties"]
+    for field in ("slot_index", "source", "batch_id", "servings"):
+        assert field in meal_props
+
+    plan_response = components["PlanResponse"]
+    daily_plans = plan_response["properties"]["daily_plans"]
+    item_schema = daily_plans["items"]
+    daily_plan_name = _schema_ref_name(item_schema)
+    daily_plan = components[daily_plan_name]
+    meals = daily_plan["properties"]["meals"]
+    assert _schema_ref_name(meals["items"]) == "PlannedMeal"
+
+
+def test_openapi_meal_prep_batch_response_fields():
+    components = _openapi_components()
+    batch_props = components["MealPrepBatchResponse"]["properties"]
+    for field in (
+        "id",
+        "recipe_id",
+        "total_servings",
+        "assigned_servings",
+        "remaining_servings",
+        "cook_date",
+        "status",
+        "assignments",
+    ):
+        assert field in batch_props
+
+    assignment_props = components["MealPrepAssignmentResponse"]["properties"]
+    for field in ("day_index", "slot_index", "servings", "date", "slot_id"):
+        assert field in assignment_props
+
+    request_props = components["CreateMealPrepBatchRequest"]["properties"]
+    for field in ("recipe_id", "total_servings", "cook_date", "assignments"):
+        assert field in request_props
 
 
 class _Recipe:

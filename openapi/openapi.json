@@ -2,21 +2,60 @@
   "components": {
     "schemas": {
       "AssignmentInput": {
+        "additionalProperties": false,
+        "description": "Canonical planner coordinates ``(day_index, slot_index)`` or legacy ``(date, slot_id)``.\n\nLegacy input is normalized at the route boundary; persistence uses only canonical fields.",
         "properties": {
           "date": {
-            "title": "Date",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "day_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day Index"
+          },
+          "servings": {
+            "default": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Servings",
+            "type": "number"
           },
           "slot_id": {
-            "minimum": 0.0,
-            "title": "Slot Id",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot Id"
+          },
+          "slot_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot Index"
           }
         },
-        "required": [
-          "date",
-          "slot_id"
-        ],
         "title": "AssignmentInput",
         "type": "object"
       },
@@ -59,6 +98,39 @@
           "cook_date"
         ],
         "title": "CreateMealPrepBatchRequest",
+        "type": "object"
+      },
+      "DailyPlan": {
+        "additionalProperties": true,
+        "properties": {
+          "day": {
+            "title": "Day",
+            "type": "integer"
+          },
+          "meals": {
+            "items": {
+              "$ref": "#/components/schemas/PlannedMeal"
+            },
+            "title": "Meals",
+            "type": "array"
+          },
+          "totals": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Totals"
+          }
+        },
+        "required": [
+          "day"
+        ],
+        "title": "DailyPlan",
         "type": "object"
       },
       "DaySchedule": {
@@ -284,6 +356,119 @@
         "title": "IngredientSearchResultItem",
         "type": "object"
       },
+      "MealPrepAssignmentResponse": {
+        "properties": {
+          "date": {
+            "title": "Date",
+            "type": "string"
+          },
+          "day_index": {
+            "title": "Day Index",
+            "type": "integer"
+          },
+          "servings": {
+            "title": "Servings",
+            "type": "number"
+          },
+          "slot_id": {
+            "title": "Slot Id",
+            "type": "integer"
+          },
+          "slot_index": {
+            "title": "Slot Index",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "day_index",
+          "slot_index",
+          "servings",
+          "date",
+          "slot_id"
+        ],
+        "title": "MealPrepAssignmentResponse",
+        "type": "object"
+      },
+      "MealPrepBatchCancelResponse": {
+        "properties": {
+          "cancelled_id": {
+            "title": "Cancelled Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cancelled_id"
+        ],
+        "title": "MealPrepBatchCancelResponse",
+        "type": "object"
+      },
+      "MealPrepBatchListResponse": {
+        "properties": {
+          "batches": {
+            "items": {
+              "$ref": "#/components/schemas/MealPrepBatchResponse"
+            },
+            "title": "Batches",
+            "type": "array"
+          }
+        },
+        "required": [
+          "batches"
+        ],
+        "title": "MealPrepBatchListResponse",
+        "type": "object"
+      },
+      "MealPrepBatchResponse": {
+        "properties": {
+          "assigned_servings": {
+            "title": "Assigned Servings",
+            "type": "number"
+          },
+          "assignments": {
+            "items": {
+              "$ref": "#/components/schemas/MealPrepAssignmentResponse"
+            },
+            "title": "Assignments",
+            "type": "array"
+          },
+          "cook_date": {
+            "title": "Cook Date",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "recipe_id": {
+            "title": "Recipe Id",
+            "type": "string"
+          },
+          "remaining_servings": {
+            "title": "Remaining Servings",
+            "type": "number"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "total_servings": {
+            "title": "Total Servings",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "recipe_id",
+          "total_servings",
+          "assigned_servings",
+          "remaining_servings",
+          "cook_date",
+          "status",
+          "assignments"
+        ],
+        "title": "MealPrepBatchResponse",
+        "type": "object"
+      },
       "MealSlot": {
         "additionalProperties": false,
         "description": "One assignable meal slot (not a workout).",
@@ -419,6 +604,11 @@
         "properties": {
           "code": {
             "enum": [
+              "FM-1",
+              "FM-2",
+              "FM-3",
+              "FM-4",
+              "FM-5",
               "FM-TAG-EMPTY",
               "FM-BATCH-CONFLICT",
               "FM-MACRO-INFEASIBLE"
@@ -427,8 +617,26 @@
             "type": "string"
           },
           "date": {
-            "title": "Date",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "day_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day Index"
           },
           "details": {
             "additionalProperties": true,
@@ -436,20 +644,46 @@
             "type": "object"
           },
           "fix_hint": {
-            "title": "Fix Hint",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fix Hint"
+          },
+          "message": {
+            "title": "Message",
             "type": "string"
           },
           "slot_id": {
-            "title": "Slot Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot Id"
+          },
+          "slot_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot Index"
           }
         },
         "required": [
           "code",
-          "slot_id",
-          "date",
-          "details",
-          "fix_hint"
+          "message"
         ],
         "title": "PlanFailure",
         "type": "object"
@@ -784,8 +1018,7 @@
         "properties": {
           "daily_plans": {
             "items": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/DailyPlan"
             },
             "title": "Daily Plans",
             "type": "array"
@@ -800,15 +1033,13 @@
             "type": "object"
           },
           "plan_status": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "enum": [
+              "success",
+              "partial",
+              "failed"
             ],
-            "title": "Plan Status"
+            "title": "Plan Status",
+            "type": "string"
           },
           "plan_status_message": {
             "anyOf": [
@@ -857,9 +1088,99 @@
           "daily_plans",
           "warnings",
           "report",
-          "goals"
+          "goals",
+          "plan_status"
         ],
         "title": "PlanResponse",
+        "type": "object"
+      },
+      "PlannedMeal": {
+        "additionalProperties": true,
+        "properties": {
+          "batch_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Batch Id"
+          },
+          "meal_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meal Type"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "recipe_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipe Id"
+          },
+          "servings": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Servings"
+          },
+          "slot_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot Index"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "enum": [
+                  "meal_prep_batch",
+                  "pinned_assignment",
+                  "planner"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          }
+        },
+        "title": "PlannedMeal",
         "type": "object"
       },
       "PrepTimeBucket": {
@@ -871,6 +1192,192 @@
         ],
         "title": "PrepTimeBucket",
         "type": "string"
+      },
+      "ProfilePinDeleteResponse": {
+        "properties": {
+          "deleted": {
+            "title": "Deleted",
+            "type": "boolean"
+          },
+          "pin": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProfilePinDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "deleted"
+        ],
+        "title": "ProfilePinDeleteResponse",
+        "type": "object"
+      },
+      "ProfilePinDto": {
+        "properties": {
+          "day_index": {
+            "minimum": 0.0,
+            "title": "Day Index",
+            "type": "integer"
+          },
+          "recipe_id": {
+            "title": "Recipe Id",
+            "type": "string"
+          },
+          "slot_index": {
+            "minimum": 0.0,
+            "title": "Slot Index",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "day_index",
+          "slot_index",
+          "recipe_id"
+        ],
+        "title": "ProfilePinDto",
+        "type": "object"
+      },
+      "ProfilePinListResponse": {
+        "properties": {
+          "pins": {
+            "items": {
+              "$ref": "#/components/schemas/ProfilePinDto"
+            },
+            "title": "Pins",
+            "type": "array"
+          }
+        },
+        "required": [
+          "pins"
+        ],
+        "title": "ProfilePinListResponse",
+        "type": "object"
+      },
+      "ProfilePinUpsertRequest": {
+        "properties": {
+          "recipe_id": {
+            "minLength": 1,
+            "title": "Recipe Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "recipe_id"
+        ],
+        "title": "ProfilePinUpsertRequest",
+        "type": "object"
+      },
+      "ProfilePinUpsertResponse": {
+        "properties": {
+          "pin": {
+            "$ref": "#/components/schemas/ProfilePinDto"
+          }
+        },
+        "required": [
+          "pin"
+        ],
+        "title": "ProfilePinUpsertResponse",
+        "type": "object"
+      },
+      "ProfilePinsClearResponse": {
+        "properties": {
+          "cleared_count": {
+            "title": "Cleared Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "cleared_count"
+        ],
+        "title": "ProfilePinsClearResponse",
+        "type": "object"
+      },
+      "ProfileScheduleWriteResponse": {
+        "properties": {
+          "schedule_days": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Schedule Days",
+            "type": "array"
+          }
+        },
+        "required": [
+          "schedule_days"
+        ],
+        "title": "ProfileScheduleWriteResponse",
+        "type": "object"
+      },
+      "RecipeDetailResponse": {
+        "additionalProperties": true,
+        "properties": {
+          "cooking_time_minutes": {
+            "title": "Cooking Time Minutes",
+            "type": "integer"
+          },
+          "default_servings": {
+            "title": "Default Servings",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "ingredients": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Ingredients",
+            "type": "array"
+          },
+          "instructions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Instructions",
+            "type": "array"
+          },
+          "is_meal_prep_capable": {
+            "title": "Is Meal Prep Capable",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "servings": {
+            "title": "Servings",
+            "type": "integer"
+          },
+          "tag_slugs_by_type": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "title": "Tag Slugs By Type",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "servings",
+          "default_servings",
+          "cooking_time_minutes",
+          "instructions",
+          "ingredients",
+          "is_meal_prep_capable"
+        ],
+        "title": "RecipeDetailResponse",
+        "type": "object"
       },
       "RecipeGenerationFailure": {
         "properties": {
@@ -980,6 +1487,12 @@
             "title": "Cooking Time Minutes",
             "type": "integer"
           },
+          "default_servings": {
+            "default": 1,
+            "minimum": 1.0,
+            "title": "Default Servings",
+            "type": "integer"
+          },
           "id": {
             "minLength": 1,
             "title": "Id",
@@ -1004,6 +1517,31 @@
             "minLength": 1,
             "title": "Name",
             "type": "string"
+          },
+          "tag_slugs_by_type": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "propertyNames": {
+                  "enum": [
+                    "context",
+                    "time",
+                    "nutrition",
+                    "constraint"
+                  ]
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tag Slugs By Type"
           }
         },
         "required": [
@@ -1854,7 +2392,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response List Meal Prep Batches Api V1 Meal Prep Batches Get"
+                  "$ref": "#/components/schemas/MealPrepBatchListResponse"
                 }
               }
             },
@@ -1893,7 +2431,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Create Meal Prep Batch Api V1 Meal Prep Batches Post"
+                  "$ref": "#/components/schemas/MealPrepBatchResponse"
                 }
               }
             },
@@ -1935,7 +2473,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Delete Meal Prep Batch Api V1 Meal Prep Batches  Batch Id  Delete"
+                  "$ref": "#/components/schemas/MealPrepBatchCancelResponse"
                 }
               }
             },
@@ -1975,7 +2513,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Get Meal Prep Batch Api V1 Meal Prep Batches  Batch Id  Get"
+                  "$ref": "#/components/schemas/MealPrepBatchResponse"
                 }
               }
             },
@@ -2111,6 +2649,184 @@
           }
         },
         "summary": "Plan From Text Endpoint"
+      }
+    },
+    "/api/v1/profile/pins": {
+      "delete": {
+        "operationId": "clear_profile_pins_endpoint_api_v1_profile_pins_delete",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfilePinsClearResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Clear Profile Pins Endpoint"
+      },
+      "get": {
+        "operationId": "list_profile_pins_endpoint_api_v1_profile_pins_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfilePinListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Profile Pins Endpoint"
+      }
+    },
+    "/api/v1/profile/pins/{day_index}/{slot_index}": {
+      "delete": {
+        "operationId": "delete_profile_pin_endpoint_api_v1_profile_pins__day_index___slot_index__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "day_index",
+            "required": true,
+            "schema": {
+              "minimum": 0,
+              "title": "Day Index",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "slot_index",
+            "required": true,
+            "schema": {
+              "minimum": 0,
+              "title": "Slot Index",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfilePinDeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Profile Pin Endpoint"
+      },
+      "put": {
+        "operationId": "put_profile_pin_endpoint_api_v1_profile_pins__day_index___slot_index__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "day_index",
+            "required": true,
+            "schema": {
+              "minimum": 0,
+              "title": "Day Index",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "slot_index",
+            "required": true,
+            "schema": {
+              "minimum": 0,
+              "title": "Slot Index",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfilePinUpsertRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfilePinUpsertResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Profile Pin Endpoint"
+      }
+    },
+    "/api/v1/profile/schedule": {
+      "get": {
+        "description": "Return the authoritative persisted schedule in the same shape as PUT writes.",
+        "operationId": "get_profile_schedule_endpoint_api_v1_profile_schedule_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileScheduleWriteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Profile Schedule Endpoint"
+      },
+      "put": {
+        "description": "Persist canonical schedule_days into the existing profile YAML path.",
+        "operationId": "put_profile_schedule_endpoint_api_v1_profile_schedule_put",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileScheduleWriteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Put Profile Schedule Endpoint"
       }
     },
     "/api/v1/recipes": {
@@ -2347,7 +3063,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Get Recipe Detail Api V1 Recipes  Recipe Id  Get"
+                  "$ref": "#/components/schemas/RecipeDetailResponse"
                 }
               }
             },

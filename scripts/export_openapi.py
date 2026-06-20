@@ -29,6 +29,18 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    try:
+        import uvicorn  # noqa: F401
+    except ModuleNotFoundError:
+        print(
+            "Missing FastAPI dependencies (uvicorn). Use the project venv:\n\n"
+            "  python3 scripts/run_export_openapi.py\n\n"
+            "Or install manually:\n\n"
+            "  .venv/bin/python -m pip install -r requirements.txt\n",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
     # Importing the app should not require real credentials in CI.
     os.environ.setdefault("USDA_API_KEY", "test-openapi-export-key")
 
@@ -44,7 +56,7 @@ def main() -> None:
         existing = args.output.read_text(encoding="utf-8")
         if existing != text:
             print(
-                "OpenAPI schema drift: run `python scripts/export_openapi.py` "
+                "OpenAPI schema drift: run `python3 scripts/run_export_openapi.py` "
                 f"and commit {args.output}",
                 file=sys.stderr,
             )

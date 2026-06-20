@@ -34,6 +34,17 @@ unless the user explicitly asks for a one-off diagnostic comparison.
 
 The test runner is responsible for selecting the correct virtual environment and test configuration.
 
+### OpenAPI export / contract check
+
+Export or verify the OpenAPI snapshot with:
+
+```bash
+python3 scripts/run_export_openapi.py
+python3 scripts/run_export_openapi.py --check
+```
+
+Do not run bare `python3 scripts/export_openapi.py` on the system interpreter — it imports `src.api.server`, which requires `uvicorn` and other deps from `requirements.txt`.
+
 ### Flutter commands
 
 Run Flutter commands from the Flutter app directory, not from the repo root unless the repo structure explicitly supports it.

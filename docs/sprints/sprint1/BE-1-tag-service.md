@@ -32,7 +32,7 @@ Unblocks: AI-3, FE-5, FE-8.
 - Use FastAPI `APIRouter`; mount under the existing `/api/v1` prefix alongside `recipes`.
 - For merge, reuse `TagRegistry.merge(src, dst)` from DM-1 and iterate `RecipeDB` with a `save_all` bulk write. Take a file lock while rewriting to avoid corrupting `recipes.json`.
 - Rejection taxonomy aligns with `src/api/error_mapping.py`: `TAG_NOT_FOUND`, `TAG_CONFLICT`, `TAG_INVALID`.
-- Emit stderr log lines for every mutation so `DEBUG_PLANNER_PARITY.md`-style diffs stay possible.
+- Emit stderr log lines for every mutation so parity-debugging-style diffs stay possible.
 
 ## Out of scope
 

@@ -16,7 +16,7 @@ Unblocks: BE-5, FE-3, FE-7.
 
 - Active batches loaded server-side and passed into the planning entrypoint (exact parameter: **REQUIRES_VERIFICATION** against `planner.plan_meals` signature at implementation time).
 - Batch assignment addressing is canonical `SlotAddress = (day_index, slot_index)` end-to-end (no `date`/`slot_id` writes in planner contracts).
-- Batch lock **precedence** vs pins vs required tags matches `docs/SPRINT_1.md` §3.5.
+- Batch lock **precedence** vs pins vs required tags matches `../../archive/sprint-notes/sprint-1.md` §3.5.
 - Two batches targeting same `(day_index, slot_index)` → `FM-BATCH-CONFLICT` in extended `MealPlanResult.report`.
 - Locked slots skipped by free search; nutrition totals include locked meals.
 - Tests: 3-day batch spread; conflict; tag mismatch → warning in report (not hard fail).
@@ -77,7 +77,7 @@ After implementation, verify each of the following:
 
 - Active batches are loaded via `MealPrepBatchRepository.list_active()` before `plan_meals` is called — not inside the planner itself
 - Batch locks use the same `(day_index, slot_index)` addressing as `pinned_assignments` — no new addressing scheme
-- Precedence matches `docs/SPRINT_1.md §3.5`: batch locks take specified precedence vs. pins vs. required tags
+- Precedence matches `../../archive/sprint-notes/sprint-1.md` §3.5: batch locks take specified precedence vs. pins vs. required tags
 - Two batches targeting the same `(day_index, slot_index)` produce `FM-BATCH-CONFLICT` in `MealPlanResult.report` — not a hard exception
 - Locked slots are skipped by free recipe search; their nutrition is included in daily totals
 - Tests pass: 3-day batch spread, conflict detection, tag-mismatch warning (not hard fail)

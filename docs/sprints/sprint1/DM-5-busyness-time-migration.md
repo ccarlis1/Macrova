@@ -8,7 +8,7 @@ One-shot script that stamps a `time-`* tag onto every existing recipe by bucketi
 
 ## Context
 
-The app has two overlapping notions of "busyness": `Meal.busyness_level ∈ {1..4}` and the raw `cooking_time_minutes`. Sprint 1 collapses both into a 5-bucket `time-*` tag scale (see `SPRINT_1.md` §2.4). This migration brings the existing recipe corpus into that scheme so BE-3 can start filtering immediately.
+The app has two overlapping notions of "busyness": `Meal.busyness_level ∈ {1..4}` and the raw `cooking_time_minutes`. Sprint 1 collapses both into a 5-bucket `time-*` tag scale (see `../../archive/sprint-notes/sprint-1.md` §2.4). This migration brings the existing recipe corpus into that scheme so BE-3 can start filtering immediately.
 
 Unblocks: BE-3 (in practice — without `time-*` tags the planner filter has nothing to hard-constrain on).
 

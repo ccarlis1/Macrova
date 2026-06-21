@@ -2,7 +2,7 @@
 
 This guide explains how to test the spec-aligned meal planner (phases 0–7) for **functionality**, **output correctness**, and **run time**.
 
-**Reference:** `docs/MEALPLAN_SPECIFICATION_v1.md`, `src/planning/phase7_search.py` (`run_meal_plan_search`).
+**Reference:** `docs/planner/mealplan-specification.md`, `src/planning/phase7_search.py` (`run_meal_plan_search`).
 
 ---
 

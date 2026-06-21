@@ -6,39 +6,41 @@ todos:
 
 - id: baseline-map
 content: Document exact existing planner/ingestion call graph and failure surfaces in implementation notes.
-status: pending
+status: completed
 - id: llm-core
 content: Create src/llm core client + strict schema module with JSON-only parsing and retry policy.
-status: pending
+status: completed
 - id: recipe-validation
 content: Implement LLM recipe draft generation and USDA-backed validation/materialization pipeline.
-status: pending
+status: completed
 - id: recipe-persistence
 content: Add deterministic recipe append repository with dedupe and ID generation.
-status: pending
+status: completed
 - id: ingredient-matcher
 content: Implement ingredient matching module and API endpoint for normalized USDA-ready output.
-status: pending
+status: completed
 - id: feedback-loop
 content: Implement planner orchestration wrapper for bounded failure-driven recipe generation retries.
-status: pending
+status: completed
 - id: nl-config
 content: Implement natural-language config parser and map validated output into existing profile conversion flow.
-status: pending
+status: completed
 - id: tagging-filter
 content: Implement recipe tagging metadata store and deterministic pre-planner filtering step.
-status: pending
+status: completed
 - id: tests
 content: Add unit, integration, determinism, and success-rate tests for all new LLM flows.
-status: pending
+status: completed
 - id: ops-config
 content: Add LLM key/settings loader and secure runtime configuration documentation.
-status: pending
+status: completed
 isProject: false
 
 ---
 
 # LLM Integration Plan (Deterministic-First)
+
+> **Implementation status (2025):** Core LLM modules under `src/llm/` are implemented — client, schemas, recipe generation/validation/persistence, ingredient matching, NL config parsing, tagging, and planner feedback (`src/planning/orchestrator.py`). See `tests/test_llm_*.py` and API routes in `src/api/server.py`. Remaining work is UX polish, expanded creativity, and operational hardening — not greenfield implementation.
 
 ## Architecture Overview
 
@@ -164,7 +166,7 @@ flowchart TD
 
 **NOTE FOR THIS PHASE (frontend alignment):**
 
-- A separate branch will be building a full frontend in parallel (see Step 1 of `docs/NEXT_STEPS.md`).
+- A separate branch will be building a full frontend in parallel (see Step 1 of `docs/roadmap/next-steps.md`).
 - The integration points defined above for features (1)–(5) are **service-level contracts**, not UI-coupled endpoints:
   - All LLM features should be exposed via stable Python APIs and/or FastAPI routes under `src/api/server.py`.
   - The CLI and any new frontend should both consume these contracts, so UI changes do not alter planner behavior.
@@ -373,7 +375,7 @@ Implement an outer retry coordinator that wraps existing planner calls.
 
 ## Phase 10 — Delivery Sequence and Guardrails
 
-- Implement in roadmap order already defined in `[docs/NEXT_STEPS.md](docs/NEXT_STEPS.md)`: recipe generation -> ingredient matching -> feedback loop -> NL config -> tagging.
+- Implement in roadmap order already defined in `[docs/roadmap/next-steps.md](../roadmap/next-steps.md)`: recipe generation -> ingredient matching -> feedback loop -> NL config -> tagging.
 - Non-negotiable safeguards from docs:
   - never trust LLM nutrition values
   - always validate via USDA

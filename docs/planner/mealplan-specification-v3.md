@@ -4,11 +4,11 @@
 
 **Specification Signature:** v3
 
-**Scope:** Steps 3 and 4 of NEXT_STEPS.md — micronutrient-aware scoring, daily tracking, validation, pinned meal slots, and multi-day backtracking (up to 7 days).
+**Scope:** Steps 3 and 4 of [next-steps.md](../roadmap/next-steps.md) — micronutrient-aware scoring, daily tracking, validation, pinned meal slots, and multi-day backtracking (up to 7 days).
 
   
 
-**Authoritative References:** SYSTEM_RULES.md, REASONING_LOGIC.md, KNOWLEDGE.md, NEXT_STEPS.md.
+**Authoritative References:** [planner-rules.md](planner-rules.md), [reasoning-logic.md](reasoning-logic.md), [nutrition-knowledge.md](../product/nutrition-knowledge.md), [next-steps.md](../roadmap/next-steps.md).
 
   
 
@@ -106,7 +106,7 @@ The algorithm is **deterministic**: identical inputs shall produce identical out
 
   
 
-**Design note — `micronutrient_weekly_min_fraction` (τ):** τ scales only the **RDI minimum** path (weekly validation, FC-4, carryover pressure, FM-4 / soft-deficit reporting). It shall **not** scale UL checks (HC-4, FC-3) or macro ±10% rules. Implementations should centralize formulas for `τ × daily_RDI × …` so feasibility and final acceptance cannot diverge (see `SYSTEM_RULES.md`).
+**Design note — `micronutrient_weekly_min_fraction` (τ):** τ scales only the **RDI minimum** path (weekly validation, FC-4, carryover pressure, FM-4 / soft-deficit reporting). It shall **not** scale UL checks (HC-4, FC-3) or macro ±10% rules. Implementations should centralize formulas for `τ × daily_RDI × …` so feasibility and final acceptance cannot diverge (see `planner-rules.md`).
 
   
 
@@ -134,7 +134,7 @@ The schedule defines, for each day in the planning horizon, an ordered sequence 
 
   
 
-Meal slots within a day are ordered chronologically by `time`. The ordering is strict and deterministic (Source: SYSTEM_RULES.md — "Meal slots are ordered and deterministic").
+Meal slots within a day are ordered chronologically by `time`. The ordering is strict and deterministic (Source: planner-rules.md — "Meal slots are ordered and deterministic").
 
   
 
@@ -160,7 +160,7 @@ For each meal slot, the following attributes are derived from the user profile a
 
 - `overnight_fast_ahead`: the time until the next meal slot (or end of day) exceeds 4 hours, OR the slot is the last slot of the day and the overnight fast is ≥ 12 hours
 
-- (Source: REASONING_LOGIC.md, Step 1)
+- (Source: reasoning-logic.md, Step 1)
 
 - **Note:** A slot may carry multiple context flags simultaneously (e.g., `post_workout` AND `overnight_fast_ahead`).
 
@@ -180,7 +180,7 @@ For each meal slot, the following attributes are derived from the user profile a
 
 - `moderate`: otherwise
 
-- (Source: REASONING_LOGIC.md, Rule 4)
+- (Source: reasoning-logic.md, Rule 4)
 
   
 
@@ -194,7 +194,7 @@ For each meal slot, the following attributes are derived from the user profile a
 
 - 4 → no upper bound
 
-- (Source: REASONING_LOGIC.md, Rule 3)
+- (Source: reasoning-logic.md, Rule 3)
 
   
 
@@ -262,7 +262,7 @@ Within a recipe, the **primary carb source** is defined as the single scalable c
 
   
 
-- **Micronutrient RDI Reference:** Daily RDI targets per micronutrient, as defined by `U.micronutrient_targets`. The **full** prorated weekly goal line is `daily_RDI × D` (prorated to the planning horizon `D`). The **hard weekly minimum** used for acceptance, feasibility (FC-4), carryover, and FM-4 diagnostics is **τ × daily_RDI × D** with τ = `U.micronutrient_weekly_min_fraction` (default 1.0). Daily RDIs are based on maintenance calories (not deficit calories). (Source: KNOWLEDGE.md)
+- **Micronutrient RDI Reference:** Daily RDI targets per micronutrient, as defined by `U.micronutrient_targets`. The **full** prorated weekly goal line is `daily_RDI × D` (prorated to the planning horizon `D`). The **hard weekly minimum** used for acceptance, feasibility (FC-4), carryover, and FM-4 diagnostics is **τ × daily_RDI × D** with τ = `U.micronutrient_weekly_min_fraction` (default 1.0). Daily RDIs are based on maintenance calories (not deficit calories). (Source: nutrition-knowledge.md)
 
   
 
@@ -376,7 +376,7 @@ Where `days_remaining` includes the current day. **`carryover_needs` is τ-aware
 
   
 
-(Source: REASONING_LOGIC.md, Initialization Phase)
+(Source: reasoning-logic.md, Initialization Phase)
 
   
 
@@ -444,7 +444,7 @@ Base per-meal target = remaining / slots_left, with the following adjustments fo
 
   
 
-(Source: REASONING_LOGIC.md, Rule 2 and Step 3)
+(Source: reasoning-logic.md, Rule 2 and Step 3)
 
   
 
@@ -484,7 +484,7 @@ For any single day d, no recipe ID shall appear more than once across all meal s
 
   
 
-(Source: SYSTEM_RULES.md — "A recipe may not appear more than once in a single day")
+(Source: planner-rules.md — "A recipe may not appear more than once in a single day")
 
   
 
@@ -500,7 +500,7 @@ Busyness level 4 has no upper bound; any cooking time is permitted.
 
   
 
-(Source: REASONING_LOGIC.md, Rule 3)
+(Source: reasoning-logic.md, Rule 3)
 
   
 
@@ -528,7 +528,7 @@ UL enforcement is independent of `U.micronutrient_targets`. A nutrient may have 
 
   
 
-(Source: SYSTEM_RULES.md, REASONING_LOGIC.md, NEXT_STEPS.md — "ULs are DAILY limits — enforced per-day, never averaged")
+(Source: planner-rules.md, reasoning-logic.md, next-steps.md — "ULs are DAILY limits — enforced per-day, never averaged")
 
   
 
@@ -548,7 +548,7 @@ Any day exceeding this ceiling is invalid.
 
   
 
-(Source: KNOWLEDGE.md, REASONING_LOGIC.md, DESIGN_UNDERSTANDING.md)
+(Source: nutrition-knowledge.md, reasoning-logic.md, DESIGN_UNDERSTANDING.md)
 
   
 
@@ -572,7 +572,7 @@ Pinned assignments are validated before the search begins (Section 3.5). A pinne
 
   
 
-(Source: NEXT_STEPS.md, Step 3d — "The algorithm cannot ignore this")
+(Source: next-steps.md, Step 3d — "The algorithm cannot ignore this")
 
 **Batch lock precedence:** Meal-prep batch locks are planner-facing pins addressed by canonical `SlotAddress = (day_index, slot_index)`. Batch locks shall be merged into the effective pinned assignment map before search and shall override explicit user pins for the same slot. A locked slot is assigned directly and is not subject to free candidate generation or scoring. If a locked recipe does not satisfy the slot's required tags, the lock still wins; the result may include a warning, but required tags do not override a batch lock.
 
@@ -590,7 +590,7 @@ This constraint is enforced structurally by the search strategy: hard constraint
 
   
 
-(Source: SYSTEM_RULES.md — "Preference scoring MUST NOT override nutrition feasibility")
+(Source: planner-rules.md — "Preference scoring MUST NOT override nutrition feasibility")
 
   
 
@@ -900,7 +900,7 @@ The **full** prorated user goal line remains `daily_RDI × D`; the **minimum** e
 
   
 
-(Source: SYSTEM_RULES.md — strict default τ = 1.0; relaxed τ < 1.0 is a documented product option with transparency requirements; UL rules are unchanged. KNOWLEDGE.md remains the rationale for maintenance-calorie-based RDIs.)
+(Source: planner-rules.md — strict default τ = 1.0; relaxed τ < 1.0 is a documented product option with transparency requirements; UL rules are unchanged. nutrition-knowledge.md remains the rationale for maintenance-calorie-based RDIs.)
 
   
 
@@ -908,7 +908,7 @@ The **full** prorated user goal line remains `daily_RDI × D`; the **minimum** e
 
   
 
-**Sodium advisory:** If the planned total for Sodium exceeds 200% of **`daily_RDI(Sodium) × D`** — i.e. 200% of the user’s **stated sodium RDI** summed over the horizon **without** applying τ — this should be flagged as a warning in the output. It is not a hard constraint and does not trigger backtracking. (Source: REASONING_LOGIC.md, SYSTEM_RULES.md)
+**Sodium advisory:** If the planned total for Sodium exceeds 200% of **`daily_RDI(Sodium) × D`** — i.e. 200% of the user’s **stated sodium RDI** summed over the horizon **without** applying τ — this should be flagged as a warning in the output. It is not a hard constraint and does not trigger backtracking. (Source: reasoning-logic.md, planner-rules.md)
 
   
 
@@ -1186,7 +1186,7 @@ Each weighted component is normalized to the range [0, 100]. `PreferredTagBonus`
 
   
 
-The weights are derived from REASONING_LOGIC.md (Step 4) with the following adjustments: Schedule Match is reduced from 20 to 10 points (since HC-3 already filters over-time recipes, reducing the discriminative value of this component), and the freed 10 points are redistributed equally to Satiety Match and Balance. The total remains 110:
+The weights are derived from reasoning-logic.md (Step 4) with the following adjustments: Schedule Match is reduced from 20 to 10 points (since HC-3 already filters over-time recipes, reducing the discriminative value of this component), and the freed 10 points are redistributed equally to Satiety Match and Balance. The total remains 110:
 
   
 
@@ -1240,7 +1240,7 @@ Evaluates how well r's macronutrient profile matches the per-meal targets for sl
 
 - `post_workout`: target increased (favor higher protein for synthesis)
 
-- (Source: REASONING_LOGIC.md, Rule 2)
+- (Source: reasoning-logic.md, Rule 2)
 
   
 
@@ -1258,7 +1258,7 @@ Evaluates how well r's macronutrient profile matches the per-meal targets for sl
 
 - `overnight_fast_ahead`: complex carbs preferred for satiety
 
-- (Source: REASONING_LOGIC.md, Rule 2)
+- (Source: reasoning-logic.md, Rule 2)
 
   
 
@@ -1296,7 +1296,7 @@ The component score is the weighted sum of per-nutrient contributions, normalize
 
   
 
-**Priority nutrients** (those with the greatest combined daily and weekly deficits) contribute disproportionately to the score. (Source: REASONING_LOGIC.md, Rule 1 — "PRIORITIZE nutrients that are most below daily target, needed for weekly carryover, not already covered")
+**Priority nutrients** (those with the greatest combined daily and weekly deficits) contribute disproportionately to the score. (Source: reasoning-logic.md, Rule 1 — "PRIORITIZE nutrients that are most below daily target, needed for weekly carryover, not already covered")
 
   
 
@@ -1318,7 +1318,7 @@ Evaluates how well r matches the satiety requirement for slot `(d, s)`.
 
 - Higher total calories → higher score (bigger meal for longer fasts)
 
-- (Source: REASONING_LOGIC.md, Rule 4 — "meal should be BIGGER with more calories")
+- (Source: reasoning-logic.md, Rule 4 — "meal should be BIGGER with more calories")
 
   
 
@@ -1342,7 +1342,7 @@ Evaluates how well r complements the meals already assigned to day d.
 
 - **Nutrient diversity:** Avoids excessive duplication of micronutrients already well-covered by prior meals today. Recipes providing novel micronutrient contributions score higher.
 
-- **Fat source diversity:** Penalizes over-reliance on the same fat sources (e.g., if prior meals are all beef/egg fat, prefer a recipe with different fat sources). (Source: KNOWLEDGE.md — "we really want to make sure we are getting a proper fat diversity")
+- **Fat source diversity:** Penalizes over-reliance on the same fat sources (e.g., if prior meals are all beef/egg fat, prefer a recipe with different fat sources). (Source: nutrition-knowledge.md — "we really want to make sure we are getting a proper fat diversity")
 
 - **Macro trajectory:** Evaluates whether the day's running macro totals are on track toward targets. Recipes that correct a macro imbalance score higher.
 

@@ -23,7 +23,7 @@ Problem P4: the current UI reads like a spreadsheet. This is the most visible Sp
   - `meal_prep_batch` — accent color, diamond glyph, `(n/N)` serving counter.
   - `user_override` — subtle highlight + "Edited" tag.
 - [ ] Tap a `MealCard` opens a bottom sheet (`MealDetailSheet`) with macros, ingredients, instructions, Swap CTA.
-- [ ] No fixed-width columns, no row numbers, no "edit cell" affordance. Matches `SPRINT_1.md` §5.2.1.
+- [ ] No fixed-width columns, no row numbers, no "edit cell" affordance. Matches `../../archive/sprint-notes/sprint-1.md` §5.2.1.
 - [ ] Widget tests:
   - `MealCard` renders correct variant per `source`.
   - Planner with a fixture 7-day plan renders without overflow errors at 1440×900 and at mobile-web 390×844.

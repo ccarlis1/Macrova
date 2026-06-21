@@ -6,7 +6,7 @@
 
 Define explicit semantic tag classes and filterability rules so planner, LLM, and UI all interpret tags the same way.
 
-Canonical contract document: `docs/tag_semantics_contract.md`.
+Canonical contract document: `docs/tagging/tag-semantics-contract.md`.
 
 ## Context
 
@@ -28,7 +28,7 @@ Unblocks: BE-3, BE-8, AI-3, FE-5, FE-10.
 
 - Keep this task documentation-first unless implementation is explicitly requested in a follow-up.
 - Prefer one canonical table that can be reused by BE/AI/FE task docs.
-- Canonical semantics, lifecycle, normalization, quarantine, and integration references are defined in `docs/tag_semantics_contract.md`.
+- Canonical semantics, lifecycle, normalization, quarantine, and integration references are defined in `docs/tagging/tag-semantics-contract.md`.
 
 ## Out of scope
 

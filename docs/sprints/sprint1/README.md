@@ -1,6 +1,6 @@
 # Sprint 1 — Task Index
 
-Per-task stubs for the Sprint 1 plan. See the parent spec at [`../SPRINT_1.md`](../SPRINT_1.md).
+Per-task stubs for the Sprint 1 plan. See the parent spec at [`../../archive/sprint-notes/sprint-1.md`](../../archive/sprint-notes/sprint-1.md).
 
 ## Stub format
 

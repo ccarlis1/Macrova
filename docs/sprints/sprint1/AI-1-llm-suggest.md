@@ -34,7 +34,7 @@ Unblocks: AI-2, FE-6.
 ## Implementation notes
 
 - Use the existing LLM client in `src/llm/client.py`; do not introduce a second SDK path.
-- Prompt template lives next to the module as `src/llm/prompts/suggest.md` (or a constant), referencing `SPRINT_1.md` §4.1 semantics. Constrain the model to NOT emit ingredients, nutrition, or instructions at this stage.
+- Prompt template lives next to the module as `src/llm/prompts/suggest.md` (or a constant), referencing `../../archive/sprint-notes/sprint-1.md` §4.1 semantics. Constrain the model to NOT emit ingredients, nutrition, or instructions at this stage.
 - `est_macros` are best-effort (for preview only); they are labeled as such in the UI and are NOT persisted with the recipe.
 - `temperature = 0.2`, `seed` passed through if the backend supports it; otherwise cache by `(query, model)`.
 

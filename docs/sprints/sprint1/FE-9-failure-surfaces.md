@@ -8,7 +8,7 @@ Render planner failures (`FM-*`) as actionable red banners on the affected slot 
 
 ## Context
 
-Dead-end errors are a big UX regression; turn them into recovery prompts per `SPRINT_1.md` §5.3.
+Dead-end errors are a big UX regression; turn them into recovery prompts per `../../archive/sprint-notes/sprint-1.md` §5.3.
 
 ## Acceptance criteria
 

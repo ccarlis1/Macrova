@@ -36,7 +36,7 @@ When information conflicts, prefer sources in this order:
 3. **`.cursor/architecture.json`** (machine-readable map of entities, features, APIs, UI, and known unknowns)
 4. **Current docs** (`docs/`, `README.md`, `USAGE.md`, `QUICK_START.md`)
 5. **Existing agent instructions** (this file)
-6. **Historical notes / sprint docs / code comments** (`docs/sprint1/`, older prose)
+6. **Historical notes / sprint docs / code comments** (`docs/sprints/`, `docs/archive/sprint-notes/`, older prose)
 
 If docs conflict with code/scripts, do not invent behavior. Preserve working behavior, follow the source/scripts, and report the conflict in your summary. Several older docs are known to be stale (see **Documentation Rules**).
 
@@ -139,7 +139,7 @@ Pytest suite, no network required (USDA-dependent tests use mocks). Includes per
 
 ### Documentation (`docs/`)
 
-`ARCHITECTURE.md`, `TECHNICAL_DESIGN.md`, `SYSTEM_RULES.md`, `REASONING_LOGIC.md`, `MEALPLAN_SPECIFICATION_v3.md`, `tag_semantics_contract.md`, `DEBUG_PLANNER_PARITY.md`, `LLM_ROADMAP.md`, `MEAL_PLANNER_TESTING_GUIDE.md`, and `docs/sprint1/` (historical per-ticket specs).
+See `docs/README.md` for the full index. Key areas: `docs/architecture/`, `docs/planner/`, `docs/tagging/`, `docs/llm/`, `docs/testing/`, `docs/product/`, `docs/roadmap/`, `docs/sprints/` (per-sprint task stubs), and `docs/archive/sprint-notes/` (historical sprint plans).
 
 ---
 
@@ -166,7 +166,7 @@ Before editing backend code:
 - Preserve structured failure reporting. Known failure codes include `FM-1`…`FM-5` and the user-actionable modes `FM-TAG-EMPTY`, `FM-BATCH-CONFLICT`, `FM-MACRO-INFEASIBLE`, each with a stable `fix_hint`. Codes are registered in `src/api/error_mapping.py` and surfaced in OpenAPI schemas. Do not hide planner failures behind generic UI errors.
 - Multi-day horizon is 1–7 days; weekly trackers and micronutrient deficit carryover apply when days > 1. Daily upper limits (ULs) are enforced per-day, never averaged.
 
-When touching planner code, read `docs/MEALPLAN_SPECIFICATION_v3.md`, `docs/DEBUG_PLANNER_PARITY.md`, and the relevant `phaseN_*.py` file(s).
+When touching planner code, read `docs/planner/mealplan-specification.md`, `docs/planner/parity-debugging.md`, and the relevant `phaseN_*.py` file(s).
 
 ---
 
@@ -197,7 +197,7 @@ There is one canonical tag source of truth. Do not create another.
 - `recipe_tags.json` (default path `data/recipes/recipe_tags.json`, referenced by `DEFAULT_TAG_PATH` in `server.py`) is the canonical seed/registry shape; `tags_by_id` is the canonical per-recipe planner/filtering tag source.
 - `Recipe.tags` in `recipes.json` is a **legacy compatibility projection only** — never use it for hard-filter/planner decisions, and do not turn it into a second write path.
 - Keep required tags (hard constraints) and preferred tags (scoring only) separate. Preserve slug normalization rules; do not duplicate slug-normalization logic.
-- All LLM-produced tags enter as `proposed`, pass strict schema validation first, then semantic eligibility gating; only `approved` (or non-LLM user/system) tags may act as hard constraints. See `docs/tag_semantics_contract.md` for the canonical semantic-class table and lifecycle.
+- All LLM-produced tags enter as `proposed`, pass strict schema validation first, then semantic eligibility gating; only `approved` (or non-LLM user/system) tags may act as hard constraints. See `docs/tagging/tag-semantics-contract.md` for the canonical semantic-class table and lifecycle.
 
 ---
 
@@ -254,19 +254,19 @@ When updating docs, keep terminology consistent across the repo:
 - Use `.venv/` instead of `venv/`.
 - `.venv/bin/python -m pytest` is a lower-level explanation only, not the primary command.
 
-Read surrounding context before replacing text. Some docs are known stale relative to source and should not be trusted over code:
+Read surrounding context before replacing text. Some archived docs may be stale relative to source:
 
-- `docs/DIRECTORY_STRUCTURE.md` lists files/dirs that no longer exist (e.g. `nutrition_fetcher.py`, `scoring/llm_reasoner.py`, `src/utils/`); the real planner module names are `phase0_models.py`…`phase10_reporting.py`.
-- `README.md` describes LLM integration as "coming soon" and links specs (`docs/planner_architecture.md`, `MEALPLAN_SPECIFICATION_v1.md`) that do not exist; the current spec is `docs/MEALPLAN_SPECIFICATION_v3.md` and LLM assistance is already implemented under `src/llm/`.
+- `docs/architecture/directory-structure.md` is refreshed against `src/` but may drift; trust source when in doubt.
+- Historical sprint stubs under `docs/sprints/` and plans under `docs/archive/sprint-notes/` may reference old paths or completed work.
 
-There is no `CLAUDE.md` in this repo at present; this `AGENTS.md` is the canonical agent instruction file.
+There is a thin root `CLAUDE.md` that points to this file; do not duplicate rules there.
 
 ---
 
 ## Cursor / Agent Rules
 
 - `.cursor/architecture.json` is the machine-readable architecture map (entities, features, APIs, UI components, and an `unknowns` list). Inspect it before broad backend/frontend/planner/API changes, but treat it as **below source code** in the hierarchy — parts of its `unknowns`/`missing` notes are now stale (see **Known Partial or Mock Areas**).
-- `.cursor/rules/` does not currently exist. If the project adopts Cursor rules, add a testing rule that enforces: never run bare `pytest`; always use `python3 scripts/run_pytest.py`; use `.venv/`, never `venv/`.
+- `.cursor/rules/` holds operational rules (`testing.mdc`, `backend.mdc`, `frontend.mdc`) derived from this file.
 
 ---
 
@@ -301,13 +301,13 @@ Verify current status against source before treating any of these as production-
 
 ## When to Read Deeper Docs
 
-- **Planner / search / failure modes:** `docs/MEALPLAN_SPECIFICATION_v3.md`, `docs/DEBUG_PLANNER_PARITY.md`, `src/planning/phaseN_*.py`, `src/planning/planner.py`.
-- **Overall architecture / data flow:** `docs/ARCHITECTURE.md`, `docs/TECHNICAL_DESIGN.md`, `docs/SYSTEM_RULES.md`, and `.cursor/architecture.json`.
-- **Tagging:** `docs/tag_semantics_contract.md`, `src/llm/tag_repository.py`, `src/llm/tag_filtering_service.py`.
-- **LLM features / roadmap:** `docs/LLM_ROADMAP.md`, `src/llm/pipeline.py`.
+- **Planner / search / failure modes:** `docs/planner/mealplan-specification.md`, `docs/planner/parity-debugging.md`, `docs/planner/planner-rules.md`, `src/planning/phaseN_*.py`, `src/planning/planner.py`.
+- **Overall architecture / data flow:** `docs/architecture/overview.md`, `docs/architecture/technical-design.md`, `docs/planner/planner-rules.md`, and `.cursor/architecture.json`.
+- **Tagging:** `docs/tagging/tag-semantics-contract.md`, `src/llm/tag_repository.py`, `src/llm/tag_filtering_service.py`.
+- **LLM features / roadmap:** `docs/llm/roadmap.md`, `src/llm/pipeline.py`.
 - **API contracts:** `src/api/server.py`, `openapi/openapi.json`, `tests/api/`.
-- **Frontend:** `frontend/lib/main.dart`, `frontend/lib/widgets/app_shell.dart`, `FLUTTER_SETUP_README.md`.
-- **Per-feature history (use cautiously, lowest priority):** `docs/sprint1/`.
+- **Frontend:** `frontend/lib/main.dart`, `frontend/lib/widgets/app_shell.dart`, `docs/usage/flutter-setup.md`.
+- **Per-feature history (use cautiously, lowest priority):** `docs/sprints/`, `docs/archive/sprint-notes/`.
 
 Always inspect the relevant `architecture.json` entries and the deeper doc before broad changes; reconcile any conflict in favor of current source and report it.
 

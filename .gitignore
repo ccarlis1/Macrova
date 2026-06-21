@@ -30,7 +30,10 @@ ENV/
 # IDE
 .vscode/
 .idea/
-.cursor/
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/**
+!.cursor/architecture.json
 *.swp
 *.swo
 *~
@@ -54,7 +57,6 @@ config/nutrition_goals.yaml
 config/model_config.yaml
 
 # Data files (keep examples, ignore actual data)
-docs/rules/*.md
 docs/wireframes/
 
 # Ingredients

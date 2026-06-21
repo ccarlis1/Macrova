@@ -12,7 +12,7 @@ LOAD user_profile:
     - Daily calorie target (e.g., 2400 kcal)
     - Daily macro targets (protein, fat range, carbs calculated)
     - Daily micronutrient RDIs (based on maintenance calories, not deficit)
-    - OPTIONAL: micronutrient_weekly_min_fraction τ in (0, 1], default 1.0 (weekly minimum vs prorated RDI; see MEALPLAN_SPECIFICATION_v1.md §6.6)
+    - OPTIONAL: micronutrient_weekly_min_fraction τ in (0, 1], default 1.0 (weekly minimum vs prorated RDI; see mealplan-specification.md §6.6)
     - Schedule constraints (time slots with busyness levels 1-4)
     - Satiety requirements (long overnight fast, frequent meals, etc.)
     - Taste preferences (liked foods, disliked foods, allergies)
@@ -407,7 +407,7 @@ WHEN tracking weekly nutrients:
     - Daily flexibility allowed
     - Let τ = micronutrient_weekly_min_fraction (default 1.0). Hard acceptance: weekly totals ≥ τ × daily_RDI × D per tracked nutrient; τ = 1.0 is strict (full prorated RDI). UL enforcement is separate — not relaxed by τ.
     - Prefer going over the applicable weekly minimum rather than under
-    - Carry forward deficits relative to the τ-aware cumulative floor (see MEALPLAN_SPECIFICATION_v1.md §3.3)
+    - Carry forward deficits relative to the τ-aware cumulative floor (see mealplan-specification.md §3.3)
     - Example (τ = 1.0): If Vitamin E is 96% today, need 104%+ tomorrow to meet the full weekly line on schedule
 ```
 

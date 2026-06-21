@@ -6,7 +6,7 @@
 
 **Version: v0.1.0**
 
-A meal planner that generates **single- or multi-day meal plans** (breakfast, lunch, dinner, plus additional slots) from your schedule and nutrition goals. The current implementation uses a **spec-aligned, phase-based planner** with deterministic backtracking search, **rule-based recipe scoring**, and **structured nutrition calculations** (macros + tracked micronutrients). LLM integration is coming soon.
+A meal planner that generates **single- or multi-day meal plans** (breakfast, lunch, dinner, plus additional slots) from your schedule and nutrition goals. The current implementation uses a **spec-aligned, phase-based planner** with deterministic backtracking search, **rule-based recipe scoring**, and **structured nutrition calculations** (macros + tracked micronutrients). Optional **LLM assistance** (recipe generation, ingredient matching, natural-language config, tagging) is implemented under `src/llm/` and validated before use.
 
 ---
 
@@ -72,7 +72,7 @@ The planner recommends meals over a **planning horizon of 1–7 days** from your
 - **Planner engine:** Phase 0–7 pipeline under `src/planning/`, with hard constraints, forward-check constraints, multi-day feasibility checks, and backtracking search (`plan_meals` / `run_meal_plan_search`).
 - **Output:** Structured daily and (when D > 1) weekly view with per-meal, per-day, and cross-day nutrition, adherence to goals, and warnings/failure modes.
 
-For a deeper architectural overview, see **`docs/planner_architecture.md`** and **`docs/MEALPLAN_SPECIFICATION_v1.md`**.
+For a deeper architectural overview, see **[docs/planner/mealplan-specification.md](docs/planner/mealplan-specification.md)** and **[docs/architecture/overview.md](docs/architecture/overview.md)**. Full doc index: [docs/README.md](docs/README.md).
 
 **Interfaces:** CLI (`plan_meals.py` / `python3 -m src.cli`) and an optional **REST API** (FastAPI server in `src/api/server.py`) for programmatic use.
 
@@ -190,11 +190,12 @@ tests/           # Pytest suite (no network required)
 - ✅ User profile, schedule, and preferences (likes, dislikes, allergies)
 - ✅ CLI and optional REST API
 
-### Phase 5+: LLM Integration & Creativity
-- **LLM-Enhanced Reasoning**: Replace rule-based scoring with intelligent AI reasoning
-- **Natural Language Queries**: Accept complex meal planning requests in natural language
-- **Recipe Creativity**: AI-generated recipe variations and cultural fusion
-- **Specialized Training**: Train agent on comprehensive recipe databases and nutrition science
+### Phase 5+: LLM Integration (implemented)
+- ✅ Recipe generation with USDA-backed validation (`src/llm/pipeline.py`)
+- ✅ Ingredient matching and NL config parsing (`/api/v1` endpoints)
+- ✅ Recipe tagging and deterministic pre-planner filtering
+- ✅ Optional planner feedback loop (`src/planning/orchestrator.py`)
+- **Ongoing:** Natural-language UX polish, expanded recipe creativity, specialized training
 
 ### Future Extensions
 - **Multi-User Support**: Expand beyond personal use

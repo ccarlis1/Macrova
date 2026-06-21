@@ -15,7 +15,7 @@ Parity (G7) requires both entry paths (CLI via `plan_meals.py`, Flutter via `POS
 - `POST /api/v1/plan` handler fetches `active_batches = repo.list_active()` before calling the orchestrator.
 - CLI `plan_meals.py` and `scripts/export_planner_debug_artifacts.py` do the same via a shared helper (e.g. `src/planning/orchestrator.py::build_plan_request_from_profile`).
 - `cli_plan_request.json` emitted by the export script includes `active_batches` explicitly (empty list is valid).
-- `DEBUG_PLANNER_PARITY.md` updated with one paragraph + a row in the artifacts table about `active_batches`.
+- `parity-debugging.md` updated with one paragraph + a row in the artifacts table about `active_batches`.
 - Parity test `tests/integration/test_cli_flutter_parity.py`:
   - Same profile, same `recipes.json`, same batch fixture, same `seed` → identical `recipe_ids_sha256` AND identical sequence of planned meals.
 
@@ -40,7 +40,7 @@ Parity (G7) requires both entry paths (CLI via `plan_meals.py`, Flutter via `POS
 - `src/planning/planner.py` — `plan_meals(...)` signature; confirm if `active_batches` flows here or stays at the orchestrator level
 - `src/data_layer/meal_prep.py` — `MealPrepBatchRepository.list_active()` (DM-3 / BE-5 output)
 - `scripts/export_planner_debug_artifacts.py` — must be updated to emit `active_batches` in `cli_plan_request.json`
-- `docs/DEBUG_PLANNER_PARITY.md` — append one paragraph + artifacts table row
+- `../../planner/parity-debugging.md` — append one paragraph + artifacts table row
 
 **Entities to reuse:**
 
@@ -61,7 +61,7 @@ Before writing any code, perform the following in order:
 2. **Read `src/planning/orchestrator.py`.** Confirm the `plan_with_llm_feedback` signature and where `active_batches` should be injected.
 3. **Check whether `scripts/export_planner_debug_artifacts.py` exists** and read it — this script must be updated to emit `active_batches`.
 4. **Check whether `src/planning/orchestrator.py::build_plan_request_from_profile` already exists** or must be created.
-5. **Read `docs/DEBUG_PLANNER_PARITY.md`.** Identify the artifacts table to append the `active_batches` row.
+5. **Read `../../planner/parity-debugging.md`.** Identify the artifacts table to append the `active_batches` row.
 6. State the shared helper signature and each call site before writing code.
 
 ---
@@ -74,6 +74,6 @@ After implementation, verify each of the following:
 - CLI and Flutter paths share the same `build_plan_request_from_profile` (or equivalent) helper — no duplicated orchestration logic
 - `cli_plan_request.json` emitted by the export script includes `active_batches` (can be `[]`)
 - If Flutter client sends `active_batches` in its payload, server logs a warning and ignores it
-- `docs/DEBUG_PLANNER_PARITY.md` has a new "active_batches" row in the artifacts table
+- `../../planner/parity-debugging.md` has a new "active_batches" row in the artifacts table
 - Parity test passes: same profile + same `recipes.json` + same batch fixture + same `seed` → identical `recipe_ids_sha256` and meal sequence
 

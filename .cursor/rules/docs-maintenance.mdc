@@ -1,0 +1,180 @@
+---
+
+description: Documentation maintenance rules for Macrova
+globs:
+
+* "**/*.py"
+* "**/*.dart"
+* "**/*.ts"
+* "**/*.json"
+* "**/*.yaml"
+* "**/*.yml"
+* "**/*.md"
+* "**/*.mdc"
+* "Makefile"
+* "justfile"
+* "requirements*.txt"
+* "pyproject.toml"
+* ".python-version"
+  alwaysApply: true
+
+---
+
+# Documentation Maintenance Rule
+
+When making relevant changes, check whether project documentation must be updated.
+
+Documentation updates are required when a change affects:
+
+* setup instructions
+* canonical commands
+* test commands
+* Python environment or dependency setup
+* Flutter setup or workflow
+* API routes, request/response DTOs, or OpenAPI output
+* planner behavior, planner contracts, failure modes, constraints, pins, tags, batches, or metadata
+* LLM behavior, validation rules, recipe generation, ingredient matching, planner feedback, or natural-language config parsing
+* tag registry behavior, tag semantics, canonical tag sources, or slug rules
+* data model shape, persistence format, repository behavior, migrations, or JSON storage
+* frontend screens, providers, navigation, backend wiring, UI states, or mock/real feature status
+* architecture boundaries or source-of-truth decisions
+* agent instructions, Cursor rules, Claude subagents, or AGENTS.md
+* roadmap status, completed features, deprecated plans, or known limitations
+
+Do not update documentation for purely internal refactors that do not change behavior, commands, architecture, public contracts, or developer workflows.
+
+## Documentation Source of Truth
+
+Use the current documentation structure.
+
+Read `docs/README.md` first if it exists.
+
+Then inspect the relevant section:
+
+* `AGENTS.md` for broad AI coding-agent instructions
+* `.cursor/rules/*.mdc` for Cursor-specific operational rules
+* `.claude/agents/*.md` for Claude Code subagent definitions
+* Root `QUICK_START.md` and `USAGE.md` for setup, CLI options, and REST API usage
+* `docs/agents/` for agent strategy and subagent explanations
+* `docs/usage/` for developer workflows (e.g. Flutter setup)
+* `docs/architecture/` for system architecture, directory structure, technical design, and backend/data flow
+* `docs/planner/` for meal planner rules, contracts, reasoning, and failure modes
+* `docs/llm/` for LLM-assisted flows
+* `docs/tagging/` for tag registry and tag semantics
+* `docs/testing/` for testing commands and test strategy
+* `docs/product/` for product vision, nutrition knowledge, and use cases
+* `docs/roadmap/` for implementation plans, next steps, backlog, and open questions
+* `docs/sprints/` for per-sprint task stubs and sprint-level specs (e.g. `sprints/sprint1/`)
+* `docs/archive/` for historical notes only (implementation plans, derived summaries, archived sprint plans)
+
+For API contracts and OpenAPI, prefer `src/api/server.py`, `openapi/openapi.json`, and `tests/api/` over prose docs.
+
+For frontend screens, providers, and wiring, prefer `frontend/lib/` and `docs/usage/flutter-setup.md`.
+
+If no canonical doc exists for a topic, search the existing `docs/` tree and source before creating a new doc.
+
+## Source of Truth Hierarchy
+
+When documentation conflicts with implementation, trust sources in this order:
+
+1. Current source code
+2. Current tests and scripts
+3. `architecture.json` files
+4. Current documentation
+5. Existing agent instructions
+6. Historical notes, sprint notes, or archived docs
+
+If there is a conflict, do not guess. Preserve current working behavior and report the conflict.
+
+## Required Documentation Check
+
+Before finishing a relevant code change, run a documentation impact check:
+
+```bash
+find docs -maxdepth 4 -type f | sort
+find . -maxdepth 3 \( -name "AGENTS.md" -o -name "CLAUDE.md" -o -name "*.mdc" \) | sort
+```
+
+Then search for terms related to the change.
+
+Examples:
+
+```bash
+grep -R "run_pytest\|pytest\|.venv\|venv/" -n AGENTS.md docs .cursor .claude 2>/dev/null || true
+grep -R "export_openapi\|OpenAPI\|uvicorn\|FastAPI" -n AGENTS.md docs .cursor .claude 2>/dev/null || true
+grep -R "planner\|failure mode\|required tags\|preferred tags\|pin\|batch" -n docs AGENTS.md 2>/dev/null || true
+grep -R "RecipeProvider\|MealPlanProvider\|IngredientProvider\|LlmConfigProvider" -n docs AGENTS.md 2>/dev/null || true
+```
+
+Tailor the grep terms to the files changed.
+
+## Required Behavior
+
+When relevant docs exist:
+
+1. Update the nearest canonical doc.
+2. Avoid duplicating the same explanation across many files.
+3. Prefer linking from overview docs to detailed docs.
+4. Keep archived docs historical unless the task explicitly asks to modernize them.
+5. If a moved or renamed doc is referenced elsewhere, update the reference.
+6. If the change completes or invalidates roadmap items, update roadmap status.
+7. If the change affects agent behavior, update `AGENTS.md` or the relevant `.cursor/rules/*.mdc` file.
+8. If the change affects Claude subagent responsibilities, update `.claude/agents/*.md`.
+
+## Documentation Style
+
+Documentation should be:
+
+* current
+* concise
+* operational
+* linked to the correct source of truth
+* honest about partial or mock-only areas
+* clear about canonical commands
+
+Do not preserve outdated instructions just because they already exist.
+
+Do not create a new doc if an appropriate canonical doc already exists.
+
+Do not make broad documentation rewrites unless the user requested a documentation overhaul.
+
+## Canonical Command Rules
+
+Always document backend tests as:
+
+```bash
+python3 scripts/run_pytest.py
+```
+
+Do not document bare `pytest` as the primary command.
+
+Use `.venv/` as the Python virtual environment directory.
+
+Do not document `venv/`.
+
+If `make test` exists, it must delegate to:
+
+```bash
+python3 scripts/run_pytest.py
+```
+
+OpenAPI export must run inside an environment with FastAPI dependencies installed.
+
+Use the project wrapper (canonical):
+
+```bash
+python3 scripts/run_export_openapi.py
+python3 scripts/run_export_openapi.py --check
+```
+
+Do not recommend bare `python3 scripts/export_openapi.py` on the system interpreter unless explicitly explaining why it fails without project dependencies. Lower-level fallback: `.venv/bin/python scripts/export_openapi.py`.
+
+## Final Response Requirement
+
+When completing a task, include a documentation note:
+
+* `Docs updated:` list changed documentation files
+* `Docs checked, no update needed:` explain why
+* `Docs not checked:` only if blocked, and explain why
+
+If documentation appears stale but fixing it is outside the current task, report it as a follow-up.

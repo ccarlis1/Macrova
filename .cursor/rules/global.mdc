@@ -1,0 +1,12 @@
+---
+description: Global non-negotiable rules for Macrova
+alwaysApply: true
+---
+
+# Global
+
+- Canonical virtualenv: **`.venv/`** only — never `venv/`.
+- Backend tests: **`python3 scripts/run_pytest.py`** from repo root — never bare `pytest`.
+- OpenAPI export: **`python3 scripts/run_export_openapi.py`** (or `--check`).
+- Read **[AGENTS.md](../../AGENTS.md)** before broad architecture or cross-domain changes.
+- When behavior, commands, contracts, or architecture change, check whether docs need updating (see `docs-maintenance.mdc`).

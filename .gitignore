@@ -30,7 +30,6 @@ ENV/
 # IDE
 .vscode/
 .idea/
-.cursor/
 *.swp
 *.swo
 *~
@@ -54,7 +53,6 @@ config/nutrition_goals.yaml
 config/model_config.yaml
 
 # Data files (keep examples, ignore actual data)
-docs/rules/*.md
 docs/wireframes/
 
 # Ingredients
@@ -87,5 +85,3 @@ Thumbs.db
 
 # Local planner debug exports (see scripts/export_planner_debug_artifacts.py)
 debug_artifacts/
-.claude/worktrees/intelligent-bardeen-ec9fc2/
-.claude/worktrees/nostalgic-pare/

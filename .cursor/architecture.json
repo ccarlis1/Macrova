@@ -1,0 +1,685 @@
+{
+  "domains": [
+    "Recipes",
+    "Tags",
+    "Planner",
+    "User Profile",
+    "Meal Prep",
+    "AI/LLM Integration"
+  ],
+  "entities": {
+    "Ingredient": {
+      "fields": [
+        "name",
+        "quantity",
+        "unit",
+        "is_to_taste",
+        "normalized_unit",
+        "normalized_quantity"
+      ],
+      "relationships": [],
+      "files": [
+        "src/data_layer/models.py"
+      ],
+      "status": "implemented"
+    },
+    "Recipe": {
+      "fields": [
+        "id",
+        "name",
+        "ingredients",
+        "cooking_time_minutes",
+        "instructions"
+      ],
+      "relationships": [
+        "ingredients -> List[Ingredient]"
+      ],
+      "files": [
+        "src/data_layer/models.py"
+      ],
+      "status": "implemented"
+    },
+    "Meal": {
+      "fields": [
+        "recipe",
+        "nutrition",
+        "meal_type",
+        "scheduled_time",
+        "busyness_level"
+      ],
+      "relationships": [
+        "recipe -> Recipe",
+        "nutrition -> NutritionProfile"
+      ],
+      "files": [
+        "src/data_layer/models.py"
+      ],
+      "status": "implemented"
+    },
+    "DailyMealPlan": {
+      "fields": [
+        "date",
+        "meals",
+        "total_nutrition",
+        "goals",
+        "meets_goals"
+      ],
+      "relationships": [
+        "meals -> List[Meal]",
+        "total_nutrition -> NutritionProfile",
+        "goals -> NutritionGoals"
+      ],
+      "files": [
+        "src/data_layer/models.py"
+      ],
+      "status": "implemented"
+    },
+    "UserProfile_backend": {
+      "fields": [
+        "daily_calories",
+        "daily_protein_g",
+        "daily_fat_g",
+        "daily_carbs_g",
+        "schedule",
+        "liked_foods",
+        "disliked_foods",
+        "allergies",
+        "max_daily_calories",
+        "daily_micronutrient_targets",
+        "micronutrient_weekly_min_fraction",
+        "schedule_days"
+      ],
+      "relationships": [
+        "schedule_days -> Optional[List[DaySchedule]]"
+      ],
+      "files": [
+        "src/data_layer/models.py"
+      ],
+      "status": "implemented"
+    },
+    "RecipeSyncItem": {
+      "fields": [
+        "id",
+        "name",
+        "ingredients",
+        "cooking_time_minutes",
+        "instructions"
+      ],
+      "relationships": [
+        "ingredients -> List[RecipeSyncIngredientLine]"
+      ],
+      "files": [
+        "src/api/recipe_sync.py"
+      ],
+      "status": "implemented"
+    },
+    "RecipeTagsJson": {
+      "fields": [
+        "cuisine",
+        "cost_level",
+        "prep_time_bucket",
+        "dietary_flags"
+      ],
+      "relationships": [],
+      "files": [
+        "src/llm/schemas.py"
+      ],
+      "status": "implemented"
+    },
+    "PlanRequest": {
+      "fields": [
+        "daily_calories",
+        "daily_protein_g",
+        "daily_fat_g_min",
+        "daily_fat_g_max",
+        "schedule_days",
+        "schedule",
+        "legacy_schedule",
+        "liked_foods",
+        "disliked_foods",
+        "allergies",
+        "days",
+        "ingredient_source",
+        "micronutrient_goals",
+        "micronutrient_weekly_min_fraction",
+        "cuisine",
+        "cost_level",
+        "prep_time_bucket",
+        "dietary_flags",
+        "recipe_tags_path",
+        "planning_mode",
+        "recipe_ids"
+      ],
+      "relationships": [
+        "schedule_days -> Optional[List[DaySchedule]]"
+      ],
+      "files": [
+        "src/api/server.py"
+      ],
+      "status": "implemented"
+    },
+    "PlanFromTextRequest": {
+      "fields": [
+        "prompt",
+        "ingredient_source",
+        "cuisine",
+        "cost_level",
+        "prep_time_bucket",
+        "dietary_flags",
+        "recipe_tags_path",
+        "planning_mode"
+      ],
+      "relationships": [],
+      "files": [
+        "src/api/server.py"
+      ],
+      "status": "implemented"
+    },
+    "PlanningUserProfile": {
+      "fields": [
+        "daily_calories",
+        "daily_protein_g",
+        "daily_fat_g",
+        "daily_carbs_g",
+        "max_daily_calories",
+        "schedule",
+        "excluded_ingredients",
+        "liked_foods",
+        "demographic",
+        "upper_limits_overrides",
+        "pinned_assignments",
+        "micronutrient_targets",
+        "micronutrient_weekly_min_fraction",
+        "activity_schedule",
+        "workout_after_meal_indices_by_day",
+        "enable_primary_carb_downscaling",
+        "max_scaling_steps",
+        "scaling_step_fraction"
+      ],
+      "relationships": [
+        "schedule -> List[List[MealSlot]]"
+      ],
+      "files": [
+        "src/planning/phase0_models.py"
+      ],
+      "status": "implemented"
+    },
+    "PlanningRecipe": {
+      "fields": [
+        "id",
+        "name",
+        "ingredients",
+        "cooking_time_minutes",
+        "nutrition",
+        "primary_carb_contribution",
+        "primary_carb_source"
+      ],
+      "relationships": [
+        "ingredients -> List[Ingredient]",
+        "nutrition -> NutritionProfile"
+      ],
+      "files": [
+        "src/planning/phase0_models.py"
+      ],
+      "status": "implemented"
+    },
+    "DaySchedule": {
+      "fields": [
+        "day_index",
+        "meals",
+        "workouts"
+      ],
+      "relationships": [
+        "meals -> List[MealSlot]",
+        "workouts -> List[WorkoutSlot]"
+      ],
+      "files": [
+        "src/models/schedule.py",
+        "frontend/lib/models/models.dart"
+      ],
+      "status": "implemented"
+    },
+    "Recipe_frontend": {
+      "fields": [
+        "id",
+        "name",
+        "ingredients",
+        "servings",
+        "cooking_time_minutes",
+        "instructions"
+      ],
+      "relationships": [
+        "ingredients -> List[RecipeIngredientEntry]"
+      ],
+      "files": [
+        "frontend/lib/models/recipe.dart"
+      ],
+      "status": "implemented"
+    },
+    "UserProfile_frontend": {
+      "fields": [
+        "calories",
+        "protein_g",
+        "carbs_g",
+        "fat_g_min",
+        "fat_g_max",
+        "protein_pct",
+        "carbs_pct",
+        "fat_pct",
+        "calorie_deficit_mode",
+        "demographic_group",
+        "allergies",
+        "micronutrient_goals",
+        "micronutrient_weekly_min_fraction",
+        "ingredient_api_key",
+        "llm_api_key",
+        "llm_provider"
+      ],
+      "relationships": [
+        "micronutrient_goals -> MicronutrientGoals"
+      ],
+      "files": [
+        "frontend/lib/models/user_profile.dart"
+      ],
+      "status": "implemented"
+    },
+    "MealPrepReference": {
+      "fields": [
+        "PrepTimeBucket.meal_prep"
+      ],
+      "relationships": [],
+      "files": [
+        "src/llm/schemas.py"
+      ],
+      "status": "partial"
+    }
+  },
+  "features": {
+    "recipe_sync_upsert": {
+      "description": "Upserts one or many recipes into the file-backed recipe store by id and returns synced ids.",
+      "files": [
+        "src/api/server.py",
+        "src/api/recipe_sync.py",
+        "frontend/lib/services/api_service.dart"
+      ],
+      "status": "implemented"
+    },
+    "recipe_listing_and_detail": {
+      "description": "Lists recipe summaries and fetches a single recipe with ingredient lines enriched for the Flutter client.",
+      "files": [
+        "src/api/server.py",
+        "frontend/lib/services/api_service.dart",
+        "frontend/lib/providers/recipe_provider.dart"
+      ],
+      "status": "implemented"
+    },
+    "recipe_builder_local_edit_save": {
+      "description": "Creates/edits recipes in UI, computes nutrition totals, and saves via provider with sync attempts.",
+      "files": [
+        "frontend/lib/screens/recipe_builder_screen.dart",
+        "frontend/lib/providers/recipe_provider.dart",
+        "frontend/lib/models/recipe.dart"
+      ],
+      "status": "implemented"
+    },
+    "nutrition_summary_for_draft_recipe": {
+      "description": "Computes macro/micro totals for draft ingredient lines and returns per-serving values.",
+      "files": [
+        "src/api/server.py",
+        "frontend/lib/services/api_service.dart",
+        "frontend/lib/screens/recipe_builder_screen.dart"
+      ],
+      "status": "implemented"
+    },
+    "deterministic_planning_from_structured_request": {
+      "description": "Generates a plan from structured request data via planner pipeline and returns formatted plan output.",
+      "files": [
+        "src/api/server.py",
+        "src/planning/planner.py",
+        "frontend/lib/screens/planner_config_screen.dart",
+        "frontend/lib/providers/meal_plan_provider.dart"
+      ],
+      "status": "implemented"
+    },
+    "planning_from_text_prompt": {
+      "description": "Accepts text prompt, uses deterministic JSON parse path or assisted LLM parse path, then plans meals.",
+      "files": [
+        "src/api/server.py",
+        "src/llm/constraint_parser.py",
+        "frontend/lib/features/agent/agent_api.dart",
+        "frontend/lib/features/agent/agent_pane_screen.dart"
+      ],
+      "status": "implemented"
+    },
+    "tag_generation_and_persistence": {
+      "description": "Generates strict recipe tags via LLM and stores them in a tags-by-id JSON file.",
+      "files": [
+        "src/api/server.py",
+        "src/llm/recipe_tagger.py",
+        "src/llm/tag_repository.py"
+      ],
+      "status": "implemented"
+    },
+    "tag_based_recipe_pool_filtering": {
+      "description": "Filters recipe pool by explicit tag preferences before recipe conversion; falls back to full pool if filter result is empty.",
+      "files": [
+        "src/api/server.py",
+        "src/llm/tag_filtering_service.py",
+        "src/llm/tag_filter.py"
+      ],
+      "status": "implemented"
+    },
+    "ingredient_search_resolve_and_save": {
+      "description": "Searches USDA ingredients, resolves selected item to nutrition payload, and saves ingredient locally in provider.",
+      "files": [
+        "src/api/server.py",
+        "frontend/lib/services/api_service.dart",
+        "frontend/lib/screens/ingredient_hub_screen.dart"
+      ],
+      "status": "implemented"
+    },
+    "ingredient_name_ai_match": {
+      "description": "Submits ingredient name queries to LLM match endpoint and displays accepted/rejected normalized results.",
+      "files": [
+        "src/api/server.py",
+        "src/llm/ingredient_matcher.py",
+        "frontend/lib/features/agent/agent_pane_screen.dart",
+        "frontend/lib/screens/ingredient_hub_screen.dart"
+      ],
+      "status": "implemented"
+    },
+    "validated_recipe_generation_via_llm": {
+      "description": "Generates recipe drafts, validates them against provider-backed checks, persists accepted recipes, and returns accepted/rejected summary.",
+      "files": [
+        "src/api/server.py",
+        "src/llm/pipeline.py",
+        "frontend/lib/features/agent/agent_api.dart",
+        "frontend/lib/features/agent/agent_pane_screen.dart"
+      ],
+      "status": "implemented"
+    },
+    "llm_feedback_assisted_planning_modes": {
+      "description": "For assisted planning modes, retries planning with LLM-generated validated recipes and cache-aware behavior.",
+      "files": [
+        "src/api/server.py",
+        "src/planning/orchestrator.py"
+      ],
+      "status": "implemented"
+    },
+    "meal_plan_calendar_view": {
+      "description": "UI has a calendar toggle but currently renders a placeholder text instead of calendar content.",
+      "files": [
+        "frontend/lib/screens/meal_plan_view_screen.dart"
+      ],
+      "status": "partial"
+    },
+    "ingredient_hub_add_to_recipe_action": {
+      "description": "Add-to-recipe button currently shows a snackbar message instructing user to navigate to recipe builder.",
+      "files": [
+        "frontend/lib/screens/ingredient_hub_screen.dart"
+      ],
+      "status": "partial"
+    },
+    "meal_prep_batch_endpoints": {
+      "description": "Meal prep batch endpoints are referenced in sprint docs but corresponding API route file/endpoints are not present in src/api.",
+      "files": [
+        "docs/sprints/sprint1/BE-5-meal-prep-endpoints.md",
+        "src/api/server.py"
+      ],
+      "status": "missing"
+    }
+  },
+  "apis": {
+    "GET_/api/v1/llm/status": {
+      "inputs": [],
+      "outputs": [
+        "enabled: bool"
+      ],
+      "files": [
+        "src/api/server.py"
+      ]
+    },
+    "POST_/api/v1/plan": {
+      "inputs": [
+        "PlanRequest"
+      ],
+      "outputs": [
+        "format_result_json(...) object or structured error JSON"
+      ],
+      "files": [
+        "src/api/server.py"
+      ]
+    },
+    "POST_/api/v1/plan-from-text": {
+      "inputs": [
+        "PlanFromTextRequest"
+      ],
+      "outputs": [
+        "format_result_json(...) object or structured error JSON"
+      ],
+      "files": [
+        "src/api/server.py"
+      ]
+    },
+    "POST_/api/v1/recipes/sync": {
+      "inputs": [
+        "RecipeSyncRequest"
+      ],
+      "outputs": [
+        "RecipeSyncResponse"
+      ],
+      "files": [
+        "src/api/server.py",
+        "src/api/recipe_sync.py"
+      ]
+    },
+    "POST_/api/v1/recipes": {
+      "inputs": [
+        "RecipeSyncItem"
+      ],
+      "outputs": [
+        "RecipeSyncResponse"
+      ],
+      "files": [
+        "src/api/server.py"
+      ]
+    },
+    "PUT_/api/v1/recipes/{recipe_id}": {
+      "inputs": [
+        "path recipe_id",
+        "RecipeSyncItem"
+      ],
+      "outputs": [
+        "RecipeSyncResponse",
+        "ID_MISMATCH error payload"
+      ],
+      "files": [
+        "src/api/server.py"
+      ]
+    },
+    "GET_/api/v1/recipes": {
+      "inputs": [],
+      "outputs": [
+        "List[{id,name}]"
+      ],
+      "files": [
+        "src/api/server.py"
+      ]
+    },
+    "GET_/api/v1/recipes/{recipe_id}": {
+      "inputs": [
+        "path recipe_id"
+      ],
+      "outputs": [
+        "{id,name,servings,cooking_time_minutes,instructions,ingredients[]}"
+      ],
+      "files": [
+        "src/api/server.py"
+      ]
+    },
+    "POST_/api/v1/recipes/generate-validated": {
+      "inputs": [
+        "RecipeGenerationRequest{context,count}"
+      ],
+      "outputs": [
+        "RecipeGenerationResponse{accepted_count,rejected_count,recipe_ids,failures}"
+      ],
+      "files": [
+        "src/api/server.py",
+        "src/llm/pipeline.py"
+      ]
+    },
+    "POST_/api/v1/recipes/tags/generate": {
+      "inputs": [
+        "RecipeTagGenerationRequest{recipes_path?,recipe_tags_path?,llm_enabled}"
+      ],
+      "outputs": [
+        "RecipeTagGenerationResponse{tagged_recipe_count}"
+      ],
+      "files": [
+        "src/api/server.py",
+        "src/llm/recipe_tagger.py",
+        "src/llm/tag_repository.py"
+      ]
+    },
+    "POST_/api/v1/ingredients/match": {
+      "inputs": [
+        "IngredientMatchRequest{queries[]}"
+      ],
+      "outputs": [
+        "IngredientMatchResponse{accepted[],rejected[]}"
+      ],
+      "files": [
+        "src/api/server.py",
+        "src/llm/ingredient_matcher.py"
+      ]
+    },
+    "GET_/api/v1/ingredients/search": {
+      "inputs": [
+        "q",
+        "page",
+        "page_size",
+        "data_types"
+      ],
+      "outputs": [
+        "IngredientSearchResponse{results[]}"
+      ],
+      "files": [
+        "src/api/server.py"
+      ]
+    },
+    "POST_/api/v1/ingredients/resolve": {
+      "inputs": [
+        "IngredientResolveRequest{fdc_id? , name? , ingredient_source?}"
+      ],
+      "outputs": [
+        "resolved ingredient payload or structured 404/other error"
+      ],
+      "files": [
+        "src/api/server.py"
+      ]
+    },
+    "POST_/api/v1/nutrition/summary": {
+      "inputs": [
+        "NutritionSummaryRequest{servings,ingredients[]}"
+      ],
+      "outputs": [
+        "{calories,protein_g,carbs_g,fat_g,per_serving_*,micronutrients,servings}"
+      ],
+      "files": [
+        "src/api/server.py"
+      ]
+    },
+    "plan_with_llm_feedback(profile,recipe_pool,days,...)": {
+      "inputs": [
+        "PlanningUserProfile",
+        "List[PlanningRecipe]",
+        "days",
+        "optional retry/cache/provider/client controls"
+      ],
+      "outputs": [
+        "MealPlanResult"
+      ],
+      "files": [
+        "src/planning/orchestrator.py"
+      ]
+    },
+    "plan_meals(profile,recipe_pool,days,...)": {
+      "inputs": [
+        "PlanningUserProfile",
+        "List[PlanningRecipe]",
+        "days",
+        "optional resolved_ul, attempt_limit, stats"
+      ],
+      "outputs": [
+        "MealPlanResult"
+      ],
+      "files": [
+        "src/planning/planner.py"
+      ]
+    }
+  },
+  "ui": {
+    "AppShell": {
+      "description": "Hosts sidebar navigation and an IndexedStack of profile, ingredient, recipe, planner, meal plan, and agent screens.",
+      "files": [
+        "frontend/lib/widgets/app_shell.dart"
+      ]
+    },
+    "ProfileScreen": {
+      "description": "Displays editable nutrition targets, demographics, allergies, micronutrient goals, and LLM validation controls.",
+      "files": [
+        "frontend/lib/screens/profile_screen.dart"
+      ]
+    },
+    "IngredientHubScreen": {
+      "description": "Displays saved/custom/API ingredients, remote USDA search+resolve flow, ingredient detail panel, and AI match dialog.",
+      "files": [
+        "frontend/lib/screens/ingredient_hub_screen.dart"
+      ]
+    },
+    "RecipeBuilderScreen": {
+      "description": "Allows creating/editing recipe lines, quantities, units, instructions, and shows nutrition totals with optional server summary.",
+      "files": [
+        "frontend/lib/screens/recipe_builder_screen.dart"
+      ]
+    },
+    "RecipeLibraryScreen": {
+      "description": "Displays recipe cards from provider, supports refresh from API summaries, and opens selected recipe in builder.",
+      "files": [
+        "frontend/lib/screens/recipe_library_screen.dart"
+      ]
+    },
+    "PlannerConfigScreen": {
+      "description": "Displays planning duration, planner mode, ingredient source, per-day schedule/workout setup, recipe pool selection, and plan generation action.",
+      "files": [
+        "frontend/lib/screens/planner_config_screen.dart"
+      ]
+    },
+    "MealPlanViewScreen": {
+      "description": "Displays generated plan totals, micronutrient bars, day-by-day meal cards, warnings, and a calendar toggle placeholder.",
+      "files": [
+        "frontend/lib/screens/meal_plan_view_screen.dart"
+      ]
+    },
+    "AgentPaneScreen": {
+      "description": "Displays text-to-plan, ingredient matching, and validated recipe generation controls with result panels.",
+      "files": [
+        "frontend/lib/features/agent/agent_pane_screen.dart"
+      ]
+    },
+    "AgentSetupScreen": {
+      "description": "Displayed when LLM gate is not ready; shown in app shell instead of agent pane.",
+      "files": [
+        "frontend/lib/features/agent/agent_setup_screen.dart",
+        "frontend/lib/widgets/app_shell.dart"
+      ]
+    }
+  },
+  "unknowns": [
+    "Meal prep batch APIs/routes are referenced in sprint docs (e.g., docs/sprints/sprint1/BE-5-meal-prep-endpoints.md) but no matching implementation file exists under src/api (no src/api/meal_prep_routes.py found).",
+    "Meal prep data-layer module is referenced in docs (docs/sprints/sprint1/DM-3-meal-prep-batch-entity.md references src/data_layer/meal_prep.py) but that file is not present in src/data_layer.",
+    "DEFAULT_TAG_PATH is set to data/recipes/recipe_tags.json in src/api/server.py, but no matching tag JSON file is present under data in this snapshot.",
+    "Frontend PlanRequest model (frontend/lib/models/models.dart) does not include backend tag-filter fields present in src/api/server.py PlanRequest; runtime behavior for passing those fields from frontend is unknown without additional integration code."
+  ]
+}

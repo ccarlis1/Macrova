@@ -1,0 +1,12 @@
+---
+description: Backend API and LLM rules for Macrova
+globs: src/**,openapi/**,scripts/**
+alwaysApply: false
+---
+
+# Backend
+
+- LLM outputs are optional assistants — **never** bypass validation or become planning authority.
+- Do not persist generated recipes unless nutrition validation and ingredient resolution pass.
+- One canonical tag source: `src/llm/tag_repository.py` / `recipe_tags.json`.
+- After API model changes: `python3 scripts/run_export_openapi.py` and keep contract tests passing.

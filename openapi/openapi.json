@@ -1424,6 +1424,13 @@
             "title": "Accepted Count",
             "type": "integer"
           },
+          "duplicate_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Duplicate Ids",
+            "type": "array"
+          },
           "failures": {
             "items": {
               "$ref": "#/components/schemas/RecipeGenerationFailure"
@@ -1441,6 +1448,13 @@
           "rejected_count": {
             "title": "Rejected Count",
             "type": "integer"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
           }
         },
         "required": [

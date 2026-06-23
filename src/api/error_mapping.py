@@ -109,6 +109,9 @@ def map_exception_to_api_error(exc: Exception) -> Tuple[int, Dict[str, Any]]:
     if isinstance(exc, LLMPlanningModeError):
         return 422, _payload(exc.error_code, str(exc))
 
+    if isinstance(exc, TagRepositoryError):
+        return exc.status_code, _payload(exc.error_code, str(exc))
+
     # Validation failures that are specifically about input/provider correctness.
     if isinstance(exc, USDAProviderRequiredError):
         return 422, _payload("INGREDIENT_VALIDATION_ERROR", str(exc))
@@ -153,4 +156,3 @@ def map_exception_to_api_error(exc: Exception) -> Tuple[int, Dict[str, Any]]:
 
     # Unknown/unexpected failures
     return 500, _payload("PIPELINE_EXECUTION_ERROR", str(exc))
-

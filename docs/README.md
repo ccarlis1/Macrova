@@ -42,6 +42,10 @@ Navigation hub for the Macrova (`nutrition-agent`) repository. For quick setup, 
 
 - [AGENTS.md](../AGENTS.md) — canonical agent instructions (repo root)
 - [Agent strategy](agents/README.md)
+- [Task router](agents/task-router.md) — classify tasks before implementation
+- [Subagent guide](agents/subagent-guide.md) — specialist roles and when to use them
+- [Evaluation log](agents/evaluation-log.md) — agent-rule change log
+- [Benchmarks](agents/benchmarks/) — repeatable agent behavior checks
 - [Cursor rules](../.cursor/rules/) — operational rules derived from AGENTS.md
 - Machine-readable map: [`.cursor/architecture.json`](../.cursor/architecture.json)
 

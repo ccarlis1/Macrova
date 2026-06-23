@@ -266,7 +266,8 @@ There is a thin root `CLAUDE.md` that points to this file; do not duplicate rule
 ## Cursor / Agent Rules
 
 - `.cursor/architecture.json` is the machine-readable architecture map (entities, features, APIs, UI components, and an `unknowns` list). Inspect it before broad backend/frontend/planner/API changes, but treat it as **below source code** in the hierarchy — parts of its `unknowns`/`missing` notes are now stale (see **Known Partial or Mock Areas**).
-- `.cursor/rules/` holds operational rules (`testing.mdc`, `backend.mdc`, `frontend.mdc`) derived from this file.
+- `.cursor/rules/` holds operational rules derived from this file: `global.mdc` (always-on), `testing.mdc`, `planner.mdc`, `backend.mdc`, `frontend.mdc`, `docs-maintenance.mdc`.
+- **Specialized agents:** [docs/agents/](docs/agents/) describes the subagent workflow (task router, specialists, benchmarks). Short definitions live in `.claude/agents/`. For multi-domain or unfamiliar tasks, classify with the **task-router** before implementing (see [docs/agents/task-router.md](docs/agents/task-router.md)).
 
 ---
 

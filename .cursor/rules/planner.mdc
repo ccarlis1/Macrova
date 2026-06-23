@@ -1,0 +1,14 @@
+---
+description: Planner invariants for Macrova deterministic meal planning
+globs: src/planning/**,tests/planning/**,docs/planner/**
+alwaysApply: false
+---
+
+# Planner
+
+- Planner is **deterministic by default** — no nondeterminism in the default search path.
+- No API/network calls during planning; ingredient resolution happens up front.
+- **Required tags** = hard constraints; **preferred tags** = scoring only.
+- Constraint precedence: **meal-prep batch lock → pin → required tags → preferred scoring**.
+- Preserve structured failure reporting (`FM-*` codes with `fix_hint` in `error_mapping.py`).
+- LLM outputs are optional assistants — **never** bypass validation or become planning authority.

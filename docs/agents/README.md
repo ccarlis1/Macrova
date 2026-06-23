@@ -12,9 +12,34 @@ Optional thin pointer: **[CLAUDE.md](../../CLAUDE.md)** → AGENTS.md (no duplic
 
 Operational rules live in [`.cursor/rules/`](../../.cursor/rules/):
 
+- `global.mdc` — always-on: `.venv/`, canonical test/OpenAPI commands, AGENTS.md pointer
 - `testing.mdc` — pytest runner, `.venv/` only
-- `backend.mdc` — deterministic planner, LLM validation, OpenAPI
+- `planner.mdc` — deterministic planner, tag/pin/batch invariants, failure modes
+- `backend.mdc` — LLM validation, tag source, OpenAPI
 - `frontend.mdc` — providers/DTOs, honest UI states
+- `docs-maintenance.mdc` — when to update docs, final Docs note
+
+## Specialized subagents
+
+Short definitions in [`.claude/agents/`](../../.claude/agents/):
+
+| Agent | Role |
+|-------|------|
+| `task-router` | Classify tasks before implementation |
+| `backend-contract-auditor` | Verify real API/DTO/OpenAPI contracts |
+| `planner-invariant-reviewer` | Guard planner determinism and failure reporting |
+| `flutter-wiring-agent` | Safe Flutter-to-backend wiring |
+| `docs-maintainer` | Nearest-canonical doc updates |
+| `test-coverage-agent` | Canonical tests, honest reporting |
+
+Detail: [subagent-guide.md](subagent-guide.md). Routing: [task-router.md](task-router.md).
+
+## Agent workflow docs
+
+- [Task router](task-router.md) — domain → specialists, docs, validation
+- [Subagent guide](subagent-guide.md) — when to call each specialist
+- [Evaluation log](evaluation-log.md) — log of agent-rule changes
+- [Benchmarks](benchmarks/) — repeatable behavior checks
 
 ## Machine-readable map
 
@@ -30,6 +55,4 @@ Operational rules live in [`.cursor/rules/`](../../.cursor/rules/):
 | Nutrition/product logic | [nutrition-knowledge.md](../product/nutrition-knowledge.md) |
 | LLM status | [roadmap.md](../llm/roadmap.md) + `src/llm/` |
 
-## Subagents (future)
-
-`.claude/agents/` subagent definitions (backend-contract-auditor, flutter-wiring-agent, planner-reviewer, docs-maintainer) are not yet in the repo. When added, they complement — not replace — AGENTS.md.
+Subagents complement — not replace — AGENTS.md.

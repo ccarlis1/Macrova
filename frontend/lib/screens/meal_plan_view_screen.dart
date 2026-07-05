@@ -6,10 +6,14 @@ import '../models/models.dart';
 import '../models/user_profile.dart';
 import '../providers/meal_plan_provider.dart';
 import '../providers/profile_provider.dart';
-import '../widgets/macro_display.dart';
+import '../theme/tokens.dart';
+import '../widgets/advisory_card.dart';
+import '../widgets/failure_panel.dart';
 import '../widgets/meal_card.dart';
 import '../widgets/micronutrient_bar.dart';
 import '../widgets/section_header.dart';
+import '../widgets/segmented_control.dart';
+import '../widgets/stat_card.dart';
 
 class MealPlanViewScreen extends StatefulWidget {
   const MealPlanViewScreen({super.key});
@@ -23,109 +27,80 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens =
+        Theme.of(context).extension<MacrovaTokens>() ?? MacrovaTokens.light;
     final planProvider = context.watch<MealPlanProvider>();
     final mealPlan = planProvider.mealPlan;
     final profile = context.watch<ProfileProvider>().profile;
 
     if (mealPlan == null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.view_list_outlined,
-              size: 64,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Generate a plan from the Planner tab',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            ),
-          ],
-        ),
-      );
+      return _EmptyPlanState(tokens: tokens);
     }
 
     final totalNutrition = mealPlan.totalNutrition;
+    // Deterministic planner reports feasibility via `success`. A false value is
+    // an actionable failure (FailurePanel); true-with-warnings is an advisory.
+    final isFailure = !mealPlan.success;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(MacrovaSpacing.xlAlt),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 800),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // View toggle
               Row(
                 children: [
-                  Text(
-                    'Meal Plan View',
-                    style: Theme.of(context).textTheme.headlineMedium,
+                  Expanded(
+                    child: Text(
+                      'Meal Plan View',
+                      style: MacrovaTypography.headline(tokens.inkPrimary),
+                    ),
                   ),
-                  const Spacer(),
-                  SegmentedButton<bool>(
-                    segments: const [
-                      ButtonSegment(
-                        value: false,
-                        label: Text('Daily List'),
-                      ),
-                      ButtonSegment(
-                        value: true,
-                        label: Text('Calendar'),
-                      ),
+                  const SizedBox(width: MacrovaSpacing.md),
+                  SegmentedControl<bool>(
+                    value: _showCalendar,
+                    onChanged: (v) => setState(() => _showCalendar = v),
+                    options: const [
+                      SegmentedOption(value: false, label: 'Daily List'),
+                      SegmentedOption(value: true, label: 'Calendar'),
                     ],
-                    selected: {_showCalendar},
-                    onSelectionChanged: (s) =>
-                        setState(() => _showCalendar = s.first),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: MacrovaSpacing.xlAlt),
 
               if (_showCalendar) ...[
-                Center(
-                  child: Text(
-                    'Calendar view coming soon',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurfaceVariant,
-                        ),
-                  ),
-                ),
+                _CalendarPlaceholder(tokens: tokens),
               ] else ...[
-                // Plan-wide macro totals (whole horizon; multi-day = sum or weekly_totals)
-                _buildWeeklyTotals(context, mealPlan.days, totalNutrition),
-                const SizedBox(height: 16),
+                // Plan-wide macro totals (whole horizon; multi-day = sum or
+                // weekly_totals).
+                _buildTotals(context, tokens, mealPlan.days, totalNutrition),
+                const SizedBox(height: MacrovaSpacing.xlAlt),
 
-                // Plan micronutrients vs profile targets (daily × plan length)
-                _buildWeeklyMicronutrients(context, profile, mealPlan),
-                const SizedBox(height: 24),
+                // Plan micronutrients vs profile targets (daily × plan length).
+                _buildMicronutrients(context, tokens, profile, mealPlan),
+                const SizedBox(height: MacrovaSpacing.sectionTop),
 
-                // Per-day breakdown from API daily_plans
-                _buildDailyBreakdown(context, mealPlan),
+                // Per-day breakdown from API daily_plans.
+                _buildDailyBreakdown(context, tokens, mealPlan),
               ],
 
-              if (mealPlan.warnings.isNotEmpty) ...[
-                const SizedBox(height: 24),
-                const SectionHeader(title: 'Warnings'),
-                ...mealPlan.warnings.map((w) => Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(Icons.warning_amber,
-                              size: 16,
-                              color: Theme.of(context).colorScheme.error),
-                          const SizedBox(width: 8),
-                          Expanded(child: Text(w)),
-                        ],
-                      ),
-                    )),
+              // Structured planner outcome: keep actionable failures distinct
+              // from success-with-warnings advisories. Rendered regardless of
+              // the view toggle so the outcome is never hidden.
+              if (isFailure) ...[
+                const SizedBox(height: MacrovaSpacing.sectionTop),
+                _buildFailurePanel(mealPlan),
+              ] else if (mealPlan.warnings.isNotEmpty) ...[
+                const SizedBox(height: MacrovaSpacing.sectionTop),
+                const SectionHeader(title: 'Advisories'),
+                AdvisoryCard(
+                  variant: AdvisoryVariant.warn,
+                  title: 'Plan generated with advisories',
+                  description: mealPlan.warnings.join('\n'),
+                ),
               ],
             ],
           ),
@@ -134,37 +109,51 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
     );
   }
 
-  Widget _buildWeeklyTotals(
-      BuildContext context, int planDays, dynamic totalNutrition) {
+  Widget _buildTotals(
+    BuildContext context,
+    MacrovaTokens tokens,
+    int planDays,
+    dynamic totalNutrition,
+  ) {
     final title = planDays > 1 ? 'Plan totals' : 'Daily totals';
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: Theme.of(context).colorScheme.outlineVariant,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 12),
-            MacroDisplay(
-              calories: totalNutrition.calories,
-              proteinG: totalNutrition.proteinG,
-              carbsG: totalNutrition.carbsG,
-              fatG: totalNutrition.fatG,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(title: title),
+        _StatCardGrid(
+          cards: [
+            StatCard(
+              label: 'Calories',
+              value: '${totalNutrition.calories.round()}',
+              unit: 'kcal',
+            ),
+            StatCard(
+              label: 'Protein',
+              value: '${totalNutrition.proteinG.round()}',
+              unit: 'g',
+              variant: StatCardVariant.protein,
+            ),
+            StatCard(
+              label: 'Carbs',
+              value: '${totalNutrition.carbsG.round()}',
+              unit: 'g',
+              variant: StatCardVariant.carb,
+            ),
+            StatCard(
+              label: 'Fat',
+              value: '${totalNutrition.fatG.round()}',
+              unit: 'g',
+              variant: StatCardVariant.fat,
             ),
           ],
         ),
-      ),
+      ],
     );
   }
 
-  Widget _buildWeeklyMicronutrients(
+  Widget _buildMicronutrients(
     BuildContext context,
+    MacrovaTokens tokens,
     UserProfile profile,
     MealPlan mealPlan,
   ) {
@@ -177,56 +166,57 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
     final actual = mealPlan.totalNutrition.micronutrients;
     final periodDays = mealPlan.days.clamp(1, 7);
 
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: Theme.of(context).colorScheme.outlineVariant,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Micronutrient Targets',
-                style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Text(
-              'Plan totals vs daily profile goals × $periodDays day(s)',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+    final rows = <Widget>[];
+    for (final meta in kMicronutrientsInDisplayOrder) {
+      if (((microJson[meta.key] as num?)?.toDouble() ?? 0) > 0) {
+        rows.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: MacrovaSpacing.sm),
+            child: MicronutrientBar(
+              label: meta.label,
+              value: actual[meta.key] ?? 0,
+              target: (microJson[meta.key] as num).toDouble() * periodDays,
+              unit: meta.unit,
+              isLimit: meta.isLimit,
             ),
-            const SizedBox(height: 12),
-            for (final meta in kMicronutrientsInDisplayOrder) ...[
-              if (((microJson[meta.key] as num?)?.toDouble() ?? 0) > 0)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: MicronutrientBar(
-                    label: meta.label,
-                    value: actual[meta.key] ?? 0,
-                    target:
-                        (microJson[meta.key] as num).toDouble() * periodDays,
-                    unit: meta.unit,
-                    isLimit: meta.isLimit,
-                  ),
-                ),
-            ],
-          ],
+          ),
+        );
+      }
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          title: 'Micronutrient Targets',
+          subtitle: 'Plan totals vs daily profile goals × $periodDays day(s)',
         ),
-      ),
+        Container(
+          padding: const EdgeInsets.all(MacrovaSpacing.lg),
+          decoration: BoxDecoration(
+            borderRadius: MacrovaRadius.borderMd,
+            border: Border.all(color: tokens.lineDefault),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: rows,
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildDailyBreakdown(BuildContext context, MealPlan mealPlan) {
+  Widget _buildDailyBreakdown(
+    BuildContext context,
+    MacrovaTokens tokens,
+    MealPlan mealPlan,
+  ) {
     final days = mealPlan.dailyPlans;
-    if (days.isEmpty ||
-        days.every((d) => d.meals.isEmpty)) {
+    if (days.isEmpty || days.every((d) => d.meals.isEmpty)) {
       return Center(
         child: Text(
           'No meals in this plan',
-          style: Theme.of(context).textTheme.bodyMedium,
+          style: MacrovaTypography.body(tokens.inkTertiary),
         ),
       );
     }
@@ -242,16 +232,22 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
             '${d.dayTotals.proteinG.round()}g P \u2022 '
             '${d.dayTotals.carbsG.round()}g C \u2022 '
             '${d.dayTotals.fatG.round()}g F',
-            style: Theme.of(context).textTheme.bodySmall,
+            style: MacrovaTypography.caption(tokens.inkTertiary).copyWith(
+              fontFeatures: MacrovaTypography.tabularFigures,
+            ),
           ),
         ),
       );
       for (final meal in d.meals) {
-        final recipeName =
-            meal.recipe['name'] as String? ?? 'Unknown Recipe';
+        final recipeName = meal.recipe['name'] as String? ?? 'Unknown Recipe';
+        // Missing/unresolved recipes are surfaced by the model as an error meal
+        // named "Missing recipe …" — the only per-slot warn signal the plan
+        // response carries. Everything else stays in the default ok state
+        // (pinned/empty/workout data is not present in the plan response).
+        final isMissing = recipeName.startsWith('Missing recipe');
         blocks.add(
           Padding(
-            padding: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.only(bottom: MacrovaSpacing.sm),
             child: MealCard(
               mealType: meal.mealType,
               recipeName: recipeName,
@@ -259,11 +255,13 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
               proteinG: meal.nutrition.proteinG,
               carbsG: meal.nutrition.carbsG,
               fatG: meal.nutrition.fatG,
+              slotState: isMissing ? MealSlotState.warn : MealSlotState.ok,
+              warningText: isMissing ? 'Recipe unavailable' : null,
             ),
           ),
         );
       }
-      blocks.add(const SizedBox(height: 16));
+      blocks.add(const SizedBox(height: MacrovaSpacing.lg));
     }
     if (blocks.isNotEmpty) {
       blocks.removeLast();
@@ -272,6 +270,112 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: blocks,
+    );
+  }
+
+  /// Re-structures the flattened failure warnings back into a [FailurePanel]
+  /// without inventing data: the termination code is recovered from the
+  /// "Planner ended with …" line the model appends; remaining lines are the
+  /// cause.
+  Widget _buildFailurePanel(MealPlan mealPlan) {
+    String? code;
+    final causeLines = <String>[];
+    for (final w in mealPlan.warnings) {
+      final match = RegExp(r'^Planner ended with (.+)$').firstMatch(w);
+      if (match != null) {
+        code = match.group(1)?.trim();
+      } else {
+        causeLines.add(w);
+      }
+    }
+    final cause = causeLines.isNotEmpty
+        ? causeLines.join('\n')
+        : 'The planner could not build a feasible plan for these constraints.';
+    return FailurePanel(
+      terminationCode: code ?? '\u2014',
+      cause: cause,
+    );
+  }
+}
+
+class _EmptyPlanState extends StatelessWidget {
+  final MacrovaTokens tokens;
+
+  const _EmptyPlanState({required this.tokens});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.view_list_outlined,
+            size: 64,
+            color: tokens.inkQuaternary,
+          ),
+          const SizedBox(height: MacrovaSpacing.lg),
+          Text(
+            'Generate a plan from the Planner tab',
+            style: MacrovaTypography.body(tokens.inkTertiary),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CalendarPlaceholder extends StatelessWidget {
+  final MacrovaTokens tokens;
+
+  const _CalendarPlaceholder({required this.tokens});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: MacrovaSpacing.xxl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.calendar_month_outlined,
+              size: 48,
+              color: tokens.inkQuaternary,
+            ),
+            const SizedBox(height: MacrovaSpacing.md),
+            Text(
+              'Calendar view coming soon',
+              style: MacrovaTypography.body(tokens.inkTertiary),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatCardGrid extends StatelessWidget {
+  final List<Widget> cards;
+
+  const _StatCardGrid({required this.cards});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const spacing = MacrovaSpacing.md;
+        final columns = constraints.maxWidth >= 480 ? 4 : 2;
+        final width =
+            (constraints.maxWidth - spacing * (columns - 1)) / columns;
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: [
+            for (final card in cards) SizedBox(width: width, child: card),
+          ],
+        );
+      },
     );
   }
 }

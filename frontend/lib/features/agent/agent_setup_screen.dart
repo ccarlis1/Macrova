@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../theme/tokens.dart';
 import 'llm_config_provider.dart';
 
 /// Shown on the Agent rail when the user has not validated LLM credentials.
@@ -12,53 +13,65 @@ class AgentSetupScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final gate = context.watch<LlmConfigProvider>();
+    final tokens =
+        Theme.of(context).extension<MacrovaTokens>() ?? MacrovaTokens.light;
+
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 480),
+        constraints: const BoxConstraints(maxWidth: MacrovaSpacing.mobileMaxWidth),
         child: Padding(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.all(MacrovaSpacing.xxl),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 Icons.smart_toy_outlined,
                 size: 56,
-                color: Theme.of(context).colorScheme.primary,
+                color: tokens.accent,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: MacrovaSpacing.xlAlt),
               Text(
                 'Agent features',
-                style: Theme.of(context).textTheme.headlineSmall,
+                style: Theme.of(context).textTheme.titleLarge,
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: MacrovaSpacing.md),
               Text(
                 'Add your LLM API key and provider on Profile, save, then tap '
                 'Validate. The server must have matching LLM_ENABLED / LLM_API_KEY.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                style: MacrovaTypography.bodyMedium(tokens.inkTertiary),
                 textAlign: TextAlign.center,
               ),
               if (gate.lastValidationError != null) ...[
-                const SizedBox(height: 20),
-                Material(
-                  color: Theme.of(context).colorScheme.errorContainer,
-                  borderRadius: BorderRadius.circular(8),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Text(
-                      gate.lastValidationError!,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onErrorContainer,
-                          ),
-                    ),
+                const SizedBox(height: MacrovaSpacing.xl),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(MacrovaSpacing.md),
+                  decoration: BoxDecoration(
+                    color: tokens.accentSoft,
+                    borderRadius: MacrovaRadius.borderMd,
+                    border: Border.all(color: tokens.accentTint),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 16,
+                        color: tokens.accentDeep,
+                      ),
+                      const SizedBox(width: MacrovaSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          gate.lastValidationError!,
+                          style: MacrovaTypography.bodyMedium(tokens.accentDeep),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
-              const SizedBox(height: 28),
+              const SizedBox(height: MacrovaSpacing.xxl),
               FilledButton.icon(
                 onPressed: onOpenProfile,
                 icon: const Icon(Icons.person_outline),

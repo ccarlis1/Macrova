@@ -6,11 +6,182 @@ import 'package:provider/provider.dart';
 import '../../providers/meal_plan_provider.dart';
 import '../../providers/recipe_provider.dart';
 import '../../services/api_service.dart';
+import '../../theme/tokens.dart';
+import '../../widgets/advisory_card.dart';
 import '../../widgets/app_shell.dart';
+import '../../widgets/confidence_chip.dart';
 import '../../widgets/section_header.dart';
 import 'agent_api.dart';
 import 'agent_models.dart';
 import 'llm_config_provider.dart';
+
+ConfidenceLevel confidenceFromScore(double confidence) {
+  if (confidence >= 0.8) return ConfidenceLevel.hi;
+  if (confidence >= 0.5) return ConfidenceLevel.mid;
+  return ConfidenceLevel.none;
+}
+
+/// API/section error surface for the agent pane (shared with widget tests).
+class AgentSectionErrorBanner extends StatelessWidget {
+  const AgentSectionErrorBanner({super.key, required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return AdvisoryCard(
+      variant: AdvisoryVariant.warn,
+      title: 'Request failed',
+      description: message,
+    );
+  }
+}
+
+/// Match result rows for the agent pane (shared with widget tests).
+class AgentMatchResultsSection extends StatelessWidget {
+  const AgentMatchResultsSection({super.key, required this.result});
+
+  final IngredientMatchResult result;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens =
+        Theme.of(context).extension<MacrovaTokens>() ?? MacrovaTokens.light;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ...result.accepted.map(
+          (a) => Padding(
+            padding: const EdgeInsets.only(bottom: MacrovaSpacing.sm),
+            child: Container(
+              padding: const EdgeInsets.all(MacrovaSpacing.md),
+              decoration: BoxDecoration(
+                color: tokens.surfaceTint,
+                borderRadius: MacrovaRadius.borderSm,
+                border: Border.all(color: tokens.lineDefault),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          a.normalizedName,
+                          style: MacrovaTypography.label(tokens.inkPrimary),
+                        ),
+                        const SizedBox(height: MacrovaSpacing.xs),
+                        Text(
+                          a.originalQuery,
+                          style: MacrovaTypography.caption(tokens.inkTertiary),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: MacrovaSpacing.sm),
+                  ConfidenceChip(
+                    level: confidenceFromScore(a.confidence),
+                    label:
+                        '${(a.confidence * 100).toStringAsFixed(0)}% match',
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        ...result.rejected.map(
+          (r) => Padding(
+            padding: const EdgeInsets.only(bottom: MacrovaSpacing.sm),
+            child: Container(
+              padding: const EdgeInsets.all(MacrovaSpacing.md),
+              decoration: BoxDecoration(
+                color: tokens.accentSoft,
+                borderRadius: MacrovaRadius.borderSm,
+                border: Border.all(color: tokens.accentTint),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 16,
+                    color: tokens.accentDeep,
+                  ),
+                  const SizedBox(width: MacrovaSpacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          r.originalQuery,
+                          style: MacrovaTypography.label(tokens.inkPrimary),
+                        ),
+                        const SizedBox(height: MacrovaSpacing.xs),
+                        Text(
+                          '${r.code}: ${r.message}',
+                          style: MacrovaTypography.caption(tokens.accentDeep),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Generation result summary for the agent pane (shared with widget tests).
+class AgentGenerationResultsSection extends StatelessWidget {
+  const AgentGenerationResultsSection({super.key, required this.result});
+
+  final RecipeGenerationResult result;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens =
+        Theme.of(context).extension<MacrovaTokens>() ?? MacrovaTokens.light;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AdvisoryCard(
+          variant: AdvisoryVariant.info,
+          title:
+              'Accepted ${result.acceptedCount}, rejected ${result.rejectedCount}',
+          description: result.recipeIds.isEmpty
+              ? 'No recipe IDs returned.'
+              : 'Recipe IDs (select to copy):',
+        ),
+        if (result.recipeIds.isNotEmpty) ...[
+          const SizedBox(height: MacrovaSpacing.sm),
+          SelectableText(
+            result.recipeIds.join(', '),
+            style: MacrovaTypography.caption(tokens.inkSecondary),
+          ),
+        ],
+        if (result.failures.isNotEmpty) ...[
+          const SizedBox(height: MacrovaSpacing.md),
+          ...result.failures.map(
+            (f) => Padding(
+              padding: const EdgeInsets.only(bottom: MacrovaSpacing.sm),
+              child: AdvisoryCard(
+                variant: AdvisoryVariant.warn,
+                title: f.code,
+                description: f.message,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
 
 /// Primary surface for NL plan, ingredient match, and validated recipe generation.
 class AgentPaneScreen extends StatefulWidget {
@@ -45,6 +216,20 @@ class _AgentPaneScreenState extends State<AgentPaneScreen> {
   void _toast(String msg) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  Widget _loadingIcon(BuildContext context) {
+    final tokens =
+        Theme.of(context).extension<MacrovaTokens>() ?? MacrovaTokens.light;
+    return SizedBox(
+      width: 18,
+      height: 18,
+      child: CircularProgressIndicator(
+        strokeWidth: 2,
+        color: tokens.accent,
+        backgroundColor: tokens.lineSoft,
+      ),
+    );
   }
 
   Future<void> _runNlPlan() async {
@@ -174,12 +359,20 @@ class _AgentPaneScreenState extends State<AgentPaneScreen> {
   @override
   Widget build(BuildContext context) {
     final gate = context.watch<LlmConfigProvider>();
+    final tokens =
+        Theme.of(context).extension<MacrovaTokens>() ?? MacrovaTokens.light;
+
     if (!gate.llmReady) {
-      return const Center(child: Text('LLM gate closed.'));
+      return Center(
+        child: Text(
+          'LLM gate closed.',
+          style: MacrovaTypography.bodyMedium(tokens.inkTertiary),
+        ),
+      );
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(MacrovaSpacing.xlAlt),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 640),
@@ -188,140 +381,91 @@ class _AgentPaneScreenState extends State<AgentPaneScreen> {
             children: [
               Text(
                 'Agent',
-                style: Theme.of(context).textTheme.headlineMedium,
+                style: Theme.of(context).textTheme.titleLarge,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: MacrovaSpacing.sm),
               Text(
                 'Requires LLM configured on the server. Client validation only '
                 'confirms you entered credentials here.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                style: MacrovaTypography.bodyMedium(tokens.inkTertiary),
               ),
               if (_sectionError != null) ...[
-                const SizedBox(height: 12),
-                Text(
-                  _sectionError!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
+                const SizedBox(height: MacrovaSpacing.md),
+                AgentSectionErrorBanner(message: _sectionError!),
               ],
-              const SizedBox(height: 24),
+              const SizedBox(height: MacrovaSpacing.xlAlt),
               const SectionHeader(title: 'Plan from text'),
               TextField(
                 controller: _nlCtrl,
                 decoration: const InputDecoration(
                   hintText: 'e.g. High protein vegetarian week, 3 meals…',
-                  border: OutlineInputBorder(),
                 ),
                 minLines: 2,
                 maxLines: 5,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: MacrovaSpacing.md),
               FilledButton.icon(
                 onPressed: _nlLoading ? null : _runNlPlan,
                 icon: _nlLoading
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
+                    ? _loadingIcon(context)
                     : const Icon(Icons.auto_awesome),
                 label: Text(_nlLoading ? 'Generating…' : 'Generate plan'),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: MacrovaSpacing.xxl),
               const SectionHeader(title: 'Match ingredient names'),
               TextField(
                 controller: _matchCtrl,
                 decoration: const InputDecoration(
                   hintText: 'One ingredient per line',
-                  border: OutlineInputBorder(),
                 ),
                 minLines: 4,
                 maxLines: 10,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: MacrovaSpacing.md),
               FilledButton.tonalIcon(
                 onPressed: _matchLoading ? null : _runMatch,
                 icon: _matchLoading
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
+                    ? _loadingIcon(context)
                     : const Icon(Icons.join_inner),
                 label: Text(_matchLoading ? 'Matching…' : 'AI match'),
               ),
               if (_matchResult != null) ...[
-                const SizedBox(height: 12),
-                ..._matchResult!.accepted.map(
-                  (a) => ListTile(
-                    dense: true,
-                    leading: const Icon(Icons.check_circle_outline),
-                    title: Text(a.normalizedName),
-                    subtitle: Text(
-                      '${a.originalQuery} · ${(a.confidence * 100).toStringAsFixed(0)}%',
-                    ),
-                  ),
-                ),
-                ..._matchResult!.rejected.map(
-                  (r) => ListTile(
-                    dense: true,
-                    leading: Icon(Icons.error_outline,
-                        color: Theme.of(context).colorScheme.error),
-                    title: Text(r.originalQuery),
-                    subtitle: Text('${r.code}: ${r.message}'),
-                  ),
-                ),
+                const SizedBox(height: MacrovaSpacing.md),
+                AgentMatchResultsSection(result: _matchResult!),
               ],
-              const SizedBox(height: 32),
+              const SizedBox(height: MacrovaSpacing.xxl),
               const SectionHeader(title: 'Generate validated recipes'),
               TextField(
                 controller: _genCountCtrl,
                 decoration: const InputDecoration(
                   labelText: 'Count (1–20)',
-                  border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.number,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: MacrovaSpacing.md),
               TextField(
                 controller: _genContextCtrl,
                 decoration: const InputDecoration(
                   labelText: 'Context JSON',
                   alignLabelWithHint: true,
-                  border: OutlineInputBorder(),
                   hintText: '{"theme":"Mediterranean"}',
                 ),
                 minLines: 2,
                 maxLines: 6,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: MacrovaSpacing.md),
               FilledButton.tonalIcon(
                 onPressed: _genLoading ? null : _runGenerate,
                 icon: _genLoading
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
+                    ? _loadingIcon(context)
                     : const Icon(Icons.restaurant_menu),
                 label: Text(_genLoading ? 'Generating…' : 'Generate & persist'),
               ),
               if (_genResult != null) ...[
-                const SizedBox(height: 12),
-                Text(
-                  'Accepted: ${_genResult!.acceptedCount}, rejected: '
-                  '${_genResult!.rejectedCount}',
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-                SelectableText(_genResult!.recipeIds.join(', ')),
-                ..._genResult!.failures.map(
-                  (f) => Text('${f.code}: ${f.message}',
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.error)),
-                ),
+                const SizedBox(height: MacrovaSpacing.md),
+                AgentGenerationResultsSection(result: _genResult!),
               ],
-              const SizedBox(height: 48),
+              const SizedBox(height: MacrovaSpacing.xxl),
             ],
           ),
         ),

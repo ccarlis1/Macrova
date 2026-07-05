@@ -12,12 +12,24 @@ import '../models/micronutrient_metadata.dart';
 import '../providers/ingredient_provider.dart';
 import '../providers/profile_provider.dart';
 import '../services/api_service.dart';
+import '../theme/tokens.dart';
+import '../widgets/advisory_card.dart';
+import '../widgets/confidence_chip.dart';
+import '../widgets/empty_state.dart';
 import '../widgets/ingredient_card.dart';
 import '../widgets/macro_display.dart';
+import '../widgets/macrova_chip.dart';
 import '../widgets/micronutrient_bar.dart';
 import '../widgets/section_header.dart';
 
 const _uuid = Uuid();
+
+/// Maps a 0..1 match confidence into a [ConfidenceLevel] band.
+ConfidenceLevel _confidenceLevel(double confidence) {
+  if (confidence >= 0.75) return ConfidenceLevel.hi;
+  if (confidence >= 0.5) return ConfidenceLevel.mid;
+  return ConfidenceLevel.none;
+}
 
 /// Keys present on [Ingredient.micronutrientsPer100g], ordered like profile / plan UI.
 List<MapEntry<String, double>> _micronutrientEntriesInDisplayOrder(
@@ -257,8 +269,13 @@ class _IngredientHubScreenState extends State<IngredientHubScreen> {
                                           (a) => ListTile(
                                             dense: true,
                                             title: Text(a.normalizedName),
-                                            subtitle: Text(
-                                              '${a.originalQuery} · ${(a.confidence * 100).toStringAsFixed(0)}%',
+                                            subtitle: Text(a.originalQuery),
+                                            trailing: ConfidenceChip(
+                                              level: _confidenceLevel(
+                                                a.confidence,
+                                              ),
+                                              label:
+                                                  '${(a.confidence * 100).toStringAsFixed(0)}%',
                                             ),
                                           ),
                                         ),
@@ -270,6 +287,9 @@ class _IngredientHubScreenState extends State<IngredientHubScreen> {
                                             title: Text(r.originalQuery),
                                             subtitle: Text(
                                               '${r.code}: ${r.message}',
+                                            ),
+                                            trailing: const ConfidenceChip(
+                                              level: ConfidenceLevel.none,
                                             ),
                                           ),
                                         ),
@@ -338,6 +358,9 @@ class _IngredientHubScreenState extends State<IngredientHubScreen> {
     final selected =
         _selectedId != null ? provider.getById(_selectedId!) : null;
 
+    final tokens = Theme.of(context).extension<MacrovaTokens>() ??
+        MacrovaTokens.light;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth > 800;
@@ -346,119 +369,82 @@ class _IngredientHubScreenState extends State<IngredientHubScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(MacrovaSpacing.lg),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  TextField(
-                    controller: _searchCtrl,
-                    decoration: InputDecoration(
-                      hintText: _remoteUsdaMode
-                          ? 'Search USDA FoodData Central…'
-                          : 'Search for ingredients...',
-                      prefixIcon: const Icon(Icons.search),
-                    ),
-                    onChanged: _onSearchTextChanged,
-                  ),
-                  const SizedBox(height: 12),
+                  _buildSearchField(tokens),
+                  const SizedBox(height: MacrovaSpacing.md),
                   _buildFilterTabs(),
                   if (_remoteUsdaMode) ...[
-                    const SizedBox(height: 8),
-                    FilterChip(
-                      label: const Text('SR Legacy only'),
+                    const SizedBox(height: MacrovaSpacing.sm),
+                    MacrovaChip(
+                      label: 'SR Legacy only',
                       selected: _remoteSrLegacyOnly,
-                      avatar: Icon(
-                        _remoteSrLegacyOnly
-                            ? Icons.check_circle
-                            : Icons.filter_list_outlined,
-                        size: 18,
-                      ),
-                      onSelected: (selected) =>
-                          _setRemoteSrLegacyOnly(selected),
+                      leadingIcon: _remoteSrLegacyOnly
+                          ? Icons.check_circle
+                          : Icons.filter_list_outlined,
+                      onTap: () =>
+                          _setRemoteSrLegacyOnly(!_remoteSrLegacyOnly),
                     ),
                     Padding(
-                      padding: const EdgeInsets.only(top: 4),
+                      padding: const EdgeInsets.only(top: MacrovaSpacing.xs),
                       child: Text(
                         _remoteSrLegacyOnly
                             ? 'USDA search is limited to SR Legacy (typical whole foods).'
                             : 'All FDC types: SR Legacy, Foundation, Survey, Branded.',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
+                        style: MacrovaTypography.caption(tokens.inkTertiary),
                       ),
                     ),
                   ],
                   if (_remoteUsdaMode && _remoteLoading)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 12),
-                      child: LinearProgressIndicator(minHeight: 2),
+                    Padding(
+                      padding: const EdgeInsets.only(top: MacrovaSpacing.md),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(MacrovaRadius.sm),
+                        child: LinearProgressIndicator(
+                          minHeight: 2,
+                          color: tokens.accent,
+                          backgroundColor: tokens.lineSoft,
+                        ),
+                      ),
                     ),
                   if (_remoteUsdaMode &&
                       _remoteError != null &&
                       !_remoteLoading)
                     Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: Material(
-                        color:
-                            Theme.of(context).colorScheme.errorContainer,
-                        borderRadius: BorderRadius.circular(8),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.warning_amber_rounded,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onErrorContainer,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  _remoteError!,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onErrorContainer,
-                                      ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                      padding: const EdgeInsets.only(top: MacrovaSpacing.md),
+                      child: AdvisoryCard(
+                        variant: AdvisoryVariant.warn,
+                        title: 'USDA search failed',
+                        description: _remoteError!,
                       ),
                     ),
                 ],
               ),
             ),
-            const Divider(height: 1),
+            Divider(height: 1, color: tokens.lineDefault),
             Expanded(
               child: _remoteUsdaMode
                   ? _buildRemoteResultsList(context)
                   : results.isEmpty
                       ? Center(
-                          child: Text(
-                            'No ingredients found',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
-                                ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(MacrovaSpacing.xxl),
+                            child: Text(
+                              'No ingredients found',
+                              textAlign: TextAlign.center,
+                              style: MacrovaTypography.bodyMedium(
+                                tokens.inkTertiary,
+                              ),
+                            ),
                           ),
                         )
                       : ListView.separated(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(MacrovaSpacing.lg),
                           itemCount: results.length,
                           separatorBuilder: (_, __) =>
-                              const SizedBox(height: 8),
+                              const SizedBox(height: MacrovaSpacing.sm),
                           itemBuilder: (_, i) {
                             final ing = results[i];
                             return IngredientCard(
@@ -471,7 +457,7 @@ class _IngredientHubScreenState extends State<IngredientHubScreen> {
                         ),
             ),
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(MacrovaSpacing.lg),
               child: SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
@@ -483,7 +469,12 @@ class _IngredientHubScreenState extends State<IngredientHubScreen> {
             ),
             if (context.watch<LlmConfigProvider>().llmReady)
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                padding: const EdgeInsets.fromLTRB(
+                  MacrovaSpacing.lg,
+                  0,
+                  MacrovaSpacing.lg,
+                  MacrovaSpacing.lg,
+                ),
                 child: SizedBox(
                   width: double.infinity,
                   child: FilledButton.tonalIcon(
@@ -499,12 +490,13 @@ class _IngredientHubScreenState extends State<IngredientHubScreen> {
         final detailPanel = selected != null
             ? _buildDetailPanel(context, selected)
             : Center(
-                child: Text(
-                  'Select an ingredient to view details',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color:
-                            Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                child: Padding(
+                  padding: const EdgeInsets.all(MacrovaSpacing.xxl),
+                  child: Text(
+                    'Select an ingredient to view details',
+                    textAlign: TextAlign.center,
+                    style: MacrovaTypography.bodyMedium(tokens.inkTertiary),
+                  ),
                 ),
               );
 
@@ -512,7 +504,7 @@ class _IngredientHubScreenState extends State<IngredientHubScreen> {
           return Row(
             children: [
               Expanded(flex: 2, child: listPanel),
-              const VerticalDivider(width: 1),
+              VerticalDivider(width: 1, color: tokens.lineDefault),
               Expanded(flex: 3, child: detailPanel),
             ],
           );
@@ -537,42 +529,71 @@ class _IngredientHubScreenState extends State<IngredientHubScreen> {
     );
   }
 
+  Widget _buildSearchField(MacrovaTokens tokens) {
+    return Container(
+      decoration: BoxDecoration(
+        color: tokens.surfaceSoft,
+        borderRadius: MacrovaRadius.borderPill,
+        border: Border.all(color: tokens.lineDefault),
+      ),
+      child: TextField(
+        controller: _searchCtrl,
+        style: MacrovaTypography.body(tokens.inkPrimary),
+        decoration: InputDecoration(
+          isDense: true,
+          filled: false,
+          hintText: _remoteUsdaMode
+              ? 'Search USDA FoodData Central…'
+              : 'Search for ingredients...',
+          hintStyle: MacrovaTypography.body(tokens.inkTertiary),
+          prefixIcon: Icon(Icons.search, color: tokens.inkTertiary, size: 20),
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: MacrovaSpacing.md,
+            vertical: MacrovaSpacing.md,
+          ),
+        ),
+        onChanged: _onSearchTextChanged,
+      ),
+    );
+  }
+
   Widget _buildRemoteResultsList(BuildContext context) {
+    final tokens = Theme.of(context).extension<MacrovaTokens>() ??
+        MacrovaTokens.light;
+    if (_remoteResults.isEmpty && _remoteLoading) {
+      return const Center(
+        child: EmptyState.loading(label: 'Searching USDA…'),
+      );
+    }
     if (_remoteResults.isEmpty && !_remoteLoading) {
       return Center(
-        child: Text(
-          _searchCtrl.text.trim().isEmpty
-              ? 'Type a food name to search USDA'
-              : 'No matches — try different keywords',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-          textAlign: TextAlign.center,
+        child: Padding(
+          padding: const EdgeInsets.all(MacrovaSpacing.xxl),
+          child: Text(
+            _searchCtrl.text.trim().isEmpty
+                ? 'Type a food name to search USDA'
+                : 'No matches — try different keywords',
+            style: MacrovaTypography.bodyMedium(tokens.inkTertiary),
+            textAlign: TextAlign.center,
+          ),
         ),
       );
     }
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(MacrovaSpacing.lg),
       itemCount: _remoteResults.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 4),
+      separatorBuilder: (_, __) => const SizedBox(height: MacrovaSpacing.sm),
       itemBuilder: (_, i) {
         final item = _remoteResults[i];
         final busy = _resolvingFdcId == item.fdcId;
-        return Card(
-          margin: EdgeInsets.zero,
-          child: ListTile(
-            leading: const Icon(Icons.cloud_download_outlined),
-            title: Text(item.description),
-            subtitle: Text('FDC ${item.fdcId} · tap to resolve & save'),
-            trailing: busy
-                ? const SizedBox(
-                    width: 28,
-                    height: 28,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.add_circle_outline),
-            onTap: busy ? null : () => _resolveAndAdd(item),
-          ),
+        return _RemoteResultCard(
+          item: item,
+          busy: busy,
+          tokens: tokens,
+          onTap: busy ? null : () => _resolveAndAdd(item),
         );
       },
     );
@@ -580,13 +601,13 @@ class _IngredientHubScreenState extends State<IngredientHubScreen> {
 
   Widget _buildFilterTabs() {
     return Wrap(
-      spacing: 8,
-      runSpacing: 8,
+      spacing: MacrovaSpacing.sm,
+      runSpacing: MacrovaSpacing.sm,
       children: [
-        FilterChip(
-          label: const Text('Remote (USDA)'),
+        MacrovaChip(
+          label: 'Remote (USDA)',
           selected: _remoteUsdaMode,
-          onSelected: (_) {
+          onTap: () {
             if (_remoteUsdaMode) {
               _leaveRemoteMode();
               setState(() {});
@@ -595,34 +616,35 @@ class _IngredientHubScreenState extends State<IngredientHubScreen> {
             }
           },
         ),
-        FilterChip(
-          label: const Text('All'),
+        MacrovaChip(
+          label: 'All',
           selected: !_remoteUsdaMode && _sourceFilter == null,
-          onSelected: (_) {
+          onTap: () {
             _leaveRemoteMode();
             setState(() => _sourceFilter = null);
           },
         ),
-        FilterChip(
-          label: const Text('Saved'),
+        MacrovaChip(
+          label: 'Saved',
           selected: !_remoteUsdaMode && _sourceFilter == IngredientSource.saved,
-          onSelected: (_) {
+          onTap: () {
             _leaveRemoteMode();
             setState(() => _sourceFilter = IngredientSource.saved);
           },
         ),
-        FilterChip(
-          label: const Text('API'),
+        MacrovaChip(
+          label: 'API',
           selected: !_remoteUsdaMode && _sourceFilter == IngredientSource.api,
-          onSelected: (_) {
+          onTap: () {
             _leaveRemoteMode();
             setState(() => _sourceFilter = IngredientSource.api);
           },
         ),
-        FilterChip(
-          label: const Text('Custom'),
-          selected: !_remoteUsdaMode && _sourceFilter == IngredientSource.custom,
-          onSelected: (_) {
+        MacrovaChip(
+          label: 'Custom',
+          selected:
+              !_remoteUsdaMode && _sourceFilter == IngredientSource.custom,
+          onTap: () {
             _leaveRemoteMode();
             setState(() => _sourceFilter = IngredientSource.custom);
           },
@@ -632,11 +654,13 @@ class _IngredientHubScreenState extends State<IngredientHubScreen> {
   }
 
   Widget _buildDetailPanel(BuildContext context, Ingredient ing) {
+    final tokens = Theme.of(context).extension<MacrovaTokens>() ??
+        MacrovaTokens.light;
     final goalsJson =
         context.watch<ProfileProvider>().profile.micronutrientGoals.toJson();
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(MacrovaSpacing.xlAlt),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -647,20 +671,18 @@ class _IngredientHubScreenState extends State<IngredientHubScreen> {
             carbsG: ing.carbsPer100g,
             fatG: ing.fatPer100g,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: MacrovaSpacing.sm),
           Text(
             'per 100g',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+            style: MacrovaTypography.caption(tokens.inkTertiary),
           ),
           if (ing.micronutrientsPer100g.isNotEmpty) ...[
-            const SizedBox(height: 24),
+            const SizedBox(height: MacrovaSpacing.xlAlt),
             Text(
               'Micronutrients (per 100g)',
-              style: Theme.of(context).textTheme.titleSmall,
+              style: MacrovaTypography.titleSm(tokens.inkPrimary),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: MacrovaSpacing.sm),
             ..._micronutrientEntriesInDisplayOrder(ing.micronutrientsPer100g)
                 .map((e) {
               final target = (goalsJson[e.key] as num?)?.toDouble() ?? 0;
@@ -673,7 +695,7 @@ class _IngredientHubScreenState extends State<IngredientHubScreen> {
               );
             }),
           ],
-          const SizedBox(height: 24),
+          const SizedBox(height: MacrovaSpacing.xlAlt),
           Row(
             children: [
               FilledButton.icon(
@@ -687,7 +709,7 @@ class _IngredientHubScreenState extends State<IngredientHubScreen> {
                 icon: const Icon(Icons.add),
                 label: const Text('Add to Recipe'),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: MacrovaSpacing.sm),
               OutlinedButton(
                 onPressed: () {
                   showDialog<void>(
@@ -707,6 +729,84 @@ class _IngredientHubScreenState extends State<IngredientHubScreen> {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Token-styled USDA remote search result row (tap to resolve & save).
+class _RemoteResultCard extends StatelessWidget {
+  final IngredientSearchResultItem item;
+  final bool busy;
+  final MacrovaTokens tokens;
+  final VoidCallback? onTap;
+
+  const _RemoteResultCard({
+    required this.item,
+    required this.busy,
+    required this.tokens,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: MacrovaRadius.borderMd,
+        child: Ink(
+          decoration: BoxDecoration(
+            color: tokens.surfaceTint,
+            borderRadius: MacrovaRadius.borderMd,
+            border: Border.all(color: tokens.lineDefault),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(MacrovaSpacing.md),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.cloud_download_outlined,
+                  size: 20,
+                  color: tokens.inkTertiary,
+                ),
+                const SizedBox(width: MacrovaSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.description,
+                        style: MacrovaTypography.bodyMedium(tokens.inkPrimary),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'FDC ${item.fdcId} · tap to resolve & save',
+                        style: MacrovaTypography.caption(tokens.inkTertiary),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: MacrovaSpacing.sm),
+                busy
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: tokens.accent,
+                          backgroundColor: tokens.lineSoft,
+                        ),
+                      )
+                    : Icon(
+                        Icons.add_circle_outline,
+                        size: 20,
+                        color: tokens.accent,
+                      ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

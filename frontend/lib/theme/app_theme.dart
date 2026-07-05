@@ -156,6 +156,25 @@ abstract final class AppTheme {
             MacrovaTypography.caption(tokens.inkTertiary),
         indicatorColor: tokens.accentSoft,
       ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: Colors.transparent,
+        indicatorColor: tokens.accentSoft,
+        elevation: 0,
+        height: 72,
+        labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return IconThemeData(color: tokens.accent);
+          }
+          return IconThemeData(color: tokens.inkTertiary);
+        }),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return MacrovaTypography.caption(tokens.accent);
+          }
+          return MacrovaTypography.caption(tokens.inkTertiary);
+        }),
+      ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: tokens.isDark
             ? MacrovaColorsDark.surfaceSoft

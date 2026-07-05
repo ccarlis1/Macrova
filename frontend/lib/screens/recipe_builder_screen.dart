@@ -15,9 +15,12 @@ import '../providers/profile_provider.dart';
 import '../providers/recipe_builder_coordinator.dart';
 import '../providers/recipe_provider.dart';
 import '../services/api_service.dart';
+import '../theme/tokens.dart';
 import 'recipe_builder_mode.dart';
+import '../widgets/dashed_border.dart';
 import '../widgets/nutrition_totals_panel.dart';
 import '../widgets/section_header.dart';
+import '../widgets/sticky_cta.dart';
 
 const _uuid = Uuid();
 
@@ -588,207 +591,237 @@ class RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth > 800;
+        final tokens =
+            Theme.of(context).extension<MacrovaTokens>() ?? MacrovaTokens.light;
 
-        final builderPanel = SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SectionHeader(
-                title: _mode == RecipeBuilderMode.create
-                    ? 'Create Recipe'
-                    : 'Edit Recipe',
-              ),
-              if (_hydratingRecipe)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Row(
-                    children: [
-                      const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Loading recipe from server…',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              TextField(
-                controller: _nameCtrl,
-                decoration: const InputDecoration(labelText: 'Recipe Name'),
-                onChanged: (_) {
-                  setState(() {});
-                  _scheduleNutritionSummary();
-                },
-              ),
-              const SizedBox(height: 16),
-              Text('Recipe Ingredients',
-                  style: Theme.of(context).textTheme.titleSmall),
-              const SizedBox(height: 8),
-              ..._lines.map(
-                (line) => _IngredientQuantityRow(
-                  lineId: line.lineId,
-                  entry: line.entry,
-                  onQuantityChanged: (q) =>
-                      _updateQuantityForLine(line.lineId, q),
-                  onUnitChanged: (u) => _updateUnitForLine(line.lineId, u),
-                  onRemove: () => _removeIngredient(line.lineId),
-                ),
-              ),
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: _showAddIngredientDialog,
-                icon: const Icon(Icons.add),
-                label: const Text('Add Ingredient'),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _servingsCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Number of Servings',
-                ),
-                keyboardType: TextInputType.number,
-                onChanged: (_) {
-                  setState(() {});
-                  _scheduleNutritionSummary();
-                },
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _cookingTimeCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Cooking time (minutes)',
-                ),
-                keyboardType: TextInputType.number,
-                onChanged: (_) => setState(() {}),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _instructionsCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Instructions (one step per line)',
-                  alignLabelWithHint: true,
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 8,
-                minLines: 3,
-                onChanged: (_) => setState(() {}),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  OutlinedButton(
-                    onPressed: _discardOrClear,
-                    child: Text(
-                      _mode == RecipeBuilderMode.create
-                          ? 'Clear Recipe'
-                          : 'Discard changes',
+        final formBody = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SectionHeader(
+              title: _mode == RecipeBuilderMode.create
+                  ? 'Create Recipe'
+                  : 'Edit Recipe',
+            ),
+            if (_hydratingRecipe)
+              Padding(
+                padding: const EdgeInsets.only(bottom: MacrovaSpacing.lg),
+                child: Row(
+                  children: [
+                    const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  FilledButton(
-                    onPressed: _save,
-                    child: Text(
-                      _mode == RecipeBuilderMode.create ? 'Create' : 'Update',
+                    const SizedBox(width: MacrovaSpacing.md),
+                    Expanded(
+                      child: Text(
+                        'Loading recipe from server…',
+                        style: MacrovaTypography.bodyMedium(tokens.inkTertiary),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              if (context.watch<LlmConfigProvider>().llmReady) ...[
-                const SizedBox(height: 16),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: OutlinedButton.icon(
-                    onPressed: _showLlmGenerateDialog,
-                    icon: const Icon(Icons.auto_awesome),
-                    label: const Text('Generate on server (LLM)'),
-                  ),
+                  ],
                 ),
-              ],
+              ),
+            TextField(
+              controller: _nameCtrl,
+              decoration: const InputDecoration(labelText: 'Recipe Name'),
+              onChanged: (_) {
+                setState(() {});
+                _scheduleNutritionSummary();
+              },
+            ),
+            const SizedBox(height: MacrovaSpacing.xl),
+            Text(
+              MacrovaTypography.labelCapsText('Recipe Ingredients'),
+              style: MacrovaTypography.labelCaps(tokens.inkTertiary),
+            ),
+            const SizedBox(height: MacrovaSpacing.sm),
+            ..._lines.map(
+              (line) => _IngredientQuantityRow(
+                lineId: line.lineId,
+                entry: line.entry,
+                onQuantityChanged: (q) =>
+                    _updateQuantityForLine(line.lineId, q),
+                onUnitChanged: (u) => _updateUnitForLine(line.lineId, u),
+                onRemove: () => _removeIngredient(line.lineId),
+              ),
+            ),
+            const SizedBox(height: MacrovaSpacing.sm),
+            _DashedAddButton(onTap: _showAddIngredientDialog),
+            const SizedBox(height: MacrovaSpacing.xl),
+            TextField(
+              controller: _servingsCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Number of Servings',
+              ),
+              keyboardType: TextInputType.number,
+              onChanged: (_) {
+                setState(() {});
+                _scheduleNutritionSummary();
+              },
+            ),
+            const SizedBox(height: MacrovaSpacing.lg),
+            TextField(
+              controller: _cookingTimeCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Cooking time (minutes)',
+              ),
+              keyboardType: TextInputType.number,
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: MacrovaSpacing.lg),
+            TextField(
+              controller: _instructionsCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Instructions (one step per line)',
+                alignLabelWithHint: true,
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 8,
+              minLines: 3,
+              onChanged: (_) => setState(() {}),
+            ),
+            if (context.watch<LlmConfigProvider>().llmReady) ...[
+              const SizedBox(height: MacrovaSpacing.lg),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton.icon(
+                  onPressed: _showLlmGenerateDialog,
+                  icon: const Icon(Icons.auto_awesome),
+                  label: const Text('Generate on server (LLM)'),
+                ),
+              ),
             ],
-          ),
+          ],
         );
 
-        final totalsPanel = SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (_summaryLoading && recipe.ingredients.isNotEmpty)
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 12),
-                  child: LinearProgressIndicator(minHeight: 2),
-                ),
-              if (_summaryError != null &&
-                  !useServerTotals &&
-                  recipe.ingredients.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Text(
-                    'Server nutrition unavailable — showing client estimate. '
-                    '($_summaryError)',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                  ),
-                ),
-              NutritionTotalsPanel(
-                title: useServerTotals
-                    ? 'Nutrition (server)'
-                    : 'Live Nutrition Totals',
-                calories:
-                    useServerTotals ? server.calories : recipe.totalCalories,
-                proteinG:
-                    useServerTotals ? server.proteinG : recipe.totalProteinG,
-                carbsG: useServerTotals ? server.carbsG : recipe.totalCarbsG,
-                fatG: useServerTotals ? server.fatG : recipe.totalFatG,
-                perServingCalories: useServerTotals
-                    ? server.perServingCalories
-                    : recipe.perServingCalories,
-                perServingProteinG: useServerTotals
-                    ? server.perServingProteinG
-                    : recipe.perServingProteinG,
-                perServingCarbsG: useServerTotals
-                    ? server.perServingCarbsG
-                    : recipe.perServingCarbsG,
-                perServingFatG: useServerTotals
-                    ? server.perServingFatG
-                    : recipe.perServingFatG,
-                servings: recipe.servings,
-                micronutrients: useServerTotals
-                    ? server.micronutrients
-                    : recipe.totalMicronutrients,
-                micronutrientTargets: microTargets,
+        final totalsBody = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_summaryLoading && recipe.ingredients.isNotEmpty)
+              const Padding(
+                padding: EdgeInsets.only(bottom: MacrovaSpacing.md),
+                child: LinearProgressIndicator(minHeight: 2),
               ),
-            ],
-          ),
+            if (_summaryError != null &&
+                !useServerTotals &&
+                recipe.ingredients.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: MacrovaSpacing.md),
+                child: Text(
+                  'Server nutrition unavailable — showing client estimate. '
+                  '($_summaryError)',
+                  style: MacrovaTypography.caption(tokens.accentDeep),
+                ),
+              ),
+            NutritionTotalsPanel(
+              title: useServerTotals
+                  ? 'Nutrition (server)'
+                  : 'Live Nutrition Totals',
+              calories:
+                  useServerTotals ? server.calories : recipe.totalCalories,
+              proteinG:
+                  useServerTotals ? server.proteinG : recipe.totalProteinG,
+              carbsG: useServerTotals ? server.carbsG : recipe.totalCarbsG,
+              fatG: useServerTotals ? server.fatG : recipe.totalFatG,
+              perServingCalories: useServerTotals
+                  ? server.perServingCalories
+                  : recipe.perServingCalories,
+              perServingProteinG: useServerTotals
+                  ? server.perServingProteinG
+                  : recipe.perServingProteinG,
+              perServingCarbsG: useServerTotals
+                  ? server.perServingCarbsG
+                  : recipe.perServingCarbsG,
+              perServingFatG: useServerTotals
+                  ? server.perServingFatG
+                  : recipe.perServingFatG,
+              servings: recipe.servings,
+              micronutrients: useServerTotals
+                  ? server.micronutrients
+                  : recipe.totalMicronutrients,
+              micronutrientTargets: microTargets,
+            ),
+          ],
+        );
+
+        final ingredientCount = recipe.ingredients.length;
+        final stickyCta = StickyCta(
+          label: _mode == RecipeBuilderMode.create
+              ? 'New recipe'
+              : 'Editing recipe',
+          detail: ingredientCount == 0
+              ? 'Add ingredients to begin'
+              : '$ingredientCount '
+                  '${ingredientCount == 1 ? 'ingredient' : 'ingredients'} • '
+                  '${recipe.servings} '
+                  '${recipe.servings == 1 ? 'serving' : 'servings'}',
+          actions: [
+            StickyCtaAction(
+              label: _mode == RecipeBuilderMode.create
+                  ? 'Clear Recipe'
+                  : 'Discard changes',
+              onPressed: _discardOrClear,
+            ),
+            StickyCtaAction(
+              label: _mode == RecipeBuilderMode.create ? 'Create' : 'Update',
+              onPressed: _save,
+              isPrimary: true,
+            ),
+          ],
         );
 
         if (wide) {
           return Row(
             children: [
-              Expanded(flex: 3, child: builderPanel),
+              Expanded(
+                flex: 3,
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(MacrovaSpacing.xlAlt),
+                        child: formBody,
+                      ),
+                    ),
+                    stickyCta,
+                  ],
+                ),
+              ),
               const VerticalDivider(width: 1),
-              Expanded(flex: 2, child: totalsPanel),
+              Expanded(
+                flex: 2,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(MacrovaSpacing.xlAlt),
+                  child: totalsBody,
+                ),
+              ),
             ],
           );
-        } else {
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                builderPanel,
-                const Divider(),
-                totalsPanel,
-              ],
-            ),
-          );
         }
+
+        return Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(MacrovaSpacing.xlAlt),
+                      child: formBody,
+                    ),
+                    const Divider(),
+                    Padding(
+                      padding: const EdgeInsets.all(MacrovaSpacing.xlAlt),
+                      child: totalsBody,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            stickyCta,
+          ],
+        );
       },
     );
   }
@@ -852,96 +885,177 @@ class _IngredientQuantityRowState extends State<_IngredientQuantityRow> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens =
+        Theme.of(context).extension<MacrovaTokens>() ?? MacrovaTokens.light;
     final ing = widget.entry;
-    return Card(
+    return Container(
       key: ValueKey(widget.lineId),
-      margin: const EdgeInsets.only(bottom: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide(
-          color: Theme.of(context).colorScheme.outlineVariant,
-        ),
+      margin: const EdgeInsets.only(bottom: MacrovaSpacing.sm),
+      decoration: BoxDecoration(
+        color: tokens.isDark
+            ? MacrovaColorsDark.surfaceCard
+            : MacrovaColors.surfaceCard,
+        borderRadius: MacrovaRadius.borderMd,
+        border: Border.all(color: tokens.lineDefault),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            Expanded(
-              flex: 3,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    ing.ingredientName,
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      SizedBox(
-                        width: 80,
-                        child: TextField(
-                          controller: _qtyCtrl,
-                          decoration: const InputDecoration(
-                            labelText: 'Qty',
-                          ),
-                          keyboardType: TextInputType.number,
-                          onEditingComplete: () {
-                            final t = _qtyCtrl.text.trim();
-                            if (t.isEmpty) {
-                              _qtyCtrl.text =
-                                  _formatQuantityLabel(widget.entry.quantity);
-                            }
-                          },
-                          onChanged: (v) {
-                            final t = v.trim();
-                            if (t.isEmpty) {
-                              return;
-                            }
-                            final qty = double.tryParse(t);
-                            if (qty == null) {
-                              return;
-                            }
-                            widget.onQuantityChanged(qty);
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      DropdownButton<String>(
-                        value: ing.unit,
-                        items: ing.availableUnits
-                            .map(
-                              (u) => DropdownMenuItem(
-                                value: u,
-                                child: Text(u),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (v) {
-                          if (v != null) widget.onUnitChanged(v);
-                        },
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+      padding: const EdgeInsets.all(MacrovaSpacing.md),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${ing.calories.round()} kcal',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
+                  ing.ingredientName,
+                  style: MacrovaTypography.subtitle(tokens.inkPrimary),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, size: 20),
-                  onPressed: widget.onRemove,
+                const SizedBox(height: MacrovaSpacing.sm),
+                _buildQtyUnitPill(tokens, ing),
+              ],
+            ),
+          ),
+          const SizedBox(width: MacrovaSpacing.md),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${ing.calories.round()} kcal',
+                style: MacrovaTypography.label(tokens.accent),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, size: 20),
+                color: tokens.inkTertiary,
+                onPressed: widget.onRemove,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQtyUnitPill(MacrovaTokens tokens, RecipeIngredientEntry ing) {
+    return Container(
+      decoration: BoxDecoration(
+        color: tokens.isDark
+            ? MacrovaColorsDark.surfaceCard
+            : MacrovaColors.backgroundPrimary,
+        borderRadius: MacrovaRadius.borderPill,
+        border: Border.all(color: tokens.lineStrong),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 64,
+            child: TextField(
+              controller: _qtyCtrl,
+              textAlign: TextAlign.center,
+              style: MacrovaTypography.subtitle(tokens.inkPrimary).copyWith(
+                fontFeatures: MacrovaTypography.tabularFigures,
+              ),
+              decoration: const InputDecoration(
+                isDense: true,
+                filled: false,
+                hintText: 'Qty',
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: MacrovaSpacing.sm,
+                  vertical: MacrovaSpacing.sm,
+                ),
+              ),
+              keyboardType: TextInputType.number,
+              onEditingComplete: () {
+                final t = _qtyCtrl.text.trim();
+                if (t.isEmpty) {
+                  _qtyCtrl.text =
+                      _formatQuantityLabel(widget.entry.quantity);
+                }
+              },
+              onChanged: (v) {
+                final t = v.trim();
+                if (t.isEmpty) {
+                  return;
+                }
+                final qty = double.tryParse(t);
+                if (qty == null) {
+                  return;
+                }
+                widget.onQuantityChanged(qty);
+              },
+            ),
+          ),
+          Container(
+            width: 1,
+            height: 36,
+            color: tokens.lineDefault,
+          ),
+          DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: ing.unit,
+              padding: const EdgeInsets.symmetric(
+                horizontal: MacrovaSpacing.md,
+              ),
+              style: MacrovaTypography.bodyMedium(tokens.inkSecondary),
+              items: ing.availableUnits
+                  .map(
+                    (u) => DropdownMenuItem(
+                      value: u,
+                      child: Text(u),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (v) {
+                if (v != null) widget.onUnitChanged(v);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DashedAddButton extends StatelessWidget {
+  const _DashedAddButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens =
+        Theme.of(context).extension<MacrovaTokens>() ?? MacrovaTokens.light;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: MacrovaRadius.borderMd,
+        child: CustomPaint(
+          painter: DashedBorderPainter(
+            color: tokens.lineStrong,
+            borderRadius: MacrovaRadius.md,
+          ),
+          child: Container(
+            width: double.infinity,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(
+              vertical: MacrovaSpacing.md,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.add, size: 18, color: tokens.inkSecondary),
+                const SizedBox(width: MacrovaSpacing.xs),
+                Text(
+                  'Add Ingredient',
+                  style: MacrovaTypography.label(tokens.inkSecondary),
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );

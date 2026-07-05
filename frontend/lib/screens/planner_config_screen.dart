@@ -3,19 +3,28 @@ import 'package:provider/provider.dart';
 
 import '../features/agent/llm_config_provider.dart';
 import '../models/models.dart';
+import '../models/recipe.dart';
 import '../providers/meal_plan_provider.dart';
 import '../providers/profile_provider.dart';
 import '../providers/recipe_provider.dart';
 import '../services/api_service.dart';
+import '../theme/tokens.dart';
+import '../widgets/advisory_card.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/macro_display.dart';
+import '../widgets/macrova_chip.dart';
 import '../widgets/section_header.dart';
+import '../widgets/segmented_control.dart';
+import '../widgets/stat_card.dart';
+import '../widgets/sticky_cta.dart';
 
 class PlannerConfigScreen extends StatelessWidget {
   const PlannerConfigScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final tokens =
+        Theme.of(context).extension<MacrovaTokens>() ?? MacrovaTokens.light;
     final planProvider = context.watch<MealPlanProvider>();
     final llmGate = context.watch<LlmConfigProvider>();
     final profile = context.watch<ProfileProvider>().profile;
@@ -32,7 +41,7 @@ class PlannerConfigScreen extends StatelessWidget {
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(MacrovaSpacing.xlAlt),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 700),
@@ -41,47 +50,46 @@ class PlannerConfigScreen extends StatelessWidget {
             children: [
               Text(
                 'Meal Planner Configuration',
-                style: Theme.of(context).textTheme.headlineMedium,
+                style: MacrovaTypography.headline(tokens.inkPrimary),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: MacrovaSpacing.sm),
               Text(
                 'Configure your meal plan parameters. The planner will use your recipe pool and nutrition targets to generate an optimized meal plan.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                style: MacrovaTypography.body(tokens.inkTertiary),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: MacrovaSpacing.xlAlt),
 
               // Planning Duration
               const SectionHeader(title: 'Planning Duration'),
-              Text('Number of Days: ${planProvider.days} days'),
-              const SizedBox(height: 8),
+              Text(
+                'Number of Days: ${planProvider.days} days',
+                style: MacrovaTypography.bodyMedium(tokens.inkSecondary),
+              ),
+              const SizedBox(height: MacrovaSpacing.sm),
               _NumberSelector(
                 value: planProvider.days,
                 min: 1,
                 max: 7,
                 onChanged: planProvider.setDays,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: MacrovaSpacing.xlAlt),
 
               // Planning mode (assisted requires validated LLM)
               const SectionHeader(title: 'Planner mode'),
               if (llmGate.llmReady) ...[
                 Text(
                   'Planning mode',
-                  style: Theme.of(context).textTheme.titleSmall,
+                  style: MacrovaTypography.titleSm(tokens.inkPrimary),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: MacrovaSpacing.xs),
                 Text(
                   'Assisted modes use the server LLM; deterministic does not.',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                  style: MacrovaTypography.caption(tokens.inkTertiary),
                 ),
-                const SizedBox(height: 8),
-                DropdownButton<String>(
+                const SizedBox(height: MacrovaSpacing.sm),
+                _TokenDropdown(
                   value: planProvider.planningMode,
-                  isExpanded: true,
+                  onChanged: planProvider.setPlanningMode,
                   items: const [
                     DropdownMenuItem(
                       value: 'deterministic',
@@ -100,22 +108,15 @@ class PlannerConfigScreen extends StatelessWidget {
                       child: Text('Assisted (live)'),
                     ),
                   ],
-                  onChanged: (v) {
-                    if (v != null) {
-                      planProvider.setPlanningMode(v);
-                    }
-                  },
                 ),
               ]
               else
                 Text(
                   'LLM-assisted planning appears here after you validate credentials '
                   'on Profile. Using deterministic only.',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                  style: MacrovaTypography.caption(tokens.inkTertiary),
                 ),
-              const SizedBox(height: 24),
+              const SizedBox(height: MacrovaSpacing.xlAlt),
 
               // Ingredient source (matches POST /api/v1/plan `ingredient_source`)
               const SectionHeader(title: 'Ingredient nutrition source'),
@@ -123,14 +124,12 @@ class PlannerConfigScreen extends StatelessWidget {
                 'How the server resolves recipe ingredient nutrition. '
                 'Use USDA (API) when your local ingredients file is incomplete — '
                 'same as CLI `--ingredient-source api`. Requires USDA_API_KEY on the API server.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                style: MacrovaTypography.caption(tokens.inkTertiary),
               ),
-              const SizedBox(height: 8),
-              DropdownButton<String>(
+              const SizedBox(height: MacrovaSpacing.sm),
+              _TokenDropdown(
                 value: planProvider.ingredientSource,
-                isExpanded: true,
+                onChanged: planProvider.setIngredientSource,
                 items: const [
                   DropdownMenuItem(
                     value: 'local',
@@ -141,24 +140,17 @@ class PlannerConfigScreen extends StatelessWidget {
                     child: Text('USDA FoodData Central (API)'),
                   ),
                 ],
-                onChanged: (v) {
-                  if (v != null) {
-                    planProvider.setIngredientSource(v);
-                  }
-                },
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: MacrovaSpacing.xlAlt),
 
               // Per-day schedule (canonical meals + workout gaps)
               const SectionHeader(title: 'Schedule'),
               Text(
                 'For each day: meal count, per-meal busyness (cooking-time band), '
                 'and up to two workouts placed between meals.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                style: MacrovaTypography.caption(tokens.inkTertiary),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: MacrovaSpacing.md),
               ...List.generate(planProvider.days, (dayIndex) {
                 final day = planProvider.scheduleDays[dayIndex];
                 return _DayScheduleCard(
@@ -170,51 +162,34 @@ class PlannerConfigScreen extends StatelessWidget {
                   onRemoveWorkout: planProvider.removeWorkoutAt,
                 );
               }),
-              const SizedBox(height: 24),
+              const SizedBox(height: MacrovaSpacing.xlAlt),
 
               // Recipe Pool
               const SectionHeader(title: 'Recipe Pool'),
               if (recipes.isEmpty)
                 Text(
                   'No recipes in your library. Create recipes first.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color:
-                            Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                  style: MacrovaTypography.body(tokens.inkTertiary),
                 )
               else ...[
                 Text(
                   'Select recipes to include in your meal plan:',
-                  style: Theme.of(context).textTheme.bodySmall,
+                  style: MacrovaTypography.caption(tokens.inkTertiary),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: MacrovaSpacing.sm),
                 ...recipes.map((recipe) {
                   final selected =
                       planProvider.selectedRecipeIds.contains(recipe.id);
-                  return CheckboxListTile(
-                    value: selected,
-                    onChanged: (_) => planProvider.toggleRecipe(recipe.id),
-                    title: Text(recipe.name),
-                    subtitle: MacroDisplay(
-                      calories: recipe.perServingCalories,
-                      proteinG: recipe.perServingProteinG,
-                      carbsG: recipe.perServingCarbsG,
-                      fatG: recipe.perServingFatG,
-                      compact: true,
-                    ),
-                    contentPadding: EdgeInsets.zero,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                  return _RecipePoolRow(
+                    recipe: recipe,
+                    selected: selected,
+                    onToggle: () => planProvider.toggleRecipe(recipe.id),
                   );
                 }),
-                const SizedBox(height: 4),
+                const SizedBox(height: MacrovaSpacing.xs),
                 Text(
                   '${planProvider.selectedRecipeIds.length} recipes selected from your library',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color:
-                            Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                  style: MacrovaTypography.caption(tokens.inkTertiary),
                 ),
                 if (remoteIds.isNotEmpty) ...[
                   Builder(
@@ -226,135 +201,110 @@ class PlannerConfigScreen extends StatelessWidget {
                         return const SizedBox.shrink();
                       }
                       return Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: Material(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .errorContainer
-                              .withValues(alpha: 0.35),
-                          borderRadius: BorderRadius.circular(8),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Icon(
-                                  Icons.warning_amber_rounded,
-                                  color: Theme.of(context).colorScheme.error,
-                                  size: 22,
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    'Some selected recipes are not on the server '
-                                    '(${notOnServer.length}). The planner only uses '
-                                    'server recipe ids — those entries may be ignored '
-                                    'until the recipe exists in the API pool.',
-                                    style:
-                                        Theme.of(context).textTheme.bodySmall,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                        padding: const EdgeInsets.only(top: MacrovaSpacing.md),
+                        child: AdvisoryCard(
+                          variant: AdvisoryVariant.warn,
+                          title:
+                              'Some selected recipes are not on the server (${notOnServer.length})',
+                          description:
+                              'The planner only uses server recipe ids — those '
+                              'entries may be ignored until the recipe exists in '
+                              'the API pool.',
                         ),
                       );
                     },
                   ),
                 ],
               ],
-              const SizedBox(height: 24),
+              const SizedBox(height: MacrovaSpacing.xlAlt),
 
               // Nutrition Targets
               const SectionHeader(title: 'Your Nutrition Targets'),
-              Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(
-                    color: Theme.of(context).colorScheme.outlineVariant,
+              Row(
+                children: [
+                  Expanded(
+                    child: StatCard(
+                      label: 'Calories',
+                      value: '${profile.calories.round()}',
+                      unit: 'kcal',
+                    ),
                   ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Daily Target',
-                          style: Theme.of(context).textTheme.titleSmall),
-                      const SizedBox(height: 8),
-                      MacroDisplay(
-                        calories: profile.calories,
-                        proteinG: profile.proteinG,
-                        carbsG: profile.carbsG,
-                        fatG: profile.fatG,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Fat goal: ${profile.fatGMin.round()}–${profile.fatGMax.round()} g',
-                        style:
-                            Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
-                                ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'From your Profile settings',
-                        style:
-                            Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
-                                ),
-                      ),
-                    ],
+                  const SizedBox(width: MacrovaSpacing.md),
+                  Expanded(
+                    child: StatCard(
+                      label: 'Protein',
+                      value: '${profile.proteinG.round()}',
+                      unit: 'g',
+                      variant: StatCardVariant.protein,
+                    ),
                   ),
-                ),
+                ],
               ),
-              const SizedBox(height: 32),
-
-              // Generate button
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: planProvider.loading || planProvider.syncing
-                      ? null
-                      : () => _generate(context),
-                  icon: planProvider.loading || planProvider.syncing
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Icon(Icons.arrow_forward),
-                  label: Text(
-                    planProvider.syncing
-                        ? 'Syncing recipes…'
-                        : planProvider.loading
-                            ? 'Generating...'
-                            : 'Generate Meal Plan',
+              const SizedBox(height: MacrovaSpacing.md),
+              Row(
+                children: [
+                  Expanded(
+                    child: StatCard(
+                      label: 'Carbs',
+                      value: '${profile.carbsG.round()}',
+                      unit: 'g',
+                      variant: StatCardVariant.carb,
+                    ),
                   ),
+                  const SizedBox(width: MacrovaSpacing.md),
+                  Expanded(
+                    child: StatCard(
+                      label: 'Fat',
+                      value: '${profile.fatG.round()}',
+                      unit: 'g',
+                      variant: StatCardVariant.fat,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: MacrovaSpacing.sm),
+              Text(
+                'Fat goal: ${profile.fatGMin.round()}–${profile.fatGMax.round()} g · From your Profile settings',
+                style: MacrovaTypography.caption(tokens.inkTertiary),
+              ),
+              const SizedBox(height: MacrovaSpacing.xxl),
+
+              // Generate CTA
+              ClipRRect(
+                borderRadius: MacrovaRadius.borderMd,
+                child: StickyCta(
+                  label: 'Meal plan',
+                  detail:
+                      '${planProvider.days} ${planProvider.days == 1 ? 'day' : 'days'} · '
+                      '${planProvider.selectedRecipeIds.length} selected',
+                  actions: [
+                    StickyCtaAction(
+                      label: planProvider.syncing
+                          ? 'Syncing recipes…'
+                          : planProvider.loading
+                              ? 'Generating...'
+                              : 'Generate Meal Plan',
+                      isPrimary: true,
+                      onPressed: planProvider.loading || planProvider.syncing
+                          ? null
+                          : () => _generate(context),
+                    ),
+                  ],
                 ),
               ),
               if (planProvider.error != null) ...[
-                const SizedBox(height: 12),
-                Text(
-                  'Error: ${planProvider.error}',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.error,
-                  ),
+                const SizedBox(height: MacrovaSpacing.md),
+                AdvisoryCard(
+                  variant: AdvisoryVariant.warn,
+                  title: 'Planning error',
+                  description: planProvider.error!,
                 ),
               ],
-              const SizedBox(height: 24),
+              const SizedBox(height: MacrovaSpacing.xlAlt),
               Text(
                 'Technical Note: Planner request will be sent to backend with these parameters',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontStyle: FontStyle.italic,
-                    ),
+                style: MacrovaTypography.caption(tokens.inkQuaternary)
+                    .copyWith(fontStyle: FontStyle.italic),
               ),
             ],
           ),
@@ -447,6 +397,119 @@ class PlannerConfigScreen extends StatelessWidget {
   }
 }
 
+/// Token-styled dropdown wrapper (hairline border, no Material underline).
+class _TokenDropdown extends StatelessWidget {
+  final String value;
+  final List<DropdownMenuItem<String>> items;
+  final ValueChanged<String> onChanged;
+
+  const _TokenDropdown({
+    required this.value,
+    required this.items,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens =
+        Theme.of(context).extension<MacrovaTokens>() ?? MacrovaTokens.light;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: MacrovaSpacing.md),
+      decoration: BoxDecoration(
+        color: tokens.surfaceTint,
+        borderRadius: MacrovaRadius.borderSm,
+        border: Border.all(color: tokens.lineDefault),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: value,
+          isExpanded: true,
+          borderRadius: MacrovaRadius.borderSm,
+          style: MacrovaTypography.bodyMedium(tokens.inkPrimary),
+          items: items,
+          onChanged: (v) {
+            if (v != null) onChanged(v);
+          },
+        ),
+      ),
+    );
+  }
+}
+
+/// Selectable recipe-pool row (token card). Reuses [MealPlanProvider.toggleRecipe]
+/// via [onToggle]; selection state is passed in.
+class _RecipePoolRow extends StatelessWidget {
+  final Recipe recipe;
+  final bool selected;
+  final VoidCallback onToggle;
+
+  const _RecipePoolRow({
+    required this.recipe,
+    required this.selected,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens =
+        Theme.of(context).extension<MacrovaTokens>() ?? MacrovaTokens.light;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: MacrovaSpacing.sm),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onToggle,
+          borderRadius: MacrovaRadius.borderSm,
+          child: Ink(
+            decoration: BoxDecoration(
+              color: selected ? tokens.surfaceSoft : Colors.transparent,
+              borderRadius: MacrovaRadius.borderSm,
+              border: Border.all(
+                color: selected ? tokens.lineStrong : tokens.lineDefault,
+              ),
+            ),
+            padding: const EdgeInsets.all(MacrovaSpacing.md),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  selected
+                      ? Icons.check_box_rounded
+                      : Icons.check_box_outline_blank_rounded,
+                  size: 20,
+                  color: selected ? tokens.accent : tokens.inkTertiary,
+                ),
+                const SizedBox(width: MacrovaSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        recipe.name,
+                        style: MacrovaTypography.label(tokens.inkPrimary),
+                      ),
+                      const SizedBox(height: MacrovaSpacing.xs),
+                      MacroDisplay(
+                        calories: recipe.perServingCalories,
+                        proteinG: recipe.perServingProteinG,
+                        carbsG: recipe.perServingCarbsG,
+                        fatG: recipe.perServingFatG,
+                        compact: true,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// One planning day: meal count, per-meal busyness, optional workouts between meals.
 class _DayScheduleCard extends StatelessWidget {
   final int dayIndex;
@@ -467,100 +530,107 @@ class _DayScheduleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens =
+        Theme.of(context).extension<MacrovaTokens>() ?? MacrovaTokens.light;
     final n = day.meals.length;
     final gaps = n >= 2 ? List.generate(n - 1, (i) => i + 1) : <int>[];
     final used = {for (final w in day.workouts) w.afterMealIndex};
     final freeGaps = gaps.where((g) => !used.contains(g)).toList();
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+    return Container(
+      margin: const EdgeInsets.only(bottom: MacrovaSpacing.md),
+      padding: const EdgeInsets.all(MacrovaSpacing.md),
+      decoration: BoxDecoration(
+        color: tokens.surfaceTint,
+        borderRadius: MacrovaRadius.borderMd,
+        border: Border.all(color: tokens.lineDefault),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Day ${day.dayIndex}',
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            const SizedBox(height: 8),
-            Text('Meals per day', style: Theme.of(context).textTheme.labelSmall),
-            const SizedBox(height: 4),
-            Wrap(
-              spacing: 4,
-              children: List.generate(8, (i) {
-                final v = i + 1;
-                final sel = v == n;
-                return ChoiceChip(
-                  label: Text('$v'),
-                  selected: sel,
-                  onSelected: (_) => onMealCount(dayIndex, v),
-                );
-              }),
-            ),
-            const SizedBox(height: 8),
-            ...List.generate(n, (mi) {
-              final m = day.meals[mi];
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 80,
-                      child: Text('Meal ${m.index}'),
-                    ),
-                    Expanded(
-                      child: SegmentedButton<int>(
-                        segments: const [
-                          ButtonSegment(value: 1, label: Text('1')),
-                          ButtonSegment(value: 2, label: Text('2')),
-                          ButtonSegment(value: 3, label: Text('3')),
-                          ButtonSegment(value: 4, label: Text('4')),
-                        ],
-                        emptySelectionAllowed: false,
-                        selected: {m.busynessLevel},
-                        onSelectionChanged: (s) {
-                          if (s.isEmpty) return;
-                          onBusyness(dayIndex, mi, s.first);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Day ${day.dayIndex}',
+            style: MacrovaTypography.titleSm(tokens.inkPrimary),
+          ),
+          const SizedBox(height: MacrovaSpacing.sm),
+          Text(
+            MacrovaTypography.labelCapsText('Meals per day'),
+            style: MacrovaTypography.labelCaps(tokens.inkTertiary),
+          ),
+          const SizedBox(height: MacrovaSpacing.xs),
+          Wrap(
+            spacing: MacrovaSpacing.xs,
+            runSpacing: MacrovaSpacing.xs,
+            children: List.generate(8, (i) {
+              final v = i + 1;
+              final sel = v == n;
+              return MacrovaChip(
+                label: '$v',
+                selected: sel,
+                onTap: () => onMealCount(dayIndex, v),
               );
             }),
-            if (n >= 2) ...[
-              const SizedBox(height: 8),
-              Text(
-                'Workouts (between meals)',
-                style: Theme.of(context).textTheme.labelSmall,
-              ),
-              const SizedBox(height: 4),
-              Wrap(
-                spacing: 6,
-                runSpacing: 4,
+          ),
+          const SizedBox(height: MacrovaSpacing.md),
+          ...List.generate(n, (mi) {
+            final m = day.meals[mi];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: MacrovaSpacing.sm),
+              child: Row(
                 children: [
-                  for (var wi = 0; wi < day.workouts.length; wi++)
-                    InputChip(
-                      label: Text('After meal ${day.workouts[wi].afterMealIndex}'),
-                      onDeleted: () => onRemoveWorkout(dayIndex, wi),
+                  SizedBox(
+                    width: 80,
+                    child: Text(
+                      'Meal ${m.index}',
+                      style: MacrovaTypography.bodyMedium(tokens.inkSecondary),
                     ),
-                  if (day.workouts.length < 2 && freeGaps.isNotEmpty)
-                    ...freeGaps.map(
-                      (g) => TextButton(
-                        onPressed: () => onAddWorkout(dayIndex, g),
-                        child: Text('+ After meal $g'),
-                      ),
+                  ),
+                  Expanded(
+                    child: SegmentedControl<int>(
+                      style: SegmentedControlStyle.busyness,
+                      value: m.busynessLevel,
+                      onChanged: (v) => onBusyness(dayIndex, mi, v),
+                      options: const [
+                        SegmentedOption(value: 1, label: '1'),
+                        SegmentedOption(value: 2, label: '2'),
+                        SegmentedOption(value: 3, label: '3'),
+                        SegmentedOption(value: 4, label: '4'),
+                      ],
                     ),
+                  ),
                 ],
               ),
-            ],
+            );
+          }),
+          if (n >= 2) ...[
+            const SizedBox(height: MacrovaSpacing.sm),
+            Text(
+              MacrovaTypography.labelCapsText('Workouts (between meals)'),
+              style: MacrovaTypography.labelCaps(tokens.inkTertiary),
+            ),
+            const SizedBox(height: MacrovaSpacing.xs),
+            Wrap(
+              spacing: MacrovaSpacing.sm,
+              runSpacing: MacrovaSpacing.xs,
+              children: [
+                for (var wi = 0; wi < day.workouts.length; wi++)
+                  MacrovaChip(
+                    label: 'After meal ${day.workouts[wi].afterMealIndex}',
+                    variant: MacrovaChipVariant.removable,
+                    onRemove: () => onRemoveWorkout(dayIndex, wi),
+                  ),
+                if (day.workouts.length < 2 && freeGaps.isNotEmpty)
+                  ...freeGaps.map(
+                    (g) => MacrovaChip(
+                      label: 'After meal $g',
+                      variant: MacrovaChipVariant.dashedAdd,
+                      onTap: () => onAddWorkout(dayIndex, g),
+                    ),
+                  ),
+              ],
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -582,14 +652,15 @@ class _NumberSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Wrap(
-      spacing: 4,
+      spacing: MacrovaSpacing.xs,
+      runSpacing: MacrovaSpacing.xs,
       children: List.generate(max - min + 1, (i) {
         final n = min + i;
         final selected = n == value;
-        return ChoiceChip(
-          label: Text('$n'),
+        return MacrovaChip(
+          label: '$n',
           selected: selected,
-          onSelected: (_) => onChanged(n),
+          onTap: () => onChanged(n),
         );
       }),
     );

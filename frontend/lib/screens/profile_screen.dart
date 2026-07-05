@@ -5,7 +5,10 @@ import '../models/micronutrient_metadata.dart';
 import '../models/user_profile.dart';
 import '../features/agent/llm_config_provider.dart';
 import '../providers/profile_provider.dart';
+import '../theme/tokens.dart';
+import '../widgets/macrova_chip.dart';
 import '../widgets/section_header.dart';
+import '../widgets/segmented_control.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -302,7 +305,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(child: _microField(fields[0])),
-        const SizedBox(width: 12),
+        const SizedBox(width: MacrovaSpacing.md),
         Expanded(
           child: fields.length > 1
               ? _microField(fields[1])
@@ -329,13 +332,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       rows.add(
         _microRow(items.sublist(i, i + 2 > items.length ? items.length : i + 2)),
       );
-      if (i + 2 < items.length) rows.add(const SizedBox(height: 12));
+      if (i + 2 < items.length) rows.add(const SizedBox(height: MacrovaSpacing.md));
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionHeader(title: title),
-        const SizedBox(height: 8),
+        const SizedBox(height: MacrovaSpacing.sm),
         ...rows,
       ],
     );
@@ -343,6 +346,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens =
+        Theme.of(context).extension<MacrovaTokens>() ?? MacrovaTokens.light;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final maxWidth = constraints.maxWidth > 600 ? 560.0 : double.infinity;
@@ -357,7 +363,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(MacrovaSpacing.xlAlt),
           child: Center(
             child: ConstrainedBox(
               constraints: BoxConstraints(maxWidth: maxWidth),
@@ -368,9 +374,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     Text(
                       'Profile & Settings',
-                      style: Theme.of(context).textTheme.headlineMedium,
+                      style: MacrovaTypography.display(tokens.inkPrimary),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: MacrovaSpacing.xlAlt),
 
                     // Editable Nutrition Targets
                     const SectionHeader(title: 'Editable Nutrition Targets'),
@@ -387,7 +393,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             validator: _requiredNumber,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: MacrovaSpacing.md),
                         Expanded(
                           child: TextFormField(
                             controller: _carbsPctCtrl,
@@ -399,7 +405,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             validator: _requiredNumber,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: MacrovaSpacing.md),
                         Expanded(
                           child: TextFormField(
                             controller: _fatPctCtrl,
@@ -413,7 +419,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: MacrovaSpacing.md),
                     TextFormField(
                       controller: _totalCaloriesCtrl,
                       decoration: const InputDecoration(
@@ -423,25 +429,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       keyboardType: TextInputType.number,
                       validator: _requiredNumber,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: MacrovaSpacing.md),
                     FilledButton.tonal(
                       onPressed: _calculateFromRatios,
                       child: const Text('Calculate from Ratios'),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: MacrovaSpacing.lg),
 
                     // Calorie Deficit Mode
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Calorie Deficit Mode'),
-                      subtitle: const Text(
-                        'Enable to automatically reduce calorie target',
-                      ),
-                      value: _calorieDeficitMode,
-                      onChanged: (v) =>
-                          setState(() => _calorieDeficitMode = v),
+                    Text(
+                      'Calorie Deficit Mode',
+                      style: MacrovaTypography.label(tokens.inkPrimary),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: MacrovaSpacing.xs),
+                    Text(
+                      'Enable to automatically reduce calorie target',
+                      style: MacrovaTypography.caption(tokens.inkTertiary),
+                    ),
+                    const SizedBox(height: MacrovaSpacing.sm),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: SegmentedControl<bool>(
+                        value: _calorieDeficitMode,
+                        onChanged: (v) =>
+                            setState(() => _calorieDeficitMode = v),
+                        options: const [
+                          SegmentedOption(value: false, label: 'Off'),
+                          SegmentedOption(value: true, label: 'On'),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: MacrovaSpacing.lg),
 
                     // Manual macro inputs
                     TextFormField(
@@ -453,7 +471,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       keyboardType: TextInputType.number,
                       validator: _requiredNumber,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: MacrovaSpacing.md),
                     TextFormField(
                       controller: _proteinGCtrl,
                       decoration: const InputDecoration(
@@ -463,7 +481,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       keyboardType: TextInputType.number,
                       validator: _requiredNumber,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: MacrovaSpacing.md),
                     TextFormField(
                       controller: _carbsGCtrl,
                       decoration: const InputDecoration(
@@ -473,16 +491,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       keyboardType: TextInputType.number,
                       validator: _requiredNumber,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: MacrovaSpacing.md),
                     Text(
                       'Daily fat range',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant,
-                          ),
+                      style: MacrovaTypography.caption(tokens.inkTertiary),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: MacrovaSpacing.sm),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -497,7 +511,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             validator: _requiredNumber,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: MacrovaSpacing.md),
                         Expanded(
                           child: TextFormField(
                             controller: _fatGMaxCtrl,
@@ -511,7 +525,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: MacrovaSpacing.xlAlt),
 
                     // User Demographics
                     const SectionHeader(title: 'User Demographics'),
@@ -529,16 +543,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       onChanged: (v) =>
                           setState(() => _demographicGroup = v ?? ''),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: MacrovaSpacing.xs),
                     Text(
                       'Used to calculate appropriate Upper Limits (UL) for micronutrients',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant,
-                          ),
+                      style: MacrovaTypography.caption(tokens.inkTertiary),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: MacrovaSpacing.xlAlt),
 
                     // Allergies & Dietary Restrictions
                     const SectionHeader(
@@ -554,46 +564,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             onFieldSubmitted: (_) => _addAllergy(),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        FilledButton(
+                        const SizedBox(width: MacrovaSpacing.sm),
+                        FilledButton.tonal(
                           onPressed: _addAllergy,
                           child: const Text('Add'),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: MacrovaSpacing.md),
                     if (_allergies.isEmpty)
                       Text(
                         'No allergies added - meal plans will consider all ingredients',
-                        style:
-                            Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
-                                ),
+                        style: MacrovaTypography.caption(tokens.inkTertiary),
                       )
                     else
                       Wrap(
-                        spacing: 8,
-                        runSpacing: 4,
+                        spacing: MacrovaSpacing.sm,
+                        runSpacing: MacrovaSpacing.xs,
                         children: _allergies
-                            .map((a) => Chip(
-                                  label: Text(a),
-                                  onDeleted: () => _removeAllergy(a),
+                            .map((a) => MacrovaChip(
+                                  label: a,
+                                  variant: MacrovaChipVariant.removable,
+                                  onRemove: () => _removeAllergy(a),
                                 ))
                             .toList(),
                       ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: MacrovaSpacing.xlAlt),
 
                     // Micronutrient Goals (parity with config/user_profile.yaml)
                     const SectionHeader(title: 'Micronutrient Goals (daily)'),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: MacrovaSpacing.lg),
                     _microSection('Vitamins', vitamins),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: MacrovaSpacing.xl),
                     _microSection('Minerals', minerals),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: MacrovaSpacing.xl),
                     _microSection('Other', other),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: MacrovaSpacing.lg),
                     TextFormField(
                       controller: _micronutrientTauCtrl,
                       decoration: const InputDecoration(
@@ -604,7 +610,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       validator: _tauValidator,
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: MacrovaSpacing.xlAlt),
 
                     // API Configuration
                     const SectionHeader(title: 'API Configuration'),
@@ -615,7 +621,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       obscureText: true,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: MacrovaSpacing.md),
                     TextFormField(
                       controller: _llmApiKeyCtrl,
                       decoration: const InputDecoration(
@@ -623,7 +629,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       obscureText: true,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: MacrovaSpacing.md),
                     DropdownButtonFormField<String>(
                       initialValue: _llmProvider,
                       isExpanded: true,
@@ -640,7 +646,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       onChanged: (v) =>
                           setState(() => _llmProvider = v ?? 'openai_compatible'),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: MacrovaSpacing.md),
                     Align(
                       alignment: Alignment.centerLeft,
                       child: FilledButton.tonalIcon(
@@ -662,7 +668,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: MacrovaSpacing.xxl),
 
                     // Action buttons
                     Row(
@@ -672,14 +678,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           onPressed: _cancel,
                           child: const Text('Cancel'),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: MacrovaSpacing.md),
                         FilledButton(
                           onPressed: _save,
                           child: const Text('Save Profile'),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: MacrovaSpacing.xlAlt),
                   ],
                 ),
               ),

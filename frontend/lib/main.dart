@@ -7,7 +7,7 @@ import 'providers/meal_plan_provider.dart';
 import 'providers/profile_provider.dart';
 import 'providers/recipe_builder_coordinator.dart';
 import 'providers/recipe_provider.dart';
-import 'theme.dart';
+import 'theme/app_theme.dart';
 import 'widgets/app_shell.dart';
 
 Future<void> main() async {
@@ -85,6 +85,8 @@ class MacrovaApp extends StatelessWidget {
         title: 'Macrova',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        themeMode: ThemeMode.system,
         home: const AppShell(),
       ),
     );

@@ -48,6 +48,9 @@ abstract final class MacrovaColors {
   // Translucency
   static const Color scrim = Color(0x66000000);
   static const Color stickyBarLight = Color(0xF0FFFFFF);
+
+  /// Text/icons on dark fills (ink primary, scrim badges).
+  static const Color onDarkFill = Color(0xFFFFFFFF);
 }
 
 /// Dark-mode surface and ink tokens (assumption).

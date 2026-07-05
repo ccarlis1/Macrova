@@ -621,7 +621,7 @@
   },
   "ui": {
     "AppShell": {
-      "description": "Hosts sidebar navigation and an IndexedStack of profile, ingredient, recipe, planner, meal plan, and agent screens.",
+      "description": "Responsive shell: NavigationRail sidebar at viewport width >= 760px, bottom NavigationBar below; IndexedStack hosts profile, ingredient, recipe, planner, meal plan, and agent screens.",
       "files": [
         "frontend/lib/widgets/app_shell.dart"
       ]

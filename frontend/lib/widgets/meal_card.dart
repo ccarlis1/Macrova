@@ -15,6 +15,8 @@ class MealCard extends StatelessWidget {
   final MealSlotState slotState;
   final String? warningText;
   final String? timeLabel;
+  /// Device-local cooked mark — independent of [MealSlotState.pinned].
+  final bool isCooked;
   final VoidCallback? onTap;
   final VoidCallback? onAdd;
 
@@ -29,6 +31,7 @@ class MealCard extends StatelessWidget {
     this.slotState = MealSlotState.ok,
     this.warningText,
     this.timeLabel,
+    this.isCooked = false,
     this.onTap,
     this.onAdd,
   });
@@ -81,7 +84,7 @@ class MealCard extends StatelessWidget {
                   ),
                 ),
               ],
-              _MealThumbnail(tokens: tokens),
+              _MealThumbnail(tokens: tokens, isCooked: isCooked),
               const SizedBox(width: MacrovaSpacing.md),
               Expanded(
                 child: Column(
@@ -96,7 +99,9 @@ class MealCard extends StatelessWidget {
                     ),
                     Text(
                       recipeName,
-                      style: Theme.of(context).textTheme.titleSmall,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            color: isCooked ? tokens.inkTertiary : null,
+                          ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -132,6 +137,15 @@ class MealCard extends StatelessWidget {
                   ],
                 ),
               ),
+              if (isCooked)
+                Padding(
+                  padding: const EdgeInsets.only(left: MacrovaSpacing.sm),
+                  child: Icon(
+                    Icons.check_circle,
+                    size: 18,
+                    color: tokens.semanticSuccess,
+                  ),
+                ),
               if (isPinned)
                 Container(
                   width: 8,
@@ -152,8 +166,9 @@ class MealCard extends StatelessWidget {
 
 class _MealThumbnail extends StatelessWidget {
   final MacrovaTokens tokens;
+  final bool isCooked;
 
-  const _MealThumbnail({required this.tokens});
+  const _MealThumbnail({required this.tokens, this.isCooked = false});
 
   @override
   Widget build(BuildContext context) {
@@ -172,7 +187,7 @@ class _MealThumbnail extends StatelessWidget {
         borderRadius: MacrovaRadius.borderSm,
       ),
       child: Icon(
-        Icons.restaurant,
+        isCooked ? Icons.check : Icons.restaurant,
         color: tokens.inkQuaternary,
       ),
     );

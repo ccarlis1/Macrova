@@ -293,9 +293,10 @@ After editing:
 
 Verify current status against source before treating any of these as production-ready:
 
-- **Meal-plan calendar view** — UI has a calendar toggle that renders a placeholder (`meal_plan_view_screen.dart`).
+- **Meal-plan calendar view** — Plan-horizon calendar (`MealPlanCalendar`) is wired on Meal Plan View; not a Gregorian month grid.
 - **Ingredient Hub "add to recipe"** — currently shows a snackbar instructing the user to use Recipe Builder (`ingredient_hub_screen.dart`).
-- **Frontend `PlanRequest` tag fields** — `frontend/lib/models/models.dart` may not carry all backend tag-filter fields present in `server.py`'s `PlanRequest`; confirm before relying on end-to-end tag filtering from the UI.
+- **Frontend pool tag filters** — Planner Config now surfaces pool-level `PlanRequest` fields (`cuisine` / `costLevel` / `prepTimeBucket` / `dietaryFlags`) via `MealPlanProvider` and sends them on generate. Slot-level `required_tag_slugs` / `preferred_tag_slugs` editors and tag-registry fetch (FE-5 / FE-8) remain out of scope.
+- **Local mark-cooked + favorites** — Device-only via `StorageService` (`cooked_slots`, `favorite_recipe_ids`) on `MealPlanProvider` / `RecipeProvider`. Not synced; favorites are not planner tags. Favorites-as-tag write path deferred until `backend-contract-auditor` confirms a contract.
 - **`MealPrepReference` / meal-prep batching** — marked `partial` in architecture.json. NOTE: meal-prep is further along in source than the architecture.json `unknowns` claim — `src/data_layer/meal_prep.py` and `src/api/meal_prep_routes.py` now exist and the router is wired into `server.py`. Trust the source; treat the architecture.json "missing meal-prep" notes as stale and verify behavior directly.
 
 ---

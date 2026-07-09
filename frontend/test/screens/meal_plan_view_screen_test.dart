@@ -189,6 +189,30 @@ void main() {
         expect(find.text('Advisories'), findsNothing);
       },
     );
+
+    testWidgets(
+      'Given a plan meal card, When tapped, Then MealDetailSheet opens with Mark cooked only',
+      (tester) async {
+        tester.view.physicalSize = const Size(1000, 1600);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final provider = MealPlanProvider()
+          ..applyPlanResult(_successWithWarningsPlan());
+
+        await tester.pumpWidget(_wrap(provider));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Oatmeal'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Mark cooked'), findsOneWidget);
+        expect(find.text('This device only'), findsOneWidget);
+        expect(find.text('Pin'), findsNothing);
+        expect(find.text('Swap'), findsNothing);
+      },
+    );
   });
 
   group('MealPlanViewScreen calendar toggle', () {

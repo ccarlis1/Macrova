@@ -10,6 +10,7 @@ import '../theme/tokens.dart';
 import '../widgets/advisory_card.dart';
 import '../widgets/failure_panel.dart';
 import '../widgets/meal_card.dart';
+import '../widgets/meal_detail_sheet.dart';
 import '../widgets/meal_plan_calendar.dart';
 import '../widgets/micronutrient_bar.dart';
 import '../widgets/section_header.dart';
@@ -73,7 +74,21 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
               const SizedBox(height: MacrovaSpacing.xlAlt),
 
               if (_showCalendar) ...[
-                MealPlanCalendar(dailyPlans: mealPlan.dailyPlans),
+                MealPlanCalendar(
+                  dailyPlans: mealPlan.dailyPlans,
+                  isCooked: planProvider.isCooked,
+                  onMealTap: (day, mealIndex, meal) {
+                    MealDetailSheet.show(
+                      context: context,
+                      meal: meal,
+                      day: day,
+                      mealIndex: mealIndex,
+                      isCooked: planProvider.isCooked(day, mealIndex),
+                      onToggleCooked: () =>
+                          planProvider.toggleCooked(day, mealIndex),
+                    );
+                  },
+                ),
               ] else ...[
                 // Plan-wide macro totals (whole horizon; multi-day = sum or
                 // weekly_totals).
@@ -212,6 +227,7 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
     MacrovaTokens tokens,
     MealPlan mealPlan,
   ) {
+    final planProvider = context.watch<MealPlanProvider>();
     final days = mealPlan.dailyPlans;
     if (days.isEmpty || days.every((d) => d.meals.isEmpty)) {
       return Center(
@@ -239,13 +255,16 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
           ),
         ),
       );
-      for (final meal in d.meals) {
+      for (var i = 0; i < d.meals.length; i++) {
+        final meal = d.meals[i];
         final recipeName = meal.recipe['name'] as String? ?? 'Unknown Recipe';
         // Missing/unresolved recipes are surfaced by the model as an error meal
         // named "Missing recipe …" — the only per-slot warn signal the plan
         // response carries. Everything else stays in the default ok state
         // (pinned/empty/workout data is not present in the plan response).
         final isMissing = recipeName.startsWith('Missing recipe');
+        final day = d.day;
+        final mealIndex = i;
         blocks.add(
           Padding(
             padding: const EdgeInsets.only(bottom: MacrovaSpacing.sm),
@@ -258,6 +277,18 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
               fatG: meal.nutrition.fatG,
               slotState: isMissing ? MealSlotState.warn : MealSlotState.ok,
               warningText: isMissing ? 'Recipe unavailable' : null,
+              isCooked: planProvider.isCooked(day, mealIndex),
+              onTap: () {
+                MealDetailSheet.show(
+                  context: context,
+                  meal: meal,
+                  day: day,
+                  mealIndex: mealIndex,
+                  isCooked: planProvider.isCooked(day, mealIndex),
+                  onToggleCooked: () =>
+                      planProvider.toggleCooked(day, mealIndex),
+                );
+              },
             ),
           ),
         );

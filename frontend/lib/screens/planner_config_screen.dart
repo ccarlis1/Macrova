@@ -13,6 +13,7 @@ import '../widgets/advisory_card.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/macro_display.dart';
 import '../widgets/macrova_chip.dart';
+import '../widgets/planner/tag_pool_filter_section.dart';
 import '../widgets/section_header.dart';
 import '../widgets/segmented_control.dart';
 import '../widgets/stat_card.dart';
@@ -218,6 +219,10 @@ class PlannerConfigScreen extends StatelessWidget {
               ],
               const SizedBox(height: MacrovaSpacing.xlAlt),
 
+              // Recipe pool filters (pool-level PlanRequest tag fields)
+              TagPoolFilterSection(planProvider: planProvider),
+              const SizedBox(height: MacrovaSpacing.xlAlt),
+
               // Nutrition Targets
               const SectionHeader(title: 'Your Nutrition Targets'),
               Row(
@@ -274,9 +279,7 @@ class PlannerConfigScreen extends StatelessWidget {
                 borderRadius: MacrovaRadius.borderMd,
                 child: StickyCta(
                   label: 'Meal plan',
-                  detail:
-                      '${planProvider.days} ${planProvider.days == 1 ? 'day' : 'days'} · '
-                      '${planProvider.selectedRecipeIds.length} selected',
+                  detail: _ctaDetail(planProvider),
                   actions: [
                     StickyCtaAction(
                       label: planProvider.syncing
@@ -335,6 +338,14 @@ class PlannerConfigScreen extends StatelessWidget {
       micronutrientWeeklyMinFraction: profile.micronutrientWeeklyMinFraction,
       planningMode: planProvider.planningMode,
       recipeIds: recipeIds,
+      cuisine: planProvider.cuisine.isEmpty
+          ? null
+          : List<String>.from(planProvider.cuisine),
+      costLevel: planProvider.costLevel,
+      prepTimeBucket: planProvider.prepTimeBucket,
+      dietaryFlags: planProvider.dietaryFlags.isEmpty
+          ? null
+          : List<String>.from(planProvider.dietaryFlags),
     );
 
     final shell = context.findAncestorStateOfType<AppShellState>();
@@ -394,6 +405,18 @@ class PlannerConfigScreen extends StatelessWidget {
     if (planProvider.mealPlan != null) {
       shell?.navigateTo(6);
     }
+  }
+
+  static String _ctaDetail(MealPlanProvider planProvider) {
+    final parts = <String>[
+      '${planProvider.days} ${planProvider.days == 1 ? 'day' : 'days'}',
+      '${planProvider.selectedRecipeIds.length} selected',
+    ];
+    final filters = planProvider.activePoolFilterCount;
+    if (filters > 0) {
+      parts.add('$filters ${filters == 1 ? 'filter' : 'filters'}');
+    }
+    return parts.join(' · ');
   }
 }
 

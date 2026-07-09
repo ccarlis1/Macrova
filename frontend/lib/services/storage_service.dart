@@ -11,6 +11,10 @@ class StorageService {
   static const _plannerConfigKey = 'planner_config';
   static const _ingredientsKey = 'ingredients';
   static const _recipesKey = 'recipes';
+  /// Local-only cooked meal slots (`"$day:$mealIndex"`). Not synced to the server.
+  static const _cookedSlotsKey = 'cooked_slots';
+  /// Local-only favorite recipe ids. Not a planner tag / not synced.
+  static const _favoriteRecipeIdsKey = 'favorite_recipe_ids';
 
   static Future<void> saveProfile(UserProfile profile) async {
     final prefs = await SharedPreferences.getInstance();
@@ -67,5 +71,31 @@ class StorageService {
     return list
         .map((e) => Recipe.fromJson(e as Map<String, dynamic>))
         .toList();
+  }
+
+  /// Persists cooked slot keys (`"${day}:${mealIndex}"`, 1-based day, 0-based index).
+  static Future<void> saveCookedSlots(Set<String> keys) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_cookedSlotsKey, keys.toList()..sort());
+  }
+
+  static Future<Set<String>> loadCookedSlots() async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList(_cookedSlotsKey);
+    if (list == null) return {};
+    return list.where((k) => k.isNotEmpty).toSet();
+  }
+
+  /// Persists favorite recipe ids (device-local only).
+  static Future<void> saveFavoriteRecipeIds(Set<String> ids) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_favoriteRecipeIdsKey, ids.toList()..sort());
+  }
+
+  static Future<Set<String>> loadFavoriteRecipeIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList(_favoriteRecipeIdsKey);
+    if (list == null) return {};
+    return list.where((id) => id.isNotEmpty).toSet();
   }
 }

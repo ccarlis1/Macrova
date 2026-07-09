@@ -407,9 +407,21 @@
       "status": "implemented"
     },
     "meal_plan_calendar_view": {
-      "description": "UI has a calendar toggle but currently renders a placeholder text instead of calendar content.",
+      "description": "Plan-horizon calendar strip on Meal Plan View (MealPlanCalendar) bound to daily_plans; supports local mark-cooked via MealDetailSheet. Not a Gregorian month grid.",
       "files": [
-        "frontend/lib/screens/meal_plan_view_screen.dart"
+        "frontend/lib/screens/meal_plan_view_screen.dart",
+        "frontend/lib/widgets/meal_plan_calendar.dart",
+        "frontend/lib/widgets/meal_detail_sheet.dart"
+      ],
+      "status": "implemented"
+    },
+    "local_cooked_and_favorites": {
+      "description": "Device-local mark-cooked (MealPlanProvider + cooked_slots) and favorites (RecipeProvider + favorite_recipe_ids) via StorageService. Not synced; favorites are not planner tags. Favorites-as-tag deferred pending backend-contract-auditor.",
+      "files": [
+        "frontend/lib/services/storage_service.dart",
+        "frontend/lib/providers/meal_plan_provider.dart",
+        "frontend/lib/providers/recipe_provider.dart",
+        "frontend/lib/widgets/meal_detail_sheet.dart"
       ],
       "status": "partial"
     },
@@ -627,7 +639,7 @@
       ]
     },
     "TodayScreen": {
-      "description": "Home dashboard composing Day 1 plan vs targets, agent entry, up-next meal, Day 1 meal list, and library carousel from existing MealPlanProvider/ProfileProvider/RecipeProvider/LlmConfigProvider — no new APIs.",
+      "description": "Home dashboard composing Day 1 plan vs targets, agent entry, up-next meal (hero favorite heart + local label), Day 1 meal list (mark-cooked sheet), and library carousel from existing MealPlanProvider/ProfileProvider/RecipeProvider/LlmConfigProvider — no new APIs.",
       "files": [
         "frontend/lib/screens/today_screen.dart"
       ]
@@ -651,21 +663,25 @@
       ]
     },
     "RecipeLibraryScreen": {
-      "description": "Displays recipe cards from provider, supports refresh from API summaries, and opens selected recipe in builder.",
+      "description": "Displays recipe cards from provider, supports refresh from API summaries, opens selected recipe in builder, and wires featured hero local favorites (Saved on this device) via RecipeProvider — not a server tag.",
       "files": [
         "frontend/lib/screens/recipe_library_screen.dart"
       ]
     },
     "PlannerConfigScreen": {
-      "description": "Displays planning duration, planner mode, ingredient source, per-day schedule/workout setup, recipe pool selection, and plan generation action.",
+      "description": "Displays planning duration, planner mode, ingredient source, per-day schedule/workout setup, recipe pool selection, pool-level tag filters (cuisine/costLevel/prepTimeBucket/dietaryFlags via MealPlanProvider), nutrition targets, and plan generation action.",
       "files": [
-        "frontend/lib/screens/planner_config_screen.dart"
+        "frontend/lib/screens/planner_config_screen.dart",
+        "frontend/lib/widgets/planner/tag_pool_filter_section.dart",
+        "frontend/lib/providers/meal_plan_provider.dart"
       ]
     },
     "MealPlanViewScreen": {
-      "description": "Displays generated plan totals, micronutrient bars, day-by-day meal cards, warnings, and a calendar toggle placeholder.",
+      "description": "Displays generated plan totals, micronutrient bars, day-by-day meal cards with local mark-cooked (MealDetailSheet), warnings, and plan-horizon calendar toggle (MealPlanCalendar).",
       "files": [
-        "frontend/lib/screens/meal_plan_view_screen.dart"
+        "frontend/lib/screens/meal_plan_view_screen.dart",
+        "frontend/lib/widgets/meal_plan_calendar.dart",
+        "frontend/lib/widgets/meal_detail_sheet.dart"
       ]
     },
     "AgentPaneScreen": {
@@ -685,7 +701,6 @@
   "unknowns": [
     "Meal prep batch APIs/routes are referenced in sprint docs (e.g., docs/sprints/sprint1/BE-5-meal-prep-endpoints.md) but no matching implementation file exists under src/api (no src/api/meal_prep_routes.py found).",
     "Meal prep data-layer module is referenced in docs (docs/sprints/sprint1/DM-3-meal-prep-batch-entity.md references src/data_layer/meal_prep.py) but that file is not present in src/data_layer.",
-    "DEFAULT_TAG_PATH is set to data/recipes/recipe_tags.json in src/api/server.py, but no matching tag JSON file is present under data in this snapshot.",
-    "Frontend PlanRequest model (frontend/lib/models/models.dart) does not include backend tag-filter fields present in src/api/server.py PlanRequest; runtime behavior for passing those fields from frontend is unknown without additional integration code."
+    "DEFAULT_TAG_PATH is set to data/recipes/recipe_tags.json in src/api/server.py, but no matching tag JSON file is present under data in this snapshot."
   ]
 }

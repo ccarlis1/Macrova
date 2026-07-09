@@ -14,6 +14,7 @@ import '../widgets/app_shell.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/failure_panel.dart';
 import '../widgets/meal_card.dart';
+import '../widgets/meal_detail_sheet.dart';
 import '../widgets/recipe_card.dart';
 import '../widgets/section_header.dart';
 import '../widgets/stat_card.dart';
@@ -362,6 +363,11 @@ class TodayScreen extends StatelessWidget {
             recipe: library,
             badge: meal.mealType,
             subtitle: subtitleParts.join(' · '),
+            isFavorite: recipes.isFavorite(library.id),
+            onFavorite: () => recipes.toggleFavorite(library.id),
+            description: recipes.isFavorite(library.id)
+                ? 'Saved on this device'
+                : null,
             onView: () => _go(context, _navPlanner),
           )
         else
@@ -379,7 +385,17 @@ class TodayScreen extends StatelessWidget {
             warningText: recipeName.startsWith('Missing recipe')
                 ? 'Recipe unavailable'
                 : null,
-            onTap: () => _go(context, _navPlanner),
+            isCooked: planProvider.isCooked(1, 0),
+            onTap: () {
+              MealDetailSheet.show(
+                context: context,
+                meal: meal,
+                day: 1,
+                mealIndex: 0,
+                isCooked: planProvider.isCooked(1, 0),
+                onToggleCooked: () => planProvider.toggleCooked(1, 0),
+              );
+            },
           ),
       ],
     );
@@ -407,6 +423,7 @@ class TodayScreen extends StatelessWidget {
               final recipeName =
                   meal.recipe['name'] as String? ?? 'Unknown Recipe';
               final isMissing = recipeName.startsWith('Missing recipe');
+              final mealIndex = i;
               return Padding(
                 padding: const EdgeInsets.only(bottom: MacrovaSpacing.sm),
                 child: MealCard(
@@ -420,6 +437,18 @@ class TodayScreen extends StatelessWidget {
                   slotState:
                       isMissing ? MealSlotState.warn : MealSlotState.ok,
                   warningText: isMissing ? 'Recipe unavailable' : null,
+                  isCooked: planProvider.isCooked(1, mealIndex),
+                  onTap: () {
+                    MealDetailSheet.show(
+                      context: context,
+                      meal: meal,
+                      day: 1,
+                      mealIndex: mealIndex,
+                      isCooked: planProvider.isCooked(1, mealIndex),
+                      onToggleCooked: () =>
+                          planProvider.toggleCooked(1, mealIndex),
+                    );
+                  },
                 ),
               );
             },

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:macrova/features/agent/llm_config_provider.dart';
+import 'package:macrova/models/models.dart';
 import 'package:macrova/providers/meal_plan_provider.dart';
 import 'package:macrova/providers/profile_provider.dart';
 import 'package:macrova/providers/recipe_provider.dart';
@@ -105,6 +106,128 @@ void main() {
           find.text('1 recipes selected from your library'),
           findsOneWidget,
         );
+      },
+    );
+
+    testWidgets(
+      'Given pool filter chips, When dietary/cost/prep/cuisine are tapped, '
+      'Then MealPlanProvider state updates',
+      (tester) async {
+        tester.view.physicalSize = const Size(1000, 3200);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final mealPlan = MealPlanProvider();
+        mealPlan.setDays(1);
+
+        await _pumpScreen(tester, mealPlan: mealPlan);
+
+        expect(find.text('Recipe pool filters'), findsOneWidget);
+
+        await tester.ensureVisible(find.byKey(const Key('pool_filter_cuisine_mexican')));
+        await tester.tap(find.byKey(const Key('pool_filter_cuisine_mexican')));
+        await tester.pumpAndSettle();
+        expect(mealPlan.cuisine, contains('mexican'));
+
+        await tester.tap(find.byKey(const Key('pool_filter_cost_cheap')));
+        await tester.pumpAndSettle();
+        expect(mealPlan.costLevel, 'cheap');
+
+        await tester.tap(find.byKey(const Key('pool_filter_prep_quick_meal')));
+        await tester.pumpAndSettle();
+        expect(mealPlan.prepTimeBucket, 'quick_meal');
+
+        await tester.tap(find.byKey(const Key('pool_filter_dietary_vegan')));
+        await tester.pumpAndSettle();
+        expect(mealPlan.dietaryFlags, contains('vegan'));
+
+        expect(mealPlan.activePoolFilterCount, 4);
+        expect(find.text('Pool filters are active'), findsOneWidget);
+        expect(find.textContaining('4 filters'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'Given active pool filters, When PlanRequest is built from provider, '
+      'Then toJson includes pool tag keys; clearing omits them',
+      (tester) async {
+        tester.view.physicalSize = const Size(1000, 3200);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final mealPlan = MealPlanProvider();
+        mealPlan.setDays(1);
+        await _pumpScreen(tester, mealPlan: mealPlan);
+
+        await tester.ensureVisible(find.byKey(const Key('pool_filter_cuisine_italian')));
+        await tester.tap(find.byKey(const Key('pool_filter_cuisine_italian')));
+        await tester.tap(find.byKey(const Key('pool_filter_cost_standard')));
+        await tester.tap(find.byKey(const Key('pool_filter_prep_snack')));
+        await tester.tap(find.byKey(const Key('pool_filter_dietary_vegetarian')));
+        await tester.pumpAndSettle();
+
+        PlanRequest requestFromProvider(MealPlanProvider p) => PlanRequest(
+              dailyCalories: 2000,
+              dailyProteinG: 100,
+              dailyFatGMin: 40,
+              dailyFatGMax: 80,
+              days: p.days,
+              cuisine: p.cuisine.isEmpty ? null : List<String>.from(p.cuisine),
+              costLevel: p.costLevel,
+              prepTimeBucket: p.prepTimeBucket,
+              dietaryFlags:
+                  p.dietaryFlags.isEmpty ? null : List<String>.from(p.dietaryFlags),
+            );
+
+        final withFilters = requestFromProvider(mealPlan).toJson();
+        expect(withFilters['cuisine'], ['italian']);
+        expect(withFilters['cost_level'], 'standard');
+        expect(withFilters['prep_time_bucket'], 'snack');
+        expect(withFilters['dietary_flags'], ['vegetarian']);
+
+        await tester.tap(find.byKey(const Key('pool_filter_cuisine_clear')));
+        await tester.tap(find.byKey(const Key('pool_filter_cost_standard')));
+        await tester.tap(find.byKey(const Key('pool_filter_prep_snack')));
+        await tester.tap(find.byKey(const Key('pool_filter_dietary_vegetarian')));
+        await tester.pumpAndSettle();
+
+        expect(mealPlan.cuisine, isEmpty);
+        expect(mealPlan.costLevel, isNull);
+        expect(mealPlan.prepTimeBucket, isNull);
+        expect(mealPlan.dietaryFlags, isEmpty);
+
+        final cleared = requestFromProvider(mealPlan).toJson();
+        expect(cleared.containsKey('cuisine'), isFalse);
+        expect(cleared.containsKey('cost_level'), isFalse);
+        expect(cleared.containsKey('prep_time_bucket'), isFalse);
+        expect(cleared.containsKey('dietary_flags'), isFalse);
+      },
+    );
+  });
+
+  group('MealPlanProvider pool filters', () {
+    test(
+      'Given persisted filter keys, When load is called, '
+      'Then valid enums restore and invalid values are ignored',
+      () async {
+        await StorageService.savePlannerConfig({
+          'days': 3,
+          'cuisine': ['mexican', ''],
+          'cost_level': 'not_a_level',
+          'prep_time_bucket': 'quick_meal',
+          'dietary_flags': ['vegan', 'keto'],
+        });
+
+        final mealPlan = MealPlanProvider();
+        await mealPlan.load();
+
+        expect(mealPlan.days, 3);
+        expect(mealPlan.cuisine, ['mexican']);
+        expect(mealPlan.costLevel, isNull);
+        expect(mealPlan.prepTimeBucket, 'quick_meal');
+        expect(mealPlan.dietaryFlags, ['vegan']);
       },
     );
   });

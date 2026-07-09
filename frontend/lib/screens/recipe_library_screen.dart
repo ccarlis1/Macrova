@@ -52,6 +52,8 @@ class RecipeLibraryScreen extends StatelessWidget {
                     recipes: recipes,
                     onView: openRecipe,
                     onCreate: openCreate,
+                    isFavorite: recipeProvider.isFavorite,
+                    onFavorite: recipeProvider.toggleFavorite,
                   ),
           ),
         ),
@@ -168,11 +170,15 @@ class _RecipeGrid extends StatelessWidget {
   final List<Recipe> recipes;
   final void Function(Recipe recipe) onView;
   final VoidCallback onCreate;
+  final bool Function(String recipeId) isFavorite;
+  final Future<void> Function(String recipeId) onFavorite;
 
   const _RecipeGrid({
     required this.recipes,
     required this.onView,
     required this.onCreate,
+    required this.isFavorite,
+    required this.onFavorite,
   });
 
   @override
@@ -221,6 +227,11 @@ class _RecipeGrid extends StatelessWidget {
                   child: RecipeCard.hero(
                     recipe: featured,
                     badge: 'Featured',
+                    isFavorite: isFavorite(featured.id),
+                    onFavorite: () => onFavorite(featured.id),
+                    description: isFavorite(featured.id)
+                        ? 'Saved on this device'
+                        : null,
                     onView: () => onView(featured),
                   ),
                 ),

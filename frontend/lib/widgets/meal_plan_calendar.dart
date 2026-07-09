@@ -10,10 +10,14 @@ import 'section_header.dart';
 /// Uses 1-based plan day indices from the API — not a Gregorian month grid.
 class MealPlanCalendar extends StatefulWidget {
   final List<MealPlanDay> dailyPlans;
+  final bool Function(int day, int mealIndex)? isCooked;
+  final void Function(int day, int mealIndex, Meal meal)? onMealTap;
 
   const MealPlanCalendar({
     super.key,
     required this.dailyPlans,
+    this.isCooked,
+    this.onMealTap,
   });
 
   @override
@@ -113,7 +117,12 @@ class _MealPlanCalendarState extends State<MealPlanCalendar> {
         ),
         if (selected != null) ...[
           const SizedBox(height: MacrovaSpacing.sectionTop),
-          _SelectedDayDetail(day: selected, tokens: tokens),
+          _SelectedDayDetail(
+            day: selected,
+            tokens: tokens,
+            isCooked: widget.isCooked,
+            onMealTap: widget.onMealTap,
+          ),
         ],
       ],
     );
@@ -185,10 +194,14 @@ class _DayCell extends StatelessWidget {
 class _SelectedDayDetail extends StatelessWidget {
   final MealPlanDay day;
   final MacrovaTokens tokens;
+  final bool Function(int day, int mealIndex)? isCooked;
+  final void Function(int day, int mealIndex, Meal meal)? onMealTap;
 
   const _SelectedDayDetail({
     required this.day,
     required this.tokens,
+    this.isCooked,
+    this.onMealTap,
   });
 
   @override
@@ -219,17 +232,31 @@ class _SelectedDayDetail extends StatelessWidget {
             ),
           )
         else
-          for (final meal in day.meals)
+          for (var i = 0; i < day.meals.length; i++)
             Padding(
               padding: const EdgeInsets.only(bottom: MacrovaSpacing.sm),
-              child: _mealCardFor(meal),
+              child: _mealCardFor(
+                day.meals[i],
+                day: day.day,
+                mealIndex: i,
+                cooked: isCooked?.call(day.day, i) ?? false,
+                onTap: onMealTap == null
+                    ? null
+                    : () => onMealTap!(day.day, i, day.meals[i]),
+              ),
             ),
       ],
     );
   }
 
   /// Same slot-state mapping as Daily List in [MealPlanViewScreen].
-  static MealCard _mealCardFor(Meal meal) {
+  static MealCard _mealCardFor(
+    Meal meal, {
+    required int day,
+    required int mealIndex,
+    required bool cooked,
+    VoidCallback? onTap,
+  }) {
     final recipeName = meal.recipe['name'] as String? ?? 'Unknown Recipe';
     final isMissing = recipeName.startsWith('Missing recipe');
     return MealCard(
@@ -241,6 +268,8 @@ class _SelectedDayDetail extends StatelessWidget {
       fatG: meal.nutrition.fatG,
       slotState: isMissing ? MealSlotState.warn : MealSlotState.ok,
       warningText: isMissing ? 'Recipe unavailable' : null,
+      isCooked: cooked,
+      onTap: onTap,
     );
   }
 }

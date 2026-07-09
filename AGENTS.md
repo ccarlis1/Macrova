@@ -295,7 +295,8 @@ Verify current status against source before treating any of these as production-
 
 - **Meal-plan calendar view** — Plan-horizon calendar (`MealPlanCalendar`) is wired on Meal Plan View; not a Gregorian month grid.
 - **Ingredient Hub "add to recipe"** — currently shows a snackbar instructing the user to use Recipe Builder (`ingredient_hub_screen.dart`).
-- **Frontend pool tag filters** — Planner Config now surfaces pool-level `PlanRequest` fields (`cuisine` / `costLevel` / `prepTimeBucket` / `dietaryFlags`) via `MealPlanProvider` and sends them on generate. Slot-level `required_tag_slugs` / `preferred_tag_slugs` editors and tag-registry fetch (FE-5 / FE-8) remain out of scope.
+- **Frontend pool tag filters** — Wired end-to-end: Planner Config + Agent `planFromText` send pool-level fields (`cuisine` / `cost_level` / `prep_time_bucket` / `dietary_flags`) via `MealPlanProvider`. Slot-level `required_tag_slugs` / `preferred_tag_slugs` editors and tag-registry fetch (FE-5 / FE-8) remain out of scope.
+- **Structured planner failures (FE)** — Today and Meal Plan View branch on `plan_status` and surface `report.failures[]` via `FailureViewModel` / `FailurePanel` (see `docs/frontend/failure-handling.md`). Do not parse `termination_code` for UX.
 - **Local mark-cooked + favorites** — Device-only via `StorageService` (`cooked_slots`, `favorite_recipe_ids`) on `MealPlanProvider` / `RecipeProvider`. Not synced; favorites are not planner tags. Favorites-as-tag write path deferred until `backend-contract-auditor` confirms a contract.
 - **`MealPrepReference` / meal-prep batching** — marked `partial` in architecture.json. NOTE: meal-prep is further along in source than the architecture.json `unknowns` claim — `src/data_layer/meal_prep.py` and `src/api/meal_prep_routes.py` now exist and the router is wired into `server.py`. Trust the source; treat the architecture.json "missing meal-prep" notes as stale and verify behavior directly.
 
@@ -308,7 +309,8 @@ Verify current status against source before treating any of these as production-
 - **Tagging:** `docs/tagging/tag-semantics-contract.md`, `src/llm/tag_repository.py`, `src/llm/tag_filtering_service.py`.
 - **LLM features / roadmap:** `docs/llm/roadmap.md`, `src/llm/pipeline.py`.
 - **API contracts:** `src/api/server.py`, `openapi/openapi.json`, `tests/api/`.
-- **Frontend:** `frontend/lib/main.dart`, `frontend/lib/widgets/app_shell.dart`, `docs/usage/flutter-setup.md`.
+- **Frontend:** `frontend/lib/main.dart`, `frontend/lib/widgets/app_shell.dart`, `docs/usage/flutter-setup.md`, `docs/frontend/failure-handling.md`, `docs/frontend/state-invariants.md`.
+- **PlanResponse contract / fixtures:** `docs/contracts/plan-response.md`, `docs/testing/plan-fixtures.md`.
 - **Per-feature history (use cautiously, lowest priority):** `docs/sprints/`, `docs/archive/sprint-notes/`.
 
 Always inspect the relevant `architecture.json` entries and the deeper doc before broad changes; reconcile any conflict in favor of current source and report it.

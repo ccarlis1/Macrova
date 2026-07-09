@@ -8,7 +8,7 @@ import '../providers/meal_plan_provider.dart';
 import '../providers/profile_provider.dart';
 import '../theme/tokens.dart';
 import '../widgets/advisory_card.dart';
-import '../widgets/failure_panel.dart';
+import '../widgets/failure_view_model.dart';
 import '../widgets/meal_card.dart';
 import '../widgets/meal_detail_sheet.dart';
 import '../widgets/meal_plan_calendar.dart';
@@ -40,9 +40,8 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
     }
 
     final totalNutrition = mealPlan.totalNutrition;
-    // Deterministic planner reports feasibility via `success`. A false value is
-    // an actionable failure (FailurePanel); true-with-warnings is an advisory.
-    final isFailure = !mealPlan.success;
+    // UX branch key is plan_status (not success / termination_code).
+    final isIncomplete = mealPlan.planStatus != 'success';
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(MacrovaSpacing.xlAlt),
@@ -106,9 +105,9 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
               // Structured planner outcome: keep actionable failures distinct
               // from success-with-warnings advisories. Rendered regardless of
               // the view toggle so the outcome is never hidden.
-              if (isFailure) ...[
+              if (isIncomplete) ...[
                 const SizedBox(height: MacrovaSpacing.sectionTop),
-                _buildFailurePanel(mealPlan),
+                FailureViewModel.fromMealPlan(mealPlan).toPanel(),
               ] else if (mealPlan.warnings.isNotEmpty) ...[
                 const SizedBox(height: MacrovaSpacing.sectionTop),
                 const SectionHeader(title: 'Advisories'),
@@ -302,30 +301,6 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: blocks,
-    );
-  }
-
-  /// Re-structures the flattened failure warnings back into a [FailurePanel]
-  /// without inventing data: the termination code is recovered from the
-  /// "Planner ended with …" line the model appends; remaining lines are the
-  /// cause.
-  Widget _buildFailurePanel(MealPlan mealPlan) {
-    String? code;
-    final causeLines = <String>[];
-    for (final w in mealPlan.warnings) {
-      final match = RegExp(r'^Planner ended with (.+)$').firstMatch(w);
-      if (match != null) {
-        code = match.group(1)?.trim();
-      } else {
-        causeLines.add(w);
-      }
-    }
-    final cause = causeLines.isNotEmpty
-        ? causeLines.join('\n')
-        : 'The planner could not build a feasible plan for these constraints.';
-    return FailurePanel(
-      terminationCode: code ?? '\u2014',
-      cause: cause,
     );
   }
 }

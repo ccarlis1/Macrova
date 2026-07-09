@@ -21,6 +21,7 @@ const _goals = {
 MealPlan _successWithWarningsPlan() {
   return MealPlan.fromPlanApiV1Response({
     'success': true,
+    'plan_status': 'success',
     'days': 1,
     'daily_plans': [
       {
@@ -49,12 +50,14 @@ MealPlan _successWithWarningsPlan() {
     ],
     'goals': _goals,
     'warnings': ['Sodium advisory: weekly total high'],
+    'report': {'failures': <dynamic>[]},
   });
 }
 
 MealPlan _multiDayPlan() {
   return MealPlan.fromPlanApiV1Response({
     'success': true,
+    'plan_status': 'success',
     'days': 3,
     'daily_plans': [
       {
@@ -116,17 +119,76 @@ MealPlan _multiDayPlan() {
     ],
     'goals': _goals,
     'warnings': const [],
+    'report': {'failures': <dynamic>[]},
   });
 }
 
 MealPlan _actionableFailurePlan() {
   return MealPlan.fromPlanApiV1Response({
     'success': false,
+    'termination_code': 'TC-2',
+    'plan_status': 'failed',
     'days': 1,
     'daily_plans': const [],
     'goals': _goals,
-    'warnings': ['No feasible plan for macro targets'],
-    'termination_code': 'FM-MACRO-INFEASIBLE',
+    'warnings': const [],
+    'report': {
+      'failures': [
+        {
+          'code': 'FM-MACRO-INFEASIBLE',
+          'message': 'No feasible plan for macro targets',
+          'details': <String, dynamic>{},
+          'fix_hint': 'Relax protein or calorie targets',
+        },
+      ],
+    },
+  });
+}
+
+MealPlan _partialPlan() {
+  return MealPlan.fromPlanApiV1Response({
+    'success': false,
+    'termination_code': 'TC-2',
+    'plan_status': 'partial',
+    'plan_status_message': 'Only day 1 could be filled',
+    'days': 1,
+    'daily_plans': [
+      {
+        'day': 1,
+        'meals': [
+          {
+            'meal_type': 'Breakfast',
+            'name': 'Partial Oats',
+            'nutrition': {
+              'calories': 280,
+              'protein_g': 12,
+              'fat_g': 6,
+              'carbs_g': 40,
+            },
+            'busyness_level': 2,
+            'ingredients': ['oats'],
+          },
+        ],
+        'totals': {
+          'calories': 280,
+          'protein_g': 12,
+          'fat_g': 6,
+          'carbs_g': 40,
+        },
+      },
+    ],
+    'goals': _goals,
+    'warnings': const [],
+    'report': {
+      'failures': [
+        {
+          'code': 'FM-MACRO-INFEASIBLE',
+          'message': 'Could not fill remaining slots',
+          'details': <String, dynamic>{},
+          'fix_hint': 'Widen the recipe pool',
+        },
+      ],
+    },
   });
 }
 
@@ -170,7 +232,7 @@ void main() {
 
     testWidgets(
       'Given an infeasible plan, When rendered, '
-      'Then a failure panel with the termination code is shown',
+      'Then a failure panel shows FM code and fix_hint',
       (tester) async {
         tester.view.physicalSize = const Size(1000, 1600);
         tester.view.devicePixelRatio = 1.0;
@@ -185,8 +247,31 @@ void main() {
 
         expect(find.byType(FailurePanel), findsOneWidget);
         expect(find.text('FM-MACRO-INFEASIBLE'), findsOneWidget);
+        expect(find.text('Relax protein or calorie targets'), findsOneWidget);
+        expect(find.text('TC-2'), findsNothing);
         expect(find.byType(AdvisoryCard), findsNothing);
         expect(find.text('Advisories'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'Given a partial plan, When rendered, '
+      'Then meals and FailurePanel are both visible',
+      (tester) async {
+        tester.view.physicalSize = const Size(1000, 1600);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final provider = MealPlanProvider()..applyPlanResult(_partialPlan());
+
+        await tester.pumpWidget(_wrap(provider));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Partial Oats'), findsOneWidget);
+        expect(find.byType(FailurePanel), findsOneWidget);
+        expect(find.text('FM-MACRO-INFEASIBLE'), findsOneWidget);
+        expect(find.text('Widen the recipe pool'), findsOneWidget);
       },
     );
 
@@ -278,8 +363,6 @@ void main() {
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
 
-        // Failure plans with empty daily_plans still show the screen body
-        // (mealPlan != null); calendar shows honest empty copy + failure panel.
         final provider = MealPlanProvider()
           ..applyPlanResult(_actionableFailurePlan());
 
@@ -293,6 +376,7 @@ void main() {
         expect(find.text('No meals in this plan'), findsOneWidget);
         expect(find.byType(FailurePanel), findsOneWidget);
         expect(find.text('FM-MACRO-INFEASIBLE'), findsOneWidget);
+        expect(find.text('Relax protein or calorie targets'), findsOneWidget);
       },
     );
   });

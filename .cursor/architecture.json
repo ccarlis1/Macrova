@@ -639,9 +639,10 @@
       ]
     },
     "TodayScreen": {
-      "description": "Home dashboard composing Day 1 plan vs targets, agent entry, up-next meal (hero favorite heart + local label), Day 1 meal list (mark-cooked sheet), and library carousel from existing MealPlanProvider/ProfileProvider/RecipeProvider/LlmConfigProvider — no new APIs.",
+      "description": "Home dashboard composing Day 1 plan vs targets, agent entry, up-next meal (hero favorite heart + local label), Day 1 meal list (mark-cooked sheet), plan_status FailurePanel / FM-* ApiException handling, and library carousel from existing MealPlanProvider/ProfileProvider/RecipeProvider/LlmConfigProvider — no new APIs.",
       "files": [
-        "frontend/lib/screens/today_screen.dart"
+        "frontend/lib/screens/today_screen.dart",
+        "frontend/lib/widgets/failure_view_model.dart"
       ]
     },
     "ProfileScreen": {
@@ -677,15 +678,16 @@
       ]
     },
     "MealPlanViewScreen": {
-      "description": "Displays generated plan totals, micronutrient bars, day-by-day meal cards with local mark-cooked (MealDetailSheet), warnings, and plan-horizon calendar toggle (MealPlanCalendar).",
+      "description": "Displays generated plan totals, micronutrient bars, day-by-day meal cards with local mark-cooked (MealDetailSheet), plan_status-driven FailurePanel vs success-with-warnings AdvisoryCard, and plan-horizon calendar toggle (MealPlanCalendar).",
       "files": [
         "frontend/lib/screens/meal_plan_view_screen.dart",
         "frontend/lib/widgets/meal_plan_calendar.dart",
-        "frontend/lib/widgets/meal_detail_sheet.dart"
+        "frontend/lib/widgets/meal_detail_sheet.dart",
+        "frontend/lib/widgets/failure_view_model.dart"
       ]
     },
     "AgentPaneScreen": {
-      "description": "Displays text-to-plan, ingredient matching, and validated recipe generation controls with result panels.",
+      "description": "Displays text-to-plan (same pool filters as /plan via MealPlanProvider), ingredient matching, and validated recipe generation controls with result panels; success toast only when plan.success is true.",
       "files": [
         "frontend/lib/features/agent/agent_pane_screen.dart"
       ]

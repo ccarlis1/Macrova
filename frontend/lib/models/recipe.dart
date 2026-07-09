@@ -271,6 +271,7 @@ class Recipe {
         'name': name,
         'cooking_time_minutes': cookingTimeMinutes,
         'instructions': instructions,
+        'default_servings': servings,
         'ingredients': ingredients
             .map(
               (e) => {

@@ -73,6 +73,8 @@ class MealPlanProvider extends ChangeNotifier {
   bool _loading = false;
   bool _syncing = false;
   String? _error;
+  String? _errorCode;
+  String? _errorMessage;
 
   int _days = 7;
   /// Per-day canonical schedule; length always equals [_days].
@@ -122,6 +124,8 @@ class MealPlanProvider extends ChangeNotifier {
   bool get loading => _loading;
   bool get syncing => _syncing;
   String? get error => _error;
+  String? get errorCode => _errorCode;
+  String? get errorMessage => _errorMessage;
   int get days => _days;
   List<DaySchedule> get scheduleDays => List.unmodifiable(_scheduleDays);
   Set<String> get selectedRecipeIds => Set.unmodifiable(_selectedRecipeIds);
@@ -454,16 +458,38 @@ class MealPlanProvider extends ChangeNotifier {
   List<DaySchedule> scheduleDaysForApi() =>
       List<DaySchedule>.from(_scheduleDays);
 
+  void _setError(Object e) {
+    if (e is ApiException) {
+      _errorCode = e.code;
+      _errorMessage = e.message;
+      _error = e.message;
+    } else {
+      _errorCode = null;
+      _errorMessage = e.toString();
+      _error = e.toString();
+    }
+  }
+
+  void _clearError() {
+    _error = null;
+    _errorCode = null;
+    _errorMessage = null;
+  }
+
+  /// Test-only: apply the same error mapping used by [generatePlan] catch.
+  @visibleForTesting
+  void debugSetError(Object e) => _setError(e);
+
   Future<void> generatePlan(PlanRequest request) async {
     _loading = true;
-    _error = null;
+    _clearError();
     notifyListeners();
 
     try {
       _mealPlan = await ApiService.plan(request);
       await _clearCookedSlots();
     } catch (e) {
-      _error = e is ApiException ? e.message : e.toString();
+      _setError(e);
     } finally {
       _loading = false;
       notifyListeners();
@@ -475,13 +501,13 @@ class MealPlanProvider extends ChangeNotifier {
     required PlanRequest request,
   }) async {
     _syncing = true;
-    _error = null;
+    _clearError();
     notifyListeners();
 
     try {
       await ApiService.syncRecipes(recipesToSync);
     } catch (e) {
-      _error = e is ApiException ? e.message : e.toString();
+      _setError(e);
       return;
     } finally {
       _syncing = false;
@@ -493,13 +519,14 @@ class MealPlanProvider extends ChangeNotifier {
 
   void clearPlan() {
     _mealPlan = null;
-    _error = null;
+    _clearError();
+    unawaited(_clearCookedSlots());
     notifyListeners();
   }
 
   void applyPlanResult(MealPlan plan) {
     _mealPlan = plan;
-    _error = null;
+    _clearError();
     if (_cookedSlots.isNotEmpty) {
       _cookedSlots.clear();
       unawaited(StorageService.saveCookedSlots(_cookedSlots));

@@ -12,7 +12,7 @@ import '../theme/tokens.dart';
 import '../widgets/advisory_card.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/empty_state.dart';
-import '../widgets/failure_panel.dart';
+import '../widgets/failure_view_model.dart';
 import '../widgets/meal_card.dart';
 import '../widgets/meal_detail_sheet.dart';
 import '../widgets/recipe_card.dart';
@@ -89,6 +89,7 @@ class TodayScreen extends StatelessWidget {
         tokens: tokens,
         greeting: _greetingFor(now),
         error: planProvider.error,
+        errorCode: planProvider.errorCode,
         llmReady: llmReady,
         recipes: recipes.recipes,
         onOpenPlanner: () => _go(context, _navPlanner),
@@ -97,7 +98,7 @@ class TodayScreen extends StatelessWidget {
     }
 
     final day1 = _day1(mealPlan);
-    final isFailure = !mealPlan.success;
+    final isIncomplete = mealPlan.planStatus != 'success';
 
     return Column(
       children: [
@@ -116,24 +117,23 @@ class TodayScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: MacrovaSpacing.xs),
                     Text(
-                      isFailure
-                          ? 'Latest plan did not succeed — see details below.'
+                      isIncomplete
+                          ? 'Latest plan did not fully succeed — see details below.'
                           : 'Day 1 of your current meal plan.',
                       style: MacrovaTypography.body(tokens.inkTertiary),
                     ),
                     const SizedBox(height: MacrovaSpacing.sectionTop),
 
                     if (planProvider.error != null) ...[
-                      AdvisoryCard(
-                        variant: AdvisoryVariant.warn,
-                        title: 'Planning error',
-                        description: planProvider.error!,
+                      _buildProviderError(
+                        planProvider.errorCode,
+                        planProvider.error!,
                       ),
                       const SizedBox(height: MacrovaSpacing.sectionTop),
                     ],
 
-                    if (isFailure) ...[
-                      _buildFailurePanel(mealPlan),
+                    if (isIncomplete) ...[
+                      FailureViewModel.fromMealPlan(mealPlan).toPanel(),
                       const SizedBox(height: MacrovaSpacing.sectionTop),
                     ] else if (mealPlan.warnings.isNotEmpty) ...[
                       const SectionHeader(title: 'Advisories'),
@@ -145,7 +145,7 @@ class TodayScreen extends StatelessWidget {
                       const SizedBox(height: MacrovaSpacing.sectionTop),
                     ],
 
-                    if (!isFailure && day1 != null) ...[
+                    if (day1 != null && day1.meals.isNotEmpty) ...[
                       _buildProgressBanner(
                         tokens,
                         day1.dayTotals,
@@ -160,7 +160,7 @@ class TodayScreen extends StatelessWidget {
                     }),
                     const SizedBox(height: MacrovaSpacing.sectionTop),
 
-                    if (!isFailure && day1 != null && day1.meals.isNotEmpty) ...[
+                    if (day1 != null && day1.meals.isNotEmpty) ...[
                       _buildUpNext(
                         context,
                         tokens,
@@ -192,17 +192,31 @@ class TodayScreen extends StatelessWidget {
           ),
         ),
         StickyCta(
-          label: isFailure ? 'Plan failed' : 'Plan ready',
+          label: isIncomplete ? 'Plan incomplete' : 'Plan ready',
           detail: _stickyDetail(mealPlan),
           actions: [
             StickyCtaAction(
-              label: isFailure ? 'Open Planner' : 'Re-generate',
+              label: isIncomplete ? 'Open Planner' : 'Re-generate',
               isPrimary: true,
               onPressed: () => _go(context, _navPlanner),
             ),
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildProviderError(String? errorCode, String message) {
+    if (errorCode != null && errorCode.startsWith('FM-')) {
+      return FailureViewModel(
+        terminationCode: errorCode,
+        cause: message,
+      ).toPanel();
+    }
+    return AdvisoryCard(
+      variant: AdvisoryVariant.warn,
+      title: 'Planning error',
+      description: message,
     );
   }
 
@@ -356,8 +370,7 @@ class TodayScreen extends StatelessWidget {
               ? '${meal.mealType} · preferred time $time'
               : meal.mealType,
         ),
-        // Prefer RecipeCard.hero when library has real nutrition; otherwise
-        // MealCard so plan macros are not shown as zeros.
+        // Always show planner meal nutrition on plan surfaces.
         if (library != null && library.ingredients.isNotEmpty)
           RecipeCard.hero(
             recipe: library,
@@ -369,6 +382,10 @@ class TodayScreen extends StatelessWidget {
                 ? 'Saved on this device'
                 : null,
             onView: () => _go(context, _navPlanner),
+            plannerCalories: meal.nutrition.calories,
+            plannerProteinG: meal.nutrition.proteinG,
+            plannerCarbsG: meal.nutrition.carbsG,
+            plannerFatG: meal.nutrition.fatG,
           )
         else
           MealCard(
@@ -491,32 +508,13 @@ class TodayScreen extends StatelessWidget {
       ],
     );
   }
-
-  Widget _buildFailurePanel(MealPlan mealPlan) {
-    String? code;
-    final causeLines = <String>[];
-    for (final w in mealPlan.warnings) {
-      final match = RegExp(r'^Planner ended with (.+)$').firstMatch(w);
-      if (match != null) {
-        code = match.group(1)?.trim();
-      } else {
-        causeLines.add(w);
-      }
-    }
-    final cause = causeLines.isNotEmpty
-        ? causeLines.join('\n')
-        : 'The planner could not build a feasible plan for these constraints.';
-    return FailurePanel(
-      terminationCode: code ?? '\u2014',
-      cause: cause,
-    );
-  }
 }
 
 class _EmptyToday extends StatelessWidget {
   final MacrovaTokens tokens;
   final String greeting;
   final String? error;
+  final String? errorCode;
   final bool llmReady;
   final List<Recipe> recipes;
   final VoidCallback onOpenPlanner;
@@ -526,6 +524,7 @@ class _EmptyToday extends StatelessWidget {
     required this.tokens,
     required this.greeting,
     required this.error,
+    required this.errorCode,
     required this.llmReady,
     required this.recipes,
     required this.onOpenPlanner,
@@ -556,11 +555,17 @@ class _EmptyToday extends StatelessWidget {
                     ),
                     const SizedBox(height: MacrovaSpacing.sectionTop),
                     if (error != null) ...[
-                      AdvisoryCard(
-                        variant: AdvisoryVariant.warn,
-                        title: 'Planning error',
-                        description: error!,
-                      ),
+                      if (errorCode != null && errorCode!.startsWith('FM-'))
+                        FailureViewModel(
+                          terminationCode: errorCode!,
+                          cause: error!,
+                        ).toPanel()
+                      else
+                        AdvisoryCard(
+                          variant: AdvisoryVariant.warn,
+                          title: 'Planning error',
+                          description: error!,
+                        ),
                       const SizedBox(height: MacrovaSpacing.sectionTop),
                     ],
                     EmptyState(

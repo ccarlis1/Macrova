@@ -212,10 +212,18 @@ class _AgentPaneScreenState extends State<AgentPaneScreen> {
         'prompt': prompt,
         'ingredient_source': meal.ingredientSource,
         'planning_mode': 'assisted',
+        if (meal.cuisine.isNotEmpty) 'cuisine': List<String>.from(meal.cuisine),
+        if (meal.costLevel != null) 'cost_level': meal.costLevel,
+        if (meal.prepTimeBucket != null)
+          'prep_time_bucket': meal.prepTimeBucket,
+        if (meal.dietaryFlags.isNotEmpty)
+          'dietary_flags': List<String>.from(meal.dietaryFlags),
       });
       if (!mounted) return;
       context.read<MealPlanProvider>().applyPlanResult(plan);
-      _toast('Plan generated');
+      if (plan.success) {
+        _toast('Plan generated');
+      }
       context.findAncestorStateOfType<AppShellState>()?.navigateTo(6);
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -555,9 +563,9 @@ class _AgentPromptCard extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: isDark
               ? [tokens.accentSoft, tokens.accentTint]
-              : const [
+              : [
                   MacrovaColors.accentSoft,
-                  Color(0xFFFAE8E2),
+                  tokens.accentTint,
                 ],
         ),
         borderRadius: MacrovaRadius.borderLg,

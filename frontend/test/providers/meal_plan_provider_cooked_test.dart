@@ -1,12 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:macrova/models/models.dart';
 import 'package:macrova/providers/meal_plan_provider.dart';
+import 'package:macrova/services/api_service.dart';
 import 'package:macrova/services/storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 MealPlan _samplePlan() {
   return MealPlan.fromPlanApiV1Response({
     'success': true,
+    'plan_status': 'success',
     'days': 1,
     'daily_plans': [
       {
@@ -40,6 +42,7 @@ MealPlan _samplePlan() {
       'daily_fat_g_max': 70.0,
       'daily_carbs_g': 200.0,
     },
+    'report': {'failures': <dynamic>[]},
   });
 }
 
@@ -83,6 +86,56 @@ void main() {
         expect(provider.isCooked(1, 0), isFalse);
         expect(provider.cookedSlots, isEmpty);
         expect(await StorageService.loadCookedSlots(), isEmpty);
+      },
+    );
+
+    test(
+      'Given cooked slots, When clearPlan is called, Then cooked set is cleared',
+      () async {
+        final provider = MealPlanProvider();
+        await provider.load();
+        provider.applyPlanResult(_samplePlan());
+        provider.toggleCooked(1, 0);
+        expect(provider.cookedSlots, isNotEmpty);
+
+        provider.clearPlan();
+        await Future<void>.delayed(Duration.zero);
+
+        expect(provider.mealPlan, isNull);
+        expect(provider.cookedSlots, isEmpty);
+        expect(await StorageService.loadCookedSlots(), isEmpty);
+      },
+    );
+  });
+
+  group('MealPlanProvider errorCode', () {
+    test(
+      'Given ApiException, When mapped, Then errorCode and errorMessage are set',
+      () {
+        final provider = MealPlanProvider();
+        provider.debugSetError(
+          const ApiException(
+            statusCode: 400,
+            code: 'FM-TAG-EMPTY',
+            message: 'No recipes match tags',
+          ),
+        );
+
+        expect(provider.errorCode, 'FM-TAG-EMPTY');
+        expect(provider.errorMessage, 'No recipes match tags');
+        expect(provider.error, 'No recipes match tags');
+      },
+    );
+
+    test(
+      'Given non-ApiException, When mapped, Then errorCode is null',
+      () {
+        final provider = MealPlanProvider();
+        provider.debugSetError(Exception('network down'));
+
+        expect(provider.errorCode, isNull);
+        expect(provider.errorMessage, contains('network down'));
+        expect(provider.error, contains('network down'));
       },
     );
   });

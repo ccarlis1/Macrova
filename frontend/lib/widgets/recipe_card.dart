@@ -23,6 +23,12 @@ class RecipeCard extends StatelessWidget {
   final String? subtitle;
   final String? description;
 
+  /// Optional planner-meal nutrition overrides for hero cards on plan surfaces.
+  final double? plannerCalories;
+  final double? plannerProteinG;
+  final double? plannerCarbsG;
+  final double? plannerFatG;
+
   const RecipeCard({
     super.key,
     required this.recipe,
@@ -33,7 +39,11 @@ class RecipeCard extends StatelessWidget {
         onFavorite = null,
         imageUrl = null,
         subtitle = null,
-        description = null;
+        description = null,
+        plannerCalories = null,
+        plannerProteinG = null,
+        plannerCarbsG = null,
+        plannerFatG = null;
 
   const RecipeCard.hero({
     super.key,
@@ -45,6 +55,10 @@ class RecipeCard extends StatelessWidget {
     this.imageUrl,
     this.subtitle,
     this.description,
+    this.plannerCalories,
+    this.plannerProteinG,
+    this.plannerCarbsG,
+    this.plannerFatG,
   }) : variant = RecipeCardVariant.hero;
 
   const RecipeCard.row({
@@ -57,7 +71,11 @@ class RecipeCard extends StatelessWidget {
         badge = null,
         isFavorite = false,
         onFavorite = null,
-        description = null;
+        description = null,
+        plannerCalories = null,
+        plannerProteinG = null,
+        plannerCarbsG = null,
+        plannerFatG = null;
 
   const RecipeCard.mini({
     super.key,
@@ -69,7 +87,11 @@ class RecipeCard extends StatelessWidget {
         badge = null,
         isFavorite = false,
         onFavorite = null,
-        description = null;
+        description = null,
+        plannerCalories = null,
+        plannerProteinG = null,
+        plannerCarbsG = null,
+        plannerFatG = null;
 
   @override
   Widget build(BuildContext context) {
@@ -87,6 +109,10 @@ class RecipeCard extends StatelessWidget {
           imageUrl: imageUrl,
           subtitle: subtitle,
           description: description,
+          plannerCalories: plannerCalories,
+          plannerProteinG: plannerProteinG,
+          plannerCarbsG: plannerCarbsG,
+          plannerFatG: plannerFatG,
         ),
       RecipeCardVariant.row => _RowRecipeCard(
           recipe: recipe,
@@ -255,6 +281,10 @@ class _HeroRecipeCard extends StatelessWidget {
   final String? imageUrl;
   final String? subtitle;
   final String? description;
+  final double? plannerCalories;
+  final double? plannerProteinG;
+  final double? plannerCarbsG;
+  final double? plannerFatG;
 
   const _HeroRecipeCard({
     required this.recipe,
@@ -265,13 +295,21 @@ class _HeroRecipeCard extends StatelessWidget {
     required this.imageUrl,
     required this.subtitle,
     required this.description,
+    this.plannerCalories,
+    this.plannerProteinG,
+    this.plannerCarbsG,
+    this.plannerFatG,
   });
 
   @override
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<MacrovaTokens>() ?? MacrovaTokens.light;
+    final calories = plannerCalories ?? recipe.perServingCalories;
+    final proteinG = plannerProteinG ?? recipe.perServingProteinG;
+    final carbsG = plannerCarbsG ?? recipe.perServingCarbsG;
+    final fatG = plannerFatG ?? recipe.perServingFatG;
     final meta = subtitle ??
-        '${recipe.servings} servings \u2022 ${recipe.perServingCalories.round()} kcal';
+        '${recipe.servings} servings \u2022 ${calories.round()} kcal';
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -356,10 +394,10 @@ class _HeroRecipeCard extends StatelessWidget {
                   Divider(color: tokens.lineSoft, height: 1),
                   const SizedBox(height: MacrovaSpacing.md),
                   MacroDisplay(
-                    calories: recipe.perServingCalories,
-                    proteinG: recipe.perServingProteinG,
-                    carbsG: recipe.perServingCarbsG,
-                    fatG: recipe.perServingFatG,
+                    calories: calories,
+                    proteinG: proteinG,
+                    carbsG: carbsG,
+                    fatG: fatG,
                     compact: true,
                   ),
                 ],

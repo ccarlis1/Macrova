@@ -10,6 +10,7 @@ import '../../theme/tokens.dart';
 import '../../widgets/advisory_card.dart';
 import '../../widgets/app_shell.dart';
 import '../../widgets/confidence_chip.dart';
+import '../../widgets/empty_state.dart';
 import '../../widgets/section_header.dart';
 import 'agent_api.dart';
 import 'agent_models.dart';
@@ -54,80 +55,31 @@ class AgentMatchResultsSection extends StatelessWidget {
         ...result.accepted.map(
           (a) => Padding(
             padding: const EdgeInsets.only(bottom: MacrovaSpacing.sm),
-            child: Container(
-              padding: const EdgeInsets.all(MacrovaSpacing.md),
-              decoration: BoxDecoration(
-                color: tokens.surfaceTint,
-                borderRadius: MacrovaRadius.borderSm,
-                border: Border.all(color: tokens.lineDefault),
+            child: _AgentMatchRow(
+              title: a.normalizedName,
+              subtitle: a.originalQuery,
+              trailing: ConfidenceChip(
+                level: confidenceFromScore(a.confidence),
+                label: '${(a.confidence * 100).toStringAsFixed(0)}% match',
               ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          a.normalizedName,
-                          style: MacrovaTypography.label(tokens.inkPrimary),
-                        ),
-                        const SizedBox(height: MacrovaSpacing.xs),
-                        Text(
-                          a.originalQuery,
-                          style: MacrovaTypography.caption(tokens.inkTertiary),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: MacrovaSpacing.sm),
-                  ConfidenceChip(
-                    level: confidenceFromScore(a.confidence),
-                    label:
-                        '${(a.confidence * 100).toStringAsFixed(0)}% match',
-                  ),
-                ],
-              ),
+              tokens: tokens,
             ),
           ),
         ),
         ...result.rejected.map(
           (r) => Padding(
             padding: const EdgeInsets.only(bottom: MacrovaSpacing.sm),
-            child: Container(
-              padding: const EdgeInsets.all(MacrovaSpacing.md),
-              decoration: BoxDecoration(
-                color: tokens.accentSoft,
-                borderRadius: MacrovaRadius.borderSm,
-                border: Border.all(color: tokens.accentTint),
+            child: _AgentMatchRow(
+              title: r.originalQuery,
+              subtitle: '${r.code}: ${r.message}',
+              subtitleColor: tokens.accentDeep,
+              leading: Icon(
+                Icons.error_outline,
+                size: 16,
+                color: tokens.accentDeep,
               ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 16,
-                    color: tokens.accentDeep,
-                  ),
-                  const SizedBox(width: MacrovaSpacing.sm),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          r.originalQuery,
-                          style: MacrovaTypography.label(tokens.inkPrimary),
-                        ),
-                        const SizedBox(height: MacrovaSpacing.xs),
-                        Text(
-                          '${r.code}: ${r.message}',
-                          style: MacrovaTypography.caption(tokens.accentDeep),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+              accent: true,
+              tokens: tokens,
             ),
           ),
         ),
@@ -160,6 +112,16 @@ class AgentGenerationResultsSection extends StatelessWidget {
         ),
         if (result.recipeIds.isNotEmpty) ...[
           const SizedBox(height: MacrovaSpacing.sm),
+          ...result.recipeIds.map(
+            (id) => Padding(
+              padding: const EdgeInsets.only(bottom: MacrovaSpacing.sm),
+              child: _AgentGenRow(
+                label: id,
+                done: true,
+                tokens: tokens,
+              ),
+            ),
+          ),
           SelectableText(
             result.recipeIds.join(', '),
             style: MacrovaTypography.caption(tokens.inkSecondary),
@@ -225,7 +187,7 @@ class _AgentPaneScreenState extends State<AgentPaneScreen> {
       width: 18,
       height: 18,
       child: CircularProgressIndicator(
-        strokeWidth: 2,
+        strokeWidth: 2.5,
         color: tokens.accent,
         backgroundColor: tokens.lineSoft,
       ),
@@ -363,12 +325,7 @@ class _AgentPaneScreenState extends State<AgentPaneScreen> {
         Theme.of(context).extension<MacrovaTokens>() ?? MacrovaTokens.light;
 
     if (!gate.llmReady) {
-      return Center(
-        child: Text(
-          'LLM gate closed.',
-          style: MacrovaTypography.bodyMedium(tokens.inkTertiary),
-        ),
-      );
+      return const _AgentGateClosedFallback();
     }
 
     return SingleChildScrollView(
@@ -381,94 +338,434 @@ class _AgentPaneScreenState extends State<AgentPaneScreen> {
             children: [
               Text(
                 'Agent',
-                style: Theme.of(context).textTheme.titleLarge,
+                style: MacrovaTypography.headline(tokens.inkPrimary),
               ),
               const SizedBox(height: MacrovaSpacing.sm),
               Text(
                 'Requires LLM configured on the server. Client validation only '
                 'confirms you entered credentials here.',
-                style: MacrovaTypography.bodyMedium(tokens.inkTertiary),
+                style: MacrovaTypography.body(tokens.inkTertiary),
               ),
               if (_sectionError != null) ...[
                 const SizedBox(height: MacrovaSpacing.md),
                 AgentSectionErrorBanner(message: _sectionError!),
               ],
               const SizedBox(height: MacrovaSpacing.xlAlt),
-              const SectionHeader(title: 'Plan from text'),
-              TextField(
+              _AgentPromptCard(
                 controller: _nlCtrl,
-                decoration: const InputDecoration(
-                  hintText: 'e.g. High protein vegetarian week, 3 meals…',
-                ),
-                minLines: 2,
-                maxLines: 5,
-              ),
-              const SizedBox(height: MacrovaSpacing.md),
-              FilledButton.icon(
-                onPressed: _nlLoading ? null : _runNlPlan,
-                icon: _nlLoading
-                    ? _loadingIcon(context)
-                    : const Icon(Icons.auto_awesome),
-                label: Text(_nlLoading ? 'Generating…' : 'Generate plan'),
+                loading: _nlLoading,
+                loadingIcon: _loadingIcon(context),
+                onGenerate: _runNlPlan,
               ),
               const SizedBox(height: MacrovaSpacing.xxl),
-              const SectionHeader(title: 'Match ingredient names'),
-              TextField(
-                controller: _matchCtrl,
-                decoration: const InputDecoration(
-                  hintText: 'One ingredient per line',
+              _AgentSectionCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SectionHeader(
+                      title: 'Match ingredient names',
+                      subtitle: 'One query per line · real confidence from match API',
+                    ),
+                    TextField(
+                      controller: _matchCtrl,
+                      decoration: const InputDecoration(
+                        hintText: 'One ingredient per line',
+                      ),
+                      minLines: 4,
+                      maxLines: 10,
+                    ),
+                    const SizedBox(height: MacrovaSpacing.md),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: FilledButton.tonalIcon(
+                        onPressed: _matchLoading ? null : _runMatch,
+                        icon: _matchLoading
+                            ? _loadingIcon(context)
+                            : const Icon(Icons.join_inner),
+                        label: Text(
+                          _matchLoading ? 'Matching…' : 'AI match',
+                        ),
+                      ),
+                    ),
+                    if (_matchLoading && _matchResult == null) ...[
+                      const SizedBox(height: MacrovaSpacing.md),
+                      const EmptyState.loading(label: 'Matching ingredients…'),
+                    ],
+                    if (_matchResult != null) ...[
+                      const SizedBox(height: MacrovaSpacing.md),
+                      AgentMatchResultsSection(result: _matchResult!),
+                    ],
+                  ],
                 ),
-                minLines: 4,
-                maxLines: 10,
               ),
-              const SizedBox(height: MacrovaSpacing.md),
-              FilledButton.tonalIcon(
-                onPressed: _matchLoading ? null : _runMatch,
-                icon: _matchLoading
-                    ? _loadingIcon(context)
-                    : const Icon(Icons.join_inner),
-                label: Text(_matchLoading ? 'Matching…' : 'AI match'),
-              ),
-              if (_matchResult != null) ...[
-                const SizedBox(height: MacrovaSpacing.md),
-                AgentMatchResultsSection(result: _matchResult!),
-              ],
               const SizedBox(height: MacrovaSpacing.xxl),
-              const SectionHeader(title: 'Generate validated recipes'),
-              TextField(
-                controller: _genCountCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Count (1–20)',
+              _AgentSectionCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SectionHeader(
+                      title: 'Generate validated recipes',
+                      subtitle:
+                          'Generate → validate → persist only if nutrition checks pass',
+                    ),
+                    TextField(
+                      controller: _genCountCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Count (1–20)',
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: MacrovaSpacing.md),
+                    TextField(
+                      controller: _genContextCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Context JSON',
+                        alignLabelWithHint: true,
+                        hintText: '{"theme":"Mediterranean"}',
+                      ),
+                      minLines: 2,
+                      maxLines: 6,
+                    ),
+                    const SizedBox(height: MacrovaSpacing.md),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: FilledButton.tonalIcon(
+                        onPressed: _genLoading ? null : _runGenerate,
+                        icon: _genLoading
+                            ? _loadingIcon(context)
+                            : const Icon(Icons.restaurant_menu),
+                        label: Text(
+                          _genLoading ? 'Generating…' : 'Generate & persist',
+                        ),
+                      ),
+                    ),
+                    if (_genLoading && _genResult == null) ...[
+                      const SizedBox(height: MacrovaSpacing.md),
+                      _AgentGenRow(
+                        label: 'Generating validated recipes…',
+                        running: true,
+                        tokens: tokens,
+                      ),
+                    ],
+                    if (_genResult != null) ...[
+                      const SizedBox(height: MacrovaSpacing.md),
+                      AgentGenerationResultsSection(result: _genResult!),
+                    ],
+                  ],
                 ),
-                keyboardType: TextInputType.number,
               ),
-              const SizedBox(height: MacrovaSpacing.md),
-              TextField(
-                controller: _genContextCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Context JSON',
-                  alignLabelWithHint: true,
-                  hintText: '{"theme":"Mediterranean"}',
-                ),
-                minLines: 2,
-                maxLines: 6,
-              ),
-              const SizedBox(height: MacrovaSpacing.md),
-              FilledButton.tonalIcon(
-                onPressed: _genLoading ? null : _runGenerate,
-                icon: _genLoading
-                    ? _loadingIcon(context)
-                    : const Icon(Icons.restaurant_menu),
-                label: Text(_genLoading ? 'Generating…' : 'Generate & persist'),
-              ),
-              if (_genResult != null) ...[
-                const SizedBox(height: MacrovaSpacing.md),
-                AgentGenerationResultsSection(result: _genResult!),
-              ],
               const SizedBox(height: MacrovaSpacing.xxl),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Tokenized fallback when the pane is shown with the LLM gate closed.
+class _AgentGateClosedFallback extends StatelessWidget {
+  const _AgentGateClosedFallback();
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens =
+        Theme.of(context).extension<MacrovaTokens>() ?? MacrovaTokens.light;
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: MacrovaSpacing.mobileMaxWidth,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(MacrovaSpacing.xxl),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(MacrovaSpacing.xlAlt),
+            decoration: BoxDecoration(
+              color: tokens.surfaceTint,
+              borderRadius: MacrovaRadius.borderLg,
+              border: Border.all(color: tokens.lineDefault),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: tokens.accentSoft,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: tokens.accentTint),
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    Icons.lock_outline,
+                    size: 28,
+                    color: tokens.accent,
+                  ),
+                ),
+                const SizedBox(height: MacrovaSpacing.xlAlt),
+                Text(
+                  'LLM gate closed.',
+                  style: MacrovaTypography.titleSm(tokens.inkPrimary),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: MacrovaSpacing.sm),
+                Text(
+                  'Validate LLM credentials on Profile to unlock Agent actions.',
+                  style: MacrovaTypography.bodyMedium(tokens.inkTertiary),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Accent-soft prompt surface for NL plan-from-text input.
+class _AgentPromptCard extends StatelessWidget {
+  const _AgentPromptCard({
+    required this.controller,
+    required this.loading,
+    required this.loadingIcon,
+    required this.onGenerate,
+  });
+
+  final TextEditingController controller;
+  final bool loading;
+  final Widget loadingIcon;
+  final VoidCallback onGenerate;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens =
+        Theme.of(context).extension<MacrovaTokens>() ?? MacrovaTokens.light;
+    final isDark = tokens.isDark;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(MacrovaSpacing.lgAlt),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? [tokens.accentSoft, tokens.accentTint]
+              : const [
+                  MacrovaColors.accentSoft,
+                  Color(0xFFFAE8E2),
+                ],
+        ),
+        borderRadius: MacrovaRadius.borderLg,
+        border: Border.all(color: tokens.accentTint),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            MacrovaTypography.labelCapsText('You said'),
+            style: MacrovaTypography.labelCaps(tokens.accentDeep),
+          ),
+          const SizedBox(height: MacrovaSpacing.sm),
+          const SectionHeader(
+            title: 'Plan from text',
+            subtitle: 'Natural language → assisted plan-from-text',
+          ),
+          TextField(
+            controller: controller,
+            style: MacrovaTypography.subtitle(tokens.inkPrimary).copyWith(
+              fontWeight: FontWeight.w500,
+            ),
+            decoration: InputDecoration(
+              hintText: 'e.g. High protein vegetarian week, 3 meals…',
+              filled: true,
+              fillColor: isDark
+                  ? MacrovaColorsDark.surfaceCard
+                  : MacrovaColors.surfaceCard,
+            ),
+            minLines: 2,
+            maxLines: 5,
+          ),
+          const SizedBox(height: MacrovaSpacing.md),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: FilledButton.icon(
+              onPressed: loading ? null : onGenerate,
+              icon: loading ? loadingIcon : const Icon(Icons.auto_awesome),
+              label: Text(loading ? 'Generating…' : 'Generate plan'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Hairline card shell for Match / Generate sections.
+class _AgentSectionCard extends StatelessWidget {
+  const _AgentSectionCard({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens =
+        Theme.of(context).extension<MacrovaTokens>() ?? MacrovaTokens.light;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(MacrovaSpacing.lg),
+      decoration: BoxDecoration(
+        color: tokens.isDark
+            ? MacrovaColorsDark.surfaceCard
+            : MacrovaColors.surfaceCard,
+        borderRadius: MacrovaRadius.borderLg,
+        border: Border.all(color: tokens.lineDefault),
+        boxShadow: MacrovaElevation.shadow1,
+      ),
+      child: child,
+    );
+  }
+}
+
+/// Match / reject row styled like prototype parse/match cards.
+class _AgentMatchRow extends StatelessWidget {
+  const _AgentMatchRow({
+    required this.title,
+    required this.subtitle,
+    required this.tokens,
+    this.trailing,
+    this.leading,
+    this.subtitleColor,
+    this.accent = false,
+  });
+
+  final String title;
+  final String subtitle;
+  final MacrovaTokens tokens;
+  final Widget? trailing;
+  final Widget? leading;
+  final Color? subtitleColor;
+  final bool accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(MacrovaSpacing.md),
+      decoration: BoxDecoration(
+        color: accent
+            ? tokens.accentSoft
+            : (tokens.isDark
+                ? MacrovaColorsDark.surfaceCard
+                : MacrovaColors.surfaceCard),
+        borderRadius: MacrovaRadius.borderSm,
+        border: Border.all(
+          color: accent ? tokens.accentTint : tokens.lineDefault,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (leading != null) ...[
+            leading!,
+            const SizedBox(width: MacrovaSpacing.sm),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: MacrovaTypography.label(tokens.inkPrimary),
+                ),
+                const SizedBox(height: MacrovaSpacing.xs),
+                Text(
+                  subtitle,
+                  style: MacrovaTypography.caption(
+                    subtitleColor ?? tokens.inkTertiary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (trailing != null) ...[
+            const SizedBox(width: MacrovaSpacing.sm),
+            trailing!,
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Gen-row presentation tied to real loading / done state (no fake phases).
+class _AgentGenRow extends StatelessWidget {
+  const _AgentGenRow({
+    required this.label,
+    required this.tokens,
+    this.running = false,
+    this.done = false,
+  });
+
+  final String label;
+  final MacrovaTokens tokens;
+  final bool running;
+  final bool done;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(MacrovaSpacing.md),
+      decoration: BoxDecoration(
+        color: tokens.isDark
+            ? MacrovaColorsDark.surfaceCard
+            : MacrovaColors.surfaceCard,
+        borderRadius: MacrovaRadius.borderSm,
+        border: Border.all(color: tokens.lineDefault),
+      ),
+      child: Row(
+        children: [
+          if (running)
+            SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: tokens.accent,
+                backgroundColor: tokens.lineSoft,
+              ),
+            )
+          else
+            Container(
+              width: 26,
+              height: 26,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: done
+                    ? tokens.semanticSuccessText
+                    : tokens.surfaceSoft,
+              ),
+              alignment: Alignment.center,
+              child: done
+                  ? const Icon(
+                      Icons.check,
+                      size: 14,
+                      color: MacrovaColors.onDarkFill,
+                    )
+                  : null,
+            ),
+          const SizedBox(width: MacrovaSpacing.md),
+          Expanded(
+            child: Text(
+              label,
+              style: MacrovaTypography.label(tokens.inkPrimary),
+            ),
+          ),
+        ],
       ),
     );
   }

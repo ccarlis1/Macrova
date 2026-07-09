@@ -10,6 +10,7 @@ import '../theme/tokens.dart';
 import '../widgets/advisory_card.dart';
 import '../widgets/failure_panel.dart';
 import '../widgets/meal_card.dart';
+import '../widgets/meal_plan_calendar.dart';
 import '../widgets/micronutrient_bar.dart';
 import '../widgets/section_header.dart';
 import '../widgets/segmented_control.dart';
@@ -72,7 +73,7 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
               const SizedBox(height: MacrovaSpacing.xlAlt),
 
               if (_showCalendar) ...[
-                _CalendarPlaceholder(tokens: tokens),
+                MealPlanCalendar(dailyPlans: mealPlan.dailyPlans),
               ] else ...[
                 // Plan-wide macro totals (whole horizon; multi-day = sum or
                 // weekly_totals).
@@ -320,36 +321,6 @@ class _EmptyPlanState extends StatelessWidget {
             style: MacrovaTypography.body(tokens.inkTertiary),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _CalendarPlaceholder extends StatelessWidget {
-  final MacrovaTokens tokens;
-
-  const _CalendarPlaceholder({required this.tokens});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: MacrovaSpacing.xxl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.calendar_month_outlined,
-              size: 48,
-              color: tokens.inkQuaternary,
-            ),
-            const SizedBox(height: MacrovaSpacing.md),
-            Text(
-              'Calendar view coming soon',
-              style: MacrovaTypography.body(tokens.inkTertiary),
-            ),
-          ],
-        ),
       ),
     );
   }

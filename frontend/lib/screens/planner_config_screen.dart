@@ -392,7 +392,7 @@ class PlannerConfigScreen extends StatelessWidget {
       context.read<LlmConfigProvider>().revokeReady(planProvider.error!);
     }
     if (planProvider.mealPlan != null) {
-      shell?.navigateTo(5);
+      shell?.navigateTo(6);
     }
   }
 }

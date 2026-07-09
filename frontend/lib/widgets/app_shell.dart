@@ -15,6 +15,7 @@ import '../screens/planner_config_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/recipe_builder_screen.dart';
 import '../screens/recipe_library_screen.dart';
+import '../screens/today_screen.dart';
 import '../theme/tokens.dart';
 import 'sidebar_nav.dart';
 
@@ -64,7 +65,8 @@ class AppShellState extends State<AppShell> {
   }
 
   void _onDestinationSelected(int index) {
-    if (index == 2) {
+    // Recipe Builder is index 3 after Today was inserted at 0.
+    if (index == 3) {
       context.read<RecipeBuilderCoordinator>().startCreate();
     }
     setState(() => _selectedIndex = index);
@@ -72,8 +74,9 @@ class AppShellState extends State<AppShell> {
 
   Widget _buildIndexedStack(BuildContext context) {
     return IndexedStack(
-      index: _selectedIndex.clamp(0, 6),
+      index: _selectedIndex.clamp(0, 7),
       children: [
+        const TodayScreen(),
         const ProfileScreen(),
         const IngredientHubScreen(),
         const RecipeBuilderScreen(),
@@ -86,7 +89,7 @@ class AppShellState extends State<AppShell> {
             final ready = context.read<LlmConfigProvider>().llmReady;
             if (ready) return const AgentPaneScreen();
             return AgentSetupScreen(
-              onOpenProfile: () => navigateTo(0),
+              onOpenProfile: () => navigateTo(1),
             );
           },
         ),

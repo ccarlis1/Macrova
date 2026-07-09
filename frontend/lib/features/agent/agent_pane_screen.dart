@@ -216,7 +216,7 @@ class _AgentPaneScreenState extends State<AgentPaneScreen> {
       if (!mounted) return;
       context.read<MealPlanProvider>().applyPlanResult(plan);
       _toast('Plan generated');
-      context.findAncestorStateOfType<AppShellState>()?.navigateTo(5);
+      context.findAncestorStateOfType<AppShellState>()?.navigateTo(6);
     } on ApiException catch (e) {
       if (!mounted) return;
       gate.revokeReady(e.message);

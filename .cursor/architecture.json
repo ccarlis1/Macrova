@@ -621,9 +621,15 @@
   },
   "ui": {
     "AppShell": {
-      "description": "Responsive shell: NavigationRail sidebar at viewport width >= 760px, bottom NavigationBar below; IndexedStack hosts profile, ingredient, recipe, planner, meal plan, and agent screens.",
+      "description": "Responsive shell: NavigationRail sidebar at viewport width >= 760px, bottom NavigationBar below; IndexedStack hosts eight modules (Today, Profile, Ingredients, Recipe Builder, Library, Planner, Plan View, Agent).",
       "files": [
         "frontend/lib/widgets/app_shell.dart"
+      ]
+    },
+    "TodayScreen": {
+      "description": "Home dashboard composing Day 1 plan vs targets, agent entry, up-next meal, Day 1 meal list, and library carousel from existing MealPlanProvider/ProfileProvider/RecipeProvider/LlmConfigProvider — no new APIs.",
+      "files": [
+        "frontend/lib/screens/today_screen.dart"
       ]
     },
     "ProfileScreen": {

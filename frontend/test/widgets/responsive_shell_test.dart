@@ -9,6 +9,7 @@ import 'package:macrova/providers/meal_plan_provider.dart';
 import 'package:macrova/providers/profile_provider.dart';
 import 'package:macrova/providers/recipe_builder_coordinator.dart';
 import 'package:macrova/providers/recipe_provider.dart';
+import 'package:macrova/widgets/sidebar_nav.dart';
 
 const _wideSize = Size(1200, 800);
 /// Below the 760px shell breakpoint but wide enough for screen content in tests.
@@ -61,7 +62,14 @@ Future<void> tapAgentTab(WidgetTester tester, {required bool wide}) async {
   if (wide) {
     await tester.tap(find.text('Agent Pane'));
   } else {
-    await tester.tap(find.byIcon(Icons.smart_toy_outlined));
+    // TodayScreen also shows smart_toy_outlined in its agent entry card;
+    // target the bottom NavigationBar destination only.
+    await tester.tap(
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.byIcon(Icons.smart_toy_outlined),
+      ),
+    );
   }
   await tester.pumpAndSettle();
 }
@@ -81,6 +89,9 @@ void main() {
         expect(find.byType(NavigationRail), findsOneWidget);
         expect(find.byType(NavigationBar), findsNothing);
         expect(find.text('Macrova'), findsOneWidget);
+        expect(find.text('Today'), findsOneWidget);
+        expect(AppNavItems.items, hasLength(8));
+        expect(AppNavItems.items.first.label, 'Today');
       },
     );
 
@@ -97,6 +108,8 @@ void main() {
         expect(find.byType(NavigationBar), findsOneWidget);
         expect(find.byType(NavigationRail), findsNothing);
         expect(find.text('Macrova'), findsNothing);
+        expect(AppNavItems.items, hasLength(8));
+        expect(find.text('Today'), findsOneWidget);
       },
     );
 
@@ -110,12 +123,19 @@ void main() {
 
         await pumpAppShell(tester);
 
-        expect(find.text('Editable Nutrition Targets'), findsOneWidget);
+        // Default tab is Today (index 0); Profile is index 1.
+        expect(
+          find.text('No meal plan yet. Generate one from the Planner.'),
+          findsOneWidget,
+        );
 
         await tester.tap(find.byIcon(Icons.egg_outlined));
         await tester.pumpAndSettle();
 
-        expect(find.text('Editable Nutrition Targets'), findsNothing);
+        expect(
+          find.text('No meal plan yet. Generate one from the Planner.'),
+          findsNothing,
+        );
         expect(find.text('Search for ingredients...'), findsOneWidget);
       },
     );
@@ -130,12 +150,18 @@ void main() {
 
         await pumpAppShell(tester);
 
-        expect(find.text('Editable Nutrition Targets'), findsOneWidget);
+        expect(
+          find.text('No meal plan yet. Generate one from the Planner.'),
+          findsOneWidget,
+        );
 
         await tester.tap(find.text('Ingredients'));
         await tester.pumpAndSettle();
 
-        expect(find.text('Editable Nutrition Targets'), findsNothing);
+        expect(
+          find.text('No meal plan yet. Generate one from the Planner.'),
+          findsNothing,
+        );
         expect(find.text('Search for ingredients...'), findsOneWidget);
       },
     );

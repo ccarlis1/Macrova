@@ -22,13 +22,13 @@ class RecipeLibraryScreen extends StatelessWidget {
     void openCreate() {
       context.read<RecipeBuilderCoordinator>().startCreate();
       final shell = context.findAncestorStateOfType<AppShellState>();
-      shell?.navigateTo(2);
+      shell?.navigateTo(3);
     }
 
     void openRecipe(Recipe recipe) {
       context.read<RecipeBuilderCoordinator>().openForEdit(recipe);
       final shell = context.findAncestorStateOfType<AppShellState>();
-      shell?.navigateTo(2);
+      shell?.navigateTo(3);
     }
 
     return Column(

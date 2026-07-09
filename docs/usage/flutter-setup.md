@@ -201,12 +201,12 @@ deactivate
 
 ### App shell (responsive layout)
 
-The Flutter app uses a single `AppShell` with an `IndexedStack` of seven screens (Profile, Ingredients, Recipe Builder, Library, Planner, Plan View, Agent Pane). Navigation is responsive:
+The Flutter app uses a single `AppShell` with an `IndexedStack` of eight screens (Today, Profile, Ingredients, Recipe Builder, Library, Planner, Plan View, Agent Pane). Navigation is responsive:
 
 - **Wide (≥ 760px logical width):** `NavigationRail` sidebar with the Macrova wordmark and labeled destinations.
-- **Narrow (< 760px):** bottom `NavigationBar` with the same seven destinations; only the selected tab shows a label (`onlyShowSelected`).
+- **Narrow (< 760px):** bottom `NavigationBar` with the same eight destinations; only the selected tab shows a label (`onlyShowSelected`).
 
-Both surfaces share one nav-item list and one selection handler (including Recipe Builder `startCreate()` on tab index 2 and the Agent LLM-ready gate). Run widget tests from `frontend/` with `flutter test test/widgets/responsive_shell_test.dart`.
+Both surfaces share one nav-item list and one selection handler (including Recipe Builder `startCreate()` on tab index 3 and the Agent LLM-ready gate). Default tab is Today (index 0). Run widget tests from `frontend/` with `flutter test test/widgets/responsive_shell_test.dart`.
 
 ---
 

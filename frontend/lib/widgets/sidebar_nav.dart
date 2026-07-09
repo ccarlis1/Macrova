@@ -18,6 +18,11 @@ class AppNavItem {
 abstract final class AppNavItems {
   static const items = [
     AppNavItem(
+      icon: Icons.today_outlined,
+      selectedIcon: Icons.today,
+      label: 'Today',
+    ),
+    AppNavItem(
       icon: Icons.person_outline,
       selectedIcon: Icons.person,
       label: 'Profile',

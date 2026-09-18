@@ -1,0 +1,7070 @@
+[
+ {
+  "id": "MB-001",
+  "title": "Office worker, simple 3 meals",
+  "cats": [
+   "baseline"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    832
+   ],
+   "distinct_meal_sets_per_day": [
+    235
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-002",
+  "title": "Maintenance with afternoon snack",
+  "cats": [
+   "baseline"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    54244
+   ],
+   "distinct_meal_sets_per_day": [
+    7619
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-003",
+  "title": "Three-day lean bulk",
+  "cats": [
+   "multi-day"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    23249,
+    23249,
+    23249
+   ],
+   "distinct_meal_sets_per_day": [
+    4843,
+    4843,
+    4843
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 577
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 3,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-004",
+  "title": "Moderate cut, 5 days, 3 meals",
+  "cats": [
+   "multi-day"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    212,
+    212,
+    212,
+    212,
+    212
+   ],
+   "distinct_meal_sets_per_day": [
+    62,
+    62,
+    62,
+    62,
+    62
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 15
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 5,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-005",
+  "title": "Vegetarian week-lite",
+  "cats": [
+   "multi-day"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    552,
+    552,
+    552
+   ],
+   "distinct_meal_sets_per_day": [
+    136,
+    136,
+    136
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 10
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 3,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-006",
+  "title": "Pescatarian two-meal day",
+  "cats": [
+   "baseline"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    792
+   ],
+   "distinct_meal_sets_per_day": [
+    262
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-007",
+  "title": "Endurance athlete, morning run",
+  "cats": [
+   "meal-timing",
+   "multi-day"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    4548,
+    4548
+   ],
+   "distinct_meal_sets_per_day": [
+    1022,
+    1022
+   ],
+   "day_enumeration_capped": [
+    false,
+    false
+   ],
+   "multiday_nodes": 3
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 2,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-008",
+  "title": "Busy parent, quick meals",
+  "cats": [
+   "cook-time"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    26312
+   ],
+   "distinct_meal_sets_per_day": [
+    1684
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-009",
+  "title": "Dairy-free three meals",
+  "cats": [
+   "preferences"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    106
+   ],
+   "distinct_meal_sets_per_day": [
+    29
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-010",
+  "title": "Gluten-free, 2 days",
+  "cats": [
+   "preferences",
+   "multi-day"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    302,
+    302
+   ],
+   "distinct_meal_sets_per_day": [
+    75,
+    75
+   ],
+   "day_enumeration_capped": [
+    false,
+    false
+   ],
+   "multiday_nodes": 11
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 2,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-011",
+  "title": "High-protein cut with shake",
+  "cats": [
+   "meal-timing"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    10236
+   ],
+   "distinct_meal_sets_per_day": [
+    2441
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-012",
+  "title": "Shift worker, late schedule",
+  "cats": [
+   "meal-timing"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    394
+   ],
+   "distinct_meal_sets_per_day": [
+    209
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-013",
+  "title": "Intermittent fasting 16:8",
+  "cats": [
+   "meal-timing"
+  ],
+  "cls": "borderline",
+  "expected": "FM-2",
+  "acceptable": [
+   "FM-2",
+   "FM-5"
+  ],
+  "got": "FM-1",
+  "status": "MISMATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 1, \"slot_id\": \"day-1-slot-1\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    0
+   ],
+   "distinct_meal_sets_per_day": [
+    0
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "infeasible_days": [
+    0
+   ],
+   "min_tolerance_for_feasibility": 0.12
+  },
+  "spec_notes": [
+   "Two atomic recipes must jointly land four +-10% windows; no pair does, one does at +-12% (no portion variable, OR review 2.1)."
+  ],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-014",
+  "title": "Liked foods steer choice",
+  "cats": [
+   "preferences"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    1218
+   ],
+   "distinct_meal_sets_per_day": [
+    478
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-015",
+  "title": "Older adult, smaller appetite",
+  "cats": [
+   "baseline"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    58722
+   ],
+   "distinct_meal_sets_per_day": [
+    3896
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-016",
+  "title": "Five meals bodybuilding",
+  "cats": [
+   "meal-timing"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    60000
+   ],
+   "distinct_meal_sets_per_day": [
+    7116
+   ],
+   "day_enumeration_capped": [
+    true
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-017",
+  "title": "Four-day vegetarian with snacks",
+  "cats": [
+   "multi-day"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    16560,
+    16560,
+    16560,
+    16560
+   ],
+   "distinct_meal_sets_per_day": [
+    1914,
+    1914,
+    1914,
+    1914
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 2586
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 4,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-018",
+  "title": "Nut allergy, simple",
+  "cats": [
+   "preferences"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    448
+   ],
+   "distinct_meal_sets_per_day": [
+    170
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": {
+   "must_not_contain_cache_keys": [
+    "almonds",
+    "almond_butter_unsalted",
+    "peanut_butter"
+   ]
+  }
+ },
+ {
+  "id": "MB-019",
+  "title": "Calorie ceiling with slack",
+  "cats": [
+   "calorie-ceiling"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    552
+   ],
+   "distinct_meal_sets_per_day": [
+    242
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": true,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-020",
+  "title": "Week plan, 3 meals, large pool",
+  "cats": [
+   "multi-day"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    1218,
+    1218,
+    1218,
+    1218,
+    1218,
+    1218,
+    1218
+   ],
+   "distinct_meal_sets_per_day": [
+    478,
+    478,
+    478,
+    478,
+    478,
+    478,
+    478
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 103
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 7,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-021",
+  "title": "Fiber goal, 3 days",
+  "cats": [
+   "micronutrients",
+   "multi-day"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    1896,
+    1896,
+    1896
+   ],
+   "distinct_meal_sets_per_day": [
+    725,
+    725,
+    725
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 9
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 3,
+  "micro": true,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-022",
+  "title": "Iron and calcium tracking, relaxed tau",
+  "cats": [
+   "micronutrients",
+   "multi-day"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    57564,
+    57564,
+    57564
+   ],
+   "distinct_meal_sets_per_day": [
+    6927,
+    6927,
+    6927
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 303
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 3,
+  "micro": true,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-023",
+  "title": "Pinned favorite breakfast",
+  "cats": [
+   "pins",
+   "multi-day"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    46,
+    1052
+   ],
+   "distinct_meal_sets_per_day": [
+    23,
+    279
+   ],
+   "day_enumeration_capped": [
+    false,
+    false
+   ],
+   "multiday_nodes": 2
+  },
+  "spec_notes": [
+   "Only day 0 is pinned; pinning the same non-workout breakfast on day 1 would violate HC-8 (see pin-conflict scenarios)."
+  ],
+  "needs_ceiling": false,
+  "n_days": 2,
+  "micro": false,
+  "pins": 1,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-024",
+  "title": "Pinned dinner out",
+  "cats": [
+   "pin-conflict",
+   "cook-time"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-3",
+  "acceptable": [
+   "FM-3"
+  ],
+  "got": "FM-3",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-3",
+  "incomplete": null,
+  "report_codes": [
+   "FM-3"
+  ],
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 1, \"slot_index\": 2, \"slot_id\": \"day-2-slot-2\", \"date\": \"day-2\", \"details\": {\"recipe_id\": \"dn_salmon_potatoes\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "detail": null,
+  "stage_exp": "pre_search",
+  "oracle": {
+   "pin": [
+    0,
+    2,
+    "dn_salmon_potatoes"
+   ],
+   "violation": "HC-3",
+   "cook_minutes": 35,
+   "slot_cap": 30
+  },
+  "spec_notes": [
+   "Someone else cooks, but HC-3 pre-validation still rejects a 35-min pinned recipe in a busyness-3 (<=30 min) slot -> FM-3. Pins cannot express 'not cooked by me'."
+  ],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 1,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-025",
+  "title": "Preferred tags only",
+  "cats": [
+   "tags"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    832
+   ],
+   "distinct_meal_sets_per_day": [
+    235
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [
+   "preferred_tag_slugs are soft (HC-9 excludes them); a nutrition_claim tag is allowed as a preference."
+  ],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-026",
+  "title": "Required breakfast tag, satisfiable",
+  "cats": [
+   "tags"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    306
+   ],
+   "distinct_meal_sets_per_day": [
+    193
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-027",
+  "title": "Portable lunch requirement",
+  "cats": [
+   "tag-conflict",
+   "multi-day-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-1",
+  "acceptable": [
+   "FM-1",
+   "FM-5"
+  ],
+  "got": "FM-1",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 1, \"slot_index\": 1, \"slot_id\": \"day-2-slot-1\", \"date\": \"day-2\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    139,
+    139
+   ],
+   "distinct_meal_sets_per_day": [
+    79,
+    79
+   ],
+   "day_enumeration_capped": [
+    false,
+    false
+   ],
+   "multiday_nodes": 19460,
+   "reason": "HC-8 consecutive-day repetition leaves no valid day sequence"
+  },
+  "spec_notes": [
+   "Each day is feasible alone, but every valid day uses the same portable lunch in a non-workout slot, so HC-8 blocks day 2 (FM-1 per spec 11: 'eligible recipes were used in non-workout slots yesterday')."
+  ],
+  "needs_ceiling": false,
+  "n_days": 2,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-028",
+  "title": "Meal prep across non-consecutive days",
+  "cats": [
+   "meal-prep",
+   "multi-day"
+  ],
+  "cls": "borderline",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "INVALID_PLAN",
+  "viol": [
+   "d0s1: pin/lock not honored (ln_chickpea_salad -> ln_tuna_poke)",
+   "d2s1: pin/lock not honored (ln_chickpea_salad -> ln_tuna_poke)"
+  ],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    19,
+    672,
+    19
+   ],
+   "distinct_meal_sets_per_day": [
+    12,
+    206,
+    12
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 16
+  },
+  "spec_notes": [
+   "Non-consecutive days, so HC-8 does not fire; 10-minute recipe fits the busyness-2 lunch cap."
+  ],
+  "needs_ceiling": false,
+  "n_days": 3,
+  "micro": false,
+  "pins": 0,
+  "batches": 1,
+  "safety": null
+ },
+ {
+  "id": "MB-029",
+  "title": "Workout-slot shake repeats daily",
+  "cats": [
+   "multi-day",
+   "meal-timing"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    2171,
+    2171,
+    2171
+   ],
+   "distinct_meal_sets_per_day": [
+    855,
+    855,
+    855
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 59
+  },
+  "spec_notes": [
+   "Slot 2 is post-workout (workout after meal 2), so HC-8 exempts the repeated shake."
+  ],
+  "needs_ceiling": false,
+  "n_days": 3,
+  "micro": false,
+  "pins": 3,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-030",
+  "title": "16:8 with bigger target",
+  "cats": [
+   "meal-timing"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-2",
+  "acceptable": [
+   "FM-2",
+   "FM-5"
+  ],
+  "got": "FM-1",
+  "status": "MISMATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 1, \"slot_id\": \"day-1-slot-1\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    0
+   ],
+   "distinct_meal_sets_per_day": [
+    0
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "infeasible_days": [
+    0
+   ],
+   "min_tolerance_for_feasibility": 0.2
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-031",
+  "title": "Small cut, 1,500 kcal",
+  "cats": [
+   "baseline"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    524
+   ],
+   "distinct_meal_sets_per_day": [
+    129
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-032",
+  "title": "Vegan high protein",
+  "cats": [
+   "nutrition-conflict"
+  ],
+  "cls": "borderline",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    6
+   ],
+   "distinct_meal_sets_per_day": [
+    2
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-033",
+  "title": "Big bulk, four meals",
+  "cats": [
+   "baseline"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    2063
+   ],
+   "distinct_meal_sets_per_day": [
+    720
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-034",
+  "title": "Narrow fat window",
+  "cats": [
+   "nutrition-conflict"
+  ],
+  "cls": "borderline",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    30
+   ],
+   "distinct_meal_sets_per_day": [
+    9
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-035",
+  "title": "Ceiling equals target",
+  "cats": [
+   "calorie-ceiling"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    745
+   ],
+   "distinct_meal_sets_per_day": [
+    289
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [
+   "Effective kcal window becomes [1620, 1800] (lower -10% bound, ceiling as upper)."
+  ],
+  "needs_ceiling": true,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-036",
+  "title": "Everything under five minutes",
+  "cats": [
+   "cook-time"
+  ],
+  "cls": "borderline",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    12
+   ],
+   "distinct_meal_sets_per_day": [
+    2
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-037",
+  "title": "Gluten-free and dairy-free",
+  "cats": [
+   "preferences"
+  ],
+  "cls": "borderline",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    16
+   ],
+   "distinct_meal_sets_per_day": [
+    6
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-038",
+  "title": "Pescatarian four days",
+  "cats": [
+   "multi-day"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    890,
+    890,
+    890,
+    890
+   ],
+   "distinct_meal_sets_per_day": [
+    271,
+    271,
+    271,
+    271
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 98
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 4,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-039",
+  "title": "Vegetarian full week",
+  "cats": [
+   "multi-day"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    465,
+    465,
+    465,
+    465,
+    465,
+    465,
+    465
+   ],
+   "distinct_meal_sets_per_day": [
+    115,
+    115,
+    115,
+    115,
+    115,
+    115,
+    115
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 19
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 7,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-040",
+  "title": "Fiber 38 g strict, 3 days",
+  "cats": [
+   "micronutrients",
+   "multi-day"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    972,
+    972,
+    972
+   ],
+   "distinct_meal_sets_per_day": [
+    369,
+    369,
+    369
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 5
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 3,
+  "micro": true,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-041",
+  "title": "Potassium 3,400 mg, 2 days",
+  "cats": [
+   "micronutrients",
+   "multi-day"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    1969,
+    1969
+   ],
+   "distinct_meal_sets_per_day": [
+    727,
+    727
+   ],
+   "day_enumeration_capped": [
+    false,
+    false
+   ],
+   "multiday_nodes": 5
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 2,
+  "micro": true,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-042",
+  "title": "Magnesium with tau 0.9",
+  "cats": [
+   "micronutrients",
+   "multi-day"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    1235,
+    1235,
+    1235
+   ],
+   "distinct_meal_sets_per_day": [
+    449,
+    449,
+    449
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 45
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 3,
+  "micro": true,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-043",
+  "title": "Low-fat heart diet",
+  "cats": [
+   "nutrition-conflict"
+  ],
+  "cls": "borderline",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    68
+   ],
+   "distinct_meal_sets_per_day": [
+    10
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-044",
+  "title": "Curated 10-recipe list, 3 days",
+  "cats": [
+   "recipe-inventory",
+   "multi-day-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-1",
+  "acceptable": [
+   "FM-1",
+   "FM-5"
+  ],
+  "got": "FM-1",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    1,
+    1,
+    1
+   ],
+   "distinct_meal_sets_per_day": [
+    1,
+    1,
+    1
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 2,
+   "reason": "HC-8 consecutive-day repetition leaves no valid day sequence"
+  },
+  "spec_notes": [
+   "Exactly one valid day exists; HC-8 forbids repeating its non-workout meals on day 2 -> FM-1."
+  ],
+  "needs_ceiling": false,
+  "n_days": 3,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-045",
+  "title": "Two-a-day training",
+  "cats": [
+   "meal-timing"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    60000
+   ],
+   "distinct_meal_sets_per_day": [
+    13944
+   ],
+   "day_enumeration_capped": [
+    true
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-046",
+  "title": "High-carb endurance",
+  "cats": [
+   "nutrition-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-2",
+  "acceptable": [
+   "FM-2",
+   "FM-5"
+  ],
+  "got": "FM-1",
+  "status": "MISMATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    0
+   ],
+   "distinct_meal_sets_per_day": [
+    0
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "infeasible_days": [
+    0
+   ],
+   "min_tolerance_for_feasibility": 0.2
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-047",
+  "title": "Six small meals",
+  "cats": [
+   "meal-timing"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    60000
+   ],
+   "distinct_meal_sets_per_day": [
+    5351
+   ],
+   "day_enumeration_capped": [
+    true
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-048",
+  "title": "Pinned lunch with tight remaining budget",
+  "cats": [
+   "pins"
+  ],
+  "cls": "borderline",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    9
+   ],
+   "distinct_meal_sets_per_day": [
+    8
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 1,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-049",
+  "title": "Quick lunches, relaxed dinners, 5 days",
+  "cats": [
+   "cook-time",
+   "multi-day"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    461,
+    461,
+    461,
+    461,
+    461
+   ],
+   "distinct_meal_sets_per_day": [
+    224,
+    224,
+    224,
+    224,
+    224
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 171
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 5,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-050",
+  "title": "Crash diet with very high protein",
+  "cats": [
+   "nutrition-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-2",
+  "acceptable": [
+   "FM-2",
+   "FM-5"
+  ],
+  "got": "FM-1",
+  "status": "MISMATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 1, \"slot_id\": \"day-1-slot-1\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    0
+   ],
+   "distinct_meal_sets_per_day": [
+    0
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "infeasible_days": [
+    0
+   ],
+   "min_tolerance_for_feasibility": null
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-051",
+  "title": "5,000 kcal in two meals",
+  "cats": [
+   "meal-timing"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-2",
+  "acceptable": [
+   "FM-2",
+   "FM-5"
+  ],
+  "got": "FM-1",
+  "status": "MISMATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    0
+   ],
+   "distinct_meal_sets_per_day": [
+    0
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "infeasible_days": [
+    0
+   ],
+   "min_tolerance_for_feasibility": null
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-052",
+  "title": "Keto macros",
+  "cats": [
+   "nutrition-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-2",
+  "acceptable": [
+   "FM-2",
+   "FM-5"
+  ],
+  "got": "FM-1",
+  "status": "MISMATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    0
+   ],
+   "distinct_meal_sets_per_day": [
+    0
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "infeasible_days": [
+    0
+   ],
+   "min_tolerance_for_feasibility": null
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-053",
+  "title": "Negative derived carbs",
+  "cats": [
+   "nutrition-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-2",
+  "acceptable": [
+   "FM-2",
+   "FM-5"
+  ],
+  "got": "FM-1",
+  "status": "MISMATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    0
+   ],
+   "distinct_meal_sets_per_day": [
+    0
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "infeasible_days": [
+    0
+   ],
+   "min_tolerance_for_feasibility": null
+  },
+  "spec_notes": [
+   "Derived carbs = (2000 - 600 - 160*9)/4 = -10 g; the input contract does not reject this (spec 2.1 has no validity rule)."
+  ],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-054",
+  "title": "Ceiling below the tolerance window",
+  "cats": [
+   "calorie-ceiling",
+   "nutrition-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-2",
+  "acceptable": [
+   "FM-2",
+   "FM-5"
+  ],
+  "got": "FM-1",
+  "status": "MISMATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    0
+   ],
+   "distinct_meal_sets_per_day": [
+    0
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "infeasible_days": [
+    0
+   ],
+   "min_tolerance_for_feasibility": 0.2
+  },
+  "spec_notes": [
+   "Window becomes [1800, 1700]: empty. A good implementation should reject pre-search."
+  ],
+  "needs_ceiling": true,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-055",
+  "title": "Vegan 180 g protein at 2,000 kcal",
+  "cats": [
+   "nutrition-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-2",
+  "acceptable": [
+   "FM-2",
+   "FM-5"
+  ],
+  "got": "FM-1",
+  "status": "MISMATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 1, \"slot_id\": \"day-1-slot-1\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    0
+   ],
+   "distinct_meal_sets_per_day": [
+    0
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "infeasible_days": [
+    0
+   ],
+   "min_tolerance_for_feasibility": null
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-056",
+  "title": "3,500 kcal with only snack-time slots",
+  "cats": [
+   "cook-time"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-2",
+  "acceptable": [
+   "FM-2",
+   "FM-5"
+  ],
+  "got": "FM-1",
+  "status": "MISMATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 1, \"slot_id\": \"day-1-slot-1\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    0
+   ],
+   "distinct_meal_sets_per_day": [
+    0
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "infeasible_days": [
+    0
+   ],
+   "min_tolerance_for_feasibility": null
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-057",
+  "title": "300 g protein",
+  "cats": [
+   "nutrition-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-2",
+  "acceptable": [
+   "FM-2",
+   "FM-5"
+  ],
+  "got": "FM-1",
+  "status": "MISMATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    0
+   ],
+   "distinct_meal_sets_per_day": [
+    0
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "infeasible_days": [
+    0
+   ],
+   "min_tolerance_for_feasibility": 0.3
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-058",
+  "title": "Fiber 60 g every day for a week",
+  "cats": [
+   "micronutrients",
+   "multi-day"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-4",
+  "acceptable": [
+   "FM-4",
+   "FM-5"
+  ],
+  "got": "FM-4",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-4"
+  ],
+  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"fiber_g\", \"achieved\": 0.0, \"required\": 420.0, \"full_req\": 420.0, \"deficit\": 420.0, \"classification\": \"structural\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    877,
+    877,
+    877,
+    877,
+    877,
+    877,
+    877
+   ],
+   "distinct_meal_sets_per_day": [
+    295,
+    295,
+    295,
+    295,
+    295,
+    295,
+    295
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 0,
+   "micronutrient_shortfall": {
+    "fiber_g": {
+     "best_achievable": 371.6,
+     "min_req": 420.0
+    }
+   }
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 7,
+  "micro": true,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-059",
+  "title": "Vitamin C 400 mg from food, 1,600 kcal",
+  "cats": [
+   "micronutrients"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-4",
+  "acceptable": [
+   "FM-4",
+   "FM-5"
+  ],
+  "got": "OK",
+  "status": "MISMATCH+INVALID",
+  "viol": [
+   "micro vitamin_c_mg 23.2 < floor 400.0"
+  ],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    2123
+   ],
+   "distinct_meal_sets_per_day": [
+    747
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 0,
+   "micronutrient_shortfall": {
+    "vitamin_c_mg": {
+     "best_achievable": 353.79,
+     "min_req": 400.0
+    }
+   }
+  },
+  "spec_notes": [
+   "D=1 with tracked micronutrients: reconciliation Q8 (structural pre-check rejects, but exit skips weekly validation)."
+  ],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": true,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-060",
+  "title": "No starches, still 2,800 kcal",
+  "cats": [
+   "preferences",
+   "nutrition-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-2",
+  "acceptable": [
+   "FM-2",
+   "FM-5"
+  ],
+  "got": "FM-1",
+  "status": "MISMATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 1, \"slot_id\": \"day-1-slot-1\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    0
+   ],
+   "distinct_meal_sets_per_day": [
+    0
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "infeasible_days": [
+    0
+   ],
+   "min_tolerance_for_feasibility": null
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-061",
+  "title": "Allergy list wipes the pool",
+  "cats": [
+   "recipe-inventory",
+   "preferences"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-1",
+  "acceptable": [
+   "FM-1"
+  ],
+  "got": "FM-1",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "candidate_generation",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "day_index": 0,
+   "slot_index": 0
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-062",
+  "title": "Seven days, three recipes",
+  "cats": [
+   "recipe-inventory",
+   "multi-day"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-1",
+  "acceptable": [
+   "FM-1",
+   "FM-5"
+  ],
+  "got": "FM-1",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 1, \"slot_index\": 0, \"slot_id\": \"day-2-slot-0\", \"date\": \"day-2\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4
+   ],
+   "distinct_meal_sets_per_day": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 20,
+   "reason": "HC-8 consecutive-day repetition leaves no valid day sequence"
+  },
+  "spec_notes": [
+   "The three recipes hit every day-1 window; HC-8 then forbids all of them on day 2 -> FM-1."
+  ],
+  "needs_ceiling": false,
+  "n_days": 7,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-063",
+  "title": "Eight meals, 1,400 kcal",
+  "cats": [
+   "meal-timing",
+   "recipe-inventory"
+  ],
+  "cls": "borderline",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    40320
+   ],
+   "distinct_meal_sets_per_day": [
+    1
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [
+   "Exactly one set of eight distinct <=5-minute recipes fits; any quick recipe removed from the library breaks it."
+  ],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-064",
+  "title": "Bulk on vegan snacks only",
+  "cats": [
+   "cook-time",
+   "preferences"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-2",
+  "acceptable": [
+   "FM-2",
+   "FM-5"
+  ],
+  "got": "FM-1",
+  "status": "MISMATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    0
+   ],
+   "distinct_meal_sets_per_day": [
+    0
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "infeasible_days": [
+    0
+   ],
+   "min_tolerance_for_feasibility": null
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-065",
+  "title": "Low-carb but high fiber",
+  "cats": [
+   "nutrition-conflict",
+   "micronutrients",
+   "multi-day"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-4",
+  "acceptable": [
+   "FM-4",
+   "FM-5"
+  ],
+  "got": "FM-1",
+  "status": "MISMATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 1, \"slot_index\": 2, \"slot_id\": \"day-2-slot-2\", \"date\": \"day-2\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    64,
+    64
+   ],
+   "distinct_meal_sets_per_day": [
+    14,
+    14
+   ],
+   "day_enumeration_capped": [
+    false,
+    false
+   ],
+   "multiday_nodes": 0,
+   "micronutrient_shortfall": {
+    "fiber_g": {
+     "best_achievable": 57.53,
+     "min_req": 70.0
+    }
+   }
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 2,
+  "micro": true,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-066",
+  "title": "Dairy-free with 1,200 mg calcium",
+  "cats": [
+   "nutrition-conflict",
+   "micronutrients",
+   "multi-day"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    122,
+    122,
+    122
+   ],
+   "distinct_meal_sets_per_day": [
+    37,
+    37,
+    37
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 61
+  },
+  "spec_notes": [
+   "Looks conflicting, but calcium-set tofu recipes carry ~1,300-1,700 mg calcium each."
+  ],
+  "needs_ceiling": false,
+  "n_days": 3,
+  "micro": true,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-067",
+  "title": "Vegetarian iron at 18 mg, 1,700 kcal",
+  "cats": [
+   "nutrition-conflict",
+   "micronutrients",
+   "multi-day"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-4",
+  "acceptable": [
+   "FM-4",
+   "FM-5"
+  ],
+  "got": "FM-5",
+  "status": "ACCEPTABLE",
+  "viol": [],
+  "tc": "TC-3",
+  "incomplete": null,
+  "report_codes": [
+   "FM-5"
+  ],
+  "report_first": "[{\"code\": \"FM-5\", \"message\": \"Planner stopped after reaching attempt limits.\", \"details\": {\"attempts\": 50000, \"backtracks\": 38150, \"search_exhaustive\": false, \"best_plan_violations\": {}}, \"fix_hint\": \"Planning hit the attempt limit. Simplify the schedule, widen macro targets, or reduce constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    538,
+    538,
+    538
+   ],
+   "distinct_meal_sets_per_day": [
+    142,
+    142,
+    142
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 0,
+   "micronutrient_shortfall": {
+    "iron_mg": {
+     "best_achievable": 71.32,
+     "min_req": 81.0
+    }
+   }
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 3,
+  "micro": true,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-068",
+  "title": "Same iron goal with tau 0.8",
+  "cats": [
+   "nutrition-conflict",
+   "micronutrients",
+   "multi-day"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "FM-5",
+  "status": "MISMATCH",
+  "viol": [],
+  "tc": "TC-3",
+  "incomplete": null,
+  "report_codes": [
+   "FM-5"
+  ],
+  "report_first": "[{\"code\": \"FM-5\", \"message\": \"Planner stopped after reaching attempt limits.\", \"details\": {\"attempts\": 50000, \"backtracks\": 38288, \"search_exhaustive\": false, \"best_plan_violations\": {}}, \"fix_hint\": \"Planning hit the attempt limit. Simplify the schedule, widen macro targets, or reduce constraints.\"}]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    538,
+    538,
+    538
+   ],
+   "distinct_meal_sets_per_day": [
+    142,
+    142,
+    142
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 25
+  },
+  "spec_notes": [
+   "Pair with the previous scenario: only tau differs. Expect micronutrient_soft_deficit warning (spec 6.6)."
+  ],
+  "needs_ceiling": false,
+  "n_days": 3,
+  "micro": true,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-069",
+  "title": "High protein, low fat, low calorie",
+  "cats": [
+   "nutrition-conflict"
+  ],
+  "cls": "borderline",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    36
+   ],
+   "distinct_meal_sets_per_day": [
+    7
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-070",
+  "title": "Fat floor too high for a cut",
+  "cats": [
+   "nutrition-conflict"
+  ],
+  "cls": "borderline",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    12
+   ],
+   "distinct_meal_sets_per_day": [
+    2
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-071",
+  "title": "Potassium 4,700 mg on 1,800 kcal",
+  "cats": [
+   "nutrition-conflict",
+   "micronutrients",
+   "multi-day"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "FM-5",
+  "status": "MISMATCH",
+  "viol": [],
+  "tc": "TC-3",
+  "incomplete": null,
+  "report_codes": [
+   "FM-5"
+  ],
+  "report_first": "[{\"code\": \"FM-5\", \"message\": \"Planner stopped after reaching attempt limits.\", \"details\": {\"attempts\": 50000, \"backtracks\": 38639, \"search_exhaustive\": false, \"best_plan_violations\": {}}, \"fix_hint\": \"Planning hit the attempt limit. Simplify the schedule, widen macro targets, or reduce constraints.\"}]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    2141,
+    2141
+   ],
+   "distinct_meal_sets_per_day": [
+    835,
+    835
+   ],
+   "day_enumeration_capped": [
+    false,
+    false
+   ],
+   "multiday_nodes": 5
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 2,
+  "micro": true,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-072",
+  "title": "Calcium and iron together, 4 days",
+  "cats": [
+   "nutrition-conflict",
+   "micronutrients",
+   "multi-day"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    57564,
+    57564,
+    57564,
+    57564
+   ],
+   "distinct_meal_sets_per_day": [
+    6927,
+    6927,
+    6927,
+    6927
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 604
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 4,
+  "micro": true,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-073",
+  "title": "Pre-workout carbs vs low-carb day",
+  "cats": [
+   "nutrition-conflict",
+   "meal-timing",
+   "tags"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    116
+   ],
+   "distinct_meal_sets_per_day": [
+    48
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-074",
+  "title": "Ceiling slightly under +10%",
+  "cats": [
+   "nutrition-conflict",
+   "calorie-ceiling"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    682
+   ],
+   "distinct_meal_sets_per_day": [
+    266
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": true,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-075",
+  "title": "Protein floor and fat cap on vegetarian bulk",
+  "cats": [
+   "nutrition-conflict"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    380
+   ],
+   "distinct_meal_sets_per_day": [
+    50
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-076",
+  "title": "Magnesium strict vs UL note",
+  "cats": [
+   "nutrition-conflict",
+   "micronutrients",
+   "multi-day"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    803,
+    803
+   ],
+   "distinct_meal_sets_per_day": [
+    298,
+    298
+   ],
+   "day_enumeration_capped": [
+    false,
+    false
+   ],
+   "multiday_nodes": 45
+  },
+  "spec_notes": [
+   "Reference magnesium UL (350 mg, supplement-only) is below this RDI; if ULs were wired into plan_meals this becomes infeasible by construction (reconciliation B6/E10). Oracle does not apply ULs."
+  ],
+  "needs_ceiling": false,
+  "n_days": 2,
+  "micro": true,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-077",
+  "title": "Starter pack, one day",
+  "cats": [
+   "recipe-inventory"
+  ],
+  "cls": "borderline",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    2
+   ],
+   "distinct_meal_sets_per_day": [
+    1
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-078",
+  "title": "Starter pack, two days",
+  "cats": [
+   "recipe-inventory",
+   "multi-day-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-1",
+  "acceptable": [
+   "FM-1",
+   "FM-5"
+  ],
+  "got": "FM-1",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    2,
+    2
+   ],
+   "distinct_meal_sets_per_day": [
+    1,
+    1
+   ],
+   "day_enumeration_capped": [
+    false,
+    false
+   ],
+   "multiday_nodes": 6,
+   "reason": "HC-8 consecutive-day repetition leaves no valid day sequence"
+  },
+  "spec_notes": [
+   "Only one 3-recipe set fits the day; HC-8 forbids repeating it on day 2 -> FM-1."
+  ],
+  "needs_ceiling": false,
+  "n_days": 2,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-079",
+  "title": "Starter pack, full week",
+  "cats": [
+   "recipe-inventory",
+   "multi-day-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-1",
+  "acceptable": [
+   "FM-1",
+   "FM-5"
+  ],
+  "got": "FM-1",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2
+   ],
+   "distinct_meal_sets_per_day": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 6,
+   "reason": "HC-8 consecutive-day repetition leaves no valid day sequence"
+  },
+  "spec_notes": [
+   "With 6 recipes and 3 non-workout slots, HC-8 forces two disjoint triples alternating across 7 days."
+  ],
+  "needs_ceiling": false,
+  "n_days": 7,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-080",
+  "title": "Four recipes, four meals, two days",
+  "cats": [
+   "recipe-inventory",
+   "multi-day-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-1",
+  "acceptable": [
+   "FM-1",
+   "FM-5"
+  ],
+  "got": "FM-1",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 1, \"slot_index\": 0, \"slot_id\": \"day-2-slot-0\", \"date\": \"day-2\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    12,
+    12
+   ],
+   "distinct_meal_sets_per_day": [
+    1,
+    1
+   ],
+   "day_enumeration_capped": [
+    false,
+    false
+   ],
+   "multiday_nodes": 156,
+   "reason": "HC-8 consecutive-day repetition leaves no valid day sequence"
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 2,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-081",
+  "title": "Only slow recipes for busy slots",
+  "cats": [
+   "recipe-inventory",
+   "cook-time"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-1",
+  "acceptable": [
+   "FM-1"
+  ],
+  "got": "FM-1",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "candidate_generation",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "day_index": 0,
+   "slot_index": 0
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-082",
+  "title": "Only snack recipes saved",
+  "cats": [
+   "recipe-inventory"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    11400
+   ],
+   "distinct_meal_sets_per_day": [
+    95
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-083",
+  "title": "Vegan pool, week of dinners",
+  "cats": [
+   "recipe-inventory",
+   "multi-day-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-2",
+  "acceptable": [
+   "FM-2",
+   "FM-5"
+  ],
+  "got": "FM-1",
+  "status": "MISMATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "distinct_meal_sets_per_day": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "infeasible_days": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "min_tolerance_for_feasibility": 0.3
+  },
+  "spec_notes": [
+   "Single-slot days: HC-8 needs two alternating dinners that each fit the day windows."
+  ],
+  "needs_ceiling": false,
+  "n_days": 7,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-084",
+  "title": "Duplicate-only pool",
+  "cats": [
+   "recipe-inventory",
+   "data-quality"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-2",
+  "acceptable": [
+   "FM-2",
+   "FM-5"
+  ],
+  "got": "FM-1",
+  "status": "MISMATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    0
+   ],
+   "distinct_meal_sets_per_day": [
+    0
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "infeasible_days": [
+    0
+   ],
+   "min_tolerance_for_feasibility": null
+  },
+  "spec_notes": [
+   "HC-2 compares IDs, so eating the same bowl three times passes; the day still misses the kcal window (3 x 688 = 2,064 > 1,870)."
+  ],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-085",
+  "title": "Duplicate-content pool that fits",
+  "cats": [
+   "recipe-inventory",
+   "data-quality"
+  ],
+  "cls": "borderline",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    6
+   ],
+   "distinct_meal_sets_per_day": [
+    1
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [
+   "Spec-valid plan serves an identical meal three times (identity by ID; OR review 2.3). Quality metric: distinct content meals = 1."
+  ],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": {
+   "quality_expectation": "a variety-aware planner should flag or reject identical-content meals in one day"
+  }
+ },
+ {
+  "id": "MB-086",
+  "title": "Breakfast recipes missing",
+  "cats": [
+   "recipe-inventory",
+   "tag-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-TAG-EMPTY",
+  "acceptable": [
+   "FM-TAG-EMPTY"
+  ],
+  "got": "FM-TAG-EMPTY",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-TAG-EMPTY"
+  ],
+  "report_first": "[{\"code\": \"FM-TAG-EMPTY\", \"message\": \"No recipes satisfy required tag `breakfast` for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"\", \"details\": {\"missing_tag\": \"breakfast\", \"recipe_count\": 0}, \"fix_hint\": \"No recipes match tag `breakfast`. Add one or relax constraints.\"}]",
+  "detail": null,
+  "stage_exp": "candidate_generation",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "day_index": 0,
+   "slot_index": 0
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-087",
+  "title": "Excluded ingredients shrink pool",
+  "cats": [
+   "recipe-inventory",
+   "preferences",
+   "multi-day"
+  ],
+  "cls": "borderline",
+  "expected": "FM-2",
+  "acceptable": [
+   "FM-2",
+   "FM-5"
+  ],
+  "got": "FM-1",
+  "status": "MISMATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    0,
+    0
+   ],
+   "distinct_meal_sets_per_day": [
+    0,
+    0
+   ],
+   "day_enumeration_capped": [
+    false,
+    false
+   ],
+   "infeasible_days": [
+    0,
+    1
+   ],
+   "min_tolerance_for_feasibility": 0.12
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 2,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-088",
+  "title": "Pinned dinner out, relaxed slot",
+  "cats": [
+   "pins"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    29
+   ],
+   "distinct_meal_sets_per_day": [
+    20
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [
+   "Counterpart to the busyness-3 version: same pin, slot relaxed to busyness 4."
+  ],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 1,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-089",
+  "title": "Pinned mass gainer on a cut",
+  "cats": [
+   "pins",
+   "nutrition-conflict"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    30
+   ],
+   "distinct_meal_sets_per_day": [
+    15
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [
+   "Looks like a pin conflict (1,142 kcal pinned of 1,800) but two lean meals close the gap."
+  ],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 1,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-090",
+  "title": "Same recipe pinned twice in a day",
+  "cats": [
+   "pin-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-3",
+  "acceptable": [
+   "FM-3"
+  ],
+  "got": "FM-3",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-3",
+  "incomplete": null,
+  "report_codes": [
+   "FM-3"
+  ],
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 1, \"slot_index\": 2, \"slot_id\": \"day-2-slot-2\", \"date\": \"day-2\", \"details\": {\"recipe_id\": \"bk_protein_oats\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "detail": null,
+  "stage_exp": "pre_search",
+  "oracle": {
+   "pin": [
+    0,
+    2,
+    "bk_protein_oats"
+   ],
+   "violation": "HC-3",
+   "cook_minutes": 8,
+   "slot_cap": 5
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 2,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-091",
+  "title": "Same breakfast every weekday",
+  "cats": [
+   "pin-conflict",
+   "multi-day-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-3",
+  "acceptable": [
+   "FM-3"
+  ],
+  "got": "FM-3",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-3",
+  "incomplete": null,
+  "report_codes": [
+   "FM-3"
+  ],
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 2, \"slot_index\": 0, \"slot_id\": \"day-3-slot-0\", \"date\": \"day-3\", \"details\": {\"recipe_id\": \"bk_yogurt_berry_bowl\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "detail": null,
+  "stage_exp": "pre_search",
+  "oracle": {
+   "pins": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ]
+   ],
+   "recipe": "bk_yogurt_berry_bowl",
+   "violation": "HC-8"
+  },
+  "spec_notes": [
+   "HC-8 forbids the same non-workout recipe on consecutive days -> FM-3 pre-validation. A very common real habit the spec cannot express."
+  ],
+  "needs_ceiling": false,
+  "n_days": 3,
+  "micro": false,
+  "pins": 3,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-092",
+  "title": "Same breakfast every other day",
+  "cats": [
+   "pins",
+   "multi-day"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    40,
+    1256,
+    40
+   ],
+   "distinct_meal_sets_per_day": [
+    20,
+    344,
+    20
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 43
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 3,
+  "micro": false,
+  "pins": 2,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-093",
+  "title": "Pinned recipe contains allergen",
+  "cats": [
+   "pin-conflict",
+   "preferences"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-3",
+  "acceptable": [
+   "FM-3"
+  ],
+  "got": "FM-3",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-3",
+  "incomplete": null,
+  "report_codes": [
+   "FM-3"
+  ],
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 1, \"slot_index\": 0, \"slot_id\": \"day-2-slot-0\", \"date\": \"day-2\", \"details\": {\"recipe_id\": \"bk_pb_banana_toast\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "detail": null,
+  "stage_exp": "pre_search",
+  "oracle": {
+   "pin": [
+    0,
+    0,
+    "bk_pb_banana_toast"
+   ],
+   "violation": "HC-1"
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 1,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-094",
+  "title": "Pinned sheet-pan dinner on a busy night",
+  "cats": [
+   "pin-conflict",
+   "cook-time"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-3",
+  "acceptable": [
+   "FM-3"
+  ],
+  "got": "FM-3",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-3",
+  "incomplete": null,
+  "report_codes": [
+   "FM-3"
+  ],
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 1, \"slot_index\": 2, \"slot_id\": \"day-2-slot-2\", \"date\": \"day-2\", \"details\": {\"recipe_id\": \"dn_thigh_sheet_pan\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "detail": null,
+  "stage_exp": "pre_search",
+  "oracle": {
+   "pin": [
+    0,
+    2,
+    "dn_thigh_sheet_pan"
+   ],
+   "violation": "HC-3",
+   "cook_minutes": 45,
+   "slot_cap": 15
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 1,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-095",
+  "title": "Pinned meal alone breaks the ceiling",
+  "cats": [
+   "pin-conflict",
+   "calorie-ceiling"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-3",
+  "acceptable": [
+   "FM-3"
+  ],
+  "got": "FM-3",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-3",
+  "incomplete": null,
+  "report_codes": [
+   "FM-3"
+  ],
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 1, \"slot_index\": 2, \"slot_id\": \"day-2-slot-2\", \"date\": \"day-2\", \"details\": {\"recipe_id\": \"dn_big_pasta_night\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "detail": null,
+  "stage_exp": "pre_search",
+  "oracle": {
+   "pin": [
+    0,
+    2,
+    "dn_big_pasta_night"
+   ],
+   "violation": "HC-5"
+  },
+  "spec_notes": [],
+  "needs_ceiling": true,
+  "n_days": 1,
+  "micro": false,
+  "pins": 1,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-096",
+  "title": "Pin to a slot that no longer exists",
+  "cats": [
+   "pin-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-3",
+  "acceptable": [
+   "FM-3"
+  ],
+  "got": "FM-3",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-3",
+  "incomplete": null,
+  "report_codes": [
+   "FM-3"
+  ],
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 1, \"slot_index\": 3, \"slot_id\": \"day-2-slot-3\", \"date\": \"day-2\", \"details\": {\"recipe_id\": \"sn_trail_mix\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "detail": null,
+  "stage_exp": "pre_search",
+  "oracle": {
+   "pin": [
+    0,
+    3,
+    "sn_trail_mix"
+   ],
+   "violation": "slot-out-of-range"
+  },
+  "spec_notes": [
+   "Stale pin: slot_index 3 on a 3-slot day. Spec does not name this case; oracle treats it as FM-3."
+  ],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 1,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-097",
+  "title": "Pinned recipe not in selected pool",
+  "cats": [
+   "pin-conflict",
+   "recipe-inventory"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-3",
+  "acceptable": [
+   "FM-3"
+  ],
+  "got": "FM-3",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-3",
+  "incomplete": null,
+  "report_codes": [
+   "FM-3"
+  ],
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 1, \"slot_index\": 2, \"slot_id\": \"day-2-slot-2\", \"date\": \"day-2\", \"details\": {\"recipe_id\": \"hc_pasta_salmon_bake\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "detail": null,
+  "stage_exp": "pre_search",
+  "oracle": {
+   "pin": [
+    0,
+    2,
+    "hc_pasta_salmon_bake"
+   ],
+   "violation": "recipe-not-in-pool"
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 1,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-098",
+  "title": "Fully pinned day that misses targets",
+  "cats": [
+   "pin-conflict",
+   "nutrition-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-3",
+  "acceptable": [
+   "FM-2",
+   "FM-3",
+   "FM-5"
+  ],
+  "got": "FM-2",
+  "status": "ACCEPTABLE",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-MACRO-INFEASIBLE"
+  ],
+  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {\"calories\": -629.3599999999999, \"protein_g\": -45.88000000000001, \"fat_g\": -4.810000000000002, \"carbs_g\": -72.215}, \"constraint\": \"exhaustion\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    0
+   ],
+   "distinct_meal_sets_per_day": [
+    0
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "infeasible_days": [
+    0
+   ],
+   "min_tolerance_for_feasibility": 0.3
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 3,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-099",
+  "title": "Fully pinned day that fits",
+  "cats": [
+   "pins"
+  ],
+  "cls": "borderline",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "FM-2",
+  "status": "MISMATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-MACRO-INFEASIBLE"
+  ],
+  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {\"calories\": -29.3599999999999, \"protein_g\": -0.8800000000000097, \"fat_g\": 0.0, \"carbs_g\": -0.9650000000000034}, \"constraint\": \"exhaustion\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    1
+   ],
+   "distinct_meal_sets_per_day": [
+    1
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 3,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-100",
+  "title": "Pin lacks the slot's required tag",
+  "cats": [
+   "pins",
+   "tags"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    39
+   ],
+   "distinct_meal_sets_per_day": [
+    27
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [
+   "Precedence pin > required tags (spec 3.5): pinned slot skips HC-9."
+  ],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 1,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-101",
+  "title": "Two pins leave little room",
+  "cats": [
+   "pin-conflict",
+   "nutrition-conflict"
+  ],
+  "cls": "borderline",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    1
+   ],
+   "distinct_meal_sets_per_day": [
+    1
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 2,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-102",
+  "title": "Pins on non-consecutive days of a week",
+  "cats": [
+   "pins",
+   "multi-day"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    38,
+    926,
+    38,
+    926,
+    38
+   ],
+   "distinct_meal_sets_per_day": [
+    25,
+    362,
+    25,
+    362,
+    25
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 41
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 5,
+  "micro": false,
+  "pins": 3,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-103",
+  "title": "Required high-protein breakfast",
+  "cats": [
+   "tag-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-TAG-EMPTY",
+  "acceptable": [
+   "FM-TAG-EMPTY"
+  ],
+  "got": "FM-TAG-EMPTY",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-TAG-EMPTY"
+  ],
+  "report_first": "[{\"code\": \"FM-TAG-EMPTY\", \"message\": \"No recipes satisfy required tag `high-protein` for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"\", \"details\": {\"missing_tag\": \"high-protein\", \"recipe_count\": 0}, \"fix_hint\": \"No recipes match tag `high-protein`. Add one or relax constraints.\"}]",
+  "detail": null,
+  "stage_exp": "candidate_generation",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "day_index": 0,
+   "slot_index": 0
+  },
+  "spec_notes": [
+   "high-protein is a nutrition_claim (DM-6): hard_filter_allowed=false, so no recipe can satisfy it as a required tag -> FM-TAG-EMPTY despite many recipes carrying the tag."
+  ],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-104",
+  "title": "Required vegan breakfast in a mixed household",
+  "cats": [
+   "tags"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    36
+   ],
+   "distinct_meal_sets_per_day": [
+    18
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-105",
+  "title": "Vegan meal-prep breakfast",
+  "cats": [
+   "tag-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-TAG-EMPTY",
+  "acceptable": [
+   "FM-TAG-EMPTY"
+  ],
+  "got": "FM-TAG-EMPTY",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-TAG-EMPTY"
+  ],
+  "report_first": "[{\"code\": \"FM-TAG-EMPTY\", \"message\": \"No recipes satisfy required tag `breakfast` for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"\", \"details\": {\"missing_tag\": \"breakfast\", \"recipe_count\": 0}, \"fix_hint\": \"No recipes match tag `breakfast`. Add one or relax constraints.\"}]",
+  "detail": null,
+  "stage_exp": "candidate_generation",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "day_index": 0,
+   "slot_index": 0
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-106",
+  "title": "Portable vegan breakfast (proposed tag only)",
+  "cats": [
+   "tag-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-TAG-EMPTY",
+  "acceptable": [
+   "FM-TAG-EMPTY"
+  ],
+  "got": "FM-TAG-EMPTY",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-TAG-EMPTY"
+  ],
+  "report_first": "[{\"code\": \"FM-TAG-EMPTY\", \"message\": \"No recipes satisfy required tag `breakfast` for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"\", \"details\": {\"missing_tag\": \"breakfast\", \"recipe_count\": 0}, \"fix_hint\": \"No recipes match tag `breakfast`. Add one or relax constraints.\"}]",
+  "detail": null,
+  "stage_exp": "candidate_generation",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "day_index": 0,
+   "slot_index": 0
+  },
+  "spec_notes": [
+   "Only bk_tofu_scramble carries 'portable', and only as an LLM-proposed tag -> not hard-eligible -> FM-TAG-EMPTY."
+  ],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-107",
+  "title": "Kid's gluten-free dinner, no cheddar",
+  "cats": [
+   "tag-conflict",
+   "preferences"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-TAG-EMPTY",
+  "acceptable": [
+   "FM-TAG-EMPTY"
+  ],
+  "got": "FM-1",
+  "status": "MISMATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 34, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "candidate_generation",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "day_index": 0,
+   "slot_index": 2
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-108",
+  "title": "Unknown tag slug",
+  "cats": [
+   "tag-conflict",
+   "input-validation"
+  ],
+  "cls": "infeasible",
+  "expected": "INVALID_REQUEST",
+  "acceptable": [
+   "INVALID_REQUEST"
+  ],
+  "got": "INVALID_REQUEST",
+  "status": "MATCH",
+  "viol": [],
+  "tc": null,
+  "incomplete": null,
+  "report_codes": null,
+  "report_first": null,
+  "detail": "1 validation error for PlanRequest\nschedule_days.0.meals.2.required_tag_slugs\n  Value error, required_tag_slugs contains unknown tag slug 'keto' [type=value_error, input_value=['keto'], input_type=list]\n    For further information visit https://errors.pydantic.dev/2.13/v/value_error",
+  "stage_exp": "input_validation",
+  "oracle": {
+   "day_index": 0,
+   "slot_index": 2,
+   "field": "required_tag_slugs",
+   "unknown_slug": "keto"
+  },
+  "spec_notes": [
+   "'keto' is not in the tag registry; MealSlot validation rejects unknown slugs -> INVALID_REQUEST (HTTP 400), not a planner failure."
+  ],
+  "needs_ceiling": null,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-109",
+  "title": "Tag alias batch-cook",
+  "cats": [
+   "tags"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    143
+   ],
+   "distinct_meal_sets_per_day": [
+    91
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [
+   "'batch-cook' is a registered alias of 'meal-prep' and must resolve before HC-9."
+  ],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-110",
+  "title": "Every slot tagged breakfast",
+  "cats": [
+   "tags"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    102
+   ],
+   "distinct_meal_sets_per_day": [
+    17
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-111",
+  "title": "Vegetarian dinner every day for a week",
+  "cats": [
+   "tags",
+   "multi-day"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    221,
+    221,
+    221,
+    221,
+    221,
+    221,
+    221
+   ],
+   "distinct_meal_sets_per_day": [
+    143,
+    143,
+    143,
+    143,
+    143,
+    143,
+    143
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 28
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 7,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-112",
+  "title": "Quick vegetarian dinners all week",
+  "cats": [
+   "tag-conflict",
+   "multi-day-conflict",
+   "cook-time"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-1",
+  "acceptable": [
+   "FM-1",
+   "FM-5"
+  ],
+  "got": "FM-1",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    38,
+    38,
+    38,
+    38,
+    38,
+    38,
+    38
+   ],
+   "distinct_meal_sets_per_day": [
+    26,
+    26,
+    26,
+    26,
+    26,
+    26,
+    26
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 1482,
+   "reason": "HC-8 consecutive-day repetition leaves no valid day sequence"
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 7,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-113",
+  "title": "Required lunch+dinner dual-tag slot",
+  "cats": [
+   "tags"
+  ],
+  "cls": "borderline",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    2
+   ],
+   "distinct_meal_sets_per_day": [
+    2
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-114",
+  "title": "Dairy-free required, pool mostly dairy",
+  "cats": [
+   "tag-conflict",
+   "recipe-inventory"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-TAG-EMPTY",
+  "acceptable": [
+   "FM-TAG-EMPTY"
+  ],
+  "got": "FM-1",
+  "status": "MISMATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 5, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "candidate_generation",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "day_index": 0,
+   "slot_index": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-115",
+  "title": "Preferred tag that no recipe has",
+  "cats": [
+   "tags"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    636
+   ],
+   "distinct_meal_sets_per_day": [
+    166
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [
+   "Preferred tags never reject (spec 2.1.1); expect success with no kid-friendly lunch."
+  ],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-116",
+  "title": "Required post-workout meal",
+  "cats": [
+   "tags",
+   "meal-timing",
+   "multi-day"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    7763,
+    7763
+   ],
+   "distinct_meal_sets_per_day": [
+    2251,
+    2251
+   ],
+   "day_enumeration_capped": [
+    false,
+    false
+   ],
+   "multiday_nodes": 359
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 2,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-117",
+  "title": "Sunday chili for weekday lunches (busy)",
+  "cats": [
+   "meal-prep-conflict",
+   "cook-time",
+   "multi-day"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-3",
+  "acceptable": [
+   "FM-3"
+  ],
+  "got": "OK",
+  "status": "MISMATCH+INVALID",
+  "viol": [
+   "d0s1: pin/lock not honored (dn_beef_chili -> dn_tuna_steak_salad)",
+   "d1s1: pin/lock not honored (dn_beef_chili -> bk_big_oat_bowl)",
+   "d2s1: pin/lock not honored (dn_beef_chili -> dn_tuna_steak_salad)"
+  ],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "pre_search",
+  "oracle": {
+   "pin": [
+    0,
+    1,
+    "dn_beef_chili"
+   ],
+   "violation": "HC-3",
+   "cook_minutes": 60,
+   "slot_cap": 15
+  },
+  "spec_notes": [
+   "Q9: the lock's recipe (60 min) is checked against the reheating slot's busyness cap (15 min) -> FM-3 (HC-3). Also violates HC-8. This is the feature's core use case."
+  ],
+  "needs_ceiling": false,
+  "n_days": 3,
+  "micro": false,
+  "pins": 0,
+  "batches": 1,
+  "safety": null
+ },
+ {
+  "id": "MB-118",
+  "title": "Sunday chili, lunch slot relaxed",
+  "cats": [
+   "meal-prep-conflict",
+   "multi-day-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-3",
+  "acceptable": [
+   "FM-3"
+  ],
+  "got": "OK",
+  "status": "MISMATCH+INVALID",
+  "viol": [
+   "d0s1: pin/lock not honored (dn_beef_chili -> dn_thigh_sheet_pan)",
+   "d1s1: pin/lock not honored (dn_beef_chili -> dn_bolognese)",
+   "d2s1: pin/lock not honored (dn_beef_chili -> dn_thigh_sheet_pan)"
+  ],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "pre_search",
+  "oracle": {
+   "pins": [
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "recipe": "dn_beef_chili",
+   "violation": "HC-8"
+  },
+  "spec_notes": [
+   "HC-3 now passes; HC-8 (same non-workout recipe on consecutive days) still rejects -> FM-3."
+  ],
+  "needs_ceiling": false,
+  "n_days": 3,
+  "micro": false,
+  "pins": 0,
+  "batches": 1,
+  "safety": null
+ },
+ {
+  "id": "MB-119",
+  "title": "Prepped chickpea salad two days in a row",
+  "cats": [
+   "meal-prep-conflict",
+   "multi-day-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-3",
+  "acceptable": [
+   "FM-3"
+  ],
+  "got": "OK",
+  "status": "MISMATCH+INVALID",
+  "viol": [
+   "d0s1: pin/lock not honored (ln_chickpea_salad -> ln_tuna_poke)"
+  ],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "pre_search",
+  "oracle": {
+   "pins": [
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "recipe": "ln_chickpea_salad",
+   "violation": "HC-8"
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 2,
+  "micro": false,
+  "pins": 0,
+  "batches": 1,
+  "safety": null
+ },
+ {
+  "id": "MB-120",
+  "title": "Prepped meal in post-workout slots",
+  "cats": [
+   "meal-prep",
+   "meal-timing",
+   "multi-day"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "INVALID_PLAN",
+  "viol": [
+   "d1s1: pin/lock not honored (dn_thigh_quinoa_prep -> hc_pasta_salmon_bake)"
+  ],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    23,
+    23
+   ],
+   "distinct_meal_sets_per_day": [
+    15,
+    15
+   ],
+   "day_enumeration_capped": [
+    false,
+    false
+   ],
+   "multiday_nodes": 4
+  },
+  "spec_notes": [
+   "Lunch is post-workout, so HC-8 exempts the repeated batch. Busyness 4 lunch avoids HC-3."
+  ],
+  "needs_ceiling": false,
+  "n_days": 2,
+  "micro": false,
+  "pins": 0,
+  "batches": 1,
+  "safety": null
+ },
+ {
+  "id": "MB-121",
+  "title": "Two batches claim the same slot",
+  "cats": [
+   "meal-prep-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-BATCH-CONFLICT",
+  "acceptable": [
+   "FM-BATCH-CONFLICT"
+  ],
+  "got": "FM-BATCH-CONFLICT",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-3",
+  "incomplete": null,
+  "report_codes": [
+   "FM-BATCH-CONFLICT"
+  ],
+  "report_first": "[{\"code\": \"FM-BATCH-CONFLICT\", \"message\": \"Batch locks conflict for this slot.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"\", \"details\": {\"batch_ids\": [\"batch_chili\", \"batch_curry\"], \"date\": \"\", \"slot_id\": \"day-1-slot-2\"}, \"fix_hint\": \"Batch locks conflict for this slot. Remove one lock so only one batch assignment remains.\"}]",
+  "detail": null,
+  "stage_exp": "pre_search",
+  "oracle": {
+   "slot_address": [
+    0,
+    2
+   ],
+   "batches": [
+    "batch_chili",
+    "batch_curry"
+   ]
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 2,
+  "micro": false,
+  "pins": 0,
+  "batches": 2,
+  "safety": null
+ },
+ {
+  "id": "MB-122",
+  "title": "Batch assigned more slots than servings",
+  "cats": [
+   "meal-prep-conflict",
+   "input-validation"
+  ],
+  "cls": "infeasible",
+  "expected": "BATCH_REJECTED",
+  "acceptable": [
+   "BATCH_REJECTED"
+  ],
+  "got": "BATCH_REJECTED",
+  "status": "MATCH",
+  "viol": [],
+  "tc": null,
+  "incomplete": null,
+  "report_codes": null,
+  "report_first": null,
+  "detail": "assignments count cannot exceed total_servings",
+  "stage_exp": "input_validation",
+  "oracle": {
+   "batch_id": "batch_curry",
+   "reason": "servings/assignments invalid at batch creation"
+  },
+  "spec_notes": [
+   "Rejected by MealPrepBatchRepository._validate_create before any planning."
+  ],
+  "needs_ceiling": null,
+  "n_days": 5,
+  "micro": false,
+  "pins": 0,
+  "batches": 1,
+  "safety": null
+ },
+ {
+  "id": "MB-123",
+  "title": "Single-serving batch",
+  "cats": [
+   "meal-prep-conflict",
+   "input-validation"
+  ],
+  "cls": "infeasible",
+  "expected": "BATCH_REJECTED",
+  "acceptable": [
+   "BATCH_REJECTED"
+  ],
+  "got": "BATCH_REJECTED",
+  "status": "MATCH",
+  "viol": [],
+  "tc": null,
+  "incomplete": null,
+  "report_codes": null,
+  "report_first": null,
+  "detail": "total_servings must be >= 2",
+  "stage_exp": "input_validation",
+  "oracle": {
+   "batch_id": "batch_bolo",
+   "reason": "servings/assignments invalid at batch creation"
+  },
+  "spec_notes": [
+   "total_servings must be >= 2 (repository validation)."
+  ],
+  "needs_ceiling": null,
+  "n_days": 3,
+  "micro": false,
+  "pins": 0,
+  "batches": 1,
+  "safety": null
+ },
+ {
+  "id": "MB-124",
+  "title": "Batch recipe now contains an excluded ingredient",
+  "cats": [
+   "meal-prep-conflict",
+   "preferences"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-3",
+  "acceptable": [
+   "FM-3"
+  ],
+  "got": "OK",
+  "status": "MISMATCH+INVALID",
+  "viol": [
+   "d0s2: pin/lock not honored (dn_beef_chili -> dn_tofu_stir_fry)",
+   "d2s2: pin/lock not honored (dn_beef_chili -> dn_tofu_stir_fry)"
+  ],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "pre_search",
+  "oracle": {
+   "pin": [
+    0,
+    2,
+    "dn_beef_chili"
+   ],
+   "violation": "HC-1"
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 3,
+  "micro": false,
+  "pins": 0,
+  "batches": 1,
+  "safety": null
+ },
+ {
+  "id": "MB-125",
+  "title": "Batch lock overrides a pin",
+  "cats": [
+   "meal-prep",
+   "pins"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [
+    [
+     0,
+     2
+    ]
+   ],
+   "valid_assignments_per_day": [
+    41,
+    1404
+   ],
+   "distinct_meal_sets_per_day": [
+    31,
+    523
+   ],
+   "day_enumeration_capped": [
+    false,
+    false
+   ],
+   "multiday_nodes": 31
+  },
+  "spec_notes": [
+   "Batch lock > explicit pin (spec 3.5); expect curry in (0,2) and the pin reported as overridden."
+  ],
+  "needs_ceiling": false,
+  "n_days": 2,
+  "micro": false,
+  "pins": 1,
+  "batches": 1,
+  "safety": null
+ },
+ {
+  "id": "MB-126",
+  "title": "High-calorie batch on a cut",
+  "cats": [
+   "meal-prep-conflict",
+   "nutrition-conflict"
+  ],
+  "cls": "borderline",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "INVALID_PLAN",
+  "viol": [
+   "d0s2: pin/lock not honored (hc_pasta_salmon_bake -> bk_cottage_papaya)",
+   "d2s2: pin/lock not honored (hc_pasta_salmon_bake -> bk_cottage_papaya)"
+  ],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    2,
+    425,
+    2
+   ],
+   "distinct_meal_sets_per_day": [
+    1,
+    147,
+    1
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 3
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 3,
+  "micro": false,
+  "pins": 0,
+  "batches": 1,
+  "safety": null
+ },
+ {
+  "id": "MB-127",
+  "title": "Mon/Wed/Fri batch",
+  "cats": [
+   "meal-prep",
+   "multi-day"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "INVALID_PLAN",
+  "viol": [
+   "d0s2: pin/lock not honored (dn_chickpea_curry -> hc_mass_gainer)",
+   "d2s2: pin/lock not honored (dn_chickpea_curry -> hc_big_beef_rice)",
+   "d4s2: pin/lock not honored (dn_chickpea_curry -> dn_bolognese)"
+  ],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    41,
+    1404,
+    41,
+    1404,
+    41
+   ],
+   "distinct_meal_sets_per_day": [
+    31,
+    523,
+    31,
+    523,
+    31
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 63
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 5,
+  "micro": false,
+  "pins": 0,
+  "batches": 1,
+  "safety": null
+ },
+ {
+  "id": "MB-128",
+  "title": "Alternating two batches",
+  "cats": [
+   "meal-prep",
+   "multi-day"
+  ],
+  "cls": "borderline",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "INVALID_PLAN",
+  "viol": [
+   "d0s2: pin/lock not honored (dn_beef_chili -> dn_bolognese)",
+   "d1s2: pin/lock not honored (dn_chickpea_curry -> ln_tuna_pasta_salad)",
+   "d2s2: pin/lock not honored (dn_beef_chili -> dn_bolognese)",
+   "d3s2: pin/lock not honored (dn_chickpea_curry -> dn_tilapia_rice)"
+  ],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    28,
+    10,
+    28,
+    10
+   ],
+   "distinct_meal_sets_per_day": [
+    20,
+    9,
+    20,
+    9
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 4
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 4,
+  "micro": false,
+  "pins": 0,
+  "batches": 2,
+  "safety": null
+ },
+ {
+  "id": "MB-129",
+  "title": "Double-portion batch servings",
+  "cats": [
+   "meal-prep-conflict",
+   "nutrition-conflict"
+  ],
+  "cls": "borderline",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "INVALID_PLAN",
+  "viol": [
+   "d0s2: pin/lock not honored (dn_thigh_quinoa_prep -> ln_tuna_poke)",
+   "d2s2: pin/lock not honored (dn_thigh_quinoa_prep -> ln_tuna_poke)"
+  ],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    2,
+    67,
+    2
+   ],
+   "distinct_meal_sets_per_day": [
+    2,
+    31,
+    2
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 8
+  },
+  "spec_notes": [
+   "Assignment servings=2.0 is accepted by the repository but not used in nutrition accounting (OR review 2.2). Oracle scores ONE serving; a servings-aware planner would see +620 kcal in each locked slot and likely fail."
+  ],
+  "needs_ceiling": false,
+  "n_days": 3,
+  "micro": false,
+  "pins": 0,
+  "batches": 1,
+  "safety": null
+ },
+ {
+  "id": "MB-130",
+  "title": "Batch assigned beyond the horizon",
+  "cats": [
+   "meal-prep-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-3",
+  "acceptable": [
+   "FM-3"
+  ],
+  "got": "OK",
+  "status": "MISMATCH+INVALID",
+  "viol": [
+   "d0s2: pin/lock not honored (dn_chickpea_curry -> hc_mass_gainer)"
+  ],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "pre_search",
+  "oracle": {
+   "pin": [
+    4,
+    2,
+    "dn_chickpea_curry"
+   ],
+   "violation": "slot-out-of-range"
+  },
+  "spec_notes": [
+   "Spec does not define locks outside the horizon; oracle treats as FM-3 (slot out of range). Implementations may instead ignore the lock - record which."
+  ],
+  "needs_ceiling": false,
+  "n_days": 3,
+  "micro": false,
+  "pins": 0,
+  "batches": 1,
+  "safety": null
+ },
+ {
+  "id": "MB-131",
+  "title": "Busy weekdays, relaxed weekend",
+  "cats": [
+   "multi-day",
+   "cook-time"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    354,
+    354,
+    354,
+    354,
+    354,
+    3942,
+    3942
+   ],
+   "distinct_meal_sets_per_day": [
+    150,
+    150,
+    150,
+    150,
+    150,
+    657,
+    657
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 69
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 7,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-132",
+  "title": "Six recipes, alternating week",
+  "cats": [
+   "multi-day-conflict",
+   "recipe-inventory"
+  ],
+  "cls": "borderline",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    32,
+    32,
+    32,
+    32,
+    32
+   ],
+   "distinct_meal_sets_per_day": [
+    8,
+    8,
+    8,
+    8,
+    8
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 47
+  },
+  "spec_notes": [
+   "Positive twin of the starter-pack week: targets chosen so two disjoint triples both fit, letting HC-8 alternate them."
+  ],
+  "needs_ceiling": false,
+  "n_days": 5,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-133",
+  "title": "Five recipes, three meals, five days",
+  "cats": [
+   "multi-day-conflict",
+   "recipe-inventory"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-1",
+  "acceptable": [
+   "FM-1",
+   "FM-5"
+  ],
+  "got": "FM-1",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 1, \"slot_index\": 0, \"slot_id\": \"day-2-slot-0\", \"date\": \"day-2\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    7,
+    7,
+    7,
+    7,
+    7
+   ],
+   "distinct_meal_sets_per_day": [
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 56,
+   "reason": "HC-8 consecutive-day repetition leaves no valid day sequence"
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 5,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-134",
+  "title": "Fiber 38 g strict, full week",
+  "cats": [
+   "multi-day",
+   "micronutrients"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    972,
+    972,
+    972,
+    972,
+    972,
+    972,
+    972
+   ],
+   "distinct_meal_sets_per_day": [
+    369,
+    369,
+    369,
+    369,
+    369,
+    369,
+    369
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 13
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 7,
+  "micro": true,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-135",
+  "title": "Dairy-free calcium 1,300 mg, 5 days",
+  "cats": [
+   "multi-day-conflict",
+   "micronutrients",
+   "nutrition-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-4",
+  "acceptable": [
+   "FM-4",
+   "FM-5"
+  ],
+  "got": "FM-4",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-4"
+  ],
+  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"calcium_mg\", \"achieved\": 0.0, \"required\": 6500.0, \"full_req\": 6500.0, \"deficit\": 6500.0, \"classification\": \"structural\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    3,
+    3,
+    3,
+    3,
+    3
+   ],
+   "distinct_meal_sets_per_day": [
+    2,
+    2,
+    2,
+    2,
+    2
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 0,
+   "micronutrient_shortfall": {
+    "calcium_mg": {
+     "best_achievable": 3020.3,
+     "min_req": 6500.0
+    }
+   }
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 5,
+  "micro": true,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-136",
+  "title": "Training vs rest days, one target",
+  "cats": [
+   "multi-day",
+   "meal-timing"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    60000,
+    973,
+    60000,
+    973,
+    60000
+   ],
+   "distinct_meal_sets_per_day": [
+    11888,
+    368,
+    11888,
+    368,
+    11888
+   ],
+   "day_enumeration_capped": [
+    true,
+    false,
+    true,
+    false,
+    true
+   ],
+   "multiday_nodes": 39
+  },
+  "spec_notes": [
+   "Per-day calorie targets are not expressible (single daily target); benchmark records the user's workaround."
+  ],
+  "needs_ceiling": false,
+  "n_days": 5,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-137",
+  "title": "Pinned dinner on consecutive days",
+  "cats": [
+   "multi-day-conflict",
+   "pin-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-3",
+  "acceptable": [
+   "FM-3"
+  ],
+  "got": "FM-3",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-3",
+  "incomplete": null,
+  "report_codes": [
+   "FM-3"
+  ],
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 2, \"slot_index\": 0, \"slot_id\": \"day-3-slot-0\", \"date\": \"day-3\", \"details\": {\"recipe_id\": \"dn_bolognese\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "detail": null,
+  "stage_exp": "pre_search",
+  "oracle": {
+   "pins": [
+    [
+     0,
+     2
+    ],
+    [
+     1,
+     2
+    ]
+   ],
+   "recipe": "dn_bolognese",
+   "violation": "HC-8"
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 2,
+  "micro": false,
+  "pins": 2,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-138",
+  "title": "5:2 fasting week",
+  "cats": [
+   "multi-day-conflict",
+   "nutrition-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-2",
+  "acceptable": [
+   "FM-2",
+   "FM-5"
+  ],
+  "got": "FM-1",
+  "status": "MISMATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 1, \"slot_index\": 0, \"slot_id\": \"day-2-slot-0\", \"date\": \"day-2\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    1969,
+    0,
+    1969,
+    0,
+    1969,
+    1969,
+    1969
+   ],
+   "distinct_meal_sets_per_day": [
+    727,
+    0,
+    727,
+    0,
+    727,
+    727,
+    727
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "infeasible_days": [
+    1,
+    3
+   ],
+   "min_tolerance_for_feasibility": null
+  },
+  "spec_notes": [
+   "Daily targets are global, so the one-meal fast days must hit 1,800-2,200 kcal with one recipe -> FM-2. The spec cannot express per-day targets."
+  ],
+  "needs_ceiling": false,
+  "n_days": 7,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-139",
+  "title": "Short day then long day, iron floor",
+  "cats": [
+   "multi-day",
+   "micronutrients"
+  ],
+  "cls": "borderline",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    1,
+    60000
+   ],
+   "distinct_meal_sets_per_day": [
+    1,
+    7577
+   ],
+   "day_enumeration_capped": [
+    false,
+    true
+   ],
+   "multiday_nodes": 2
+  },
+  "spec_notes": [
+   "Reconciliation E3: FC-4 uses the CURRENT day's slot count for max-achievable; a day with fewer slots than later days can be wrongly pruned."
+  ],
+  "needs_ceiling": false,
+  "n_days": 2,
+  "micro": true,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-140",
+  "title": "Weekday lunches all portable for a week",
+  "cats": [
+   "multi-day",
+   "tags"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    293,
+    293,
+    293,
+    293,
+    293
+   ],
+   "distinct_meal_sets_per_day": [
+    190,
+    190,
+    190,
+    190,
+    190
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 235
+  },
+  "spec_notes": [
+   "Contrast with the 2-day portable-lunch scenario that fails: lower targets here admit several distinct portable lunches, so HC-8 can rotate them."
+  ],
+  "needs_ceiling": false,
+  "n_days": 5,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-141",
+  "title": "Meal-prep dinners every night",
+  "cats": [
+   "multi-day",
+   "tags",
+   "meal-prep"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    429,
+    429,
+    429,
+    429,
+    429,
+    429,
+    429
+   ],
+   "distinct_meal_sets_per_day": [
+    296,
+    296,
+    296,
+    296,
+    296,
+    296,
+    296
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 55
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 7,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-142",
+  "title": "Seven-day magnesium strict, tau 1.0",
+  "cats": [
+   "multi-day",
+   "micronutrients"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    2074,
+    2074,
+    2074,
+    2074,
+    2074,
+    2074,
+    2074
+   ],
+   "distinct_meal_sets_per_day": [
+    808,
+    808,
+    808,
+    808,
+    808,
+    808,
+    808
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 19
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 7,
+  "micro": true,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-143",
+  "title": "Peanut allergy typed as 'peanuts'",
+  "cats": [
+   "preferences",
+   "safety",
+   "data-quality"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "INVALID_PLAN",
+  "viol": [
+   "d0s2: SAFETY(intent) bk_pb_banana_toast"
+  ],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    60000
+   ],
+   "distinct_meal_sets_per_day": [
+    8318
+   ],
+   "day_enumeration_capped": [
+    true
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [
+   "HC-1 is exact normalized-name matching; 'peanuts' does not match 'peanut butter' (reconciliation Q10)."
+  ],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": {
+   "must_not_contain_cache_keys": [
+    "peanut_butter"
+   ],
+   "severity": "allergen"
+  }
+ },
+ {
+  "id": "MB-144",
+  "title": "Egg allergy typed as 'egg'",
+  "cats": [
+   "preferences",
+   "safety",
+   "data-quality"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    1698
+   ],
+   "distinct_meal_sets_per_day": [
+    454
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": {
+   "must_not_contain_cache_keys": [
+    "egg_yolk",
+    "eggs"
+   ],
+   "severity": "allergen"
+  }
+ },
+ {
+  "id": "MB-145",
+  "title": "Dairy allergy typed as 'dairy'",
+  "cats": [
+   "preferences",
+   "safety",
+   "data-quality"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "INVALID_PLAN",
+  "viol": [
+   "d0s0: SAFETY(intent) dn_bean_quesadilla"
+  ],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    2283
+   ],
+   "distinct_meal_sets_per_day": [
+    860
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": {
+   "must_not_contain_ingredient_class": "dairy",
+   "severity": "allergen"
+  }
+ },
+ {
+  "id": "MB-146",
+  "title": "Gluten-free tag on a recipe with egg bread",
+  "cats": [
+   "tags",
+   "safety",
+   "data-quality"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    378
+   ],
+   "distinct_meal_sets_per_day": [
+    93
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
+  "batches": 0,
+  "safety": {
+   "must_not_contain_recipe_ids": [
+    "dh_veggie_egg_scramble"
+   ],
+   "severity": "allergen"
+  }
+ },
+ {
+  "id": "MB-147",
+  "title": "Oat parfait that is really oat oil",
+  "cats": [
+   "pin-conflict",
+   "data-quality"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-3",
+  "acceptable": [
+   "FM-2",
+   "FM-3",
+   "FM-5"
+  ],
+  "got": "FM-1",
+  "status": "MISMATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    0
+   ],
+   "distinct_meal_sets_per_day": [
+    0
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "infeasible_days": [
+    0
+   ],
+   "min_tolerance_for_feasibility": 0.2
+  },
+  "spec_notes": [
+   "Cached 'oats' is oat OIL: the parfait computes to 548 kcal / 41 g fat instead of ~330 kcal / 7 g. The pinned breakfast eats the fat budget and the day fails (FM-3 downstream); the real cause is a mis-resolved ingredient."
+  ],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 1,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-148",
+  "title": "Chicken breast bowl that is really deli roll",
+  "cats": [
+   "pins",
+   "data-quality",
+   "pin-conflict"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-3",
+  "acceptable": [
+   "FM-2",
+   "FM-3",
+   "FM-5"
+  ],
+  "got": "FM-1",
+  "status": "MISMATCH",
+  "viol": [],
+  "tc": "TC-2",
+  "incomplete": null,
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "detail": null,
+  "stage_exp": "search",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    0
+   ],
+   "distinct_meal_sets_per_day": [
+    0
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "infeasible_days": [
+    0
+   ],
+   "min_tolerance_for_feasibility": 0.2
+  },
+  "spec_notes": [
+   "With real chicken breast (~56 g protein) this day is likely feasible; with the cached deli-roll entry (33 g) the protein window fails. Data error surfaces as a pin/nutrition failure."
+  ],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 1,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-149",
+  "title": "Vitamin D tracked on mis-mapped data",
+  "cats": [
+   "micronutrients",
+   "data-quality"
+  ],
+  "cls": "feasible",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-1",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    1564,
+    1564,
+    1564
+   ],
+   "distinct_meal_sets_per_day": [
+    598,
+    598,
+    598
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 94
+  },
+  "spec_notes": [
+   "Cached vitamin D values are implausible (e.g. tilapia bowl 9,926 IU, overnight oats 3,360 IU): the floor is trivially met. A correct data layer would make this much harder."
+  ],
+  "needs_ceiling": false,
+  "n_days": 3,
+  "micro": true,
+  "pins": 0,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-150",
+  "title": "Sweet potato hash with zero-calorie potatoes",
+  "cats": [
+   "pins",
+   "data-quality"
+  ],
+  "cls": "borderline",
+  "expected": "OK",
+  "acceptable": [
+   "OK"
+  ],
+  "got": "OK",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-4",
+  "incomplete": null,
+  "report_codes": [],
+  "report_first": "[]",
+  "detail": null,
+  "stage_exp": "complete",
+  "oracle": {
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    7
+   ],
+   "distinct_meal_sets_per_day": [
+    5
+   ],
+   "day_enumeration_capped": [
+    false
+   ],
+   "multiday_nodes": 1
+  },
+  "spec_notes": [
+   "Cached sweet potato has 0 kcal but 17 g carbs/100 g, so the hash is ~170 kcal under-counted; kcal and carb windows disagree about it."
+  ],
+  "needs_ceiling": false,
+  "n_days": 1,
+  "micro": false,
+  "pins": 1,
+  "batches": 0,
+  "safety": null
+ }
+]

@@ -20,28 +20,36 @@ This has a direct consequence for the sprint: `evaluation/initial_state.md` desi
 
 ---
 
+
+
 ## 1. Where the reports agree (treat as settled; no further investigation needed)
 
 Independently reached by both, same mechanism, same direction:
 
-| Finding | Tribunal | OR review | Verified |
-|---|---|---|---|
-| Unresolved ingredients are silently skipped; most recipes compute to zero nutrition; the resulting FM-4 misnames the cause | A1, F2 | 5.4 | **[verified]** `src/nutrition/calculator.py:166` catches `IngredientNotFoundError` and continues |
-| Upper limits are computed in the CLI and discarded; absent from the API; demographic hard-coded `adult_male` | B1 | 3.4 | **[verified]** `src/cli.py:421` builds `resolved_ul`, `src/cli.py:432` calls `plan_meals(...)` without it; `src/api/server.py:1036,1242` likewise |
-| Magnesium UL (350 mg) is a supplement-only figure below the profile's 400 mg RDI; same caveat for niacin, folate, vitamin E | B6 | 3.5 | agreed by both |
-| HC-1 allergen exclusion is exact normalized-string equality | B2 | 3.1 | agreed by both |
-| Sodium (and omega-6) are modelled as floors the scorer rewards reaching | B7 | 4.6 | agreed by both |
-| `tags_by_id` is empty, so HC-9 / required tags cannot be exercised end to end | B4, D8 | 3.10, 9 | agreed by both |
-| Chronological backtracking thrashes on the horizon micronutrient floor; the 50k cap yields FM-5 with no infeasibility proof | C1, C2 | 5.2 | agreed by both |
-| Duplicate LLM recipes; meal identity is by ID, so variety constraints are defeated | D4 | 2.3 | agreed by both |
-| Small pools are structurally brittle under simultaneous ±10% macro windows | C3 | 2.1, 5.5, 8 | agreed by both |
-| `.cursor/architecture.json`'s "tag filter falls back to full pool" is false | B4, G | 8 | **[verified]** `src/llm/tag_filtering_service.py:26` documents empty-list-on-no-match as intended |
+
+| Finding                                                                                                                     | Tribunal | OR review   | Verified                                                                                                                                          |
+| --------------------------------------------------------------------------------------------------------------------------- | -------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unresolved ingredients are silently skipped; most recipes compute to zero nutrition; the resulting FM-4 misnames the cause  | A1, F2   | 5.4         | **[verified]** `src/nutrition/calculator.py:166` catches `IngredientNotFoundError` and continues                                                  |
+| Upper limits are computed in the CLI and discarded; absent from the API; demographic hard-coded `adult_male`                | B1       | 3.4         | **[verified]** `src/cli.py:421` builds `resolved_ul`, `src/cli.py:432` calls `plan_meals(...)` without it; `src/api/server.py:1036,1242` likewise |
+| Magnesium UL (350 mg) is a supplement-only figure below the profile's 400 mg RDI; same caveat for niacin, folate, vitamin E | B6       | 3.5         | agreed by both                                                                                                                                    |
+| HC-1 allergen exclusion is exact normalized-string equality                                                                 | B2       | 3.1         | agreed by both                                                                                                                                    |
+| Sodium (and omega-6) are modelled as floors the scorer rewards reaching                                                     | B7       | 4.6         | agreed by both                                                                                                                                    |
+| `tags_by_id` is empty, so HC-9 / required tags cannot be exercised end to end                                               | B4, D8   | 3.10, 9     | agreed by both                                                                                                                                    |
+| Chronological backtracking thrashes on the horizon micronutrient floor; the 50k cap yields FM-5 with no infeasibility proof | C1, C2   | 5.2         | agreed by both                                                                                                                                    |
+| Duplicate LLM recipes; meal identity is by ID, so variety constraints are defeated                                          | D4       | 2.3         | agreed by both                                                                                                                                    |
+| Small pools are structurally brittle under simultaneous ±10% macro windows                                                  | C3       | 2.1, 5.5, 8 | agreed by both                                                                                                                                    |
+| `.cursor/architecture.json`'s "tag filter falls back to full pool" is false                                                 | B4, G    | 8           | **[verified]** `src/llm/tag_filtering_service.py:26` documents empty-list-on-no-match as intended                                                 |
+
 
 One refinement on the last row: the tribunal frames the empty-pool behaviour as a defect, but the code's own docstring states the empty-list outcome deliberately. It is therefore a **specification decision with a stale doc**, not an implementation bug. The defect is that the resulting failure report names a nutrition cause for a candidate-set cause.
 
 ---
 
+
+
 ## 2. Where the reports conflict, and how each conflict resolves
+
+
 
 ### 2.1 Are the feasibility bounds conservative? — **tribunal is right, OR review over-generalized**
 
@@ -58,7 +66,7 @@ The OR review (5.6) argues D=1 is the strictest instance: the prorated floor τ�
 **[verified]** Both mechanisms are present and they apply at different ends of the same run:
 
 - `src/planning/phase7_search.py:629` runs `check_structural_feasibility` with **no gating on D**, so a D=1 instance whose pool cannot reach the floor is rejected up front with FM-4.
-- `src/planning/phase7_search.py:980` returns `result_from_success(..., "TC-4", ...)` for `D == 1` **without calling `_weekly_validation`**, so a D=1 instance that *could* have met the floor but didn't is returned as success, unwarned.
+- `src/planning/phase7_search.py:980` returns `result_from_success(..., "TC-4", ...)` for `D == 1` **without calling** `_weekly_validation`, so a D=1 instance that *could* have met the floor but didn't is returned as success, unwarned.
 
 The system is therefore **strict at the gate and silent at the exit for the same constraint**. A one-day plan can be refused as structurally impossible, or accepted with hard floors unmet, but it cannot be accepted with a warning. Neither report stated this pairing; it is the sharpest contradiction the reconciliation produced, and it is a specification question, not a bug to patch blindly (§4, Q8).
 
@@ -75,6 +83,8 @@ The OR review lists determinism among the sound elements. The tribunal (F5) narr
 The tribunal's D1/D2 treat LLM validation as hollow — most severely, `validate_recipe_draft` demotes unresolvable ingredients to `to taste` and persists the recipe anyway, in direct contradiction of the AGENTS.md rule. The OR review does not cover the LLM pipeline at all. This is a coverage gap, not a disagreement, but it matters for §4 Q2: the two reports use "validated" to mean different things (syntactically resolvable vs. nutritionally plausible), and the codebase uses the weaker one.
 
 ---
+
+
 
 ## 3. The ten most important unresolved questions
 
@@ -114,21 +124,27 @@ It is the only constraint with a safety dimension and it is the weakest one. If 
 
 ---
 
+
+
 ## 4. Classification
+
+
 
 ### 4a. Answerable experimentally (no specification decision needed)
 
-| # | Question | What settles it |
-|---|---|---|
-| Q1 | Error decomposition | Ground-truth ingredient panel; recompute each channel in isolation (E1) |
-| Q5 | False infeasibility | Brute-force oracle vs. planner on known-nutrition pools (E2, E3) |
-| Q6 | Feasibility frontier | Parameter sweep over pool size × horizon × tolerance × τ (E2) |
-| — | Does "no objective" cost anything? | Regret vs. enumerated optimum on small instances (E5) |
-| — | Is the scoring cliff non-discriminating? | Score-distribution and rank-correlation measurement (E6) |
-| — | How bad is exact-match allergen recall? | Exclusion panel against the real corpus (E8) |
-| — | Is meal prep usable at all? | Enumerate batch-lock configurations, count pre-validation passes (E9) |
-| — | Would wiring ULs break the product? | Counterfactual run with `resolved_ul` supplied (E10) |
-| — | Can the test suite detect any of this? | Fault injection against the existing suite (E11) |
+
+| #   | Question                                 | What settles it                                                         |
+| --- | ---------------------------------------- | ----------------------------------------------------------------------- |
+| Q1  | Error decomposition                      | Ground-truth ingredient panel; recompute each channel in isolation (E1) |
+| Q5  | False infeasibility                      | Brute-force oracle vs. planner on known-nutrition pools (E2, E3)        |
+| Q6  | Feasibility frontier                     | Parameter sweep over pool size × horizon × tolerance × τ (E2)           |
+| —   | Does "no objective" cost anything?       | Regret vs. enumerated optimum on small instances (E5)                   |
+| —   | Is the scoring cliff non-discriminating? | Score-distribution and rank-correlation measurement (E6)                |
+| —   | How bad is exact-match allergen recall?  | Exclusion panel against the real corpus (E8)                            |
+| —   | Is meal prep usable at all?              | Enumerate batch-lock configurations, count pre-validation passes (E9)   |
+| —   | Would wiring ULs break the product?      | Counterfactual run with `resolved_ul` supplied (E10)                    |
+| —   | Can the test suite detect any of this?   | Fault injection against the existing suite (E11)                        |
+
 
 Q10 has an experimental *input* (recall measurement) but the acceptability decision is specification.
 
@@ -154,18 +170,20 @@ Verified as sound; both reports either affirm these or do not dispute them. No w
 - **τ centralization** in `micronutrient_policy.py` — acceptance, feasibility, structural pre-check and FC-4 all derive τ from one place, so they cannot drift. **[verified]** all four call sites route through `tau_from_profile`.
 - **FC-1 / FC-2 interval bounds** — conservative in the correct direction and cheap. The tribunal's counterexample applies to FC-4 only (§2.1). Looseness is a performance property, not a correctness defect.
 - **The structural pre-check's arithmetic** — correct in principle and correctly summed per day **[verified]** `phase3_feasibility.py:336`. Its *report text* is misleading, which is a reporting fix, not a feasibility fix.
-- **Structured failure codes with stable `fix_hint`** — the right contract shape. Both reports' complaint is that the text names the wrong cause, which presupposes the mechanism is worth keeping.
+- **Structured failure codes with stable** `fix_hint` — the right contract shape. Both reports' complaint is that the text names the wrong cause, which presupposes the mechanism is worth keeping.
 - **The tag lifecycle gate** (only `approved` or non-LLM tags may act as hard constraints) — well-defined and correctly gated (OR §9, "no issue"). The tribunal's objection (D8) is that no data flows through it, which is a data gap, not a design gap.
 - **Workout-gap / activity-context conversion** — deterministic and correct (OR §12, "no issue").
 - **No network during planning** — holds; ingredient resolution completes up front.
 
 ---
 
+
+
 ## 5. Proposed evaluation plan
 
 **Governing principle:** the data track and the search track are confounded in both reports. Separate them by constructing the search experiments so they never touch the ingredient layer — build `PlanningRecipe` objects with known-correct nutrition directly, as the existing planner tests already do. The two tracks then run in parallel and neither blocks the other.
 
-**Harness required (all outside `src/`; this is the only build work the questions justify):**
+**Harness required (all outside** `src/`**; this is the only build work the questions justify):**
 
 1. **Ground-truth ingredient panel** — the ~65 distinct ingredient names in the local corpus, each hand-labelled with the intended USDA FDC ID and per-100 g values pulled from the raw record. Data, not code.
 2. **Known-nutrition recipe corpus** — synthetic recipes with nutrition vectors supplied directly, parameterized by pool size and macro spread. Bypasses resolution entirely.
@@ -173,40 +191,48 @@ Verified as sound; both reports either affirm these or do not dispute them. No w
 4. **Canonical-JSON comparator** — for stable snapshots given §2.4.
 5. Existing planner stats (`attempts`, `backtracks`, `day_runtimes`) are sufficient instrumentation; nothing new needed in `src/`.
 
+
+
 ### Track A — data integrity (answers Q1; informs Q2)
 
 - **E1. Error decomposition.** For each ingredient in the panel, compute four deltas against ground truth: coverage (absent from source), resolution (resolved description is a different food — adjudicated by hand from the panel), mapping (cached value vs. value recomputed from the raw record, per nutrient), and units (recipe recomputed via `NutritionScaler` vs. `NutritionCalculator`). Roll up to per-recipe kcal / protein / per-micronutrient error, attributing each recipe's error to its dominant channel.
-  *Primary metric:* share of total absolute kcal and per-micronutrient error attributable to each channel. *Secondary:* count of recipes whose kcal error exceeds 20%, by channel.
-  *Decision this drives:* the ordering of any data work, and whether the mapping table alone accounts for the micronutrient failures.
+*Primary metric:* share of total absolute kcal and per-micronutrient error attributable to each channel. *Secondary:* count of recipes whose kcal error exceeds 20%, by channel.
+*Decision this drives:* the ordering of any data work, and whether the mapping table alone accounts for the micronutrient failures.
 - **E1b. Cache provenance audit.** Partition the on-disk cache by whether each entry is consistent with the current mapping (the tribunal found salmon and egg yolk disagree). *Metric:* fraction of entries attributable to a superseded mapping. *Decision:* whether the cache can be trusted at all or must be rebuilt.
 - **E8. Allergen recall.** Exclusion panel (peanuts → peanut butter / peanut oil; shellfish → shrimp / crab / prawn; egg → eggs / egg white; milk → whole milk / skim) run against the real corpus under HC-1.
-  *Metric:* recall of exact-match matching per allergen class. *Decision:* whether Q10 can be answered "best-effort, documented" or must be "guarantee, requires taxonomy".
+*Metric:* recall of exact-match matching per allergen class. *Decision:* whether Q10 can be answered "best-effort, documented" or must be "guarantee, requires taxonomy".
+
+
 
 ### Track B — search and formulation (answers Q5, Q6; informs Q3, Q4)
 
 - **E2. Frontier sweep.** Known-nutrition pools of {15, 30, 60, 120} recipes × D ∈ {1, 2, 3, 5, 7} × τ ∈ {0.7, 0.8, 1.0} × macro tolerance ∈ {±10%, ±15%, ±20%}, with and without micronutrient targets. Record termination code, attempts, backtracks, wall time. For D ≤ 3 and pools ≤ 40, compare against the oracle.
-  *Primary metric:* **false-infeasible rate** — instances the oracle proves feasible that the planner terminates as FM-2/FM-5. *Secondary:* attempts-to-success distribution; the (pool size, horizon) contour where the false-infeasible rate crosses 5%.
-  *Exoneration criterion (state this up front):* if the false-infeasible rate is ≈0 at pool ≥ 60 on correct data, then the tribunal's C1/C2 and the OR review's 5.2 are data artifacts and **no search redesign is warranted** — raise the cap and document the pool-size requirement instead.
+*Primary metric:* **false-infeasible rate** — instances the oracle proves feasible that the planner terminates as FM-2/FM-5. *Secondary:* attempts-to-success distribution; the (pool size, horizon) contour where the false-infeasible rate crosses 5%.
+*Exoneration criterion (state this up front):* if the false-infeasible rate is ≈0 at pool ≥ 60 on correct data, then the tribunal's C1/C2 and the OR review's 5.2 are data artifacts and **no search redesign is warranted** — raise the cap and document the pool-size requirement instead.
 - **E3. FC-4 soundness (decisive, single instance).** Construct a schedule where day 1 has 2 slots and day 2 has 4, and the only feasible plan uses day 2's extra capacity to meet the horizon floor. Prediction from §2.1: FC-4 prunes at the day-2 boundary and the run returns FM-4 despite an oracle-verified solution.
-  *Metric:* binary. This resolves the reports' one direct factual conflict.
+*Metric:* binary. This resolves the reports' one direct factual conflict.
 - **E4. D=1 asymmetry (decisive, two instances).** (i) A D=1 instance whose floors are achievable but unmet by the first feasible leaf — expect `TC-4` success with floors unmet and no warning. (ii) A D=1 instance that is structurally impossible — expect FM-4. Documents the strict-gate/silent-exit pair for the Q8 decision.
 - **E5. Objective regret.** On instances small enough to enumerate all feasible plans, compute total normalized deviation from targets for the planner's returned plan and for the minimum-deviation plan.
-  *Metric:* regret distribution (median, p90). *Decision:* if median regret is small, Q4 resolves as "first-feasible is fine, fix the docs"; if large, plan quality needs an objective.
+*Metric:* regret distribution (median, p90). *Decision:* if median regret is small, Q4 resolves as "first-feasible is fine, fix the docs"; if large, plan quality needs an objective.
 - **E6. Scoring discrimination.** At each decision point, record the distribution of the nutrition sub-score and the fraction of candidates tied at zero; measure rank correlation between composite score and the final plan's deviation; ablate the preferred-tag bonus and the synthesized `high-<nutrient>` tags.
-  *Metric:* share of decision points where the nutrition component does not discriminate. *Decision:* whether the ±10% cliff (OR 4.2) and the unbounded bonus (4.4) are actually governing candidate order.
+*Metric:* share of decision points where the nutrition component does not discriminate. *Decision:* whether the ±10% cliff (OR 4.2) and the unbounded bonus (4.4) are actually governing candidate order.
 - **E7. Variety under duplicates.** Pool seeded with near-duplicate recipes under distinct IDs; measure distinct *content* meals per plan versus distinct IDs.
-  *Metric:* distinct-content-meal count — propose adopting this as the variety metric regardless of what else changes.
+*Metric:* distinct-content-meal count — propose adopting this as the variety metric regardless of what else changes.
+
+
 
 ### Track C — wiring counterfactuals and evaluation validity
 
 - **E9. Meal-prep usability probe.** Enumerate batch-lock configurations (2–5 servings × placements across days and slots × cook times 10/20/40 min × busyness 1–4) and record how many survive pre-validation.
-  *Metric:* pass rate. Prediction: near zero. Confirms Q9 is a specification conflict, not tuning.
+*Metric:* pass rate. Prediction: near zero. Confirms Q9 is a specification conflict, not tuning.
 - **E10. UL counterfactual.** Call `plan_meals` from the harness with `resolved_ul` supplied (no `src/` change) across the E2 instance set.
-  *Metric:* feasibility rate with ULs on vs. off, and per-nutrient binding frequency. *Decision:* whether wiring ULs — which both reports demand — is currently shippable, or whether the magnesium row must be corrected first (it would make the default instance infeasible by construction).
+*Metric:* feasibility rate with ULs on vs. off, and per-nutrient binding frequency. *Decision:* whether wiring ULs — which both reports demand — is currently shippable, or whether the magnesium row must be corrected first (it would make the default instance infeasible by construction).
 - **E11. Suite sensitivity (fault injection).** Inject each known defect class into a scratch copy and run `python3 scripts/run_pytest.py`: swap the vitamin D IDs back, zero all micronutrients, remove volume conversion, make resolution return an arbitrary record.
-  *Metric:* fault detection rate across the 1074 tests. *Decision:* whether the suite can serve as the regression gate for anything above. Note `tests/test_nutrition_calculator.py::test_calculate_recipe_missing_ingredient` currently asserts the silent-skip as correct, so at least one injected fault is expected to pass.
+*Metric:* fault detection rate across the 1074 tests. *Decision:* whether the suite can serve as the regression gate for anything above. Note `tests/test_nutrition_calculator.py::test_calculate_recipe_missing_ingredient` currently asserts the silent-skip as correct, so at least one injected fault is expected to pass.
 - **E12. Baseline re-anchoring.** Re-record the baseline with the cause separated from the symptom: report ingredient coverage and the count of zero-nutrition recipes *alongside* the termination code, so a future FM-4 can be attributed.
-  *Decision:* replaces `initial_state.md`'s "preserve FM-4" guard, which currently protects the defect.
+*Decision:* replaces `initial_state.md`'s "preserve FM-4" guard, which currently protects the defect.
+
+
 
 ### Sequencing
 

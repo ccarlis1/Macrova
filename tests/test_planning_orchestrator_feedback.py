@@ -1,793 +1,238 @@
-import copy
+"""Recovery-loop contract tests (LLM overhaul Stages 1, 5, 6).
+
+The loop is exercised end to end with the real deterministic planner, a scripted LLM client
+and a USDA-capable fake provider. No monkeypatching of loop internals: the contract is what
+comes back in ``report['llm_recovery']`` and what is (not) persisted on disk.
+"""
+from __future__ import annotations
+
+import json
 
 import pytest
 
-from src.data_layer.models import Ingredient, Recipe
-from src.llm.planner_assistant import build_feedback_context
+from src.data_layer.models import Ingredient, MicronutrientProfile, NutritionProfile
 from src.llm.feedback_cache import DeterministicCacheMissError
-from src.llm.schemas import RecipeDraft, RecipeIngredientDraft
-from src.llm.types import ValidatedRecipeForPersistence
+from src.llm.recovery_types import RecoveryState
 from src.planning.orchestrator import plan_with_llm_feedback
 from src.planning.phase0_models import MealSlot, PlanningRecipe, PlanningUserProfile
-from src.planning.phase10_reporting import MealPlanResult
+from src.providers.ingredient_provider import IngredientDataProvider
+
+TABLE = {
+    "chicken breast": {"calories": 165.0, "protein_g": 31.0, "fat_g": 3.6, "carbs_g": 0.0},
+    "rice": {"calories": 130.0, "protein_g": 2.7, "fat_g": 0.3, "carbs_g": 28.0},
+    "olive oil": {"calories": 884.0, "protein_g": 0.0, "fat_g": 100.0, "carbs_g": 0.0},
+    "spinach": {"calories": 23.0, "protein_g": 2.9, "fat_g": 0.4, "carbs_g": 3.6, "iron_mg": 2.7},
+    "peanut butter": {"calories": 598.0, "protein_g": 22.0, "fat_g": 51.0, "carbs_g": 22.0},
+}
 
 
-def _make_schedule(*, days: int, slots_per_day: int) -> list[list[MealSlot]]:
-    schedule: list[list[MealSlot]] = []
-    for _ in range(days):
-        day_slots: list[MealSlot] = []
-        for _s in range(slots_per_day):
-            day_slots.append(MealSlot(time="12:00", busyness_level=2, meal_type="lunch"))
-        schedule.append(day_slots)
-    return schedule
+class Provider(IngredientDataProvider):
+    usda_capable = True
+
+    def __init__(self):
+        self.resolved = []
+
+    def get_ingredient_info(self, name):
+        key = name.lower()
+        if key not in TABLE:
+            return None
+        return {"name": key, "per_100g": TABLE[key], "provenance": {"description": key.title(), "fdc_id": 7, "method": "deterministic"}}
+
+    def resolve_all(self, names):
+        self.resolved.append(list(names))
 
 
-def _make_profile(*, days: int = 1, slots_per_day: int = 2) -> PlanningUserProfile:
-    return PlanningUserProfile(
-        daily_calories=2000,
-        daily_protein_g=100.0,
-        daily_fat_g=(50.0, 80.0),
-        daily_carbs_g=250.0,
-        schedule=_make_schedule(days=days, slots_per_day=slots_per_day),
-        excluded_ingredients=[],
-        liked_foods=[],
-        pinned_assignments={},
-        micronutrient_targets={},
-    )
+class Client:
+    _settings = None
+
+    def __init__(self, envelopes):
+        self.envelopes = list(envelopes)
+        self.calls = 0
+        self.contexts = []
+
+    def generate_json(self, *, system_prompt, user_prompt, schema_name, temperature=0.0):
+        self.calls += 1
+        ctx = user_prompt.split("Generation context (JSON): ", 1)[1].split("\n")[0]
+        self.contexts.append(json.loads(ctx))
+        env = self.envelopes[min(self.calls - 1, len(self.envelopes) - 1)]
+        if isinstance(env, Exception):
+            raise env
+        return env
 
 
-def _fake_failure_result(*, failure_mode: str) -> MealPlanResult:
-    return MealPlanResult(
-        success=False,
-        termination_code="TC-2",
-        failure_mode=failure_mode,
-        plan=[],
-        daily_trackers={},
-        weekly_tracker=None,
-        report={
-            "deficient_nutrients": [
-                {
-                    "nutrient": "iron_mg",
-                    "achieved": 0.0,
-                    "required": 2.0,
-                    "deficit": 2.0,
-                    "classification": "structural",
-                }
-            ],
-            "failed_days": [
-                {
-                    "day": 0,
-                    "constraint_detail": "calories",
-                    "macro_violations": {
-                        "constraint_detail": "calories",
-                        "calories_consumed": 2500.0,
-                        "protein_consumed": 90.0,
-                        "fat_consumed": 40.0,
-                        "carbs_consumed": 200.0,
-                    },
-                    "ul_violations": {},
-                }
-            ],
-        },
-        stats={"attempts": 0, "backtracks": 0},
-    )
+def R(rid, kcal, p, f, c, t=10, ings=("rice",)):
+    return PlanningRecipe(id=rid, name=rid, ingredients=[Ingredient(n, 100, "g") for n in ings], cooking_time_minutes=t,
+                          nutrition=NutritionProfile(kcal, p, f, c, MicronutrientProfile()))
 
 
-def test_orchestrator_retries_once_then_succeeds(monkeypatch):
-    profile = _make_profile(days=2, slots_per_day=2)
-    base_pool: list[PlanningRecipe] = []
-
-    failure = _fake_failure_result(failure_mode="FM-2")
-    success = MealPlanResult(
-        success=True,
-        termination_code="TC-1",
-        plan=[],
-        daily_trackers={0: None},  # formatters only care that it's non-empty in this test
-        weekly_tracker=None,
-        report={},
-        stats={"attempts": 1, "backtracks": 0},
-    )
-
-    plan_calls = {"count": 0}
-
-    def _fake_plan_meals(*args, **kwargs):
-        plan_calls["count"] += 1
-        return failure if plan_calls["count"] == 1 else success
-
-    monkeypatch.setattr("src.planning.orchestrator.plan_meals", _fake_plan_meals)
-
-    # Planner assistant -> recipe drafts
-    draft = RecipeDraft(
-        name="Generated",
-        ingredients=[RecipeIngredientDraft(name="chicken breast", quantity=200.0, unit="g")],
-        instructions=["Cook it."],
-    )
-
-    def _fake_suggest_targeted_recipe_drafts(*, client, context, count):
-        assert context["failure_type"] == "FM-2"
-        assert count == 1
-        return [draft]
-
-    monkeypatch.setattr(
-        "src.planning.orchestrator.suggest_targeted_recipe_drafts",
-        _fake_suggest_targeted_recipe_drafts,
-    )
-
-    # Validation -> accepted recipes
-    accepted_recipe = Recipe(
-        id="",
-        name="Accepted",
-        ingredients=[Ingredient(name="chicken breast", quantity=200.0, unit="g", normalized_unit="g", normalized_quantity=200.0)],
-        cooking_time_minutes=10,
-        instructions=["Cook it."],
-    )
-    validated = ValidatedRecipeForPersistence(recipe=accepted_recipe)
-
-    def _fake_validate_recipe_drafts(*, drafts, provider):
-        assert drafts == [draft]
-        return [validated], []
-
-    # Signature is validate_recipe_drafts(drafts, provider) in the real module.
-    monkeypatch.setattr(
-        "src.planning.orchestrator.validate_recipe_drafts",
-        lambda drafts, provider: ([validated], []),
-    )
-
-    # Persistence
-    monkeypatch.setattr(
-        "src.planning.orchestrator.append_validated_recipes",
-        lambda *, path, recipes: ["llm_recipe_1"],
-    )
-
-    # Pool update (avoid I/O + nutrition calculation in unit test)
-    monkeypatch.setattr(
-        "src.planning.orchestrator._append_new_recipes_to_pool",
-        lambda *, recipes_path, provider, current_pool, persisted_ids: [],
-    )
-
-    dummy_client = object()  # not used due to patched suggest
-    dummy_provider = type("P", (), {"usda_capable": True})()  # for assert_usda_capable_provider
-
-    out = plan_with_llm_feedback(
-        profile,
-        base_pool,
-        days=2,
-        max_feedback_retries=3,
-        recipes_path="ignored.json",
-        client=dummy_client,  # type: ignore[arg-type]
-        provider=dummy_provider,  # type: ignore[arg-type]
-        recipes_to_generate_per_attempt=1,
-    )
-
-    assert out.success is True
-    assert plan_calls["count"] == 2
-    assert out.stats is not None
-    assert "llm_feedback_attempts" in out.stats
-    assert isinstance(out.stats["llm_feedback_attempts"], list)
+def profile(slots=2, kcal=1200, protein=70.0, fat=(20.0, 40.0), carbs=130.0, busy=4, excl=(), micro=None, required=None):
+    busy_list = busy if isinstance(busy, list) else [busy] * slots
+    return PlanningUserProfile(daily_calories=kcal, daily_protein_g=protein, daily_fat_g=fat, daily_carbs_g=carbs,
+                               schedule=[[MealSlot(time="12:00", busyness_level=busy_list[i], meal_type="lunch",
+                                                   required_tag_slugs=(required or {}).get(i)) for i in range(slots)]],
+                               excluded_ingredients=list(excl), liked_foods=[], pinned_assignments={}, micronutrient_targets=micro or {})
 
 
-def test_orchestrator_aborts_on_repeated_failure_signature_no_progress(monkeypatch):
-    profile = _make_profile(days=1, slots_per_day=2)
-    base_pool: list[PlanningRecipe] = []
+# chicken 200 g + rice 250 g = 655 kcal / 68.75 p / 7.95 f / 70 c ; two such meals ~ 1310 kcal window
+FIT = {"name": "Chicken and rice", "ingredients": [{"name": "chicken breast", "quantity": 200.0, "unit": "g"}, {"name": "rice", "quantity": 250.0, "unit": "g"}],
+       "instructions": ["Cook.", "Serve."], "cooking_time_minutes": 20}
+FIT2 = {"name": "Rice and chicken plate", "ingredients": [{"name": "chicken breast", "quantity": 190.0, "unit": "g"}, {"name": "rice", "quantity": 240.0, "unit": "g"}, {"name": "olive oil", "quantity": 5.0, "unit": "g"}],
+        "instructions": ["Cook.", "Serve."], "cooking_time_minutes": 15}
+TINY = {"name": "Rice spoon", "ingredients": [{"name": "rice", "quantity": 30.0, "unit": "g"}], "instructions": ["Eat."], "cooking_time_minutes": 1}
 
-    failure = _fake_failure_result(failure_mode="FM-2")
-    failure2 = copy.deepcopy(failure)
 
-    plan_calls = {"count": 0}
+def _target_for_two_fits(**kw):
+    # window that FIT + FIT2 satisfies (real planner validation, ±10 %)
+    return profile(slots=2, kcal=1310, protein=134.0, fat=(6.0, 22.0), carbs=136.0, **kw)
 
-    def _fake_plan_meals(*args, **kwargs):
-        plan_calls["count"] += 1
-        return failure if plan_calls["count"] == 1 else failure2
 
-    monkeypatch.setattr("src.planning.orchestrator.plan_meals", _fake_plan_meals)
+def test_retry_succeeds_and_persists_only_used_recipes(tmp_path):
+    prof = _target_for_two_fits()
+    pool = [R("small_a", 100, 5, 2, 10), R("small_b", 120, 6, 2, 12), R("small_c", 110, 5, 3, 11)]
+    client = Client([{"drafts": [FIT, FIT2, TINY]}])
+    out = plan_with_llm_feedback(prof, pool, 1, recipes_path=str(tmp_path / "r.json"), client=client, provider=Provider(),
+                                 use_feedback_cache=False, force_live_generation=True, recipes_to_generate_per_attempt=3)
+    rec = out.report["llm_recovery"]
+    assert out.success is True and rec["state"] == RecoveryState.SUCCESS.value
+    assert rec["gap_spec"]["kind"] == "macro_gap"
+    assert client.calls == 1 and rec["planner_runs"] == 2
+    on_disk = json.load(open(tmp_path / "r.json"))["recipes"]
+    assert len(on_disk) == 2 and {r["name"] for r in on_disk} == {"Chicken and rice", "Rice and chicken plate"}
+    assert all(r["provenance"]["source"] == "llm_feedback" and r["provenance"]["gap_kind"] == "macro_gap" for r in on_disk)
+    assert all(r["cooking_time_minutes"] in (20, 15) for r in on_disk)  # author-claimed, not fabricated
+    assert rec["attempts"][0]["rejected"] == [{"code": "NOT_USEFUL", "message": rec["attempts"][0]["rejected"][0]["message"]}]
+    assert set(rec["persisted_recipe_ids"]) == {r["id"] for r in on_disk}
 
-    # Generate drafts each attempt, but validation returns nothing => no persistence.
-    draft = RecipeDraft(
-        name="Generated",
-        ingredients=[RecipeIngredientDraft(name="chicken breast", quantity=200.0, unit="g")],
-        instructions=["Cook it."],
-    )
-    monkeypatch.setattr(
-        "src.planning.orchestrator.suggest_targeted_recipe_drafts",
-        lambda *, client, context, count: [draft],
-    )
 
-    monkeypatch.setattr(
-        "src.planning.orchestrator.validate_recipe_drafts",
-        lambda drafts, provider: ([], []),
-    )
+def test_llm_receives_gap_spec_not_bare_failure_code(tmp_path):
+    prof = _target_for_two_fits()
+    prof.excluded_ingredients = ["peanuts"]
+    pool = [R("small_a", 100, 5, 2, 10), R("small_b", 120, 6, 2, 12)]
+    client = Client([{"drafts": [FIT, FIT2]}])
+    plan_with_llm_feedback(prof, pool, 1, recipes_path=str(tmp_path / "r.json"), client=client, provider=Provider(),
+                           use_feedback_cache=False, force_live_generation=True, recipes_to_generate_per_attempt=2)
+    ctx = client.contexts[0]
+    assert ctx["kind"] == "macro_gap" and ctx["excluded_ingredients"] == ["peanuts"]
+    assert ctx["per_meal_calories"] == 655.0 and "existing_recipe_names" in ctx and ctx["attempt"] == 1
 
-    monkeypatch.setattr(
-        "src.planning.orchestrator.append_validated_recipes",
-        lambda *, path, recipes: [],
-    )
 
-    monkeypatch.setattr(
-        "src.planning.orchestrator._append_new_recipes_to_pool",
-        lambda *, recipes_path, provider, current_pool, persisted_ids: [],
-    )
-
-    dummy_client = object()
-    dummy_provider = type("P", (), {"usda_capable": True})()  # for assert_usda_capable_provider
-
-    out = plan_with_llm_feedback(
-        profile,
-        base_pool,
-        days=1,
-        max_feedback_retries=3,
-        recipes_path="ignored.json",
-        client=dummy_client,  # type: ignore[arg-type]
-        provider=dummy_provider,  # type: ignore[arg-type]
-        recipes_to_generate_per_attempt=1,
-    )
-
+def test_failed_request_persists_nothing(tmp_path):
+    prof = _target_for_two_fits()
+    pool = [R("small_a", 100, 5, 2, 10), R("small_b", 120, 6, 2, 12)]
+    client = Client([{"drafts": [FIT]}, {"drafts": [FIT]}, {"drafts": [FIT]}])  # one fitting recipe is not enough for two slots
+    out = plan_with_llm_feedback(prof, pool, 1, recipes_path=str(tmp_path / "r.json"), client=client, provider=Provider(),
+                                 use_feedback_cache=False, force_live_generation=True, recipes_to_generate_per_attempt=1)
     assert out.success is False
-    # Initial attempt + only 1 feedback attempt (abort on repeated signature).
-    assert plan_calls["count"] == 2
-    assert out.stats is not None
-    assert "llm_feedback_attempts" in out.stats
+    assert not (tmp_path / "r.json").exists() or json.load(open(tmp_path / "r.json"))["recipes"] == []
+    rec = out.report["llm_recovery"]
+    assert rec["state"] in (RecoveryState.NO_USEFUL_RECOVERY_FOUND.value, RecoveryState.RECOVERY_LIMIT_REACHED.value)
+    assert rec["persisted_recipe_ids"] == []
 
 
-def test_orchestrator_feedback_cache_hit_bypasses_llm_and_is_replayable(
-    monkeypatch,
-    tmp_path,
-):
-    profile = _make_profile(days=2, slots_per_day=2)
-    base_pool: list[PlanningRecipe] = []
+def test_excluded_ingredient_draft_is_rejected_and_never_planned(tmp_path):
+    prof = _target_for_two_fits(); prof.excluded_ingredients = ["peanuts"]
+    pool = [R("small_a", 100, 5, 2, 10), R("small_b", 120, 6, 2, 12)]
+    pb = {"name": "PB plate", "ingredients": [{"name": "peanut butter", "quantity": 100.0, "unit": "g"}, {"name": "rice", "quantity": 50.0, "unit": "g"}], "instructions": ["Mix."], "cooking_time_minutes": 2}
+    client = Client([{"drafts": [pb, pb]}])
+    out = plan_with_llm_feedback(prof, pool, 1, recipes_path=str(tmp_path / "r.json"), client=client, provider=Provider(),
+                                 use_feedback_cache=False, force_live_generation=True, recipes_to_generate_per_attempt=2)
+    rec = out.report["llm_recovery"]
+    assert out.success is False
+    assert rec["attempts"][0]["rejected"][0]["code"] == "EXCLUDED_INGREDIENT"
+    assert rec["state"] == RecoveryState.INVALID_RECOVERY_OUTPUT.value
+    assert rec["planner_runs"] == 1  # nothing accepted -> planner not re-run
 
-    failure = _fake_failure_result(failure_mode="FM-2")
-    success = MealPlanResult(
-        success=True,
-        termination_code="TC-1",
-        plan=[],
-        daily_trackers={0: None},
-        weekly_tracker=None,
-        report={},
-        stats={"attempts": 1, "backtracks": 0},
-    )
 
-    suggest_calls = {"count": 0}
+def test_unrecoverable_cases_never_call_the_llm(tmp_path):
+    client = Client([{"drafts": [FIT]}])
+    # impossible targets
+    prof = profile(carbs=-10.0)
+    out = plan_with_llm_feedback(prof, [R("a", 600, 35, 10, 65), R("b", 600, 35, 10, 65)], 1, recipes_path=str(tmp_path / "r.json"),
+                                 client=client, provider=Provider(), use_feedback_cache=False, force_live_generation=True)
+    assert out.report["llm_recovery"]["state"] == RecoveryState.UNRECOVERABLE_INFEASIBILITY.value
+    assert out.report["llm_recovery"]["reason"] == "IMPOSSIBLE_TARGETS"
+    # empty pool
+    out2 = plan_with_llm_feedback(_target_for_two_fits(), [], 1, recipes_path=str(tmp_path / "r.json"), client=client, provider=Provider(),
+                                  use_feedback_cache=False, force_live_generation=True)
+    assert out2.report["llm_recovery"]["reason"] == "EMPTY_POOL"
+    # required tag nobody holds
+    prof3 = _target_for_two_fits(required={1: ["post-workout"]})
+    out3 = plan_with_llm_feedback(prof3, [R("a", 600, 35, 10, 65), R("b", 600, 35, 10, 65)], 1, recipes_path=str(tmp_path / "r.json"),
+                                  client=client, provider=Provider(), use_feedback_cache=False, force_live_generation=True)
+    assert out3.report["llm_recovery"]["reason"] == "REQUIRED_TAG_UNHELD"
+    assert client.calls == 0
 
-    draft = RecipeDraft(
-        name="Generated",
-        ingredients=[RecipeIngredientDraft(name="chicken breast", quantity=200.0, unit="g")],
-        instructions=["Cook it."],
-    )
 
-    validated_recipe = Recipe(
-        id="",
-        name="Accepted",
-        ingredients=[
-            Ingredient(
-                name="chicken breast",
-                quantity=200.0,
-                unit="g",
-                normalized_unit="g",
-                normalized_quantity=200.0,
-            )
-        ],
-        cooking_time_minutes=10,
-        instructions=["Cook it."],
-    )
-    validated = ValidatedRecipeForPersistence(recipe=validated_recipe)
+def test_cook_time_cap_gap_and_claimed_time(tmp_path):
+    prof = _target_for_two_fits(busy=[1, 4])  # slot 0: <= 5 min
+    pool = [R("a", 655, 68.75, 7.95, 70, t=20), R("b", 655, 68.75, 7.95, 70, t=20)]
+    quick = {"name": "Quick chicken rice", "ingredients": [{"name": "chicken breast", "quantity": 200.0, "unit": "g"}, {"name": "rice", "quantity": 250.0, "unit": "g"}], "instructions": ["Microwave."], "cooking_time_minutes": 4}
+    slow_claim = {"name": "Slow chicken rice", "ingredients": [{"name": "chicken breast", "quantity": 200.0, "unit": "g"}, {"name": "rice", "quantity": 250.0, "unit": "g"}], "instructions": ["Roast."], "cooking_time_minutes": 40}
+    client = Client([{"drafts": [slow_claim, quick]}])
+    out = plan_with_llm_feedback(prof, pool, 1, recipes_path=str(tmp_path / "r.json"), client=client, provider=Provider(),
+                                 use_feedback_cache=False, force_live_generation=True, recipes_to_generate_per_attempt=2)
+    rec = out.report["llm_recovery"]
+    assert rec["gap_spec"]["kind"] == "candidate_gap" and rec["gap_spec"]["cook_time_cap_minutes"] == 5
+    assert [r["code"] for r in rec["attempts"][0]["rejected"]] == ["COOK_TIME_EXCEEDS_CAP"]
+    assert out.success is True and rec["state"] == RecoveryState.SUCCESS.value
+    assert json.load(open(tmp_path / "r.json"))["recipes"][0]["cooking_time_minutes"] == 4
 
-    monkeypatch.setenv("LLM_FEEDBACK_CACHE_PATH", str(tmp_path / "feedback_cache.json"))
-    monkeypatch.setenv("LLM_FEEDBACK_CACHE_SCHEMA_VERSION", "1")
-    monkeypatch.setenv("LLM_DETERMINISTIC_STRICT", "false")
+
+def test_rejections_are_fed_back_on_the_next_attempt(tmp_path):
+    prof = _target_for_two_fits()
+    pool = [R("small_a", 100, 5, 2, 10), R("small_b", 120, 6, 2, 12)]
+    client = Client([{"drafts": [TINY, TINY]}, {"drafts": [FIT, FIT2]}])
+    out = plan_with_llm_feedback(prof, pool, 1, recipes_path=str(tmp_path / "r.json"), client=client, provider=Provider(),
+                                 use_feedback_cache=False, force_live_generation=True, recipes_to_generate_per_attempt=2)
+    assert client.calls == 2
+    assert client.contexts[1]["previous_attempt_rejections"][0]["code"] == "NOT_USEFUL"
+    assert out.success is True
+
+
+def test_feedback_cache_replays_and_model_change_invalidates(tmp_path, monkeypatch):
+    prof = _target_for_two_fits()
+    pool = [R("small_a", 100, 5, 2, 10), R("small_b", 120, 6, 2, 12)]
+    monkeypatch.setenv("LLM_FEEDBACK_CACHE_PATH", str(tmp_path / "fc.json"))
     monkeypatch.setenv("LLM_MODEL", "model-A")
-
-    plan_calls = {"count": 0}
-
-    def _fake_plan_meals(*args, **kwargs):
-        plan_calls["count"] += 1
-        return failure if plan_calls["count"] == 1 else success
-
-    monkeypatch.setattr("src.planning.orchestrator.plan_meals", _fake_plan_meals)
-
-    def _fake_suggest_targeted_recipe_drafts(*, client, context, count):
-        suggest_calls["count"] += 1
-        assert context["failure_type"] == "FM-2"
-        assert count == 1
-        return [draft]
-
-    monkeypatch.setattr(
-        "src.planning.orchestrator.suggest_targeted_recipe_drafts",
-        _fake_suggest_targeted_recipe_drafts,
-    )
-
-    monkeypatch.setattr(
-        "src.planning.orchestrator.validate_recipe_drafts",
-        lambda drafts, provider: ([validated], []),
-    )
-
-    monkeypatch.setattr(
-        "src.planning.orchestrator.append_validated_recipes",
-        lambda *, path, recipes: ["llm_recipe_1"],
-    )
-
-    # Avoid filesystem + nutrition calculation for incremental pool update.
-    monkeypatch.setattr(
-        "src.planning.orchestrator._append_new_recipes_to_pool",
-        lambda *, recipes_path, provider, current_pool, persisted_ids: [],
-    )
-
-    dummy_client = object()
-    dummy_provider = type("P", (), {"usda_capable": True})()
-
-    out1 = plan_with_llm_feedback(
-        profile,
-        base_pool,
-        days=2,
-        max_feedback_retries=3,
-        recipes_path="ignored.json",
-        client=dummy_client,  # type: ignore[arg-type]
-        provider=dummy_provider,  # type: ignore[arg-type]
-        recipes_to_generate_per_attempt=1,
-    )
-    out2 = plan_with_llm_feedback(
-        profile,
-        base_pool,
-        days=2,
-        max_feedback_retries=3,
-        recipes_path="ignored.json",
-        client=dummy_client,  # type: ignore[arg-type]
-        provider=dummy_provider,  # type: ignore[arg-type]
-        recipes_to_generate_per_attempt=1,
-    )
-
-    assert out1.success is True
-    assert out2.success is True
-    assert suggest_calls["count"] == 1  # second run replayed from cache
-
-    assert out1.stats is not None
-    assert out2.stats is not None
-    assert out1.stats["llm_feedback_attempts"] == out2.stats["llm_feedback_attempts"]
+    c1 = Client([{"drafts": [FIT, FIT2]}])
+    out1 = plan_with_llm_feedback(prof, pool, 1, recipes_path=str(tmp_path / "r1.json"), client=c1, provider=Provider(), recipes_to_generate_per_attempt=2)
+    c2 = Client([{"drafts": [FIT, FIT2]}])
+    out2 = plan_with_llm_feedback(prof, pool, 1, recipes_path=str(tmp_path / "r2.json"), client=c2, provider=Provider(), recipes_to_generate_per_attempt=2)
+    assert out1.success and out2.success and c1.calls == 1 and c2.calls == 0
+    monkeypatch.setenv("LLM_MODEL", "model-B")
+    c3 = Client([{"drafts": [FIT, FIT2]}])
+    plan_with_llm_feedback(prof, pool, 1, recipes_path=str(tmp_path / "r3.json"), client=c3, provider=Provider(), recipes_to_generate_per_attempt=2)
+    assert c3.calls == 1
 
 
-def test_orchestrator_feedback_cache_invalidates_when_model_changes(
-    monkeypatch,
-    tmp_path,
-):
-    profile = _make_profile(days=1, slots_per_day=2)
-    base_pool: list[PlanningRecipe] = []
-
-    failure = _fake_failure_result(failure_mode="FM-2")
-    success = MealPlanResult(
-        success=True,
-        termination_code="TC-1",
-        plan=[],
-        daily_trackers={0: None},
-        weekly_tracker=None,
-        report={},
-        stats={"attempts": 1, "backtracks": 0},
-    )
-
-    suggest_calls = {"count": 0}
-
-    draft = RecipeDraft(
-        name="Generated",
-        ingredients=[RecipeIngredientDraft(name="chicken breast", quantity=200.0, unit="g")],
-        instructions=["Cook it."],
-    )
-
-    validated_recipe = Recipe(
-        id="",
-        name="Accepted",
-        ingredients=[
-            Ingredient(
-                name="chicken breast",
-                quantity=200.0,
-                unit="g",
-                normalized_unit="g",
-                normalized_quantity=200.0,
-            )
-        ],
-        cooking_time_minutes=10,
-        instructions=["Cook it."],
-    )
-    validated = ValidatedRecipeForPersistence(recipe=validated_recipe)
-
-    monkeypatch.setenv("LLM_FEEDBACK_CACHE_PATH", str(tmp_path / "feedback_cache.json"))
-    monkeypatch.setenv("LLM_DETERMINISTIC_STRICT", "false")
-
-    def _run_with_model(model_version: str) -> MealPlanResult:
-        monkeypatch.setenv("LLM_MODEL", model_version)
-
-        plan_calls = {"count": 0}
-
-        def _fake_plan_meals(*args, **kwargs):
-            plan_calls["count"] += 1
-            return failure if plan_calls["count"] == 1 else success
-
-        monkeypatch.setattr("src.planning.orchestrator.plan_meals", _fake_plan_meals)
-
-        def _fake_suggest_targeted_recipe_drafts(*, client, context, count):
-            suggest_calls["count"] += 1
-            return [draft]
-
-        monkeypatch.setattr(
-            "src.planning.orchestrator.suggest_targeted_recipe_drafts",
-            _fake_suggest_targeted_recipe_drafts,
-        )
-
-        monkeypatch.setattr(
-            "src.planning.orchestrator.validate_recipe_drafts",
-            lambda drafts, provider: ([validated], []),
-        )
-
-        monkeypatch.setattr(
-            "src.planning.orchestrator.append_validated_recipes",
-            lambda *, path, recipes: ["llm_recipe_1"],
-        )
-
-        monkeypatch.setattr(
-            "src.planning.orchestrator._append_new_recipes_to_pool",
-            lambda *, recipes_path, provider, current_pool, persisted_ids: [],
-        )
-
-        dummy_client = object()
-        dummy_provider = type("P", (), {"usda_capable": True})()
-
-        return plan_with_llm_feedback(
-            profile,
-            base_pool,
-            days=1,
-            max_feedback_retries=3,
-            recipes_path="ignored.json",
-            client=dummy_client,  # type: ignore[arg-type]
-            provider=dummy_provider,  # type: ignore[arg-type]
-            recipes_to_generate_per_attempt=1,
-        )
-
-    out1 = _run_with_model("model-A")
-    out2 = _run_with_model("model-B")
-
-    assert out1.success is True
-    assert out2.success is True
-    assert suggest_calls["count"] == 2  # different model => different cache keys
-
-
-def test_orchestrator_feedback_strict_mode_aborts_on_cache_miss(
-    monkeypatch,
-    tmp_path,
-):
-    profile = _make_profile(days=1, slots_per_day=2)
-    base_pool: list[PlanningRecipe] = []
-
-    failure = _fake_failure_result(failure_mode="FM-2")
-
-    monkeypatch.setenv("LLM_FEEDBACK_CACHE_PATH", str(tmp_path / "feedback_cache.json"))
-    monkeypatch.setenv("LLM_DETERMINISTIC_STRICT", "true")
-    monkeypatch.setenv("LLM_MODEL", "model-A")
-
-    monkeypatch.setattr("src.planning.orchestrator.plan_meals", lambda *args, **kwargs: failure)
-
-    def _fake_suggest_targeted_recipe_drafts(*, client, context, count):
-        raise AssertionError("LLM draft generation should not run in strict mode on cache miss.")
-
-    monkeypatch.setattr(
-        "src.planning.orchestrator.suggest_targeted_recipe_drafts",
-        _fake_suggest_targeted_recipe_drafts,
-    )
-
-    dummy_client = object()
-    dummy_provider = type("P", (), {"usda_capable": True})()
-
+def test_strict_mode_raises_on_cache_miss(tmp_path, monkeypatch):
+    monkeypatch.setenv("LLM_FEEDBACK_CACHE_PATH", str(tmp_path / "fc.json"))
+    client = Client([{"drafts": [FIT]}])
     with pytest.raises(DeterministicCacheMissError):
-        plan_with_llm_feedback(
-            profile,
-            base_pool,
-            days=1,
-            max_feedback_retries=3,
-            recipes_path="ignored.json",
-            client=dummy_client,  # type: ignore[arg-type]
-            provider=dummy_provider,  # type: ignore[arg-type]
-            recipes_to_generate_per_attempt=1,
-        )
+        plan_with_llm_feedback(_target_for_two_fits(), [R("small_a", 100, 5, 2, 10), R("small_b", 120, 6, 2, 12)], 1,
+                               recipes_path=str(tmp_path / "r.json"), client=client, provider=Provider(), deterministic_strict_override=True)
+    assert client.calls == 0
 
 
-def test_orchestrator_pre_validation_dedupes_within_attempt(monkeypatch):
-    """
-    When the LLM returns duplicate drafts in a single attempt, the orchestrator
-    should de-dupe before `validate_recipe_drafts()` runs.
-    """
-    profile = _make_profile(days=2, slots_per_day=2)
-    base_pool: list[PlanningRecipe] = []
-
-    failure = _fake_failure_result(failure_mode="FM-2")
-    success = MealPlanResult(
-        success=True,
-        termination_code="TC-1",
-        plan=[],
-        daily_trackers={0: None},
-        weekly_tracker=None,
-        report={},
-        stats={"attempts": 1, "backtracks": 0},
-    )
-
-    plan_calls = {"count": 0}
-
-    def _fake_plan_meals(*args, **kwargs):
-        plan_calls["count"] += 1
-        return failure if plan_calls["count"] == 1 else success
-
-    monkeypatch.setattr("src.planning.orchestrator.plan_meals", _fake_plan_meals)
-
-    draft = RecipeDraft(
-        name="Generated",
-        ingredients=[RecipeIngredientDraft(name="chicken breast", quantity=200.0, unit="g")],
-        instructions=["Cook it."],
-    )
-
-    def _fake_suggest_targeted_recipe_drafts(*, client, context, count):
-        assert context["failure_type"] == "FM-2"
-        assert count == 1
-        # Duplicate drafts in the same attempt; orchestrator should de-dupe.
-        return [draft, draft]
-
-    monkeypatch.setattr(
-        "src.planning.orchestrator.suggest_targeted_recipe_drafts",
-        _fake_suggest_targeted_recipe_drafts,
-    )
-
-    accepted_recipe = Recipe(
-        id="",
-        name="Accepted",
-        ingredients=[
-            Ingredient(
-                name="chicken breast",
-                quantity=200.0,
-                unit="g",
-                normalized_unit="g",
-                normalized_quantity=200.0,
-            )
-        ],
-        cooking_time_minutes=10,
-        instructions=["Cook it."],
-    )
-    validated = ValidatedRecipeForPersistence(recipe=accepted_recipe)
-
-    validate_calls = {"count": 0}
-
-    def _fake_validate_recipe_drafts(drafts, provider):
-        validate_calls["count"] += 1
-        assert drafts == [draft]  # within-attempt de-dupe
-        return [validated], []
-
-    monkeypatch.setattr("src.planning.orchestrator.validate_recipe_drafts", _fake_validate_recipe_drafts)
-
-    monkeypatch.setattr(
-        "src.planning.orchestrator.append_validated_recipes",
-        lambda *, path, recipes: ["llm_recipe_1"],
-    )
-    monkeypatch.setattr(
-        "src.planning.orchestrator._append_new_recipes_to_pool",
-        lambda *, recipes_path, provider, current_pool, persisted_ids: [],
-    )
-
-    dummy_client = object()
-    dummy_provider = type("P", (), {"usda_capable": True})()
-
-    out = plan_with_llm_feedback(
-        profile,
-        base_pool,
-        days=2,
-        max_feedback_retries=2,
-        recipes_path="ignored.json",
-        client=dummy_client,  # type: ignore[arg-type]
-        provider=dummy_provider,  # type: ignore[arg-type]
-        recipes_to_generate_per_attempt=1,
-    )
-
-    assert out.success is True
-    assert plan_calls["count"] == 2
-    assert validate_calls["count"] == 1
-    assert out.stats is not None
-    attempts = out.stats.get("llm_feedback_attempts") or []
-    assert len(attempts) == 1
-    assert attempts[0]["recipes_generated"] == 1
-    assert attempts[0]["accepted"] == 1
-    assert attempts[0]["status"] == "fail"
+def test_duplicate_drafts_within_and_across_attempts_are_filtered(tmp_path):
+    prof = _target_for_two_fits()
+    pool = [R("small_a", 100, 5, 2, 10), R("small_b", 120, 6, 2, 12)]
+    client = Client([{"drafts": [FIT, FIT]}, {"drafts": [FIT, FIT]}, {"drafts": [FIT, FIT]}])
+    out = plan_with_llm_feedback(prof, pool, 1, recipes_path=str(tmp_path / "r.json"), client=client, provider=Provider(),
+                                 use_feedback_cache=False, force_live_generation=True, recipes_to_generate_per_attempt=2)
+    rec = out.report["llm_recovery"]
+    assert rec["attempts"][0]["drafts_received"] == 2 and rec["attempts"][0]["recipes_generated"] == 1
+    assert rec["attempts"][1]["recipes_generated"] == 0  # fingerprint already seen
+    assert out.success is False and rec["persisted_recipe_ids"] == []
 
 
-def test_orchestrator_pre_validation_dedupes_already_accepted_on_retry(monkeypatch):
-    """
-    When the orchestrator has already persisted a draft fingerprint from a
-    previous attempt, subsequent retries that re-suggest the same draft
-    should be filtered out before validation, leading to an abort when the
-    planner repeats the same failure signature without new persistence.
-    """
-    profile = _make_profile(days=1, slots_per_day=2)
-    base_pool: list[PlanningRecipe] = []
-
-    failure = _fake_failure_result(failure_mode="FM-2")
-
-    plan_calls = {"count": 0}
-
-    def _fake_plan_meals(*args, **kwargs):
-        plan_calls["count"] += 1
-        return failure
-
-    monkeypatch.setattr("src.planning.orchestrator.plan_meals", _fake_plan_meals)
-
-    draft = RecipeDraft(
-        name="Generated",
-        ingredients=[RecipeIngredientDraft(name="chicken breast", quantity=200.0, unit="g")],
-        instructions=["Cook it."],
-    )
-
-    suggest_calls = {"count": 0}
-
-    def _fake_suggest_targeted_recipe_drafts(*, client, context, count):
-        suggest_calls["count"] += 1
-        # Two feedback attempts (max_feedback_retries=2).
-        return [draft]  # re-suggest same draft on both attempts
-
-    monkeypatch.setattr(
-        "src.planning.orchestrator.suggest_targeted_recipe_drafts",
-        _fake_suggest_targeted_recipe_drafts,
-    )
-
-    accepted_recipe = Recipe(
-        id="",
-        name="Accepted",
-        ingredients=[
-            Ingredient(
-                name="chicken breast",
-                quantity=200.0,
-                unit="g",
-                normalized_unit="g",
-                normalized_quantity=200.0,
-            )
-        ],
-        cooking_time_minutes=10,
-        instructions=["Cook it."],
-    )
-    validated = ValidatedRecipeForPersistence(recipe=accepted_recipe)
-
-    validate_calls = {"count": 0}
-
-    def _fake_validate_recipe_drafts(drafts, provider):
-        validate_calls["count"] += 1
-        if validate_calls["count"] == 1:
-            assert drafts == [draft]
-            return [validated], []
-        # Second attempt: draft fingerprint already accepted -> filtered out.
-        assert drafts == []
-        return [], []
-
-    monkeypatch.setattr("src.planning.orchestrator.validate_recipe_drafts", _fake_validate_recipe_drafts)
-
-    append_calls = {"count": 0}
-
-    def _fake_append_validated_recipes(*, path, recipes):
-        append_calls["count"] += 1
-        return ["llm_recipe_1"]
-
-    monkeypatch.setattr("src.planning.orchestrator.append_validated_recipes", _fake_append_validated_recipes)
-
-    monkeypatch.setattr(
-        "src.planning.orchestrator._append_new_recipes_to_pool",
-        lambda *, recipes_path, provider, current_pool, persisted_ids: [],
-    )
-
-    dummy_client = object()
-    dummy_provider = type("P", (), {"usda_capable": True})()
-
-    out = plan_with_llm_feedback(
-        profile,
-        base_pool,
-        days=1,
-        max_feedback_retries=2,
-        recipes_path="ignored.json",
-        client=dummy_client,  # type: ignore[arg-type]
-        provider=dummy_provider,  # type: ignore[arg-type]
-        recipes_to_generate_per_attempt=1,
-    )
-
-    assert out.success is False
-    assert plan_calls["count"] == 3  # initial + 2 feedback attempts
-    assert validate_calls["count"] == 2
-    assert append_calls["count"] == 1  # second attempt persisted nothing
-
-    assert out.stats is not None
-    attempts = out.stats.get("llm_feedback_attempts") or []
-    assert len(attempts) == 2
-    assert attempts[0]["status"] == "fail"
-    assert attempts[0]["recipes_generated"] == 1
-    assert attempts[0]["accepted"] == 1
-    assert attempts[1]["status"] == "abort"
-    assert attempts[1]["recipes_generated"] == 0
-    assert attempts[1]["accepted"] == 0
-
-
-def test_orchestrator_fallback_observability_on_incremental_failure(monkeypatch, capsys):
-    profile = _make_profile(days=1, slots_per_day=2)
-    base_pool: list[PlanningRecipe] = []
-
-    failure = _fake_failure_result(failure_mode="FM-2")
-    success = MealPlanResult(
-        success=True,
-        termination_code="TC-1",
-        plan=[],
-        daily_trackers={0: None},
-        weekly_tracker=None,
-        report={},
-        stats={"attempts": 1, "backtracks": 0},
-    )
-
-    plan_calls = {"count": 0}
-
-    def _fake_plan_meals(*args, **kwargs):
-        plan_calls["count"] += 1
-        return failure if plan_calls["count"] == 1 else success
-
-    monkeypatch.setattr("src.planning.orchestrator.plan_meals", _fake_plan_meals)
-
-    draft = RecipeDraft(
-        name="Generated",
-        ingredients=[RecipeIngredientDraft(name="chicken breast", quantity=200.0, unit="g")],
-        instructions=["Cook it."],
-    )
-
-    monkeypatch.setattr(
-        "src.planning.orchestrator.suggest_targeted_recipe_drafts",
-        lambda *, client, context, count: [draft],
-    )
-
-    accepted_recipe = Recipe(
-        id="",
-        name="Accepted",
-        ingredients=[
-            Ingredient(
-                name="chicken breast",
-                quantity=200.0,
-                unit="g",
-                normalized_unit="g",
-                normalized_quantity=200.0,
-            )
-        ],
-        cooking_time_minutes=10,
-        instructions=["Cook it."],
-    )
-    validated = ValidatedRecipeForPersistence(recipe=accepted_recipe)
-
-    monkeypatch.setattr(
-        "src.planning.orchestrator.validate_recipe_drafts",
-        lambda drafts, provider: ([validated], []),
-    )
-
-    # Persist at least one draft so the incremental expansion path runs.
-    monkeypatch.setattr(
-        "src.planning.orchestrator.append_validated_recipes",
-        lambda *, path, recipes: ["llm_recipe_1"],
-    )
-
-    def _raise_incremental(*args, **kwargs):
-        raise RuntimeError("incremental update failed")
-
-    monkeypatch.setattr("src.planning.orchestrator._append_new_recipes_to_pool", _raise_incremental)
-    monkeypatch.setattr(
-        "src.planning.orchestrator._rebuild_recipe_pool",
-        lambda *, recipes_path, provider: [],
-    )
-
-    dummy_client = object()
-    dummy_provider = type("P", (), {"usda_capable": True})()
-
-    out = plan_with_llm_feedback(
-        profile,
-        base_pool,
-        days=1,
-        max_feedback_retries=2,
-        recipes_path="ignored.json",
-        client=dummy_client,  # type: ignore[arg-type]
-        provider=dummy_provider,  # type: ignore[arg-type]
-        recipes_to_generate_per_attempt=1,
-    )
-
-    assert out.success is True
-    captured = capsys.readouterr()
-    assert '"fallback_triggered": true' in captured.err
-    assert '"reason": "incremental_update_failed"' in captured.err
-
+def test_pool_update_failure_is_typed_and_never_rebuilds_pool(tmp_path, monkeypatch):
+    prof = _target_for_two_fits()
+    pool = [R("small_a", 100, 5, 2, 10), R("small_b", 120, 6, 2, 12)]
+    monkeypatch.setattr("src.planning.orchestrator._candidate_planning_recipe", lambda recipe, provider: (_ for _ in ()).throw(RuntimeError("incremental update failed")))
+    client = Client([{"drafts": [FIT, FIT2]}])
+    out = plan_with_llm_feedback(prof, pool, 1, recipes_path=str(tmp_path / "r.json"), client=client, provider=Provider(),
+                                 use_feedback_cache=False, force_live_generation=True, recipes_to_generate_per_attempt=2)
+    rec = out.report["llm_recovery"]
+    assert out.success is False and rec["state"] == RecoveryState.SYSTEM_ERROR.value and rec["reason"] == "pool_update_failed"
+    assert rec["planner_runs"] == 1

@@ -83,7 +83,8 @@ def test_tag_recipes_happy_path_preserves_order():
 
     assert out["r2"].cuisine == "italian"
     assert out["r2"].cost_level == BudgetLevel.standard
-    assert out["r2"].prep_time_bucket == PrepTimeBucket.weeknight_meal
+    # prep_time_bucket is derived from the known cooking time (10 min), never taken from the model.
+    assert out["r2"].prep_time_bucket == PrepTimeBucket.quick_meal
     assert out["r2"].dietary_flags == []
 
     assert len(client.calls) == 2

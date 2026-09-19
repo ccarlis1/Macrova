@@ -255,9 +255,15 @@ def validate_matches(
 
         canonical_name = None
         if isinstance(info, dict):
-            name_val = info.get("name")
-            if isinstance(name_val, str) and name_val.strip():
-                canonical_name = name_val.strip()
+            # Prefer the resolved USDA description so callers can verify identity;
+            # fall back to the provider's name key.
+            prov = info.get("provenance")
+            if isinstance(prov, dict) and isinstance(prov.get("description"), str) and prov["description"].strip():
+                canonical_name = prov["description"].strip()
+            else:
+                name_val = info.get("name")
+                if isinstance(name_val, str) and name_val.strip():
+                    canonical_name = name_val.strip()
 
         accepted.append(
             match.model_copy(

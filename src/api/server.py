@@ -79,6 +79,7 @@ from src.data_layer.user_profile import (
     load_profile_pins,
     persist_profile_schedule_days,
     upsert_profile_pin,
+    planner_config_interpretation_report,
     user_profile_from_planner_config,
 )
 from src.models.legacy_schedule_migration import (
@@ -1160,6 +1161,8 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
             # never infer cuisine/cost from the prompt.
             parsed_cost_level = None
             parsed_cuisines = None
+            parsed_dietary_flags = None
+            nl_interpretation = planner_config_interpretation_report(cfg)
         else:
             if not llm_settings.enabled:
                 raise LLMPlanningModeError(
@@ -1174,9 +1177,16 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
             user_profile = user_profile_from_planner_config(cfg)
             days = int(cfg.days)
 
-            # Assisted modes allow baseline cuisine + cost_level inferred from prompt cfg.
-            parsed_cost_level = getattr(cfg.preferences, "budget", None)
-            parsed_cuisines = getattr(cfg.preferences, "cuisine", None)
+            # LLM overhaul Stage 8: cuisine/budget inferred from the prompt are soft preferences
+            # (liked_foods / fat-range default) and are NEVER turned into hard pool filters.
+            # Explicit diet statements (vegan, gluten-free, ...) are hard and travel through the
+            # typed constraints block into the canonical dietary_flags tag filter.
+            parsed_cost_level = None
+            parsed_cuisines = None
+            parsed_dietary_flags = (
+                list(cfg.constraints.dietary_flags) if cfg.constraints and cfg.constraints.dietary_flags else None
+            )
+            nl_interpretation = planner_config_interpretation_report(cfg)
 
         recipe_db = RecipeDB(recipes_path)
         all_recipes = recipe_db.get_all_recipes()
@@ -1191,6 +1201,9 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
         final_cost_level = (
             request.cost_level if request.cost_level is not None else parsed_cost_level
         )
+        final_dietary_flags = (
+            request.dietary_flags if request.dietary_flags is not None else parsed_dietary_flags
+        )
 
         tag_path = getattr(request, "recipe_tags_path", None) or DEFAULT_TAG_PATH
         shim = type(
@@ -1200,7 +1213,7 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
                 "cuisine": final_cuisines,
                 "cost_level": final_cost_level,
                 "prep_time_bucket": request.prep_time_bucket,
-                "dietary_flags": request.dietary_flags,
+                "dietary_flags": final_dietary_flags,
             },
         )()
         all_recipes, filter_log = _apply_recipe_tag_filter_pre_convert(
@@ -1305,6 +1318,9 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
             meal_metadata_by_slot,
         )
         _merge_filter_warnings(out, filter_log)
+        warnings_out = out.get("warnings") if isinstance(out.get("warnings"), dict) else {}
+        warnings_out["nl_interpretation"] = nl_interpretation
+        out["warnings"] = warnings_out
         return out
     except HTTPException:
         raise

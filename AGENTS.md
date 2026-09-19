@@ -177,15 +177,26 @@ LLM features are optional assistants, not the authority for deterministic planni
 Recipe generation must follow:
 
 ```text
-generate draft -> parse strict schema -> resolve ingredients -> recompute nutrition -> persist only if validated
+generate draft -> parse strict schema -> resolve ingredients (all-or-nothing) -> identity, exclusion,
+plausibility, cook-time and fitness gates -> recompute nutrition -> persist only if validated, with provenance
 ```
 
-This is implemented by `src/llm/pipeline.py` (`generate_validate_persist_recipes`): it asserts a USDA-capable provider, generates drafts, validates against provider-backed checks, and only persists accepted recipes.
+This is implemented by `src/llm/recipe_validator.py` (`validate_recipe_draft`) and `src/llm/pipeline.py`. An unresolvable ingredient rejects the draft; it is never demoted to "to taste". Accepted recipes carry `provenance` (source, validation version, cook-time source, resolved `fdc_id`s).
 
-- Ingredient matching validates against the ingredient provider.
-- Natural-language config parsing (`constraint_parser.py`) must map text into explicit planner config objects before planning.
-- Planner feedback should explain why planning failed and suggest targeted changes, not silently mutate constraints.
+Planner-failure recovery (`src/planning/orchestrator.py::plan_with_llm_feedback`) is a diagnosed control loop:
+
+```text
+plan -> diagnose (deterministic, may refuse) -> GapSpec -> drafts -> validate against GapSpec
+     -> in-memory candidate pool -> feasibility signal -> plan again -> typed RecoveryOutcome
+```
+
+- `src/llm/recovery_diagnosis.py` decides *before any LLM call* whether recipes can help (`GapSpec`) or not (`UnrecoverableReason`: impossible targets, empty pool, unheld required tag, pin/batch conflict, search budget). The LLM is only ever shown a `GapSpec`.
+- Nothing is persisted unless the retried plan succeeds; then only the recipes the plan uses are written. Failed requests leave no residue. The request's pool is never rebuilt from disk.
+- Every exit attaches `report["llm_recovery"]` (`src/llm/recovery_types.py::RecoveryOutcome`, seven terminal states). LLM/USDA errors are reported there as `DATA_SOURCE_FAILURE`; they never replace the deterministic result.
+- Ingredient matching validates against the ingredient provider; `canonical_name` is the resolved USDA description.
+- Natural-language config parsing (`constraint_parser.py`) maps text into `PlannerConfigJson`, including the typed `constraints` block (allergies, dislikes, calorie ceiling, fat range, micronutrient goals, dietary flags, τ) and `stated_fields`. NL cuisine/budget are soft preferences and never become hard pool filters; an unstated `schedule_days` is dropped.
 - The frontend gates LLM/assisted planning modes behind an LLM-ready check; assisted modes fall back to deterministic when the gate is not ready.
+- Evaluation harness and diagnostic reports: `evaluation/llm_overhaul/`.
 
 ---
 
@@ -198,6 +209,7 @@ There is one canonical tag source of truth. Do not create another.
 - `Recipe.tags` in `recipes.json` is a **legacy compatibility projection only** — never use it for hard-filter/planner decisions, and do not turn it into a second write path.
 - Keep required tags (hard constraints) and preferred tags (scoring only) separate. Preserve slug normalization rules; do not duplicate slug-normalization logic.
 - All LLM-produced tags enter as `proposed`, pass strict schema validation first, then semantic eligibility gating; only `approved` (or non-LLM user/system) tags may act as hard constraints. See `docs/tagging/tag-semantics-contract.md` for the canonical semantic-class table and lifecycle.
+- `upsert_recipe_tags` **merges** by default; pass `replace=True` only when replacing the whole table is intended. The LLM tagger (`recipe_tagger.py`) embeds the schema and registry slugs in its prompt, derives `prep_time_bucket` and `time-*` from `cooking_time_minutes`, restricts `cuisine` to a closed vocabulary, and records proposed slugs per recipe with `source="llm"`, `eligibility="proposed"`.
 
 ---
 

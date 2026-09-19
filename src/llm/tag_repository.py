@@ -523,9 +523,18 @@ def _write_tags_payload(
     os.replace(str(tmp_path), str(tags_path))
 
 
-def upsert_recipe_tags(path: str, tags_by_id: Dict[str, RecipeTagsJson]) -> None:
+def upsert_recipe_tags(
+    path: str,
+    tags_by_id: Dict[str, RecipeTagsJson],
+    *,
+    replace: bool = False,
+) -> None:
     """Persist recipe tags atomically as JSON.
 
+    - **Merge by default**: entries for recipe ids not present in ``tags_by_id`` are kept.
+      A caller that really wants to replace the whole table passes ``replace=True``.
+      (Before the LLM overhaul this function replaced the table unconditionally, so one
+      LLM tagging run deleted every curated entry; see evaluation/llm_overhaul.)
     - Idempotent: writing identical tags yields identical file content.
     - Stable ordering: keys are sorted for deterministic writes.
     - Atomic write: write to `*.tmp` then `os.replace`.
@@ -533,9 +542,15 @@ def upsert_recipe_tags(path: str, tags_by_id: Dict[str, RecipeTagsJson]) -> None
     raw = _load_tags_json(Path(path))
     tag_registry = _parse_tag_registry(raw.get("tag_registry", {}))
     tag_aliases = _parse_tag_aliases(raw.get("tag_aliases", {}))
+    merged: Dict[str, RecipeTagsJson]
+    if replace:
+        merged = dict(tags_by_id)
+    else:
+        merged = dict(load_recipe_tags(path))
+        merged.update(tags_by_id)
     _write_tags_payload(
         path=path,
-        tags_by_id=tags_by_id,
+        tags_by_id=merged,
         tag_registry=tag_registry,
         tag_aliases=tag_aliases,
     )

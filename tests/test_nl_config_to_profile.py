@@ -103,3 +103,68 @@ def test_user_profile_from_planner_config_with_schedule_days_sets_canonical_sche
     assert profile.schedule_days[0].workouts[0].after_meal_index == 1
     assert len(profile.schedule) == 2
 
+
+
+# ---- LLM overhaul Stage 8: typed constraints, stated fields, derived-field transparency ----
+from src.data_layer.user_profile import planner_config_interpretation_report
+from src.llm.schemas import PlannerConstraints, parse_llm_json
+
+
+def _cfg_with(constraints=None, stated=None, schedule_days=None):
+    return PlannerConfigJson(
+        days=2, meals_per_day=3,
+        targets=PlannerTargets(calories=2000, protein=150.0),
+        preferences=PlannerPreferences(cuisine=["mexican"], budget=BudgetLevel.standard),
+        constraints=constraints, stated_fields=stated or [], schedule_days=schedule_days,
+    )
+
+
+def test_constraints_map_to_planner_inputs():
+    cfg = _cfg_with(PlannerConstraints(allergies=["peanuts"], disliked_foods=["cilantro"], liked_foods=["salmon"],
+                                       max_daily_calories=1900, micronutrient_goals={"fiber_g": 30, "iron_mg": 18},
+                                       dietary_flags=["vegan"], micronutrient_weekly_min_fraction=0.8))
+    p = user_profile_from_planner_config(cfg)
+    assert p.allergies == ["peanuts"] and p.disliked_foods == ["cilantro"]
+    assert p.liked_foods == ["mexican", "salmon"]  # cuisine stays a soft preference
+    assert p.max_daily_calories == 1900
+    assert p.daily_micronutrient_targets == {"fiber_g": 30.0, "iron_mg": 18.0}
+    assert p.micronutrient_weekly_min_fraction == pytest.approx(0.8)
+
+
+def test_stated_fat_range_overrides_budget_derived_range():
+    p = user_profile_from_planner_config(_cfg_with(PlannerConstraints(fat_g_min=50, fat_g_max=70)))
+    assert p.daily_fat_g == (50.0, 70.0)
+    assert p.daily_carbs_g == pytest.approx((2000 - 150 * 4 - 60 * 9) / 4)
+    rep = planner_config_interpretation_report(_cfg_with(PlannerConstraints(fat_g_min=50, fat_g_max=70)))
+    assert "fat_range_from_budget" not in rep["derived_fields"]
+    assert "fat_range_from_budget" in planner_config_interpretation_report(_cfg_with())["derived_fields"]
+
+
+def test_invented_schedule_is_dropped_when_not_stated_but_kept_when_stated_or_unknown():
+    sd = [DaySchedule(day_index=1, meals=[CanonMeal(index=i, busyness_level=3) for i in (1, 2, 3)])]
+    dropped = user_profile_from_planner_config(_cfg_with(stated=["days", "calories"], schedule_days=sd))
+    assert dropped.schedule_days is None and all(v == 4 for v in dropped.schedule.values())
+    kept = user_profile_from_planner_config(_cfg_with(stated=["days", "schedule_days"], schedule_days=sd))
+    assert kept.schedule_days is not None and kept.schedule_days[0].meals[0].busyness_level == 3
+    unknown = user_profile_from_planner_config(_cfg_with(stated=[], schedule_days=sd))  # model did not report stated fields
+    assert unknown.schedule_days is not None
+    rep = planner_config_interpretation_report(_cfg_with(stated=["days", "calories"], schedule_days=sd))
+    assert rep["dropped_fields"] == ["schedule_days_not_stated"]
+    assert set(rep["defaulted_fields"]) == {"meals_per_day", "protein", "budget", "cuisine", "schedule_days"}
+
+
+def test_stated_field_names_are_filtered_and_constraint_schema_is_strict():
+    cfg = _cfg_with(stated=["calories", "numberOfMeals", " protein "])
+    assert cfg.stated_fields == ["calories", "protein"]
+    bad = parse_llm_json(PlannerConfigJson, {"days": 1, "meals_per_day": 3, "targets": {"calories": 2000, "protein": 100},
+                                             "preferences": {"cuisine": [], "budget": "standard"},
+                                             "constraints": {"micronutrient_goals": {"unobtainium_mg": 5}}})
+    assert bad.error_code == "LLM_SCHEMA_VALIDATION_ERROR"
+    bad2 = parse_llm_json(PlannerConfigJson, {"days": 1, "meals_per_day": 3, "targets": {"calories": 2000, "protein": 100},
+                                              "preferences": {"cuisine": [], "budget": "standard"},
+                                              "constraints": {"fat_g_min": 80, "fat_g_max": 60}})
+    assert bad2.error_code == "LLM_SCHEMA_VALIDATION_ERROR"
+    ok = parse_llm_json(PlannerConfigJson, {"days": 1, "meals_per_day": 3, "targets": {"calories": 2000, "protein": 100},
+                                            "preferences": {"cuisine": [], "budget": "standard"},
+                                            "constraints": {"allergies": ["peanuts"]}, "stated_fields": ["allergies", "calories"]})
+    assert isinstance(ok, PlannerConfigJson) and ok.constraints.allergies == ["peanuts"]

@@ -1,0 +1,5033 @@
+{
+  "source": ".cache/ingredients (per-100 g USDA values), quantities in grams per single serving",
+  "quarantined_cache_entries": {
+    "bell_pepper": "resolved to 'TACO BELL, Nachos' (350 kcal/100 g)",
+    "eggs": "resolved to 'Bread, egg' (287 kcal, 47.8 g carbs/100 g)",
+    "oats": "resolved to 'Oil, oat' (884 kcal, 100 g fat/100 g)",
+    "chicken_breast": "resolved to 'Chicken breast, roll, oven-roasted' deli roll (14.6 g protein, 883 mg sodium/100 g)",
+    "cherry_tomatoes": "resolved to 'Cherries, raw'",
+    "milk_1_fat_lowfat": "resolved to 'Cheese, cottage, lowfat, 1% milkfat'",
+    "banana": "resolved to 'Bananas, dehydrated, or banana powder' (346 kcal/100 g)",
+    "tortillas_corn": "resolved to flour tortillas (name says corn; gluten-free intent broken)",
+    "kiwi_fruit_green": "0 kcal with 13.8 g carbs/100 g (energy field missing)",
+    "mushrooms": "0 kcal with 8.2 g carbs/100 g (energy field missing)",
+    "spaghetti_squash": "0 kcal with 0 g carbs/100 g (energy field missing)",
+    "sweet_potato": "0 kcal with 17.3 g carbs/100 g (energy field missing)",
+    "tomato": "0 kcal with 7.1 g carbs/100 g (energy field missing)",
+    "acai_berry": "fortified beverage, not the fruit"
+  },
+  "recipes": [
+    {
+      "id": "bk_yogurt_berry_bowl",
+      "name": "Greek Yogurt Berry Bowl",
+      "cooking_time_minutes": 3,
+      "ingredients": [
+        {
+          "name": "greek yogurt plain nonfat",
+          "cache_key": "greek_yogurt_plain_nonfat",
+          "quantity": 250,
+          "unit": "g"
+        },
+        {
+          "name": "blueberries",
+          "cache_key": "blueberries",
+          "quantity": 100,
+          "unit": "g"
+        },
+        {
+          "name": "honey",
+          "cache_key": "honey",
+          "quantity": 15,
+          "unit": "g"
+        },
+        {
+          "name": "chia seeds",
+          "cache_key": "chia_seeds",
+          "quantity": 15,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "breakfast",
+        "snack",
+        "vegetarian",
+        "gluten-free",
+        "nut-free",
+        "no-cook",
+        "high-protein"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 323.0,
+        "protein_g": 28.74,
+        "fat_g": 5.92,
+        "carbs_g": 42.17,
+        "micronutrients": {
+          "b12_cobalamin_ug": 1.875,
+          "b1_thiamine_mg": 0.188,
+          "b2_riboflavin_mg": 0.767,
+          "b3_niacin_mg": 2.281,
+          "b5_pantothenic_acid_mg": 0.962,
+          "b6_pyridoxine_mg": 0.213,
+          "calcium_mg": 376.55,
+          "copper_mg": 0.243,
+          "fiber_g": 7.59,
+          "folate_ug": 31.15,
+          "iron_mg": 1.676,
+          "magnesium_mg": 84.05,
+          "manganese_mg": 0.779,
+          "omega_3_g": 0.0,
+          "omega_6_g": 0.988,
+          "phosphorus_mg": 479.1,
+          "potassium_mg": 498.35,
+          "selenium_ug": 32.75,
+          "sodium_mg": 94.0,
+          "vitamin_a_ug": 5.5,
+          "vitamin_c_mg": 10.015,
+          "vitamin_d_iu": 0.0,
+          "vitamin_e_mg": 0.67,
+          "vitamin_k_ug": 19.3,
+          "zinc_mg": 2.18
+        }
+      }
+    },
+    {
+      "id": "bk_overnight_oats",
+      "name": "Overnight Oats with Banana",
+      "cooking_time_minutes": 5,
+      "ingredients": [
+        {
+          "name": "rolled oats",
+          "cache_key": "rolled_oats",
+          "quantity": 60,
+          "unit": "g"
+        },
+        {
+          "name": "milk",
+          "cache_key": "milk",
+          "quantity": 200,
+          "unit": "g"
+        },
+        {
+          "name": "chia seeds",
+          "cache_key": "chia_seeds",
+          "quantity": 10,
+          "unit": "g"
+        },
+        {
+          "name": "bananas",
+          "cache_key": "bananas",
+          "quantity": 100,
+          "unit": "g"
+        },
+        {
+          "name": "honey",
+          "cache_key": "honey",
+          "quantity": 10,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "breakfast",
+        "vegetarian",
+        "nut-free",
+        "no-cook",
+        "meal-prep",
+        "high-fiber"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 503.0,
+        "protein_g": 17.05,
+        "fat_g": 12.14,
+        "carbs_g": 85.95,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.0,
+          "b1_thiamine_mg": 0.093,
+          "b2_riboflavin_mg": 0.094,
+          "b3_niacin_mg": 1.56,
+          "b5_pantothenic_acid_mg": 0.341,
+          "b6_pyridoxine_mg": 0.369,
+          "calcium_mg": 322.7,
+          "copper_mg": 0.174,
+          "fiber_g": 12.06,
+          "folate_ug": 25.1,
+          "iron_mg": 3.774,
+          "magnesium_mg": 60.7,
+          "manganese_mg": 0.55,
+          "omega_3_g": 0.0,
+          "omega_6_g": 0.63,
+          "phosphorus_mg": 108.4,
+          "potassium_mg": 403.9,
+          "selenium_ug": 6.6,
+          "sodium_mg": 113.0,
+          "vitamin_a_ug": 3.0,
+          "vitamin_c_mg": 10.91,
+          "vitamin_d_iu": 3360.0,
+          "vitamin_e_mg": 0.15,
+          "vitamin_k_ug": 0.5,
+          "zinc_mg": 0.63
+        }
+      }
+    },
+    {
+      "id": "bk_protein_oats",
+      "name": "Protein Oatmeal",
+      "cooking_time_minutes": 8,
+      "ingredients": [
+        {
+          "name": "rolled oats",
+          "cache_key": "rolled_oats",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "whey protein powder",
+          "cache_key": "whey_protein_powder",
+          "quantity": 30,
+          "unit": "g"
+        },
+        {
+          "name": "blueberries",
+          "cache_key": "blueberries",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "almond butter unsalted",
+          "cache_key": "almond_butter_unsalted",
+          "quantity": 16,
+          "unit": "g"
+        },
+        {
+          "name": "milk",
+          "cache_key": "milk",
+          "quantity": 150,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "breakfast",
+        "vegetarian",
+        "post-workout",
+        "high-protein"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 634.04,
+        "protein_g": 36.47,
+        "fat_g": 18.67,
+        "carbs_g": 84.94,
+        "micronutrients": {
+          "b12_cobalamin_ug": 1.047,
+          "b1_thiamine_mg": 0.298,
+          "b2_riboflavin_mg": 0.479,
+          "b3_niacin_mg": 4.328,
+          "b5_pantothenic_acid_mg": 1.894,
+          "b6_pyridoxine_mg": 0.407,
+          "calcium_mg": 460.22,
+          "copper_mg": 0.544,
+          "fiber_g": 11.568,
+          "folate_ug": 83.18,
+          "iron_mg": 4.76,
+          "magnesium_mg": 119.34,
+          "manganese_mg": 0.958,
+          "omega_3_g": 0.0,
+          "omega_6_g": 2.253,
+          "phosphorus_mg": 265.18,
+          "potassium_mg": 442.88,
+          "selenium_ug": 12.674,
+          "sodium_mg": 196.02,
+          "vitamin_a_ug": 264.0,
+          "vitamin_c_mg": 19.73,
+          "vitamin_d_iu": 2520.0,
+          "vitamin_e_mg": 6.685,
+          "vitamin_k_ug": 29.39,
+          "zinc_mg": 3.27
+        }
+      }
+    },
+    {
+      "id": "bk_cottage_papaya",
+      "name": "Cottage Cheese with Papaya and Almonds",
+      "cooking_time_minutes": 2,
+      "ingredients": [
+        {
+          "name": "cottage cheese 1% fat",
+          "cache_key": "cottage_cheese_1_fat",
+          "quantity": 225,
+          "unit": "g"
+        },
+        {
+          "name": "papaya",
+          "cache_key": "papaya",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "name": "almonds",
+          "cache_key": "almonds",
+          "quantity": 15,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "breakfast",
+        "snack",
+        "vegetarian",
+        "gluten-free",
+        "no-cook",
+        "high-protein"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 313.35,
+        "protein_g": 31.75,
+        "fat_g": 10.17,
+        "carbs_g": 25.58,
+        "micronutrients": {
+          "b12_cobalamin_ug": 1.417,
+          "b1_thiamine_mg": 0.113,
+          "b2_riboflavin_mg": 0.582,
+          "b3_niacin_mg": 1.366,
+          "b5_pantothenic_acid_mg": 0.841,
+          "b6_pyridoxine_mg": 0.231,
+          "calcium_mg": 207.6,
+          "copper_mg": 0.285,
+          "fiber_g": 4.425,
+          "folate_ug": 89.1,
+          "iron_mg": 1.247,
+          "magnesium_mg": 83.25,
+          "manganese_mg": 0.394,
+          "omega_3_g": 0.0,
+          "omega_6_g": 1.915,
+          "phosphorus_mg": 388.65,
+          "potassium_mg": 576.45,
+          "selenium_ug": 21.765,
+          "sodium_mg": 925.65,
+          "vitamin_a_ug": 95.25,
+          "vitamin_c_mg": 91.35,
+          "vitamin_d_iu": 0.0,
+          "vitamin_e_mg": 4.317,
+          "vitamin_k_ug": 4.125,
+          "zinc_mg": 1.443
+        }
+      }
+    },
+    {
+      "id": "bk_avocado_toast_feta",
+      "name": "Avocado Feta Toast",
+      "cooking_time_minutes": 7,
+      "ingredients": [
+        {
+          "name": "sourdough bread",
+          "cache_key": "sourdough_bread",
+          "quantity": 90,
+          "unit": "g"
+        },
+        {
+          "name": "Avocados, raw, all commercial varieties",
+          "cache_key": "avocados_raw_all_commercial_varieties",
+          "quantity": 100,
+          "unit": "g"
+        },
+        {
+          "name": "lemon juice",
+          "cache_key": "lemon_juice",
+          "quantity": 5,
+          "unit": "g"
+        },
+        {
+          "name": "feta cheese reduced fat",
+          "cache_key": "feta_cheese_reduced_fat",
+          "quantity": 30,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "breakfast",
+        "vegetarian",
+        "nut-free"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 485.4,
+        "protein_g": 15.96,
+        "fat_g": 23.3,
+        "carbs_g": 56.73,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.507,
+          "b1_thiamine_mg": 0.753,
+          "b2_riboflavin_mg": 0.768,
+          "b3_niacin_mg": 6.375,
+          "b5_pantothenic_acid_mg": 2.095,
+          "b6_pyridoxine_mg": 0.483,
+          "calcium_mg": 207.0,
+          "copper_mg": 0.337,
+          "fiber_g": 8.695,
+          "folate_ug": 202.3,
+          "iron_mg": 4.268,
+          "magnesium_mg": 63.8,
+          "manganese_mg": 0.67,
+          "omega_3_g": 0.0,
+          "omega_6_g": 2.483,
+          "phosphorus_mg": 248.0,
+          "potassium_mg": 614.05,
+          "selenium_ug": 30.645,
+          "sodium_mg": 890.55,
+          "vitamin_a_ug": 44.5,
+          "vitamin_c_mg": 11.935,
+          "vitamin_d_iu": 192.12,
+          "vitamin_e_mg": 2.32,
+          "vitamin_k_ug": 22.17,
+          "zinc_mg": 2.442
+        }
+      }
+    },
+    {
+      "id": "bk_cream_of_rice_whey",
+      "name": "Cream of Rice with Whey and Banana",
+      "cooking_time_minutes": 6,
+      "ingredients": [
+        {
+          "name": "cream of rice dry",
+          "cache_key": "cream_of_rice_dry",
+          "quantity": 60,
+          "unit": "g"
+        },
+        {
+          "name": "whey protein powder",
+          "cache_key": "whey_protein_powder",
+          "quantity": 30,
+          "unit": "g"
+        },
+        {
+          "name": "bananas",
+          "cache_key": "bananas",
+          "quantity": 120,
+          "unit": "g"
+        },
+        {
+          "name": "honey",
+          "cache_key": "honey",
+          "quantity": 10,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "breakfast",
+        "vegetarian",
+        "gluten-free",
+        "nut-free",
+        "pre-workout",
+        "low-fat"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 466.9,
+        "protein_g": 22.56,
+        "fat_g": 1.04,
+        "carbs_g": 93.81,
+        "micronutrients": {
+          "b12_cobalamin_ug": 1.047,
+          "b1_thiamine_mg": 0.605,
+          "b2_riboflavin_mg": 0.466,
+          "b3_niacin_mg": 8.774,
+          "b5_pantothenic_acid_mg": 2.482,
+          "b6_pyridoxine_mg": 0.909,
+          "calcium_mg": 219.0,
+          "copper_mg": 0.593,
+          "fiber_g": 3.56,
+          "folate_ug": 111.5,
+          "iron_mg": 17.796,
+          "magnesium_mg": 116.3,
+          "manganese_mg": 1.3,
+          "omega_3_g": 0.0,
+          "omega_6_g": 0.127,
+          "phosphorus_mg": 275.5,
+          "potassium_mg": 782.2,
+          "selenium_ug": 24.89,
+          "sodium_mg": 116.8,
+          "vitamin_a_ug": 265.2,
+          "vitamin_c_mg": 20.96,
+          "vitamin_d_iu": 0.0,
+          "vitamin_e_mg": 2.541,
+          "vitamin_k_ug": 14.61,
+          "zinc_mg": 3.49
+        }
+      }
+    },
+    {
+      "id": "bk_tofu_scramble",
+      "name": "Tofu Scramble Wrap",
+      "cooking_time_minutes": 15,
+      "ingredients": [
+        {
+          "name": "tofu not silken firm",
+          "cache_key": "tofu_not_silken_firm",
+          "quantity": 200,
+          "unit": "g"
+        },
+        {
+          "name": "spinach",
+          "cache_key": "spinach",
+          "quantity": 60,
+          "unit": "g"
+        },
+        {
+          "name": "red peppers",
+          "cache_key": "red_peppers",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "olive oil",
+          "cache_key": "olive_oil",
+          "quantity": 10,
+          "unit": "g"
+        },
+        {
+          "name": "salsa ready-to-serve",
+          "cache_key": "salsa_ready-to-serve",
+          "quantity": 50,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "breakfast",
+        "vegan",
+        "vegetarian",
+        "dairy-free",
+        "gluten-free",
+        "nut-free",
+        "high-protein"
+      ],
+      "proposed_tags": [
+        "portable"
+      ],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 425.5,
+        "protein_g": 37.81,
+        "fat_g": 28.0,
+        "carbs_g": 15.88,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.0,
+          "b1_thiamine_mg": 0.423,
+          "b2_riboflavin_mg": 0.401,
+          "b3_niacin_mg": 2.525,
+          "b5_pantothenic_acid_mg": 0.658,
+          "b6_pyridoxine_mg": 0.62,
+          "calcium_mg": 1446.1,
+          "copper_mg": 0.881,
+          "fiber_g": 8.55,
+          "folate_ug": 213.2,
+          "iron_mg": 7.556,
+          "magnesium_mg": 180.5,
+          "manganese_mg": 3.046,
+          "omega_3_g": 0.0,
+          "omega_6_g": 9.787,
+          "phosphorus_mg": 446.7,
+          "potassium_mg": 1115.2,
+          "selenium_ug": 35.93,
+          "sodium_mg": 434.3,
+          "vitamin_a_ug": 418.5,
+          "vitamin_c_mg": 120.37,
+          "vitamin_d_iu": 0.0,
+          "vitamin_e_mg": 4.557,
+          "vitamin_k_ug": 301.83,
+          "zinc_mg": 3.748
+        }
+      }
+    },
+    {
+      "id": "bk_pb_banana_toast",
+      "name": "Peanut Butter Banana Toast",
+      "cooking_time_minutes": 4,
+      "ingredients": [
+        {
+          "name": "sourdough bread",
+          "cache_key": "sourdough_bread",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "peanut butter",
+          "cache_key": "peanut_butter",
+          "quantity": 32,
+          "unit": "g"
+        },
+        {
+          "name": "bananas",
+          "cache_key": "bananas",
+          "quantity": 120,
+          "unit": "g"
+        },
+        {
+          "name": "honey",
+          "cache_key": "honey",
+          "quantity": 10,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "breakfast",
+        "vegan",
+        "vegetarian",
+        "dairy-free",
+        "kid-friendly"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 546.16,
+        "protein_g": 17.04,
+        "fat_g": 18.78,
+        "carbs_g": 84.29,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.0,
+          "b1_thiamine_mg": 0.653,
+          "b2_riboflavin_mg": 0.494,
+          "b3_niacin_mg": 8.856,
+          "b5_pantothenic_acid_mg": 0.772,
+          "b6_pyridoxine_mg": 0.67,
+          "calcium_mg": 63.88,
+          "copper_mg": 0.354,
+          "fiber_g": 6.5,
+          "folate_ug": 150.44,
+          "iron_mg": 4.039,
+          "magnesium_mg": 111.96,
+          "manganese_mg": 0.794,
+          "omega_3_g": 0.0,
+          "omega_6_g": 4.623,
+          "phosphorus_mg": 218.0,
+          "potassium_mg": 706.96,
+          "selenium_ug": 25.472,
+          "sodium_mg": 619.52,
+          "vitamin_a_ug": 3.6,
+          "vitamin_c_mg": 10.49,
+          "vitamin_d_iu": 0.0,
+          "vitamin_e_mg": 3.2,
+          "vitamin_k_ug": 1.256,
+          "zinc_mg": 1.837
+        }
+      }
+    },
+    {
+      "id": "bk_chia_pudding",
+      "name": "Blackberry Chia Pudding",
+      "cooking_time_minutes": 5,
+      "ingredients": [
+        {
+          "name": "chia seeds",
+          "cache_key": "chia_seeds",
+          "quantity": 35,
+          "unit": "g"
+        },
+        {
+          "name": "milk",
+          "cache_key": "milk",
+          "quantity": 250,
+          "unit": "g"
+        },
+        {
+          "name": "blackberries unsweetened",
+          "cache_key": "blackberries_unsweetened",
+          "quantity": 100,
+          "unit": "g"
+        },
+        {
+          "name": "honey",
+          "cache_key": "honey",
+          "quantity": 10,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "breakfast",
+        "snack",
+        "vegetarian",
+        "gluten-free",
+        "nut-free",
+        "no-cook",
+        "meal-prep",
+        "high-fiber"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 402.0,
+        "protein_g": 15.47,
+        "fat_g": 16.49,
+        "carbs_g": 51.35,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.0,
+          "b1_thiamine_mg": 0.246,
+          "b2_riboflavin_mg": 0.109,
+          "b3_niacin_mg": 4.31,
+          "b5_pantothenic_acid_mg": 0.158,
+          "b6_pyridoxine_mg": 0.063,
+          "calcium_mg": 567.95,
+          "copper_mg": 0.447,
+          "fiber_g": 17.06,
+          "folate_ug": 51.35,
+          "iron_mg": 3.544,
+          "magnesium_mg": 139.45,
+          "manganese_mg": 2.184,
+          "omega_3_g": 0.0,
+          "omega_6_g": 2.205,
+          "phosphorus_mg": 331.4,
+          "potassium_mg": 287.65,
+          "selenium_ug": 19.8,
+          "sodium_mg": 144.5,
+          "vitamin_a_ug": 6.0,
+          "vitamin_c_mg": 6.21,
+          "vitamin_d_iu": 4200.0,
+          "vitamin_e_mg": 1.345,
+          "vitamin_k_ug": 19.8,
+          "zinc_mg": 1.875
+        }
+      }
+    },
+    {
+      "id": "bk_salmon_toast",
+      "name": "Salmon Cottage Cheese Toast",
+      "cooking_time_minutes": 5,
+      "ingredients": [
+        {
+          "name": "sourdough bread",
+          "cache_key": "sourdough_bread",
+          "quantity": 90,
+          "unit": "g"
+        },
+        {
+          "name": "salmon canned",
+          "cache_key": "salmon_canned",
+          "quantity": 100,
+          "unit": "g"
+        },
+        {
+          "name": "cottage cheese 1% fat",
+          "cache_key": "cottage_cheese_1_fat",
+          "quantity": 100,
+          "unit": "g"
+        },
+        {
+          "name": "cucumber",
+          "cache_key": "cucumber",
+          "quantity": 60,
+          "unit": "g"
+        },
+        {
+          "name": "lemon juice",
+          "cache_key": "lemon_juice",
+          "quantity": 5,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "breakfast",
+        "lunch",
+        "pescatarian",
+        "nut-free",
+        "high-protein"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 476.9,
+        "protein_g": 43.07,
+        "fat_g": 10.48,
+        "carbs_g": 51.05,
+        "micronutrients": {
+          "b12_cobalamin_ug": 1.03,
+          "b1_thiamine_mg": 0.7,
+          "b2_riboflavin_mg": 0.765,
+          "b3_niacin_mg": 10.49,
+          "b5_pantothenic_acid_mg": 0.775,
+          "b6_pyridoxine_mg": 0.527,
+          "calcium_mg": 314.5,
+          "copper_mg": 0.269,
+          "fiber_g": 2.415,
+          "folate_ug": 132.1,
+          "iron_mg": 4.365,
+          "magnesium_mg": 71.3,
+          "manganese_mg": 0.591,
+          "omega_3_g": 5.0,
+          "omega_6_g": 0.875,
+          "phosphorus_mg": 562.5,
+          "potassium_mg": 607.05,
+          "selenium_ug": 64.905,
+          "sodium_mg": 1382.05,
+          "vitamin_a_ug": 52.4,
+          "vitamin_c_mg": 3.855,
+          "vitamin_d_iu": 761.0,
+          "vitamin_e_mg": 2.104,
+          "vitamin_k_ug": 5.15,
+          "zinc_mg": 2.091
+        }
+      }
+    },
+    {
+      "id": "bk_yolk_spinach_toast",
+      "name": "Egg Yolk Spinach Toast",
+      "cooking_time_minutes": 10,
+      "ingredients": [
+        {
+          "name": "egg yolk",
+          "cache_key": "egg_yolk",
+          "quantity": 51,
+          "unit": "g"
+        },
+        {
+          "name": "spinach",
+          "cache_key": "spinach",
+          "quantity": 60,
+          "unit": "g"
+        },
+        {
+          "name": "butter",
+          "cache_key": "butter",
+          "quantity": 5,
+          "unit": "g"
+        },
+        {
+          "name": "sourdough bread",
+          "cache_key": "sourdough_bread",
+          "quantity": 70,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "breakfast",
+        "vegetarian",
+        "nut-free"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 404.27,
+        "protein_g": 17.37,
+        "fat_g": 19.52,
+        "carbs_g": 40.33,
+        "micronutrients": {
+          "b12_cobalamin_ug": 1.003,
+          "b1_thiamine_mg": 0.634,
+          "b2_riboflavin_mg": 0.683,
+          "b3_niacin_mg": 3.821,
+          "b5_pantothenic_acid_mg": 1.888,
+          "b6_pyridoxine_mg": 0.371,
+          "calcium_mg": 162.79,
+          "copper_mg": 0.224,
+          "fiber_g": 2.86,
+          "folate_ug": 277.11,
+          "iron_mg": 5.756,
+          "magnesium_mg": 72.45,
+          "manganese_mg": 0.97,
+          "omega_3_g": 0.058,
+          "omega_6_g": 2.509,
+          "phosphorus_mg": 303.0,
+          "potassium_mg": 473.49,
+          "selenium_ug": 49.23,
+          "sodium_mg": 525.43,
+          "vitamin_a_ug": 509.91,
+          "vitamin_c_mg": 16.86,
+          "vitamin_d_iu": 4449.954,
+          "vitamin_e_mg": 2.797,
+          "vitamin_k_ug": 290.937,
+          "zinc_mg": 2.223
+        }
+      }
+    },
+    {
+      "id": "bk_big_oat_bowl",
+      "name": "Big Oat Bowl (Bulk)",
+      "cooking_time_minutes": 6,
+      "ingredients": [
+        {
+          "name": "rolled oats",
+          "cache_key": "rolled_oats",
+          "quantity": 120,
+          "unit": "g"
+        },
+        {
+          "name": "milk",
+          "cache_key": "milk",
+          "quantity": 300,
+          "unit": "g"
+        },
+        {
+          "name": "peanut butter",
+          "cache_key": "peanut_butter",
+          "quantity": 32,
+          "unit": "g"
+        },
+        {
+          "name": "bananas",
+          "cache_key": "bananas",
+          "quantity": 120,
+          "unit": "g"
+        },
+        {
+          "name": "honey",
+          "cache_key": "honey",
+          "quantity": 20,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "breakfast",
+        "vegetarian",
+        "high-fiber"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 973.96,
+        "protein_g": 33.64,
+        "fat_g": 32.2,
+        "carbs_g": 147.26,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.0,
+          "b1_thiamine_mg": 0.085,
+          "b2_riboflavin_mg": 0.157,
+          "b3_niacin_mg": 5.014,
+          "b5_pantothenic_acid_mg": 0.414,
+          "b6_pyridoxine_mg": 0.586,
+          "calcium_mg": 403.88,
+          "copper_mg": 0.236,
+          "fiber_g": 16.76,
+          "folate_ug": 52.24,
+          "iron_mg": 6.353,
+          "magnesium_mg": 86.56,
+          "manganese_mg": 0.34,
+          "omega_3_g": 0.0,
+          "omega_6_g": 3.991,
+          "phosphorus_mg": 134.4,
+          "potassium_mg": 618.56,
+          "selenium_ug": 2.672,
+          "sodium_mg": 303.32,
+          "vitamin_a_ug": 3.6,
+          "vitamin_c_mg": 13.54,
+          "vitamin_d_iu": 5040.0,
+          "vitamin_e_mg": 3.032,
+          "vitamin_k_ug": 0.696,
+          "zinc_mg": 1.027
+        }
+      }
+    },
+    {
+      "id": "ln_turkey_sandwich",
+      "name": "Turkey Cheddar Sandwich",
+      "cooking_time_minutes": 5,
+      "ingredients": [
+        {
+          "name": "sourdough bread",
+          "cache_key": "sourdough_bread",
+          "quantity": 100,
+          "unit": "g"
+        },
+        {
+          "name": "turkey breast lunchmeat reduced fat",
+          "cache_key": "turkey_breast_lunchmeat_reduced_fat",
+          "quantity": 110,
+          "unit": "g"
+        },
+        {
+          "name": "lettuce",
+          "cache_key": "lettuce",
+          "quantity": 30,
+          "unit": "g"
+        },
+        {
+          "name": "cheddar cheese natural 50% reduced fat",
+          "cache_key": "cheddar_cheese_natural_50_reduced_fat",
+          "quantity": 30,
+          "unit": "g"
+        },
+        {
+          "name": "cucumber",
+          "cache_key": "cucumber",
+          "quantity": 40,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "lunch",
+        "portable",
+        "no-cook",
+        "nut-free",
+        "high-protein"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 448.4,
+        "protein_g": 34.98,
+        "fat_g": 8.8,
+        "carbs_g": 56.41,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.554,
+          "b1_thiamine_mg": 0.787,
+          "b2_riboflavin_mg": 0.686,
+          "b3_niacin_mg": 12.808,
+          "b5_pantothenic_acid_mg": 1.001,
+          "b6_pyridoxine_mg": 0.622,
+          "calcium_mg": 207.4,
+          "copper_mg": 0.222,
+          "fiber_g": 2.75,
+          "folate_ug": 147.1,
+          "iron_mg": 4.946,
+          "magnesium_mg": 66.1,
+          "manganese_mg": 0.686,
+          "omega_3_g": 0.006,
+          "omega_6_g": 1.823,
+          "phosphorus_mg": 540.9,
+          "potassium_mg": 655.4,
+          "selenium_ug": 47.74,
+          "sodium_mg": 1860.0,
+          "vitamin_a_ug": 132.1,
+          "vitamin_c_mg": 2.39,
+          "vitamin_d_iu": 324.25,
+          "vitamin_e_mg": 0.428,
+          "vitamin_k_ug": 45.85,
+          "zinc_mg": 2.748
+        }
+      }
+    },
+    {
+      "id": "ln_roast_beef_wrap",
+      "name": "Roast Beef Feta Wrap",
+      "cooking_time_minutes": 5,
+      "ingredients": [
+        {
+          "name": "tortillas corn",
+          "cache_key": "tortillas_corn",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "roast beef lunchmeat",
+          "cache_key": "roast_beef_lunchmeat",
+          "quantity": 120,
+          "unit": "g"
+        },
+        {
+          "name": "lettuce",
+          "cache_key": "lettuce",
+          "quantity": 30,
+          "unit": "g"
+        },
+        {
+          "name": "feta cheese reduced fat",
+          "cache_key": "feta_cheese_reduced_fat",
+          "quantity": 30,
+          "unit": "g"
+        },
+        {
+          "name": "red peppers",
+          "cache_key": "red_peppers",
+          "quantity": 50,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "lunch",
+        "portable",
+        "no-cook",
+        "nut-free",
+        "high-protein"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [
+        "tortillas_corn"
+      ],
+      "notes": "tortillas_corn cache entry is actually a flour tortilla; recipe is not gluten-free",
+      "nutrition": {
+        "calories": 472.0,
+        "protein_g": 33.91,
+        "fat_g": 17.16,
+        "carbs_g": 45.04,
+        "micronutrients": {
+          "b12_cobalamin_ug": 2.955,
+          "b1_thiamine_mg": 0.534,
+          "b2_riboflavin_mg": 0.674,
+          "b3_niacin_mg": 10.933,
+          "b5_pantothenic_acid_mg": 1.397,
+          "b6_pyridoxine_mg": 0.877,
+          "calcium_mg": 297.7,
+          "copper_mg": 0.222,
+          "fiber_g": 3.24,
+          "folate_ug": 143.8,
+          "iron_mg": 5.886,
+          "magnesium_mg": 56.1,
+          "manganese_mg": 0.556,
+          "omega_3_g": 0.001,
+          "omega_6_g": 1.783,
+          "phosphorus_mg": 583.3,
+          "potassium_mg": 1063.0,
+          "selenium_ug": 40.16,
+          "sodium_mg": 1968.4,
+          "vitamin_a_ug": 232.1,
+          "vitamin_c_mg": 64.96,
+          "vitamin_d_iu": 240.12,
+          "vitamin_e_mg": 2.165,
+          "vitamin_k_ug": 50.36,
+          "zinc_mg": 5.345
+        }
+      }
+    },
+    {
+      "id": "ln_tuna_poke",
+      "name": "Tuna Poke Bowl",
+      "cooking_time_minutes": 15,
+      "ingredients": [
+        {
+          "name": "tuna sashimi",
+          "cache_key": "tuna_sashimi",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "name": "jasmine rice in unsalted water",
+          "cache_key": "jasmine_rice_in_unsalted_water",
+          "quantity": 220,
+          "unit": "g"
+        },
+        {
+          "name": "edamame beans",
+          "cache_key": "edamame_beans",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "cucumber",
+          "cache_key": "cucumber",
+          "quantity": 60,
+          "unit": "g"
+        },
+        {
+          "name": "soy sauce",
+          "cache_key": "soy_sauce",
+          "quantity": 15,
+          "unit": "g"
+        },
+        {
+          "name": "sesame oil",
+          "cache_key": "sesame_oil",
+          "quantity": 5,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "lunch",
+        "dinner",
+        "pescatarian",
+        "dairy-free",
+        "nut-free",
+        "no-shellfish",
+        "high-protein"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 605.5,
+        "protein_g": 53.25,
+        "fat_g": 10.42,
+        "carbs_g": 72.47,
+        "micronutrients": {
+          "b12_cobalamin_ug": 3.12,
+          "b1_thiamine_mg": 0.408,
+          "b2_riboflavin_mg": 0.369,
+          "b3_niacin_mg": 29.939,
+          "b5_pantothenic_acid_mg": 1.81,
+          "b6_pyridoxine_mg": 1.67,
+          "calcium_mg": 70.0,
+          "copper_mg": 0.551,
+          "fiber_g": 4.7,
+          "folate_ug": 267.3,
+          "iron_mg": 3.9,
+          "magnesium_mg": 134.5,
+          "manganese_mg": 1.74,
+          "omega_3_g": 0.132,
+          "omega_6_g": 3.629,
+          "phosphorus_mg": 656.9,
+          "potassium_mg": 1180.9,
+          "selenium_ug": 136.72,
+          "sodium_mg": 911.4,
+          "vitamin_a_ug": 41.4,
+          "vitamin_c_mg": 6.8,
+          "vitamin_d_iu": 4142.55,
+          "vitamin_e_mg": 0.992,
+          "vitamin_k_ug": 26.51,
+          "zinc_mg": 2.697
+        }
+      }
+    },
+    {
+      "id": "ln_chickpea_salad",
+      "name": "Mediterranean Chickpea Salad",
+      "cooking_time_minutes": 10,
+      "ingredients": [
+        {
+          "name": "chickpeas drained",
+          "cache_key": "chickpeas_drained",
+          "quantity": 200,
+          "unit": "g"
+        },
+        {
+          "name": "cucumber",
+          "cache_key": "cucumber",
+          "quantity": 100,
+          "unit": "g"
+        },
+        {
+          "name": "red peppers",
+          "cache_key": "red_peppers",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "feta cheese reduced fat",
+          "cache_key": "feta_cheese_reduced_fat",
+          "quantity": 40,
+          "unit": "g"
+        },
+        {
+          "name": "olive oil",
+          "cache_key": "olive_oil",
+          "quantity": 12,
+          "unit": "g"
+        },
+        {
+          "name": "lemon juice",
+          "cache_key": "lemon_juice",
+          "quantity": 15,
+          "unit": "g"
+        },
+        {
+          "name": "parsley",
+          "cache_key": "parsley",
+          "quantity": 10,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "lunch",
+        "vegetarian",
+        "gluten-free",
+        "nut-free",
+        "portable",
+        "no-cook",
+        "meal-prep",
+        "high-fiber"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 527.78,
+        "protein_g": 21.52,
+        "fat_g": 26.65,
+        "carbs_g": 55.26,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.676,
+          "b1_thiamine_mg": 0.202,
+          "b2_riboflavin_mg": 0.473,
+          "b3_niacin_mg": 1.642,
+          "b5_pantothenic_acid_mg": 0.94,
+          "b6_pyridoxine_mg": 0.701,
+          "calcium_mg": 321.62,
+          "copper_mg": 0.621,
+          "fiber_g": 15.555,
+          "folate_ug": 177.8,
+          "iron_mg": 3.663,
+          "magnesium_mg": 87.1,
+          "manganese_mg": 1.884,
+          "omega_3_g": 0.0,
+          "omega_6_g": 3.267,
+          "phosphorus_mg": 353.6,
+          "potassium_mg": 652.57,
+          "selenium_ug": 12.405,
+          "sodium_mg": 958.79,
+          "vitamin_a_ug": 223.7,
+          "vitamin_c_mg": 124.665,
+          "vitamin_d_iu": 256.16,
+          "vitamin_e_mg": 3.766,
+          "vitamin_k_ug": 189.864,
+          "zinc_mg": 2.897
+        }
+      }
+    },
+    {
+      "id": "ln_black_bean_quinoa",
+      "name": "Black Bean Quinoa Bowl",
+      "cooking_time_minutes": 25,
+      "ingredients": [
+        {
+          "name": "quinoa",
+          "cache_key": "quinoa",
+          "quantity": 70,
+          "unit": "g"
+        },
+        {
+          "name": "black beans drained",
+          "cache_key": "black_beans_drained",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "name": "salsa ready-to-serve",
+          "cache_key": "salsa_ready-to-serve",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "Avocados, raw, all commercial varieties",
+          "cache_key": "avocados_raw_all_commercial_varieties",
+          "quantity": 70,
+          "unit": "g"
+        },
+        {
+          "name": "lettuce",
+          "cache_key": "lettuce",
+          "quantity": 40,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "lunch",
+        "dinner",
+        "vegan",
+        "vegetarian",
+        "dairy-free",
+        "gluten-free",
+        "nut-free",
+        "meal-prep",
+        "reheats-well",
+        "high-fiber"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 526.8,
+        "protein_g": 22.2,
+        "fat_g": 15.92,
+        "carbs_g": 82.02,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.0,
+          "b1_thiamine_mg": 0.309,
+          "b2_riboflavin_mg": 0.327,
+          "b3_niacin_mg": 3.148,
+          "b5_pantothenic_acid_mg": 1.465,
+          "b6_pyridoxine_mg": 0.44,
+          "calcium_mg": 98.1,
+          "copper_mg": 0.485,
+          "fiber_g": 21.89,
+          "folate_ug": 165.8,
+          "iron_mg": 6.753,
+          "magnesium_mg": 89.6,
+          "manganese_mg": 0.62,
+          "omega_3_g": 0.0,
+          "omega_6_g": 1.347,
+          "phosphorus_mg": 236.0,
+          "potassium_mg": 1096.3,
+          "selenium_ug": 3.55,
+          "sodium_mg": 790.7,
+          "vitamin_a_ug": 173.3,
+          "vitamin_c_mg": 14.05,
+          "vitamin_d_iu": 0.0,
+          "vitamin_e_mg": 3.463,
+          "vitamin_k_ug": 77.71,
+          "zinc_mg": 1.482
+        }
+      }
+    },
+    {
+      "id": "ln_salmon_salad",
+      "name": "Salmon Avocado Salad",
+      "cooking_time_minutes": 5,
+      "ingredients": [
+        {
+          "name": "salmon canned",
+          "cache_key": "salmon_canned",
+          "quantity": 120,
+          "unit": "g"
+        },
+        {
+          "name": "lettuce",
+          "cache_key": "lettuce",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "cucumber",
+          "cache_key": "cucumber",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "Avocados, raw, all commercial varieties",
+          "cache_key": "avocados_raw_all_commercial_varieties",
+          "quantity": 60,
+          "unit": "g"
+        },
+        {
+          "name": "olive oil",
+          "cache_key": "olive_oil",
+          "quantity": 10,
+          "unit": "g"
+        },
+        {
+          "name": "lemon juice",
+          "cache_key": "lemon_juice",
+          "quantity": 10,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "lunch",
+        "pescatarian",
+        "gluten-free",
+        "dairy-free",
+        "nut-free",
+        "no-cook",
+        "low-carb",
+        "high-protein"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 388.6,
+        "protein_g": 27.53,
+        "fat_g": 27.73,
+        "carbs_g": 9.34,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.48,
+          "b1_thiamine_mg": 0.143,
+          "b2_riboflavin_mg": 0.401,
+          "b3_niacin_mg": 8.538,
+          "b5_pantothenic_acid_mg": 1.154,
+          "b6_pyridoxine_mg": 0.676,
+          "calcium_mg": 283.1,
+          "copper_mg": 0.268,
+          "fiber_g": 5.33,
+          "folate_ug": 90.6,
+          "iron_mg": 2.214,
+          "magnesium_mg": 73.2,
+          "manganese_mg": 0.336,
+          "omega_3_g": 6.0,
+          "omega_6_g": 2.179,
+          "phosphorus_mg": 456.4,
+          "potassium_mg": 954.6,
+          "selenium_ug": 37.65,
+          "sodium_mg": 545.7,
+          "vitamin_a_ug": 354.2,
+          "vitamin_c_mg": 15.39,
+          "vitamin_d_iu": 913.2,
+          "vitamin_e_mg": 5.092,
+          "vitamin_k_ug": 136.74,
+          "zinc_mg": 1.489
+        }
+      }
+    },
+    {
+      "id": "ln_white_bean_soup",
+      "name": "White Bean Spinach Soup",
+      "cooking_time_minutes": 30,
+      "ingredients": [
+        {
+          "name": "beans white mature seeds",
+          "cache_key": "beans_white_mature_seeds",
+          "quantity": 250,
+          "unit": "g"
+        },
+        {
+          "name": "spinach",
+          "cache_key": "spinach",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "carrots",
+          "cache_key": "carrots",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "garlic",
+          "cache_key": "garlic",
+          "quantity": 6,
+          "unit": "g"
+        },
+        {
+          "name": "olive oil",
+          "cache_key": "olive_oil",
+          "quantity": 10,
+          "unit": "g"
+        },
+        {
+          "name": "parmesan cheese hard",
+          "cache_key": "parmesan_cheese_hard",
+          "quantity": 15,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "lunch",
+        "dinner",
+        "vegetarian",
+        "gluten-free",
+        "nut-free",
+        "meal-prep",
+        "reheats-well",
+        "high-fiber"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 492.34,
+        "protein_g": 26.93,
+        "fat_g": 15.01,
+        "carbs_g": 66.03,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.18,
+          "b1_thiamine_mg": 0.373,
+          "b2_riboflavin_mg": 0.347,
+          "b3_niacin_mg": 1.731,
+          "b5_pantothenic_acid_mg": 0.837,
+          "b6_pyridoxine_mg": 0.542,
+          "calcium_mg": 476.66,
+          "copper_mg": 0.743,
+          "fiber_g": 16.126,
+          "folate_ug": 334.13,
+          "iron_mg": 10.164,
+          "magnesium_mg": 208.4,
+          "manganese_mg": 2.223,
+          "omega_3_g": 0.0,
+          "omega_6_g": 1.299,
+          "phosphorus_mg": 407.98,
+          "potassium_mg": 1875.36,
+          "selenium_ug": 9.107,
+          "sodium_mg": 1145.87,
+          "vitamin_a_ug": 1074.25,
+          "vitamin_c_mg": 29.072,
+          "vitamin_d_iu": 114.075,
+          "vitamin_e_mg": 5.6,
+          "vitamin_k_ug": 410.507,
+          "zinc_mg": 3.898
+        }
+      }
+    },
+    {
+      "id": "ln_salami_plate",
+      "name": "Salami and Cheddar Plate",
+      "cooking_time_minutes": 3,
+      "ingredients": [
+        {
+          "name": "salami genoa",
+          "cache_key": "salami_genoa",
+          "quantity": 50,
+          "unit": "g"
+        },
+        {
+          "name": "sharp cheddar cheese",
+          "cache_key": "sharp_cheddar_cheese",
+          "quantity": 40,
+          "unit": "g"
+        },
+        {
+          "name": "sourdough bread",
+          "cache_key": "sourdough_bread",
+          "quantity": 60,
+          "unit": "g"
+        },
+        {
+          "name": "cucumber",
+          "cache_key": "cucumber",
+          "quantity": 80,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "lunch",
+        "snack",
+        "portable",
+        "no-cook",
+        "nut-free"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 531.7,
+        "protein_g": 25.55,
+        "fat_g": 32.07,
+        "carbs_g": 35.49,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.352,
+          "b1_thiamine_mg": 0.462,
+          "b2_riboflavin_mg": 0.45,
+          "b3_niacin_mg": 2.935,
+          "b5_pantothenic_acid_mg": 0.657,
+          "b6_pyridoxine_mg": 0.135,
+          "calcium_mg": 326.8,
+          "copper_mg": 0.162,
+          "fiber_g": 1.88,
+          "folate_ug": 95.8,
+          "iron_mg": 3.551,
+          "magnesium_mg": 39.6,
+          "manganese_mg": 0.414,
+          "omega_3_g": 0.0,
+          "omega_6_g": 0.954,
+          "phosphorus_mg": 263.8,
+          "potassium_mg": 209.4,
+          "selenium_ug": 28.56,
+          "sodium_mg": 1441.9,
+          "vitamin_a_ug": 108.4,
+          "vitamin_c_mg": 2.56,
+          "vitamin_d_iu": 656.4,
+          "vitamin_e_mg": 0.462,
+          "vitamin_k_ug": 7.14,
+          "zinc_mg": 2.256
+        }
+      }
+    },
+    {
+      "id": "ln_cottage_box",
+      "name": "Cottage Cheese Protein Box",
+      "cooking_time_minutes": 3,
+      "ingredients": [
+        {
+          "name": "cottage cheese 1% fat",
+          "cache_key": "cottage_cheese_1_fat",
+          "quantity": 200,
+          "unit": "g"
+        },
+        {
+          "name": "carrots",
+          "cache_key": "carrots",
+          "quantity": 100,
+          "unit": "g"
+        },
+        {
+          "name": "almonds",
+          "cache_key": "almonds",
+          "quantity": 20,
+          "unit": "g"
+        },
+        {
+          "name": "bananas",
+          "cache_key": "bananas",
+          "quantity": 100,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "lunch",
+        "snack",
+        "vegetarian",
+        "gluten-free",
+        "portable",
+        "no-cook",
+        "high-protein"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 389.8,
+        "protein_g": 31.03,
+        "fat_g": 12.6,
+        "carbs_g": 42.17,
+        "micronutrients": {
+          "b12_cobalamin_ug": 1.26,
+          "b1_thiamine_mg": 0.18,
+          "b2_riboflavin_mg": 0.689,
+          "b3_niacin_mg": 2.628,
+          "b5_pantothenic_acid_mg": 1.131,
+          "b6_pyridoxine_mg": 0.668,
+          "calcium_mg": 213.8,
+          "copper_mg": 0.385,
+          "fiber_g": 7.9,
+          "folate_ug": 71.8,
+          "iron_mg": 1.582,
+          "magnesium_mg": 103.0,
+          "manganese_mg": 0.855,
+          "omega_3_g": 0.0,
+          "omega_6_g": 2.655,
+          "phosphorus_mg": 421.2,
+          "potassium_mg": 996.6,
+          "selenium_ug": 19.92,
+          "sodium_mg": 882.2,
+          "vitamin_a_ug": 860.0,
+          "vitamin_c_mg": 14.6,
+          "vitamin_d_iu": 0.0,
+          "vitamin_e_mg": 5.906,
+          "vitamin_k_ug": 13.9,
+          "zinc_mg": 1.774
+        }
+      }
+    },
+    {
+      "id": "ln_tuna_pasta_salad",
+      "name": "Tuna Pasta Salad",
+      "cooking_time_minutes": 20,
+      "ingredients": [
+        {
+          "name": "pasta",
+          "cache_key": "pasta",
+          "quantity": 90,
+          "unit": "g"
+        },
+        {
+          "name": "tuna sashimi",
+          "cache_key": "tuna_sashimi",
+          "quantity": 120,
+          "unit": "g"
+        },
+        {
+          "name": "cucumber",
+          "cache_key": "cucumber",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "olive oil",
+          "cache_key": "olive_oil",
+          "quantity": 10,
+          "unit": "g"
+        },
+        {
+          "name": "lemon juice",
+          "cache_key": "lemon_juice",
+          "quantity": 10,
+          "unit": "g"
+        },
+        {
+          "name": "parsley",
+          "cache_key": "parsley",
+          "quantity": 10,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "lunch",
+        "pescatarian",
+        "dairy-free",
+        "nut-free",
+        "no-shellfish",
+        "portable",
+        "meal-prep",
+        "high-protein"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 566.9,
+        "protein_g": 41.82,
+        "fat_g": 12.18,
+        "carbs_g": 70.25,
+        "micronutrients": {
+          "b12_cobalamin_ug": 2.496,
+          "b1_thiamine_mg": 0.979,
+          "b2_riboflavin_mg": 0.529,
+          "b3_niacin_mg": 28.799,
+          "b5_pantothenic_acid_mg": 0.969,
+          "b6_pyridoxine_mg": 1.302,
+          "calcium_mg": 49.4,
+          "copper_mg": 0.377,
+          "fiber_g": 3.8,
+          "folate_ug": 244.1,
+          "iron_mg": 4.754,
+          "magnesium_mg": 104.9,
+          "manganese_mg": 0.914,
+          "omega_3_g": 0.106,
+          "omega_6_g": 1.506,
+          "phosphorus_mg": 527.1,
+          "potassium_mg": 904.5,
+          "selenium_ug": 165.7,
+          "sodium_mg": 66.9,
+          "vitamin_a_ug": 66.9,
+          "vitamin_c_mg": 19.73,
+          "vitamin_d_iu": 3314.04,
+          "vitamin_e_mg": 1.936,
+          "vitamin_k_ug": 175.99,
+          "zinc_mg": 1.961
+        }
+      }
+    },
+    {
+      "id": "ln_tofu_quinoa_salad",
+      "name": "Sesame Tofu Quinoa Salad",
+      "cooking_time_minutes": 25,
+      "ingredients": [
+        {
+          "name": "tofu not silken firm",
+          "cache_key": "tofu_not_silken_firm",
+          "quantity": 180,
+          "unit": "g"
+        },
+        {
+          "name": "quinoa",
+          "cache_key": "quinoa",
+          "quantity": 60,
+          "unit": "g"
+        },
+        {
+          "name": "carrots",
+          "cache_key": "carrots",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "cucumber",
+          "cache_key": "cucumber",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "soy sauce",
+          "cache_key": "soy_sauce",
+          "quantity": 10,
+          "unit": "g"
+        },
+        {
+          "name": "sesame oil",
+          "cache_key": "sesame_oil",
+          "quantity": 8,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "lunch",
+        "vegan",
+        "vegetarian",
+        "dairy-free",
+        "gluten-free",
+        "nut-free",
+        "meal-prep",
+        "portable"
+      ],
+      "proposed_tags": [
+        "high-protein"
+      ],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 590.92,
+        "protein_g": 41.93,
+        "fat_g": 28.31,
+        "carbs_g": 53.53,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.0,
+          "b1_thiamine_mg": 0.368,
+          "b2_riboflavin_mg": 0.265,
+          "b3_niacin_mg": 1.897,
+          "b5_pantothenic_acid_mg": 0.687,
+          "b6_pyridoxine_mg": 0.337,
+          "calcium_mg": 1269.0,
+          "copper_mg": 0.787,
+          "fiber_g": 11.28,
+          "folate_ug": 80.4,
+          "iron_mg": 7.758,
+          "magnesium_mg": 127.6,
+          "manganese_mg": 2.349,
+          "omega_3_g": 0.0,
+          "omega_6_g": 11.206,
+          "phosphorus_mg": 399.8,
+          "potassium_mg": 812.6,
+          "selenium_ug": 31.56,
+          "sodium_mg": 640.6,
+          "vitamin_a_ug": 671.2,
+          "vitamin_c_mg": 7.64,
+          "vitamin_d_iu": 0.0,
+          "vitamin_e_mg": 0.664,
+          "vitamin_k_ug": 17.408,
+          "zinc_mg": 3.197
+        }
+      }
+    },
+    {
+      "id": "dn_beef_rice_bowl",
+      "name": "Beef and Rice Bowl",
+      "cooking_time_minutes": 20,
+      "ingredients": [
+        {
+          "name": "hamburger or beef 90%",
+          "cache_key": "hamburger_or_beef_90",
+          "quantity": 170,
+          "unit": "g"
+        },
+        {
+          "name": "jasmine rice in unsalted water",
+          "cache_key": "jasmine_rice_in_unsalted_water",
+          "quantity": 250,
+          "unit": "g"
+        },
+        {
+          "name": "spinach",
+          "cache_key": "spinach",
+          "quantity": 60,
+          "unit": "g"
+        },
+        {
+          "name": "soy sauce",
+          "cache_key": "soy_sauce",
+          "quantity": 10,
+          "unit": "g"
+        },
+        {
+          "name": "sesame oil",
+          "cache_key": "sesame_oil",
+          "quantity": 5,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "dinner",
+        "lunch",
+        "dairy-free",
+        "nut-free",
+        "reheats-well",
+        "high-protein"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 688.2,
+        "protein_g": 42.67,
+        "fat_g": 22.72,
+        "carbs_g": 74.56,
+        "micronutrients": {
+          "b12_cobalamin_ug": 3.757,
+          "b1_thiamine_mg": 0.174,
+          "b2_riboflavin_mg": 0.425,
+          "b3_niacin_mg": 10.452,
+          "b5_pantothenic_acid_mg": 2.091,
+          "b6_pyridoxine_mg": 0.912,
+          "calcium_mg": 84.3,
+          "copper_mg": 0.394,
+          "fiber_g": 1.4,
+          "folate_ug": 133.4,
+          "iron_mg": 6.172,
+          "magnesium_mg": 105.4,
+          "manganese_mg": 1.498,
+          "omega_3_g": 0.0,
+          "omega_6_g": 2.634,
+          "phosphorus_mg": 437.7,
+          "potassium_mg": 966.7,
+          "selenium_ug": 28.9,
+          "sodium_mg": 718.2,
+          "vitamin_a_ug": 288.2,
+          "vitamin_c_mg": 16.86,
+          "vitamin_d_iu": 204.17,
+          "vitamin_e_mg": 1.577,
+          "vitamin_k_ug": 291.78,
+          "zinc_mg": 9.504
+        }
+      }
+    },
+    {
+      "id": "dn_beef_chili",
+      "name": "Lean Beef and Bean Chili",
+      "cooking_time_minutes": 60,
+      "ingredients": [
+        {
+          "name": "hamburger or beef 95%",
+          "cache_key": "hamburger_or_beef_95",
+          "quantity": 200,
+          "unit": "g"
+        },
+        {
+          "name": "black beans drained",
+          "cache_key": "black_beans_drained",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "name": "salsa ready-to-serve",
+          "cache_key": "salsa_ready-to-serve",
+          "quantity": 120,
+          "unit": "g"
+        },
+        {
+          "name": "red peppers",
+          "cache_key": "red_peppers",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "garlic",
+          "cache_key": "garlic",
+          "quantity": 6,
+          "unit": "g"
+        },
+        {
+          "name": "cheddar cheese natural 50% reduced fat",
+          "cache_key": "cheddar_cheese_natural_50_reduced_fat",
+          "quantity": 20,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "dinner",
+        "lunch",
+        "gluten-free",
+        "nut-free",
+        "meal-prep",
+        "reheats-well",
+        "high-protein",
+        "high-fiber"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 539.64,
+        "protein_g": 58.61,
+        "fat_g": 16.31,
+        "carbs_g": 39.98,
+        "micronutrients": {
+          "b12_cobalamin_ug": 4.558,
+          "b1_thiamine_mg": 0.389,
+          "b2_riboflavin_mg": 0.639,
+          "b3_niacin_mg": 13.725,
+          "b5_pantothenic_acid_mg": 2.105,
+          "b6_pyridoxine_mg": 1.371,
+          "calcium_mg": 207.96,
+          "copper_mg": 0.553,
+          "fiber_g": 14.436,
+          "folate_ug": 145.48,
+          "iron_mg": 8.544,
+          "magnesium_mg": 126.8,
+          "manganese_mg": 0.695,
+          "omega_3_g": 0.0,
+          "omega_6_g": 0.748,
+          "phosphorus_mg": 712.38,
+          "potassium_mg": 1670.06,
+          "selenium_ug": 41.062,
+          "sodium_mg": 1371.02,
+          "vitamin_a_ug": 173.2,
+          "vitamin_c_mg": 110.362,
+          "vitamin_d_iu": 280.22,
+          "vitamin_e_mg": 4.087,
+          "vitamin_k_ug": 13.752,
+          "zinc_mg": 11.6
+        }
+      }
+    },
+    {
+      "id": "dn_thigh_sheet_pan",
+      "name": "Chicken Thigh Sheet Pan with Potatoes",
+      "cooking_time_minutes": 45,
+      "ingredients": [
+        {
+          "name": "chicken thigh skin removed",
+          "cache_key": "chicken_thigh_skin_removed",
+          "quantity": 220,
+          "unit": "g"
+        },
+        {
+          "name": "potatoes flesh",
+          "cache_key": "potatoes_flesh",
+          "quantity": 300,
+          "unit": "g"
+        },
+        {
+          "name": "carrots",
+          "cache_key": "carrots",
+          "quantity": 100,
+          "unit": "g"
+        },
+        {
+          "name": "olive oil",
+          "cache_key": "olive_oil",
+          "quantity": 12,
+          "unit": "g"
+        },
+        {
+          "name": "garlic",
+          "cache_key": "garlic",
+          "quantity": 6,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "dinner",
+        "gluten-free",
+        "dairy-free",
+        "nut-free",
+        "meal-prep",
+        "reheats-well",
+        "high-protein"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 653.22,
+        "protein_g": 50.71,
+        "fat_g": 21.6,
+        "carbs_g": 64.03,
+        "micronutrients": {
+          "b12_cobalamin_ug": 1.342,
+          "b1_thiamine_mg": 0.515,
+          "b2_riboflavin_mg": 0.592,
+          "b3_niacin_mg": 16.433,
+          "b5_pantothenic_acid_mg": 1.194,
+          "b6_pyridoxine_mg": 2.098,
+          "calcium_mg": 95.38,
+          "copper_mg": 0.529,
+          "fiber_g": 9.226,
+          "folate_ug": 72.98,
+          "iron_mg": 4.681,
+          "magnesium_mg": 133.1,
+          "manganese_mg": 0.731,
+          "omega_3_g": 0.015,
+          "omega_6_g": 3.027,
+          "phosphorus_mg": 622.18,
+          "potassium_mg": 2151.58,
+          "selenium_ug": 52.532,
+          "sodium_mg": 297.26,
+          "vitamin_a_ug": 850.4,
+          "vitamin_c_mg": 66.872,
+          "vitamin_d_iu": 88.0,
+          "vitamin_e_mg": 2.813,
+          "vitamin_k_ug": 32.906,
+          "zinc_mg": 4.686
+        }
+      }
+    },
+    {
+      "id": "dn_tilapia_rice",
+      "name": "Lemon Butter Tilapia with Rice",
+      "cooking_time_minutes": 20,
+      "ingredients": [
+        {
+          "name": "tilapia",
+          "cache_key": "tilapia",
+          "quantity": 200,
+          "unit": "g"
+        },
+        {
+          "name": "jasmine rice in unsalted water",
+          "cache_key": "jasmine_rice_in_unsalted_water",
+          "quantity": 200,
+          "unit": "g"
+        },
+        {
+          "name": "asparagus",
+          "cache_key": "asparagus",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "name": "butter",
+          "cache_key": "butter",
+          "quantity": 10,
+          "unit": "g"
+        },
+        {
+          "name": "lemon juice",
+          "cache_key": "lemon_juice",
+          "quantity": 10,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "dinner",
+        "pescatarian",
+        "gluten-free",
+        "nut-free",
+        "no-shellfish",
+        "high-protein"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 555.9,
+        "protein_g": 48.3,
+        "fat_g": 12.1,
+        "carbs_g": 63.98,
+        "micronutrients": {
+          "b12_cobalamin_ug": 3.177,
+          "b1_thiamine_mg": 0.339,
+          "b2_riboflavin_mg": 0.374,
+          "b3_niacin_mg": 10.086,
+          "b5_pantothenic_acid_mg": 2.203,
+          "b6_pyridoxine_mg": 0.583,
+          "calcium_mg": 61.0,
+          "copper_mg": 0.579,
+          "fiber_g": 3.18,
+          "folate_ug": 132.3,
+          "iron_mg": 4.74,
+          "magnesium_mg": 91.8,
+          "manganese_mg": 1.026,
+          "omega_3_g": 0.172,
+          "omega_6_g": 0.732,
+          "phosphorus_mg": 487.2,
+          "potassium_mg": 971.7,
+          "selenium_ug": 87.16,
+          "sodium_mg": 171.4,
+          "vitamin_a_ug": 125.4,
+          "vitamin_c_mg": 12.27,
+          "vitamin_d_iu": 9926.2,
+          "vitamin_e_mg": 2.742,
+          "vitamin_k_ug": 65.9,
+          "zinc_mg": 2.284
+        }
+      }
+    },
+    {
+      "id": "dn_bolognese",
+      "name": "Pasta Bolognese",
+      "cooking_time_minutes": 30,
+      "ingredients": [
+        {
+          "name": "pasta",
+          "cache_key": "pasta",
+          "quantity": 100,
+          "unit": "g"
+        },
+        {
+          "name": "hamburger or beef 90%",
+          "cache_key": "hamburger_or_beef_90",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "name": "salsa ready-to-serve",
+          "cache_key": "salsa_ready-to-serve",
+          "quantity": 100,
+          "unit": "g"
+        },
+        {
+          "name": "parmesan grated",
+          "cache_key": "parmesan_grated",
+          "quantity": 15,
+          "unit": "g"
+        },
+        {
+          "name": "olive oil",
+          "cache_key": "olive_oil",
+          "quantity": 5,
+          "unit": "g"
+        },
+        {
+          "name": "garlic",
+          "cache_key": "garlic",
+          "quantity": 5,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "dinner",
+        "nut-free",
+        "meal-prep",
+        "reheats-well",
+        "kid-friendly"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 778.65,
+        "protein_g": 49.14,
+        "fat_g": 25.88,
+        "carbs_g": 85.05,
+        "micronutrients": {
+          "b12_cobalamin_ug": 3.525,
+          "b1_thiamine_mg": 1.001,
+          "b2_riboflavin_mg": 0.718,
+          "b3_niacin_mg": 15.923,
+          "b5_pantothenic_acid_mg": 1.629,
+          "b6_pyridoxine_mg": 0.941,
+          "calcium_mg": 206.05,
+          "copper_mg": 0.484,
+          "fiber_g": 5.205,
+          "folate_ug": 251.05,
+          "iron_mg": 7.266,
+          "magnesium_mg": 104.35,
+          "manganese_mg": 1.138,
+          "omega_3_g": 0.0,
+          "omega_6_g": 1.684,
+          "phosphorus_mg": 599.7,
+          "potassium_mg": 1026.6,
+          "selenium_ug": 94.87,
+          "sodium_mg": 1087.55,
+          "vitamin_a_ug": 68.3,
+          "vitamin_c_mg": 3.46,
+          "vitamin_d_iu": 306.225,
+          "vitamin_e_mg": 2.446,
+          "vitamin_k_ug": 8.95,
+          "zinc_mg": 9.463
+        }
+      }
+    },
+    {
+      "id": "dn_tofu_stir_fry",
+      "name": "Tofu Vegetable Stir Fry",
+      "cooking_time_minutes": 20,
+      "ingredients": [
+        {
+          "name": "tofu not silken firm",
+          "cache_key": "tofu_not_silken_firm",
+          "quantity": 250,
+          "unit": "g"
+        },
+        {
+          "name": "jasmine rice in unsalted water",
+          "cache_key": "jasmine_rice_in_unsalted_water",
+          "quantity": 220,
+          "unit": "g"
+        },
+        {
+          "name": "red peppers",
+          "cache_key": "red_peppers",
+          "quantity": 100,
+          "unit": "g"
+        },
+        {
+          "name": "zucchini",
+          "cache_key": "zucchini",
+          "quantity": 100,
+          "unit": "g"
+        },
+        {
+          "name": "soy sauce",
+          "cache_key": "soy_sauce",
+          "quantity": 20,
+          "unit": "g"
+        },
+        {
+          "name": "sesame oil",
+          "cache_key": "sesame_oil",
+          "quantity": 10,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "dinner",
+        "vegan",
+        "vegetarian",
+        "dairy-free",
+        "gluten-free",
+        "nut-free"
+      ],
+      "proposed_tags": [
+        "high-protein",
+        "meal-prep"
+      ],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 793.4,
+        "protein_g": 54.17,
+        "fat_g": 32.94,
+        "carbs_g": 80.41,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.0,
+          "b1_thiamine_mg": 0.547,
+          "b2_riboflavin_mg": 0.442,
+          "b3_niacin_mg": 4.307,
+          "b5_pantothenic_acid_mg": 1.965,
+          "b6_pyridoxine_mg": 0.833,
+          "calcium_mg": 1741.7,
+          "copper_mg": 1.244,
+          "fiber_g": 9.11,
+          "folate_ug": 146.5,
+          "iron_mg": 8.786,
+          "magnesium_mg": 215.6,
+          "manganese_mg": 4.146,
+          "omega_3_g": 0.0,
+          "omega_6_g": 15.238,
+          "phosphorus_mg": 692.6,
+          "potassium_mg": 1362.1,
+          "selenium_ug": 44.06,
+          "sodium_mg": 1159.2,
+          "vitamin_a_ug": 182.0,
+          "vitamin_c_mg": 162.3,
+          "vitamin_d_iu": 0.0,
+          "vitamin_e_mg": 1.72,
+          "vitamin_k_ug": 6.26,
+          "zinc_mg": 5.971
+        }
+      }
+    },
+    {
+      "id": "dn_salmon_potatoes",
+      "name": "Salmon with Roast Potatoes and Asparagus",
+      "cooking_time_minutes": 35,
+      "ingredients": [
+        {
+          "name": "salmon canned",
+          "cache_key": "salmon_canned",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "name": "potatoes flesh",
+          "cache_key": "potatoes_flesh",
+          "quantity": 300,
+          "unit": "g"
+        },
+        {
+          "name": "asparagus",
+          "cache_key": "asparagus",
+          "quantity": 120,
+          "unit": "g"
+        },
+        {
+          "name": "olive oil",
+          "cache_key": "olive_oil",
+          "quantity": 10,
+          "unit": "g"
+        },
+        {
+          "name": "lemon juice",
+          "cache_key": "lemon_juice",
+          "quantity": 10,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "dinner",
+        "pescatarian",
+        "gluten-free",
+        "dairy-free",
+        "nut-free",
+        "no-shellfish",
+        "high-protein"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 575.1,
+        "protein_g": 39.77,
+        "fat_g": 21.19,
+        "carbs_g": 57.82,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.6,
+          "b1_thiamine_mg": 0.447,
+          "b2_riboflavin_mg": 0.567,
+          "b3_niacin_mg": 13.366,
+          "b5_pantothenic_acid_mg": 1.227,
+          "b6_pyridoxine_mg": 1.503,
+          "calcium_mg": 362.5,
+          "copper_mg": 0.65,
+          "fiber_g": 8.85,
+          "folate_ug": 109.4,
+          "iron_mg": 5.917,
+          "magnesium_mg": 131.4,
+          "manganese_mg": 0.686,
+          "omega_3_g": 7.5,
+          "omega_6_g": 1.324,
+          "phosphorus_mg": 715.7,
+          "potassium_mg": 2021.3,
+          "selenium_ug": 49.12,
+          "sodium_mg": 670.2,
+          "vitamin_a_ug": 104.1,
+          "vitamin_c_mg": 69.69,
+          "vitamin_d_iu": 1141.5,
+          "vitamin_e_mg": 5.656,
+          "vitamin_k_ug": 62.09,
+          "zinc_mg": 2.558
+        }
+      }
+    },
+    {
+      "id": "dn_burger_bowl",
+      "name": "Bunless Burger Bowl with Potatoes",
+      "cooking_time_minutes": 25,
+      "ingredients": [
+        {
+          "name": "hamburger or beef 95%",
+          "cache_key": "hamburger_or_beef_95",
+          "quantity": 200,
+          "unit": "g"
+        },
+        {
+          "name": "lettuce",
+          "cache_key": "lettuce",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "sharp cheddar cheese",
+          "cache_key": "sharp_cheddar_cheese",
+          "quantity": 30,
+          "unit": "g"
+        },
+        {
+          "name": "potatoes flesh",
+          "cache_key": "potatoes_flesh",
+          "quantity": 250,
+          "unit": "g"
+        },
+        {
+          "name": "olive oil",
+          "cache_key": "olive_oil",
+          "quantity": 10,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "dinner",
+        "gluten-free",
+        "nut-free",
+        "kid-friendly",
+        "high-protein"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 718.3,
+        "protein_g": 55.16,
+        "fat_g": 34.55,
+        "carbs_g": 46.17,
+        "micronutrients": {
+          "b12_cobalamin_ug": 4.724,
+          "b1_thiamine_mg": 0.344,
+          "b2_riboflavin_mg": 0.574,
+          "b3_niacin_mg": 13.571,
+          "b5_pantothenic_acid_mg": 2.261,
+          "b6_pyridoxine_mg": 1.614,
+          "calcium_mg": 289.8,
+          "copper_mg": 0.458,
+          "fiber_g": 5.97,
+          "folate_ug": 84.4,
+          "iron_mg": 7.749,
+          "magnesium_mg": 117.2,
+          "manganese_mg": 0.572,
+          "omega_3_g": 0.0,
+          "omega_6_g": 1.869,
+          "phosphorus_mg": 686.9,
+          "potassium_mg": 1907.0,
+          "selenium_ug": 44.89,
+          "sodium_mg": 360.4,
+          "vitamin_a_ug": 386.9,
+          "vitamin_c_mg": 52.21,
+          "vitamin_d_iu": 732.5,
+          "vitamin_e_mg": 2.154,
+          "vitamin_k_ug": 124.98,
+          "zinc_mg": 11.972
+        }
+      }
+    },
+    {
+      "id": "dn_veggie_pasta",
+      "name": "Zucchini Spinach Parmesan Pasta",
+      "cooking_time_minutes": 20,
+      "ingredients": [
+        {
+          "name": "pasta",
+          "cache_key": "pasta",
+          "quantity": 110,
+          "unit": "g"
+        },
+        {
+          "name": "zucchini",
+          "cache_key": "zucchini",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "name": "spinach",
+          "cache_key": "spinach",
+          "quantity": 60,
+          "unit": "g"
+        },
+        {
+          "name": "parmesan cheese hard",
+          "cache_key": "parmesan_cheese_hard",
+          "quantity": 25,
+          "unit": "g"
+        },
+        {
+          "name": "olive oil",
+          "cache_key": "olive_oil",
+          "quantity": 15,
+          "unit": "g"
+        },
+        {
+          "name": "garlic",
+          "cache_key": "garlic",
+          "quantity": 6,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "dinner",
+        "vegetarian",
+        "nut-free",
+        "kid-friendly"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 692.94,
+        "protein_g": 29.44,
+        "fat_g": 23.78,
+        "carbs_g": 91.77,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.3,
+          "b1_thiamine_mg": 1.112,
+          "b2_riboflavin_mg": 0.697,
+          "b3_niacin_mg": 9.496,
+          "b5_pantothenic_acid_mg": 1.213,
+          "b6_pyridoxine_mg": 0.583,
+          "calcium_mg": 421.01,
+          "copper_mg": 0.567,
+          "fiber_g": 6.616,
+          "folate_ug": 409.03,
+          "iron_mg": 6.832,
+          "magnesium_mg": 167.7,
+          "manganese_mg": 1.946,
+          "omega_3_g": 0.0,
+          "omega_6_g": 2.25,
+          "phosphorus_mg": 559.48,
+          "potassium_mg": 1315.81,
+          "selenium_ug": 77.047,
+          "sodium_mg": 353.57,
+          "vitamin_a_ug": 370.65,
+          "vitamin_c_mg": 69.882,
+          "vitamin_d_iu": 190.125,
+          "vitamin_e_mg": 3.551,
+          "vitamin_k_ug": 299.407,
+          "zinc_mg": 3.871
+        }
+      }
+    },
+    {
+      "id": "dn_thigh_quinoa_prep",
+      "name": "Chicken Thigh Quinoa Prep Bowl",
+      "cooking_time_minutes": 40,
+      "ingredients": [
+        {
+          "name": "chicken thigh skin removed",
+          "cache_key": "chicken_thigh_skin_removed",
+          "quantity": 200,
+          "unit": "g"
+        },
+        {
+          "name": "quinoa",
+          "cache_key": "quinoa",
+          "quantity": 70,
+          "unit": "g"
+        },
+        {
+          "name": "cauliflower",
+          "cache_key": "cauliflower",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "name": "olive oil",
+          "cache_key": "olive_oil",
+          "quantity": 10,
+          "unit": "g"
+        },
+        {
+          "name": "lemon juice",
+          "cache_key": "lemon_juice",
+          "quantity": 10,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "dinner",
+        "lunch",
+        "gluten-free",
+        "dairy-free",
+        "nut-free",
+        "meal-prep",
+        "reheats-well",
+        "high-protein"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 620.0,
+        "protein_g": 52.24,
+        "fat_g": 23.68,
+        "carbs_g": 53.15,
+        "micronutrients": {
+          "b12_cobalamin_ug": 1.22,
+          "b1_thiamine_mg": 0.253,
+          "b2_riboflavin_mg": 0.483,
+          "b3_niacin_mg": 11.884,
+          "b5_pantothenic_acid_mg": 1.014,
+          "b6_pyridoxine_mg": 1.183,
+          "calcium_mg": 47.7,
+          "copper_mg": 0.184,
+          "fiber_g": 8.0,
+          "folate_ug": 95.5,
+          "iron_mg": 5.016,
+          "magnesium_mg": 69.1,
+          "manganese_mg": 0.26,
+          "omega_3_g": 0.014,
+          "omega_6_g": 2.497,
+          "phosphorus_mg": 436.8,
+          "potassium_mg": 942.9,
+          "selenium_ug": 46.71,
+          "sodium_mg": 235.3,
+          "vitamin_a_ug": 14.0,
+          "vitamin_c_mg": 76.17,
+          "vitamin_d_iu": 80.0,
+          "vitamin_e_mg": 1.93,
+          "vitamin_k_ug": 35.07,
+          "zinc_mg": 3.57
+        }
+      }
+    },
+    {
+      "id": "dn_edamame_fried_rice",
+      "name": "Edamame Fried Rice",
+      "cooking_time_minutes": 20,
+      "ingredients": [
+        {
+          "name": "edamame beans",
+          "cache_key": "edamame_beans",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "name": "jasmine rice in unsalted water",
+          "cache_key": "jasmine_rice_in_unsalted_water",
+          "quantity": 280,
+          "unit": "g"
+        },
+        {
+          "name": "carrots",
+          "cache_key": "carrots",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "soy sauce",
+          "cache_key": "soy_sauce",
+          "quantity": 20,
+          "unit": "g"
+        },
+        {
+          "name": "sesame oil",
+          "cache_key": "sesame_oil",
+          "quantity": 10,
+          "unit": "g"
+        },
+        {
+          "name": "egg yolk",
+          "cache_key": "egg_yolk",
+          "quantity": 34,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "dinner",
+        "vegetarian",
+        "dairy-free",
+        "nut-free"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 788.18,
+        "protein_g": 32.71,
+        "fat_g": 27.57,
+        "carbs_g": 103.81,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.663,
+          "b1_thiamine_mg": 0.48,
+          "b2_riboflavin_mg": 0.534,
+          "b3_niacin_mg": 4.077,
+          "b5_pantothenic_acid_mg": 3.014,
+          "b6_pyridoxine_mg": 0.585,
+          "calcium_mg": 171.56,
+          "copper_mg": 0.808,
+          "fiber_g": 10.2,
+          "folate_ug": 540.54,
+          "iron_mg": 5.609,
+          "magnesium_mg": 137.7,
+          "manganese_mg": 2.768,
+          "omega_3_g": 0.039,
+          "omega_6_g": 8.224,
+          "phosphorus_mg": 532.5,
+          "potassium_mg": 1062.26,
+          "selenium_ug": 20.48,
+          "sodium_mg": 1197.72,
+          "vitamin_a_ug": 820.04,
+          "vitamin_c_mg": 13.87,
+          "vitamin_d_iu": 2966.636,
+          "vitamin_e_mg": 2.565,
+          "vitamin_k_ug": 52.208,
+          "zinc_mg": 4.235
+        }
+      }
+    },
+    {
+      "id": "dn_cauli_beef_bowl",
+      "name": "Low-Carb Beef Cauliflower Bowl",
+      "cooking_time_minutes": 20,
+      "ingredients": [
+        {
+          "name": "hamburger or beef 90%",
+          "cache_key": "hamburger_or_beef_90",
+          "quantity": 200,
+          "unit": "g"
+        },
+        {
+          "name": "cauliflower",
+          "cache_key": "cauliflower",
+          "quantity": 250,
+          "unit": "g"
+        },
+        {
+          "name": "spinach",
+          "cache_key": "spinach",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "olive oil",
+          "cache_key": "olive_oil",
+          "quantity": 10,
+          "unit": "g"
+        },
+        {
+          "name": "parmesan cheese hard",
+          "cache_key": "parmesan_cheese_hard",
+          "quantity": 15,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "dinner",
+        "gluten-free",
+        "nut-free",
+        "low-carb",
+        "high-protein"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 580.1,
+        "protein_g": 52.45,
+        "fat_g": 34.76,
+        "carbs_g": 15.81,
+        "micronutrients": {
+          "b12_cobalamin_ug": 4.6,
+          "b1_thiamine_mg": 0.277,
+          "b2_riboflavin_mg": 0.653,
+          "b3_niacin_mg": 12.031,
+          "b5_pantothenic_acid_mg": 2.989,
+          "b6_pyridoxine_mg": 1.368,
+          "calcium_mg": 335.9,
+          "copper_mg": 0.35,
+          "fiber_g": 6.76,
+          "folate_ug": 310.75,
+          "iron_mg": 7.877,
+          "magnesium_mg": 147.3,
+          "manganese_mg": 1.128,
+          "omega_3_g": 0.0,
+          "omega_6_g": 1.604,
+          "phosphorus_mg": 621.3,
+          "potassium_mg": 1849.8,
+          "selenium_ug": 38.875,
+          "sodium_mg": 446.65,
+          "vitamin_a_ug": 414.25,
+          "vitamin_c_mg": 142.98,
+          "vitamin_d_iu": 354.275,
+          "vitamin_e_mg": 3.632,
+          "vitamin_k_ug": 432.945,
+          "zinc_mg": 11.091
+        }
+      }
+    },
+    {
+      "id": "dn_big_pasta_night",
+      "name": "Big Pasta Night",
+      "cooking_time_minutes": 35,
+      "ingredients": [
+        {
+          "name": "pasta",
+          "cache_key": "pasta",
+          "quantity": 160,
+          "unit": "g"
+        },
+        {
+          "name": "hamburger or beef 90%",
+          "cache_key": "hamburger_or_beef_90",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "name": "parmesan grated",
+          "cache_key": "parmesan_grated",
+          "quantity": 30,
+          "unit": "g"
+        },
+        {
+          "name": "olive oil",
+          "cache_key": "olive_oil",
+          "quantity": 20,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "dinner",
+        "nut-free",
+        "kid-friendly"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 1160.4,
+        "protein_g": 59.39,
+        "fat_g": 45.77,
+        "carbs_g": 123.65,
+        "micronutrients": {
+          "b12_cobalamin_ug": 3.735,
+          "b1_thiamine_mg": 1.496,
+          "b2_riboflavin_mg": 0.974,
+          "b3_niacin_mg": 19.115,
+          "b5_pantothenic_acid_mg": 1.726,
+          "b6_pyridoxine_mg": 0.805,
+          "calcium_mg": 307.7,
+          "copper_mg": 0.582,
+          "fiber_g": 5.12,
+          "folate_ug": 390.0,
+          "iron_mg": 8.899,
+          "magnesium_mg": 125.0,
+          "manganese_mg": 1.504,
+          "omega_3_g": 0.0,
+          "omega_6_g": 3.563,
+          "phosphorus_mg": 766.5,
+          "potassium_mg": 892.5,
+          "selenium_ug": 136.34,
+          "sodium_mg": 650.2,
+          "vitamin_a_ug": 84.6,
+          "vitamin_c_mg": 0.0,
+          "vitamin_d_iu": 432.3,
+          "vitamin_e_mg": 3.46,
+          "vitamin_k_ug": 13.91,
+          "zinc_mg": 10.701
+        }
+      }
+    },
+    {
+      "id": "dn_bean_quesadilla",
+      "name": "Black Bean Cheddar Quesadilla",
+      "cooking_time_minutes": 15,
+      "ingredients": [
+        {
+          "name": "tortillas corn",
+          "cache_key": "tortillas_corn",
+          "quantity": 120,
+          "unit": "g"
+        },
+        {
+          "name": "black beans drained",
+          "cache_key": "black_beans_drained",
+          "quantity": 200,
+          "unit": "g"
+        },
+        {
+          "name": "sharp cheddar cheese",
+          "cache_key": "sharp_cheddar_cheese",
+          "quantity": 40,
+          "unit": "g"
+        },
+        {
+          "name": "salsa ready-to-serve",
+          "cache_key": "salsa_ready-to-serve",
+          "quantity": 80,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "dinner",
+        "lunch",
+        "vegetarian",
+        "nut-free",
+        "kid-friendly",
+        "high-fiber"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [
+        "tortillas_corn"
+      ],
+      "notes": "",
+      "nutrition": {
+        "calories": 725.6,
+        "protein_g": 32.59,
+        "fat_g": 23.34,
+        "carbs_g": 98.39,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.352,
+          "b1_thiamine_mg": 0.902,
+          "b2_riboflavin_mg": 0.588,
+          "b3_niacin_mg": 7.158,
+          "b5_pantothenic_acid_mg": 1.059,
+          "b6_pyridoxine_mg": 0.311,
+          "calcium_mg": 574.0,
+          "copper_mg": 0.589,
+          "fiber_g": 18.2,
+          "folate_ug": 277.6,
+          "iron_mg": 8.184,
+          "magnesium_mg": 118.0,
+          "manganese_mg": 1.184,
+          "omega_3_g": 0.0,
+          "omega_6_g": 2.784,
+          "phosphorus_mg": 682.0,
+          "potassium_mg": 1026.0,
+          "selenium_ug": 40.92,
+          "sodium_mg": 1992.8,
+          "vitamin_a_ug": 123.6,
+          "vitamin_c_mg": 6.92,
+          "vitamin_d_iu": 656.4,
+          "vitamin_e_mg": 3.608,
+          "vitamin_k_ug": 14.04,
+          "zinc_mg": 3.404
+        }
+      }
+    },
+    {
+      "id": "dn_tuna_steak_salad",
+      "name": "Seared Tuna Steak Salad",
+      "cooking_time_minutes": 15,
+      "ingredients": [
+        {
+          "name": "tuna sashimi",
+          "cache_key": "tuna_sashimi",
+          "quantity": 180,
+          "unit": "g"
+        },
+        {
+          "name": "lettuce",
+          "cache_key": "lettuce",
+          "quantity": 100,
+          "unit": "g"
+        },
+        {
+          "name": "cucumber",
+          "cache_key": "cucumber",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "Avocados, raw, all commercial varieties",
+          "cache_key": "avocados_raw_all_commercial_varieties",
+          "quantity": 50,
+          "unit": "g"
+        },
+        {
+          "name": "olive oil",
+          "cache_key": "olive_oil",
+          "quantity": 8,
+          "unit": "g"
+        },
+        {
+          "name": "lemon juice",
+          "cache_key": "lemon_juice",
+          "quantity": 10,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "dinner",
+        "lunch",
+        "pescatarian",
+        "gluten-free",
+        "dairy-free",
+        "nut-free",
+        "no-shellfish",
+        "low-carb",
+        "high-protein"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 370.12,
+        "protein_g": 46.76,
+        "fat_g": 16.58,
+        "carbs_g": 8.94,
+        "micronutrients": {
+          "b12_cobalamin_ug": 3.744,
+          "b1_thiamine_mg": 0.337,
+          "b2_riboflavin_mg": 0.371,
+          "b3_niacin_mg": 34.484,
+          "b5_pantothenic_acid_mg": 1.548,
+          "b6_pyridoxine_mg": 1.953,
+          "calcium_mg": 58.08,
+          "copper_mg": 0.246,
+          "fiber_g": 4.84,
+          "folate_ug": 93.3,
+          "iron_mg": 3.09,
+          "magnesium_mg": 99.7,
+          "manganese_mg": 0.353,
+          "omega_3_g": 0.158,
+          "omega_6_g": 1.695,
+          "phosphorus_mg": 572.0,
+          "potassium_mg": 1342.48,
+          "selenium_ug": 164.87,
+          "sodium_mg": 111.36,
+          "vitamin_a_ug": 414.1,
+          "vitamin_c_mg": 15.13,
+          "vitamin_d_iu": 4971.06,
+          "vitamin_e_mg": 2.804,
+          "vitamin_k_ug": 161.556,
+          "zinc_mg": 1.327
+        }
+      }
+    },
+    {
+      "id": "dn_chickpea_curry",
+      "name": "Chickpea Spinach Curry with Rice",
+      "cooking_time_minutes": 35,
+      "ingredients": [
+        {
+          "name": "chickpeas drained",
+          "cache_key": "chickpeas_drained",
+          "quantity": 220,
+          "unit": "g"
+        },
+        {
+          "name": "spinach",
+          "cache_key": "spinach",
+          "quantity": 100,
+          "unit": "g"
+        },
+        {
+          "name": "salsa ready-to-serve",
+          "cache_key": "salsa_ready-to-serve",
+          "quantity": 100,
+          "unit": "g"
+        },
+        {
+          "name": "garlic",
+          "cache_key": "garlic",
+          "quantity": 6,
+          "unit": "g"
+        },
+        {
+          "name": "olive oil",
+          "cache_key": "olive_oil",
+          "quantity": 12,
+          "unit": "g"
+        },
+        {
+          "name": "jasmine rice in unsalted water",
+          "cache_key": "jasmine_rice_in_unsalted_water",
+          "quantity": 200,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "dinner",
+        "vegan",
+        "vegetarian",
+        "dairy-free",
+        "gluten-free",
+        "nut-free",
+        "meal-prep",
+        "reheats-well",
+        "high-fiber"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 732.82,
+        "protein_g": 24.99,
+        "fat_g": 19.06,
+        "carbs_g": 119.28,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.0,
+          "b1_thiamine_mg": 0.222,
+          "b2_riboflavin_mg": 0.293,
+          "b3_niacin_mg": 2.965,
+          "b5_pantothenic_acid_mg": 1.094,
+          "b6_pyridoxine_mg": 0.814,
+          "calcium_mg": 240.98,
+          "copper_mg": 0.915,
+          "fiber_g": 18.306,
+          "folate_ug": 307.78,
+          "iron_mg": 6.053,
+          "magnesium_mg": 168.7,
+          "manganese_mg": 3.685,
+          "omega_3_g": 0.0,
+          "omega_6_g": 3.415,
+          "phosphorus_mg": 344.18,
+          "potassium_mg": 1186.38,
+          "selenium_ug": 9.572,
+          "sodium_mg": 1332.46,
+          "vitamin_a_ug": 494.2,
+          "vitamin_c_mg": 32.092,
+          "vitamin_d_iu": 0.0,
+          "vitamin_e_mg": 5.675,
+          "vitamin_k_ug": 502.006,
+          "zinc_mg": 2.966
+        }
+      }
+    },
+    {
+      "id": "sn_protein_shake",
+      "name": "Banana Whey Shake",
+      "cooking_time_minutes": 2,
+      "ingredients": [
+        {
+          "name": "whey protein powder",
+          "cache_key": "whey_protein_powder",
+          "quantity": 40,
+          "unit": "g"
+        },
+        {
+          "name": "milk",
+          "cache_key": "milk",
+          "quantity": 300,
+          "unit": "g"
+        },
+        {
+          "name": "bananas",
+          "cache_key": "bananas",
+          "quantity": 100,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "snack",
+        "post-workout",
+        "vegetarian",
+        "gluten-free",
+        "nut-free",
+        "no-cook",
+        "portable",
+        "high-protein"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 397.6,
+        "protein_g": 34.52,
+        "fat_g": 7.15,
+        "carbs_g": 49.71,
+        "micronutrients": {
+          "b12_cobalamin_ug": 1.396,
+          "b1_thiamine_mg": 0.38,
+          "b2_riboflavin_mg": 0.468,
+          "b3_niacin_mg": 5.316,
+          "b5_pantothenic_acid_mg": 2.66,
+          "b6_pyridoxine_mg": 0.832,
+          "calcium_mg": 665.2,
+          "copper_mg": 0.543,
+          "fiber_g": 2.6,
+          "folate_ug": 113.2,
+          "iron_mg": 0.764,
+          "magnesium_mg": 120.2,
+          "manganese_mg": 0.734,
+          "omega_3_g": 0.0,
+          "omega_6_g": 0.053,
+          "phosphorus_mg": 254.4,
+          "potassium_mg": 706.8,
+          "selenium_ug": 17.28,
+          "sodium_mg": 314.8,
+          "vitamin_a_ug": 351.8,
+          "vitamin_c_mg": 25.66,
+          "vitamin_d_iu": 5040.0,
+          "vitamin_e_mg": 3.24,
+          "vitamin_k_ug": 19.1,
+          "zinc_mg": 3.638
+        }
+      }
+    },
+    {
+      "id": "sn_whey_water",
+      "name": "Whey Isolate with Water",
+      "cooking_time_minutes": 1,
+      "ingredients": [
+        {
+          "name": "whey protein powder",
+          "cache_key": "whey_protein_powder",
+          "quantity": 35,
+          "unit": "g"
+        },
+        {
+          "name": "water",
+          "cache_key": "water",
+          "quantity": 400,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "snack",
+        "post-workout",
+        "vegetarian",
+        "gluten-free",
+        "nut-free",
+        "no-cook",
+        "portable",
+        "high-protein",
+        "low-fat"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 125.65,
+        "protein_g": 20.35,
+        "fat_g": 0.41,
+        "carbs_g": 10.17,
+        "micronutrients": {
+          "b12_cobalamin_ug": 1.222,
+          "b1_thiamine_mg": 0.305,
+          "b2_riboflavin_mg": 0.346,
+          "b3_niacin_mg": 4.07,
+          "b5_pantothenic_acid_mg": 2.035,
+          "b6_pyridoxine_mg": 0.407,
+          "calcium_mg": 256.3,
+          "copper_mg": 0.447,
+          "fiber_g": 0.0,
+          "folate_ug": 81.55,
+          "iron_mg": 0.441,
+          "magnesium_mg": 85.55,
+          "manganese_mg": 0.406,
+          "omega_3_g": 0.0,
+          "omega_6_g": 0.006,
+          "phosphorus_mg": 203.35,
+          "potassium_mg": 305.2,
+          "selenium_ug": 14.245,
+          "sodium_mg": 146.2,
+          "vitamin_a_ug": 305.2,
+          "vitamin_c_mg": 12.215,
+          "vitamin_d_iu": 0.0,
+          "vitamin_e_mg": 2.747,
+          "vitamin_k_ug": 16.275,
+          "zinc_mg": 3.092
+        }
+      }
+    },
+    {
+      "id": "sn_banana_pb",
+      "name": "Banana with Peanut Butter",
+      "cooking_time_minutes": 1,
+      "ingredients": [
+        {
+          "name": "bananas",
+          "cache_key": "bananas",
+          "quantity": 120,
+          "unit": "g"
+        },
+        {
+          "name": "peanut butter",
+          "cache_key": "peanut_butter",
+          "quantity": 32,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "snack",
+        "pre-workout",
+        "vegan",
+        "vegetarian",
+        "dairy-free",
+        "gluten-free",
+        "no-cook",
+        "portable"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 298.16,
+        "protein_g": 8.41,
+        "fat_g": 16.84,
+        "carbs_g": 34.54,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.0,
+          "b1_thiamine_mg": 0.085,
+          "b2_riboflavin_mg": 0.149,
+          "b3_niacin_mg": 4.99,
+          "b5_pantothenic_acid_mg": 0.401,
+          "b6_pyridoxine_mg": 0.582,
+          "calcium_mg": 21.68,
+          "copper_mg": 0.229,
+          "fiber_g": 4.72,
+          "folate_ug": 51.84,
+          "iron_mg": 0.869,
+          "magnesium_mg": 86.16,
+          "manganese_mg": 0.324,
+          "omega_3_g": 0.0,
+          "omega_6_g": 3.991,
+          "phosphorus_mg": 133.6,
+          "potassium_mg": 608.16,
+          "selenium_ug": 2.512,
+          "sodium_mg": 137.52,
+          "vitamin_a_ug": 3.6,
+          "vitamin_c_mg": 10.44,
+          "vitamin_d_iu": 0.0,
+          "vitamin_e_mg": 3.032,
+          "vitamin_k_ug": 0.696,
+          "zinc_mg": 0.983
+        }
+      }
+    },
+    {
+      "id": "sn_almonds_chocolate",
+      "name": "Almonds and Dark Chocolate",
+      "cooking_time_minutes": 0,
+      "ingredients": [
+        {
+          "name": "almonds",
+          "cache_key": "almonds",
+          "quantity": 30,
+          "unit": "g"
+        },
+        {
+          "name": "chocolate dark 70-85% cacao solids",
+          "cache_key": "chocolate_dark_70-85_cacao_solids",
+          "quantity": 20,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "snack",
+        "vegetarian",
+        "gluten-free",
+        "no-cook",
+        "portable"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 293.3,
+        "protein_g": 7.9,
+        "fat_g": 23.51,
+        "carbs_g": 15.64,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.056,
+          "b1_thiamine_mg": 0.068,
+          "b2_riboflavin_mg": 0.357,
+          "b3_niacin_mg": 1.296,
+          "b5_pantothenic_acid_mg": 0.225,
+          "b6_pyridoxine_mg": 0.049,
+          "calcium_mg": 95.3,
+          "copper_mg": 0.662,
+          "fiber_g": 5.93,
+          "folate_ug": 13.2,
+          "iron_mg": 3.493,
+          "magnesium_mg": 126.6,
+          "manganese_mg": 1.043,
+          "omega_3_g": 0.0,
+          "omega_6_g": 3.941,
+          "phosphorus_mg": 205.9,
+          "potassium_mg": 362.9,
+          "selenium_ug": 2.59,
+          "sodium_mg": 4.3,
+          "vitamin_a_ug": 0.4,
+          "vitamin_c_mg": 0.0,
+          "vitamin_d_iu": 0.0,
+          "vitamin_e_mg": 7.807,
+          "vitamin_k_ug": 1.46,
+          "zinc_mg": 1.598
+        }
+      }
+    },
+    {
+      "id": "sn_yogurt_honey",
+      "name": "Greek Yogurt with Honey",
+      "cooking_time_minutes": 1,
+      "ingredients": [
+        {
+          "name": "low fat greek yogurt",
+          "cache_key": "low_fat_greek_yogurt",
+          "quantity": 200,
+          "unit": "g"
+        },
+        {
+          "name": "honey",
+          "cache_key": "honey",
+          "quantity": 15,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "snack",
+        "breakfast",
+        "vegetarian",
+        "gluten-free",
+        "nut-free",
+        "no-cook",
+        "high-protein"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 191.6,
+        "protein_g": 19.95,
+        "fat_g": 3.84,
+        "carbs_g": 20.24,
+        "micronutrients": {
+          "b12_cobalamin_ug": 1.04,
+          "b1_thiamine_mg": 0.088,
+          "b2_riboflavin_mg": 0.472,
+          "b3_niacin_mg": 0.412,
+          "b5_pantothenic_acid_mg": 0.95,
+          "b6_pyridoxine_mg": 0.114,
+          "calcium_mg": 230.9,
+          "copper_mg": 0.047,
+          "fiber_g": 0.03,
+          "folate_ug": 24.3,
+          "iron_mg": 0.143,
+          "magnesium_mg": 22.3,
+          "manganese_mg": 0.026,
+          "omega_3_g": 0.0,
+          "omega_6_g": 0.13,
+          "phosphorus_mg": 274.6,
+          "potassium_mg": 289.8,
+          "selenium_ug": 24.92,
+          "sodium_mg": 68.6,
+          "vitamin_a_ug": 180.0,
+          "vitamin_c_mg": 1.675,
+          "vitamin_d_iu": 0.0,
+          "vitamin_e_mg": 0.08,
+          "vitamin_k_ug": 0.4,
+          "zinc_mg": 1.233
+        }
+      }
+    },
+    {
+      "id": "sn_krispie_banana",
+      "name": "Rice Krispies Treat and Banana",
+      "cooking_time_minutes": 0,
+      "ingredients": [
+        {
+          "name": "kellogg's rice krispies treats original",
+          "cache_key": "kellogg_s_rice_krispies_treats_original",
+          "quantity": 44,
+          "unit": "g"
+        },
+        {
+          "name": "bananas",
+          "cache_key": "bananas",
+          "quantity": 120,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "snack",
+        "pre-workout",
+        "vegetarian",
+        "nut-free",
+        "no-cook",
+        "portable",
+        "low-fat"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 290.28,
+        "protein_g": 2.8,
+        "fat_g": 4.36,
+        "carbs_g": 62.83,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.0,
+          "b1_thiamine_mg": 0.345,
+          "b2_riboflavin_mg": 0.44,
+          "b3_niacin_mg": 4.802,
+          "b5_pantothenic_acid_mg": 0.401,
+          "b6_pyridoxine_mg": 0.836,
+          "calcium_mg": 7.32,
+          "copper_mg": 0.138,
+          "fiber_g": 3.12,
+          "folate_ug": 130.04,
+          "iron_mg": 1.28,
+          "magnesium_mg": 38.12,
+          "manganese_mg": 1.028,
+          "omega_3_g": 0.0,
+          "omega_6_g": 1.967,
+          "phosphorus_mg": 44.88,
+          "potassium_mg": 446.76,
+          "selenium_ug": 6.04,
+          "sodium_mg": 155.64,
+          "vitamin_a_ug": 122.4,
+          "vitamin_c_mg": 10.44,
+          "vitamin_d_iu": 0.0,
+          "vitamin_e_mg": 0.12,
+          "vitamin_k_ug": 0.6,
+          "zinc_mg": 0.4
+        }
+      }
+    },
+    {
+      "id": "sn_cottage_blueberry",
+      "name": "Cottage Cheese with Blueberries",
+      "cooking_time_minutes": 1,
+      "ingredients": [
+        {
+          "name": "cottage cheese 1% fat",
+          "cache_key": "cottage_cheese_1_fat",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "name": "blueberries",
+          "cache_key": "blueberries",
+          "quantity": 80,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "snack",
+        "vegetarian",
+        "gluten-free",
+        "nut-free",
+        "no-cook",
+        "high-protein",
+        "low-fat"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 153.6,
+        "protein_g": 19.18,
+        "fat_g": 1.79,
+        "carbs_g": 15.67,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.945,
+          "b1_thiamine_mg": 0.061,
+          "b2_riboflavin_mg": 0.28,
+          "b3_niacin_mg": 0.526,
+          "b5_pantothenic_acid_mg": 0.422,
+          "b6_pyridoxine_mg": 0.144,
+          "calcium_mg": 96.3,
+          "copper_mg": 0.088,
+          "fiber_g": 1.92,
+          "folate_ug": 22.8,
+          "iron_mg": 0.434,
+          "magnesium_mg": 12.3,
+          "manganese_mg": 0.273,
+          "omega_3_g": 0.0,
+          "omega_6_g": 0.103,
+          "phosphorus_mg": 210.6,
+          "potassium_mg": 190.6,
+          "selenium_ug": 13.58,
+          "sodium_mg": 609.8,
+          "vitamin_a_ug": 18.9,
+          "vitamin_c_mg": 7.76,
+          "vitamin_d_iu": 0.0,
+          "vitamin_e_mg": 0.471,
+          "vitamin_k_ug": 15.59,
+          "zinc_mg": 0.698
+        }
+      }
+    },
+    {
+      "id": "sn_carrots_almond_butter",
+      "name": "Carrots with Almond Butter",
+      "cooking_time_minutes": 2,
+      "ingredients": [
+        {
+          "name": "carrots",
+          "cache_key": "carrots",
+          "quantity": 120,
+          "unit": "g"
+        },
+        {
+          "name": "almond butter unsalted",
+          "cache_key": "almond_butter_unsalted",
+          "quantity": 20,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "snack",
+        "vegan",
+        "vegetarian",
+        "dairy-free",
+        "gluten-free",
+        "no-cook",
+        "portable"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 172.0,
+        "protein_g": 5.31,
+        "fat_g": 11.39,
+        "carbs_g": 15.26,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.0,
+          "b1_thiamine_mg": 0.087,
+          "b2_riboflavin_mg": 0.257,
+          "b3_niacin_mg": 1.811,
+          "b5_pantothenic_acid_mg": 0.391,
+          "b6_pyridoxine_mg": 0.186,
+          "calcium_mg": 109.0,
+          "copper_mg": 0.241,
+          "fiber_g": 5.42,
+          "folate_ug": 33.4,
+          "iron_mg": 1.058,
+          "magnesium_mg": 70.2,
+          "manganese_mg": 0.598,
+          "omega_3_g": 0.0,
+          "omega_6_g": 2.841,
+          "phosphorus_mg": 143.6,
+          "potassium_mg": 533.6,
+          "selenium_ug": 0.6,
+          "sodium_mg": 84.2,
+          "vitamin_a_ug": 1002.0,
+          "vitamin_c_mg": 7.08,
+          "vitamin_d_iu": 0.0,
+          "vitamin_e_mg": 5.634,
+          "vitamin_k_ug": 15.84,
+          "zinc_mg": 0.946
+        }
+      }
+    },
+    {
+      "id": "sn_turkey_rollups",
+      "name": "Turkey Cheddar Roll-Ups",
+      "cooking_time_minutes": 2,
+      "ingredients": [
+        {
+          "name": "turkey breast lunchmeat reduced fat",
+          "cache_key": "turkey_breast_lunchmeat_reduced_fat",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "cheddar cheese natural 50% reduced fat",
+          "cache_key": "cheddar_cheese_natural_50_reduced_fat",
+          "quantity": 30,
+          "unit": "g"
+        },
+        {
+          "name": "lettuce",
+          "cache_key": "lettuce",
+          "quantity": 20,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "snack",
+        "gluten-free",
+        "nut-free",
+        "no-cook",
+        "portable",
+        "low-carb",
+        "high-protein"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 139.3,
+        "protein_g": 19.42,
+        "fat_g": 5.16,
+        "carbs_g": 2.79,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.443,
+          "b1_thiamine_mg": 0.047,
+          "b2_riboflavin_mg": 0.198,
+          "b3_niacin_mg": 5.8,
+          "b5_pantothenic_acid_mg": 0.34,
+          "b6_pyridoxine_mg": 0.362,
+          "calcium_mg": 142.3,
+          "copper_mg": 0.031,
+          "fiber_g": 0.18,
+          "folate_ug": 13.7,
+          "iron_mg": 0.702,
+          "magnesium_mg": 22.4,
+          "manganese_mg": 0.055,
+          "omega_3_g": 0.004,
+          "omega_6_g": 0.761,
+          "phosphorus_mg": 350.0,
+          "potassium_mg": 354.0,
+          "selenium_ug": 15.05,
+          "sodium_mg": 985.3,
+          "vitamin_a_ug": 93.0,
+          "vitamin_c_mg": 0.74,
+          "vitamin_d_iu": 252.19,
+          "vitamin_e_mg": 0.152,
+          "vitamin_k_ug": 28.24,
+          "zinc_mg": 1.338
+        }
+      }
+    },
+    {
+      "id": "sn_papaya_yogurt",
+      "name": "Papaya Yogurt Cup",
+      "cooking_time_minutes": 2,
+      "ingredients": [
+        {
+          "name": "papaya",
+          "cache_key": "papaya",
+          "quantity": 200,
+          "unit": "g"
+        },
+        {
+          "name": "greek yogurt plain nonfat",
+          "cache_key": "greek_yogurt_plain_nonfat",
+          "quantity": 150,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "snack",
+        "breakfast",
+        "vegetarian",
+        "gluten-free",
+        "nut-free",
+        "no-cook",
+        "low-fat"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 174.5,
+        "protein_g": 16.23,
+        "fat_g": 1.1,
+        "carbs_g": 27.04,
+        "micronutrients": {
+          "b12_cobalamin_ug": 1.125,
+          "b1_thiamine_mg": 0.081,
+          "b2_riboflavin_mg": 0.471,
+          "b3_niacin_mg": 1.026,
+          "b5_pantothenic_acid_mg": 0.879,
+          "b6_pyridoxine_mg": 0.17,
+          "calcium_mg": 205.0,
+          "copper_mg": 0.115,
+          "fiber_g": 3.4,
+          "folate_ug": 84.5,
+          "iron_mg": 0.605,
+          "magnesium_mg": 58.5,
+          "manganese_mg": 0.093,
+          "omega_3_g": 0.0,
+          "omega_6_g": 0.037,
+          "phosphorus_mg": 222.5,
+          "potassium_mg": 575.5,
+          "selenium_ug": 15.75,
+          "sodium_mg": 70.0,
+          "vitamin_a_ug": 95.5,
+          "vitamin_c_mg": 121.8,
+          "vitamin_d_iu": 0.0,
+          "vitamin_e_mg": 0.615,
+          "vitamin_k_ug": 5.2,
+          "zinc_mg": 0.94
+        }
+      }
+    },
+    {
+      "id": "sn_bedtime_cottage",
+      "name": "Bedtime Cottage Cheese with Almond Butter",
+      "cooking_time_minutes": 2,
+      "ingredients": [
+        {
+          "name": "cottage cheese 1% fat",
+          "cache_key": "cottage_cheese_1_fat",
+          "quantity": 250,
+          "unit": "g"
+        },
+        {
+          "name": "almond butter unsalted",
+          "cache_key": "almond_butter_unsalted",
+          "quantity": 16,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "snack",
+        "vegetarian",
+        "gluten-free",
+        "no-cook",
+        "high-protein"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 278.24,
+        "protein_g": 34.33,
+        "fat_g": 11.43,
+        "carbs_g": 9.81,
+        "micronutrients": {
+          "b12_cobalamin_ug": 1.575,
+          "b1_thiamine_mg": 0.059,
+          "b2_riboflavin_mg": 0.563,
+          "b3_niacin_mg": 0.825,
+          "b5_pantothenic_acid_mg": 0.588,
+          "b6_pyridoxine_mg": 0.186,
+          "calcium_mg": 208.02,
+          "copper_mg": 0.219,
+          "fiber_g": 1.648,
+          "folate_ug": 38.48,
+          "iron_mg": 0.908,
+          "magnesium_mg": 57.14,
+          "manganese_mg": 0.348,
+          "omega_3_g": 0.0,
+          "omega_6_g": 2.232,
+          "phosphorus_mg": 416.28,
+          "potassium_mg": 334.68,
+          "selenium_ug": 22.884,
+          "sodium_mg": 1016.12,
+          "vitamin_a_ug": 27.5,
+          "vitamin_c_mg": 0.0,
+          "vitamin_d_iu": 0.0,
+          "vitamin_e_mg": 3.899,
+          "vitamin_k_ug": 0.25,
+          "zinc_mg": 1.476
+        }
+      }
+    },
+    {
+      "id": "sn_trail_mix",
+      "name": "Almond Chocolate Trail Mix",
+      "cooking_time_minutes": 0,
+      "ingredients": [
+        {
+          "name": "almonds",
+          "cache_key": "almonds",
+          "quantity": 40,
+          "unit": "g"
+        },
+        {
+          "name": "chocolate dark 70-85% cacao solids",
+          "cache_key": "chocolate_dark_70-85_cacao_solids",
+          "quantity": 15,
+          "unit": "g"
+        },
+        {
+          "name": "blueberries",
+          "cache_key": "blueberries",
+          "quantity": 50,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "snack",
+        "vegetarian",
+        "gluten-free",
+        "no-cook",
+        "portable"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 349.8,
+        "protein_g": 10.0,
+        "fat_g": 26.53,
+        "carbs_g": 22.75,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.042,
+          "b1_thiamine_mg": 0.106,
+          "b2_riboflavin_mg": 0.487,
+          "b3_niacin_mg": 1.814,
+          "b5_pantothenic_acid_mg": 0.313,
+          "b6_pyridoxine_mg": 0.087,
+          "calcium_mg": 121.55,
+          "copper_mg": 0.706,
+          "fiber_g": 7.835,
+          "folate_ug": 20.6,
+          "iron_mg": 3.409,
+          "magnesium_mg": 145.2,
+          "manganese_mg": 1.332,
+          "omega_3_g": 0.0,
+          "omega_6_g": 5.156,
+          "phosphorus_mg": 244.6,
+          "potassium_mg": 438.95,
+          "selenium_ug": 2.71,
+          "sodium_mg": 3.9,
+          "vitamin_a_ug": 1.8,
+          "vitamin_c_mg": 4.85,
+          "vitamin_d_iu": 0.0,
+          "vitamin_e_mg": 10.626,
+          "vitamin_k_ug": 10.745,
+          "zinc_mg": 1.825
+        }
+      }
+    },
+    {
+      "id": "sn_edamame_cup",
+      "name": "Salted Edamame Cup",
+      "cooking_time_minutes": 5,
+      "ingredients": [
+        {
+          "name": "edamame beans",
+          "cache_key": "edamame_beans",
+          "quantity": 200,
+          "unit": "g"
+        },
+        {
+          "name": "soy sauce",
+          "cache_key": "soy_sauce",
+          "quantity": 5,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "snack",
+        "vegan",
+        "vegetarian",
+        "dairy-free",
+        "gluten-free",
+        "nut-free",
+        "portable",
+        "high-protein"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 245.0,
+        "protein_g": 24.35,
+        "fat_g": 10.41,
+        "carbs_g": 18.1,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.0,
+          "b1_thiamine_mg": 0.403,
+          "b2_riboflavin_mg": 0.318,
+          "b3_niacin_mg": 2.028,
+          "b5_pantothenic_acid_mg": 0.809,
+          "b6_pyridoxine_mg": 0.21,
+          "calcium_mg": 127.0,
+          "copper_mg": 0.697,
+          "fiber_g": 10.44,
+          "folate_ug": 622.9,
+          "iron_mg": 4.659,
+          "magnesium_mg": 130.0,
+          "manganese_mg": 2.073,
+          "omega_3_g": 0.0,
+          "omega_6_g": 3.586,
+          "phosphorus_mg": 344.5,
+          "potassium_mg": 882.6,
+          "selenium_ug": 1.64,
+          "sodium_mg": 291.3,
+          "vitamin_a_ug": 30.0,
+          "vitamin_c_mg": 12.2,
+          "vitamin_d_iu": 0.0,
+          "vitamin_e_mg": 1.36,
+          "vitamin_k_ug": 53.4,
+          "zinc_mg": 2.762
+        }
+      }
+    },
+    {
+      "id": "sn_chia_seed_water",
+      "name": "Lemon Chia Water",
+      "cooking_time_minutes": 2,
+      "ingredients": [
+        {
+          "name": "chia seeds",
+          "cache_key": "chia_seeds",
+          "quantity": 20,
+          "unit": "g"
+        },
+        {
+          "name": "lemon juice",
+          "cache_key": "lemon_juice",
+          "quantity": 15,
+          "unit": "g"
+        },
+        {
+          "name": "water",
+          "cache_key": "water",
+          "quantity": 350,
+          "unit": "g"
+        },
+        {
+          "name": "honey",
+          "cache_key": "honey",
+          "quantity": 10,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "snack",
+        "vegan",
+        "vegetarian",
+        "dairy-free",
+        "gluten-free",
+        "nut-free",
+        "no-cook",
+        "portable",
+        "high-fiber"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 130.9,
+        "protein_g": 3.39,
+        "fat_g": 6.18,
+        "carbs_g": 17.7,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.0,
+          "b1_thiamine_mg": 0.128,
+          "b2_riboflavin_mg": 0.04,
+          "b3_niacin_mg": 1.792,
+          "b5_pantothenic_acid_mg": 0.026,
+          "b6_pyridoxine_mg": 0.009,
+          "calcium_mg": 138.2,
+          "copper_mg": 0.226,
+          "fiber_g": 6.945,
+          "folate_ug": 13.0,
+          "iron_mg": 1.598,
+          "magnesium_mg": 71.6,
+          "manganese_mg": 0.554,
+          "omega_3_g": 0.0,
+          "omega_6_g": 1.169,
+          "phosphorus_mg": 173.6,
+          "potassium_mg": 102.05,
+          "selenium_ug": 11.135,
+          "sodium_mg": 17.75,
+          "vitamin_a_ug": 0.0,
+          "vitamin_c_mg": 6.175,
+          "vitamin_d_iu": 0.0,
+          "vitamin_e_mg": 0.122,
+          "vitamin_k_ug": 0.0,
+          "zinc_mg": 0.981
+        }
+      }
+    },
+    {
+      "id": "hc_mass_gainer",
+      "name": "Homemade Mass Gainer Shake",
+      "cooking_time_minutes": 3,
+      "ingredients": [
+        {
+          "name": "whey protein powder",
+          "cache_key": "whey_protein_powder",
+          "quantity": 60,
+          "unit": "g"
+        },
+        {
+          "name": "milk",
+          "cache_key": "milk",
+          "quantity": 400,
+          "unit": "g"
+        },
+        {
+          "name": "rolled oats",
+          "cache_key": "rolled_oats",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "peanut butter",
+          "cache_key": "peanut_butter",
+          "quantity": 40,
+          "unit": "g"
+        },
+        {
+          "name": "bananas",
+          "cache_key": "bananas",
+          "quantity": 120,
+          "unit": "g"
+        },
+        {
+          "name": "honey",
+          "cache_key": "honey",
+          "quantity": 20,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "snack",
+        "breakfast",
+        "post-workout",
+        "vegetarian",
+        "no-cook",
+        "portable",
+        "high-protein"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 1142.2,
+        "protein_g": 68.69,
+        "fat_g": 36.13,
+        "carbs_g": 144.57,
+        "micronutrients": {
+          "b12_cobalamin_ug": 2.094,
+          "b1_thiamine_mg": 0.62,
+          "b2_riboflavin_mg": 0.765,
+          "b3_niacin_mg": 13.039,
+          "b5_pantothenic_acid_mg": 3.903,
+          "b6_pyridoxine_mg": 1.319,
+          "calcium_mg": 953.6,
+          "copper_mg": 0.967,
+          "fiber_g": 13.16,
+          "folate_ug": 199.0,
+          "iron_mg": 5.448,
+          "magnesium_mg": 239.8,
+          "manganese_mg": 1.036,
+          "omega_3_g": 0.0,
+          "omega_6_g": 4.986,
+          "phosphorus_mg": 509.8,
+          "potassium_mg": 1186.4,
+          "selenium_ug": 27.42,
+          "sodium_mg": 615.6,
+          "vitamin_a_ug": 526.8,
+          "vitamin_c_mg": 35.48,
+          "vitamin_d_iu": 6720.0,
+          "vitamin_e_mg": 8.47,
+          "vitamin_k_ug": 28.62,
+          "zinc_mg": 6.46
+        }
+      }
+    },
+    {
+      "id": "hc_double_burger_potatoes",
+      "name": "Double Burger Plate with Potatoes",
+      "cooking_time_minutes": 30,
+      "ingredients": [
+        {
+          "name": "hamburger or beef 90%",
+          "cache_key": "hamburger_or_beef_90",
+          "quantity": 300,
+          "unit": "g"
+        },
+        {
+          "name": "potatoes flesh",
+          "cache_key": "potatoes_flesh",
+          "quantity": 400,
+          "unit": "g"
+        },
+        {
+          "name": "sharp cheddar cheese",
+          "cache_key": "sharp_cheddar_cheese",
+          "quantity": 40,
+          "unit": "g"
+        },
+        {
+          "name": "olive oil",
+          "cache_key": "olive_oil",
+          "quantity": 15,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "dinner",
+        "gluten-free",
+        "nut-free",
+        "high-protein"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 1132.6,
+        "protein_g": 77.9,
+        "fat_g": 58.89,
+        "carbs_g": 70.81,
+        "micronutrients": {
+          "b12_cobalamin_ug": 6.982,
+          "b1_thiamine_mg": 0.461,
+          "b2_riboflavin_mg": 0.755,
+          "b3_niacin_mg": 19.476,
+          "b5_pantothenic_acid_mg": 3.175,
+          "b6_pyridoxine_mg": 2.329,
+          "calcium_mg": 368.55,
+          "copper_mg": 0.67,
+          "fiber_g": 8.4,
+          "folate_ug": 88.8,
+          "iron_mg": 10.108,
+          "magnesium_mg": 162.8,
+          "manganese_mg": 0.652,
+          "omega_3_g": 0.0,
+          "omega_6_g": 2.853,
+          "phosphorus_mg": 964.0,
+          "potassium_mg": 2693.55,
+          "selenium_ug": 62.72,
+          "sodium_mg": 479.9,
+          "vitamin_a_ug": 117.2,
+          "vitamin_c_mg": 78.8,
+          "vitamin_d_iu": 1016.7,
+          "vitamin_e_mg": 3.014,
+          "vitamin_k_ug": 20.39,
+          "zinc_mg": 17.066
+        }
+      }
+    },
+    {
+      "id": "hc_big_beef_rice",
+      "name": "Big Beef Rice Plate",
+      "cooking_time_minutes": 25,
+      "ingredients": [
+        {
+          "name": "hamburger or beef 90%",
+          "cache_key": "hamburger_or_beef_90",
+          "quantity": 250,
+          "unit": "g"
+        },
+        {
+          "name": "jasmine rice in unsalted water",
+          "cache_key": "jasmine_rice_in_unsalted_water",
+          "quantity": 400,
+          "unit": "g"
+        },
+        {
+          "name": "butter",
+          "cache_key": "butter",
+          "quantity": 10,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "dinner",
+        "lunch",
+        "gluten-free",
+        "nut-free",
+        "high-protein"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 1031.7,
+        "protein_g": 59.52,
+        "fat_g": 33.87,
+        "carbs_g": 114.93,
+        "micronutrients": {
+          "b12_cobalamin_ug": 5.542,
+          "b1_thiamine_mg": 0.185,
+          "b2_riboflavin_mg": 0.445,
+          "b3_niacin_mg": 14.284,
+          "b5_pantothenic_acid_mg": 3.102,
+          "b6_pyridoxine_mg": 1.159,
+          "calcium_mg": 36.4,
+          "copper_mg": 0.468,
+          "fiber_g": 0.0,
+          "folate_ug": 23.3,
+          "iron_mg": 6.402,
+          "magnesium_mg": 82.2,
+          "manganese_mg": 1.453,
+          "omega_3_g": 0.0,
+          "omega_6_g": 1.094,
+          "phosphorus_mg": 594.4,
+          "potassium_mg": 908.9,
+          "selenium_ug": 41.6,
+          "sodium_mg": 229.3,
+          "vitamin_a_ug": 78.4,
+          "vitamin_c_mg": 0.0,
+          "vitamin_d_iu": 300.25,
+          "vitamin_e_mg": 0.657,
+          "vitamin_k_ug": 2.7,
+          "zinc_mg": 13.584
+        }
+      }
+    },
+    {
+      "id": "hc_pasta_salmon_bake",
+      "name": "Salmon Pasta Bake",
+      "cooking_time_minutes": 45,
+      "ingredients": [
+        {
+          "name": "pasta",
+          "cache_key": "pasta",
+          "quantity": 140,
+          "unit": "g"
+        },
+        {
+          "name": "salmon canned",
+          "cache_key": "salmon_canned",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "name": "parmesan grated",
+          "cache_key": "parmesan_grated",
+          "quantity": 30,
+          "unit": "g"
+        },
+        {
+          "name": "spinach",
+          "cache_key": "spinach",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "olive oil",
+          "cache_key": "olive_oil",
+          "quantity": 10,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "dinner",
+        "pescatarian",
+        "nut-free",
+        "meal-prep",
+        "reheats-well",
+        "high-protein"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "",
+      "nutrition": {
+        "calories": 981.7,
+        "protein_g": 60.01,
+        "fat_g": 31.53,
+        "carbs_g": 111.61,
+        "micronutrients": {
+          "b12_cobalamin_ug": 1.02,
+          "b1_thiamine_mg": 1.348,
+          "b2_riboflavin_mg": 1.119,
+          "b3_niacin_mg": 19.651,
+          "b5_pantothenic_acid_mg": 0.79,
+          "b6_pyridoxine_mg": 0.874,
+          "calcium_mg": 661.6,
+          "copper_mg": 0.612,
+          "fiber_g": 6.24,
+          "folate_ug": 488.8,
+          "iron_mg": 7.846,
+          "magnesium_mg": 192.6,
+          "manganese_mg": 2.059,
+          "omega_3_g": 7.5,
+          "omega_6_g": 2.308,
+          "phosphorus_mg": 973.4,
+          "potassium_mg": 1306.2,
+          "selenium_ug": 144.75,
+          "sodium_mg": 1262.5,
+          "vitamin_a_ug": 512.3,
+          "vitamin_c_mg": 22.48,
+          "vitamin_d_iu": 1393.65,
+          "vitamin_e_mg": 6.192,
+          "vitamin_k_ug": 393.14,
+          "zinc_mg": 4.663
+        }
+      }
+    },
+    {
+      "id": "dup_beef_rice_bowl_v2",
+      "name": "Beef and Rice Bowl",
+      "cooking_time_minutes": 20,
+      "ingredients": [
+        {
+          "name": "hamburger or beef 90%",
+          "cache_key": "hamburger_or_beef_90",
+          "quantity": 170,
+          "unit": "g"
+        },
+        {
+          "name": "jasmine rice in unsalted water",
+          "cache_key": "jasmine_rice_in_unsalted_water",
+          "quantity": 250,
+          "unit": "g"
+        },
+        {
+          "name": "spinach",
+          "cache_key": "spinach",
+          "quantity": 60,
+          "unit": "g"
+        },
+        {
+          "name": "soy sauce",
+          "cache_key": "soy_sauce",
+          "quantity": 10,
+          "unit": "g"
+        },
+        {
+          "name": "sesame oil",
+          "cache_key": "sesame_oil",
+          "quantity": 5,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "dinner",
+        "lunch",
+        "dairy-free",
+        "nut-free",
+        "reheats-well"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "content-identical to dn_beef_rice_bowl (LLM duplicate pattern)",
+      "nutrition": {
+        "calories": 688.2,
+        "protein_g": 42.67,
+        "fat_g": 22.72,
+        "carbs_g": 74.56,
+        "micronutrients": {
+          "b12_cobalamin_ug": 3.757,
+          "b1_thiamine_mg": 0.174,
+          "b2_riboflavin_mg": 0.425,
+          "b3_niacin_mg": 10.452,
+          "b5_pantothenic_acid_mg": 2.091,
+          "b6_pyridoxine_mg": 0.912,
+          "calcium_mg": 84.3,
+          "copper_mg": 0.394,
+          "fiber_g": 1.4,
+          "folate_ug": 133.4,
+          "iron_mg": 6.172,
+          "magnesium_mg": 105.4,
+          "manganese_mg": 1.498,
+          "omega_3_g": 0.0,
+          "omega_6_g": 2.634,
+          "phosphorus_mg": 437.7,
+          "potassium_mg": 966.7,
+          "selenium_ug": 28.9,
+          "sodium_mg": 718.2,
+          "vitamin_a_ug": 288.2,
+          "vitamin_c_mg": 16.86,
+          "vitamin_d_iu": 204.17,
+          "vitamin_e_mg": 1.577,
+          "vitamin_k_ug": 291.78,
+          "zinc_mg": 9.504
+        }
+      }
+    },
+    {
+      "id": "dup_beef_rice_bowl_v3",
+      "name": "Beef & Rice Bowl",
+      "cooking_time_minutes": 20,
+      "ingredients": [
+        {
+          "name": "hamburger or beef 90%",
+          "cache_key": "hamburger_or_beef_90",
+          "quantity": 170,
+          "unit": "g"
+        },
+        {
+          "name": "jasmine rice in unsalted water",
+          "cache_key": "jasmine_rice_in_unsalted_water",
+          "quantity": 250,
+          "unit": "g"
+        },
+        {
+          "name": "spinach",
+          "cache_key": "spinach",
+          "quantity": 60,
+          "unit": "g"
+        },
+        {
+          "name": "soy sauce",
+          "cache_key": "soy_sauce",
+          "quantity": 10,
+          "unit": "g"
+        },
+        {
+          "name": "sesame oil",
+          "cache_key": "sesame_oil",
+          "quantity": 5,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "dinner",
+        "lunch",
+        "dairy-free",
+        "nut-free"
+      ],
+      "proposed_tags": [],
+      "data_hazard": false,
+      "uses_quarantined_ingredients": [],
+      "notes": "content-identical to dn_beef_rice_bowl (LLM duplicate pattern)",
+      "nutrition": {
+        "calories": 688.2,
+        "protein_g": 42.67,
+        "fat_g": 22.72,
+        "carbs_g": 74.56,
+        "micronutrients": {
+          "b12_cobalamin_ug": 3.757,
+          "b1_thiamine_mg": 0.174,
+          "b2_riboflavin_mg": 0.425,
+          "b3_niacin_mg": 10.452,
+          "b5_pantothenic_acid_mg": 2.091,
+          "b6_pyridoxine_mg": 0.912,
+          "calcium_mg": 84.3,
+          "copper_mg": 0.394,
+          "fiber_g": 1.4,
+          "folate_ug": 133.4,
+          "iron_mg": 6.172,
+          "magnesium_mg": 105.4,
+          "manganese_mg": 1.498,
+          "omega_3_g": 0.0,
+          "omega_6_g": 2.634,
+          "phosphorus_mg": 437.7,
+          "potassium_mg": 966.7,
+          "selenium_ug": 28.9,
+          "sodium_mg": 718.2,
+          "vitamin_a_ug": 288.2,
+          "vitamin_c_mg": 16.86,
+          "vitamin_d_iu": 204.17,
+          "vitamin_e_mg": 1.577,
+          "vitamin_k_ug": 291.78,
+          "zinc_mg": 9.504
+        }
+      }
+    },
+    {
+      "id": "dh_oat_yogurt_parfait",
+      "name": "Oat Yogurt Parfait",
+      "cooking_time_minutes": 3,
+      "ingredients": [
+        {
+          "name": "greek yogurt plain nonfat",
+          "cache_key": "greek_yogurt_plain_nonfat",
+          "quantity": 200,
+          "unit": "g"
+        },
+        {
+          "name": "oats",
+          "cache_key": "oats",
+          "quantity": 40,
+          "unit": "g"
+        },
+        {
+          "name": "blueberries",
+          "cache_key": "blueberries",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "honey",
+          "cache_key": "honey",
+          "quantity": 10,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "breakfast",
+        "vegetarian",
+        "no-cook"
+      ],
+      "proposed_tags": [],
+      "data_hazard": true,
+      "uses_quarantined_ingredients": [
+        "oats"
+      ],
+      "notes": "'oats' resolves to oat OIL: +354 kcal, +40 g fat vs intent",
+      "nutrition": {
+        "calories": 547.6,
+        "protein_g": 21.0,
+        "fat_g": 41.04,
+        "carbs_g": 27.03,
+        "micronutrients": {
+          "b12_cobalamin_ug": 1.5,
+          "b1_thiamine_mg": 0.076,
+          "b2_riboflavin_mg": 0.593,
+          "b3_niacin_mg": 0.762,
+          "b5_pantothenic_acid_mg": 0.768,
+          "b6_pyridoxine_mg": 0.17,
+          "calcium_mg": 225.4,
+          "copper_mg": 0.083,
+          "fiber_g": 1.94,
+          "folate_ug": 19.0,
+          "iron_mg": 0.406,
+          "magnesium_mg": 27.0,
+          "manganese_mg": 0.295,
+          "omega_3_g": 0.0,
+          "omega_6_g": 15.722,
+          "phosphorus_mg": 280.0,
+          "potassium_mg": 348.8,
+          "selenium_ug": 19.56,
+          "sodium_mg": 73.2,
+          "vitamin_a_ug": 4.4,
+          "vitamin_c_mg": 7.81,
+          "vitamin_d_iu": 0.0,
+          "vitamin_e_mg": 6.236,
+          "vitamin_k_ug": 25.32,
+          "zinc_mg": 1.19
+        }
+      }
+    },
+    {
+      "id": "dh_veggie_egg_scramble",
+      "name": "Veggie Egg Scramble",
+      "cooking_time_minutes": 10,
+      "ingredients": [
+        {
+          "name": "eggs",
+          "cache_key": "eggs",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "name": "bell pepper",
+          "cache_key": "bell_pepper",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "spinach",
+          "cache_key": "spinach",
+          "quantity": 50,
+          "unit": "g"
+        },
+        {
+          "name": "sharp cheddar cheese",
+          "cache_key": "sharp_cheddar_cheese",
+          "quantity": 30,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "breakfast",
+        "vegetarian",
+        "gluten-free",
+        "high-protein"
+      ],
+      "proposed_tags": [],
+      "data_hazard": true,
+      "uses_quarantined_ingredients": [
+        "bell_pepper",
+        "eggs"
+      ],
+      "notes": "'eggs' -> egg bread, 'bell_pepper' -> Taco Bell nachos; tagged gluten-free and high-protein but is neither",
+      "nutrition": {
+        "calories": 845.0,
+        "protein_g": 26.41,
+        "fat_g": 36.54,
+        "carbs_g": 102.08,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.47,
+          "b1_thiamine_mg": 0.803,
+          "b2_riboflavin_mg": 0.985,
+          "b3_niacin_mg": 8.15,
+          "b5_pantothenic_acid_mg": 0.904,
+          "b6_pyridoxine_mg": 0.388,
+          "calcium_mg": 452.7,
+          "copper_mg": 0.37,
+          "fiber_g": 7.11,
+          "folate_ug": 270.6,
+          "iron_mg": 6.563,
+          "magnesium_mg": 109.7,
+          "manganese_mg": 1.355,
+          "omega_3_g": 0.018,
+          "omega_6_g": 5.361,
+          "phosphorus_mg": 479.9,
+          "potassium_mg": 763.9,
+          "selenium_ug": 61.02,
+          "sodium_mg": 1053.1,
+          "vitamin_a_ug": 411.9,
+          "vitamin_c_mg": 14.05,
+          "vitamin_d_iu": 1452.9,
+          "vitamin_e_mg": 4.903,
+          "vitamin_k_ug": 249.52,
+          "zinc_mg": 3.26
+        }
+      }
+    },
+    {
+      "id": "dh_chicken_breast_rice",
+      "name": "Chicken Breast Rice Bowl",
+      "cooking_time_minutes": 20,
+      "ingredients": [
+        {
+          "name": "chicken breast",
+          "cache_key": "chicken_breast",
+          "quantity": 180,
+          "unit": "g"
+        },
+        {
+          "name": "jasmine rice in unsalted water",
+          "cache_key": "jasmine_rice_in_unsalted_water",
+          "quantity": 200,
+          "unit": "g"
+        },
+        {
+          "name": "asparagus",
+          "cache_key": "asparagus",
+          "quantity": 100,
+          "unit": "g"
+        },
+        {
+          "name": "olive oil",
+          "cache_key": "olive_oil",
+          "quantity": 5,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "lunch",
+        "dinner",
+        "dairy-free",
+        "gluten-free",
+        "high-protein"
+      ],
+      "proposed_tags": [],
+      "data_hazard": true,
+      "uses_quarantined_ingredients": [
+        "chicken_breast"
+      ],
+      "notes": "'chicken_breast' -> deli roll: 26 g protein instead of ~56 g; 1.6 g sodium",
+      "nutrition": {
+        "calories": 565.4,
+        "protein_g": 33.18,
+        "fat_g": 19.27,
+        "carbs_g": 64.56,
+        "micronutrients": {
+          "b12_cobalamin_ug": 0.432,
+          "b1_thiamine_mg": 0.26,
+          "b2_riboflavin_mg": 0.285,
+          "b3_niacin_mg": 13.543,
+          "b5_pantothenic_acid_mg": 2.085,
+          "b6_pyridoxine_mg": 0.745,
+          "calcium_mg": 36.85,
+          "copper_mg": 0.457,
+          "fiber_g": 2.1,
+          "folate_ug": 61.4,
+          "iron_mg": 3.144,
+          "magnesium_mg": 60.6,
+          "manganese_mg": 0.903,
+          "omega_3_g": 0.027,
+          "omega_6_g": 2.995,
+          "phosphorus_mg": 335.8,
+          "potassium_mg": 837.25,
+          "selenium_ug": 23.36,
+          "sodium_mg": 1591.5,
+          "vitamin_a_ug": 38.0,
+          "vitamin_c_mg": 5.6,
+          "vitamin_d_iu": 0.0,
+          "vitamin_e_mg": 1.974,
+          "vitamin_k_ug": 45.51,
+          "zinc_mg": 2.51
+        }
+      }
+    },
+    {
+      "id": "dh_sweet_potato_hash",
+      "name": "Sweet Potato Beef Hash",
+      "cooking_time_minutes": 25,
+      "ingredients": [
+        {
+          "name": "sweet potato",
+          "cache_key": "sweet_potato",
+          "quantity": 250,
+          "unit": "g"
+        },
+        {
+          "name": "hamburger or beef 95%",
+          "cache_key": "hamburger_or_beef_95",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "name": "olive oil",
+          "cache_key": "olive_oil",
+          "quantity": 10,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "dinner",
+        "gluten-free",
+        "dairy-free"
+      ],
+      "proposed_tags": [],
+      "data_hazard": true,
+      "uses_quarantined_ingredients": [
+        "sweet_potato"
+      ],
+      "notes": "'sweet_potato' has 0 kcal but 43 g carbs at this quantity",
+      "nutrition": {
+        "calories": 316.4,
+        "protein_g": 35.22,
+        "fat_g": 21.44,
+        "carbs_g": 43.32,
+        "micronutrients": {
+          "b12_cobalamin_ug": 3.345,
+          "b1_thiamine_mg": 0.174,
+          "b2_riboflavin_mg": 0.226,
+          "b3_niacin_mg": 9.069,
+          "b5_pantothenic_acid_mg": 0.948,
+          "b6_pyridoxine_mg": 0.885,
+          "calcium_mg": 70.925,
+          "copper_mg": 0.579,
+          "fiber_g": 0.0,
+          "folate_ug": 7.5,
+          "iron_mg": 4.546,
+          "magnesium_mg": 79.35,
+          "manganese_mg": 1.058,
+          "omega_3_g": 0.0,
+          "omega_6_g": 1.3,
+          "phosphorus_mg": 379.825,
+          "potassium_mg": 1720.1,
+          "selenium_ug": 25.65,
+          "sodium_mg": 99.2,
+          "vitamin_a_ug": 6.0,
+          "vitamin_c_mg": 37.1,
+          "vitamin_d_iu": 180.15,
+          "vitamin_e_mg": 1.69,
+          "vitamin_k_ug": 7.27,
+          "zinc_mg": 8.299
+        }
+      }
+    },
+    {
+      "id": "dh_kiwi_smoothie",
+      "name": "Kiwi Banana Smoothie",
+      "cooking_time_minutes": 3,
+      "ingredients": [
+        {
+          "name": "kiwi fruit green",
+          "cache_key": "kiwi_fruit_green",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "name": "bananas",
+          "cache_key": "bananas",
+          "quantity": 100,
+          "unit": "g"
+        },
+        {
+          "name": "greek yogurt plain nonfat",
+          "cache_key": "greek_yogurt_plain_nonfat",
+          "quantity": 150,
+          "unit": "g"
+        }
+      ],
+      "tags": [
+        "snack",
+        "breakfast",
+        "vegetarian",
+        "gluten-free",
+        "no-cook"
+      ],
+      "proposed_tags": [],
+      "data_hazard": true,
+      "uses_quarantined_ingredients": [
+        "kiwi_fruit_green"
+      ],
+      "notes": "'kiwi_fruit_green' has 0 kcal but 20.7 g carbs at this quantity",
+      "nutrition": {
+        "calories": 177.5,
+        "protein_g": 17.89,
+        "fat_g": 1.88,
+        "carbs_g": 48.97,
+        "micronutrients": {
+          "b12_cobalamin_ug": 1.125,
+          "b1_thiamine_mg": 0.066,
+          "b2_riboflavin_mg": 0.49,
+          "b3_niacin_mg": 0.977,
+          "b5_pantothenic_acid_mg": 0.831,
+          "b6_pyridoxine_mg": 0.462,
+          "calcium_mg": 206.57,
+          "copper_mg": 0.296,
+          "fiber_g": 5.793,
+          "folate_ug": 79.775,
+          "iron_mg": 0.42,
+          "magnesium_mg": 65.685,
+          "manganese_mg": 0.386,
+          "omega_3_g": 0.0,
+          "omega_6_g": 0.061,
+          "phosphorus_mg": 265.915,
+          "potassium_mg": 1021.75,
+          "selenium_ug": 15.55,
+          "sodium_mg": 58.413,
+          "vitamin_a_ug": 4.5,
+          "vitamin_c_mg": 96.87,
+          "vitamin_d_iu": 0.0,
+          "vitamin_e_mg": 0.115,
+          "vitamin_k_ug": 0.5,
+          "zinc_mg": 1.612
+        }
+      }
+    }
+  ]
+}

@@ -312,3 +312,52 @@ def test_plan_from_text_planning_mode_assisted_cached_routes_to_orchestrator(
     assert captured["use_feedback_cache"] is True
     assert captured["force_live_generation"] is False
 
+
+
+def test_plan_from_text_assisted_never_turns_nl_cuisine_into_a_hard_filter(monkeypatch):
+    """LLM overhaul Stage 8: cuisine/budget from the prompt are soft; diet flags from constraints are hard."""
+    from src.llm.schemas import DietaryFlag, PlannerConstraints
+
+    cfg = PlannerConfigJson(
+        days=1, meals_per_day=1,
+        targets=PlannerTargets(calories=2000, protein=150.0),
+        preferences=PlannerPreferences(cuisine=["mexican"], budget=BudgetLevel.cheap),
+        constraints=PlannerConstraints(allergies=["peanuts"], dietary_flags=[DietaryFlag.vegan]),
+        stated_fields=["days", "calories", "protein", "allergies", "dietary_flags"],
+    )
+    monkeypatch.setattr("src.api.server.load_llm_settings", lambda: LLMSettings(api_key="d", model="m", timeout_seconds=1.0, max_retries=0, rate_limit_qps=1.0, enabled=True))
+    monkeypatch.setattr("src.api.server.build_llm_client", lambda: object())
+    monkeypatch.setattr("src.api.server.parse_nl_config", lambda client, text: cfg)
+    monkeypatch.setattr("src.api.server.RecipeDB", DummyRecipeDB)
+    monkeypatch.setattr("src.api.server.extract_ingredient_names", lambda recipes: [])
+    monkeypatch.setattr("src.api.server.convert_recipes", lambda _recipes, _calc: [])
+    monkeypatch.setattr("src.api.server.NutritionCalculator", lambda _provider: object())
+    monkeypatch.setattr("src.api.server.NutritionDB", lambda _: object())
+    monkeypatch.setattr("src.api.server.LocalIngredientProvider", lambda _: DummyProvider())
+    monkeypatch.setattr("src.api.server.build_usda_provider", lambda: DummyProvider())
+
+    captured = {}
+
+    def _capture_filter(*, recipes, request_like, tag_path, protected_recipe_ids=None):
+        captured["cuisine"] = getattr(request_like, "cuisine", None)
+        captured["cost_level"] = getattr(request_like, "cost_level", None)
+        captured["dietary_flags"] = getattr(request_like, "dietary_flags", None)
+        return recipes, {"filter_applied": False, "input_recipe_count": 0, "output_recipe_count": 0}
+
+    monkeypatch.setattr("src.api.server._apply_recipe_tag_filter_pre_convert", _capture_filter)
+    captured_profile = {}
+
+    def _fake_loop(profile, pool, days, **kwargs):
+        captured_profile["excluded"] = list(profile.excluded_ingredients)
+        return MealPlanResult(success=True, termination_code="TC-1", plan=[], daily_trackers={}, weekly_tracker=None, report={}, stats={"attempts": 1, "backtracks": 0})
+
+    monkeypatch.setattr("src.api.server.plan_with_llm_feedback", _fake_loop)
+
+    resp = TestClient(app).post("/api/plan-from-text", json={"prompt": "vegan, allergic to peanuts, mexican if possible", "planning_mode": "assisted"})
+    assert resp.status_code == 200, resp.text
+    assert captured["cuisine"] is None and captured["cost_level"] is None
+    assert captured["dietary_flags"] == [DietaryFlag.vegan]
+    assert captured_profile["excluded"] == ["peanuts"]
+    interp = resp.json()["warnings"]["nl_interpretation"]
+    assert interp["stated_fields"] == ["days", "calories", "protein", "allergies", "dietary_flags"]
+    assert "meals_per_day" in interp["defaulted_fields"] and "fat_range_from_budget" in interp["derived_fields"]

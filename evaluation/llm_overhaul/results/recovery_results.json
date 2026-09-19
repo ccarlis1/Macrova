@@ -1,0 +1,1504 @@
+[
+ {
+  "id": "R-01",
+  "title": "fitting pool, no gap",
+  "expected_terminal": "SUCCESS",
+  "recipes_could_help": "n/a",
+  "exception": null,
+  "final_success": true,
+  "final_code": "OK",
+  "history": [],
+  "plan": [
+   "ln_chickpea_salad",
+   "dn_tilapia_rice",
+   "bk_yogurt_berry_bowl"
+  ],
+  "initial_code": "OK",
+  "planner_runs": 1,
+  "llm_calls": 0,
+  "llm_contexts": [],
+  "pool_trace": [
+   {
+    "pool_size": 7,
+    "pool_ids": [
+     "bk_yogurt_berry_bowl",
+     "dn_tilapia_rice",
+     "ln_chickpea_salad",
+     "sn_carrots_almond_butter",
+     "sn_chia_seed_water",
+     "sn_edamame_cup",
+     "sn_whey_water"
+    ],
+    "code": "OK",
+    "tagged": 7,
+    "hard_attr": 7
+   }
+  ],
+  "persisted_llm_recipes": [],
+  "cache_files_written": 0,
+  "feedback_cache_keys": 0,
+  "intent_violations": [],
+  "observed_terminal": "SUCCESS"
+ },
+ {
+  "id": "R-02",
+  "title": "one recipe missing; LLM supplies it (resolvable)",
+  "expected_terminal": "SUCCESS",
+  "recipes_could_help": "yes",
+  "exception": null,
+  "final_success": true,
+  "final_code": "OK",
+  "history": [
+   {
+    "attempt": 1,
+    "status": "fail",
+    "failure_type": "FM-1",
+    "recipes_generated": 1,
+    "accepted": 1,
+    "persisted_ids": [
+     "llm_34cfa92b324c2dc5"
+    ],
+    "validation_error": null
+   }
+  ],
+  "plan": [
+   "ln_chickpea_salad",
+   "llm_34cfa92b324c2dc5",
+   "bk_yogurt_berry_bowl"
+  ],
+  "initial_code": "FM-1",
+  "planner_runs": 2,
+  "llm_calls": 1,
+  "llm_contexts": [
+   {
+    "busyness_by_day": [
+     [
+      4,
+      4,
+      4
+     ]
+    ],
+    "days": 1,
+    "failure_type": "FM-1",
+    "macro_violations": [],
+    "meals_per_day": 3,
+    "nutrient_deficits": [],
+    "workout_gaps_by_day": null
+   }
+  ],
+  "pool_trace": [
+   {
+    "pool_size": 6,
+    "pool_ids": [
+     "bk_yogurt_berry_bowl",
+     "ln_chickpea_salad",
+     "sn_carrots_almond_butter",
+     "sn_chia_seed_water",
+     "sn_edamame_cup",
+     "sn_whey_water"
+    ],
+    "code": "FM-1",
+    "tagged": 6,
+    "hard_attr": 6
+   },
+   {
+    "pool_size": 7,
+    "pool_ids": [
+     "bk_yogurt_berry_bowl",
+     "llm_34cfa92b324c2dc5",
+     "ln_chickpea_salad",
+     "sn_carrots_almond_butter",
+     "sn_chia_seed_water",
+     "sn_edamame_cup",
+     "sn_whey_water"
+    ],
+    "code": "OK",
+    "tagged": 6,
+    "hard_attr": 6
+   }
+  ],
+  "persisted_llm_recipes": [
+   [
+    "llm_34cfa92b324c2dc5",
+    "Lemon Butter Tilapia with Rice",
+    5,
+    []
+   ]
+  ],
+  "cache_files_written": 0,
+  "feedback_cache_keys": 1,
+  "intent_violations": [
+   "retry pool lost hard-eligible tag attributes on some recipes"
+  ],
+  "observed_terminal": "SUCCESS"
+ },
+ {
+  "id": "R-03",
+  "title": "one missing; LLM names unresolvable ingredients",
+  "expected_terminal": "INVALID_RECOVERY_OUTPUT",
+  "recipes_could_help": "yes",
+  "exception": null,
+  "final_success": false,
+  "final_code": "FM-1",
+  "history": [
+   {
+    "attempt": 1,
+    "status": "fail",
+    "failure_type": "FM-1",
+    "recipes_generated": 1,
+    "accepted": 1,
+    "persisted_ids": [
+     "llm_791d52b496218e33"
+    ],
+    "validation_error": null
+   },
+   {
+    "attempt": 2,
+    "status": "abort",
+    "failure_type": "FM-1",
+    "recipes_generated": 1,
+    "accepted": 1,
+    "persisted_ids": [],
+    "validation_error": null
+   }
+  ],
+  "plan": null,
+  "initial_code": "FM-1",
+  "planner_runs": 3,
+  "llm_calls": 1,
+  "llm_contexts": [
+   {
+    "busyness_by_day": [
+     [
+      4,
+      4,
+      4
+     ]
+    ],
+    "days": 1,
+    "failure_type": "FM-1",
+    "macro_violations": [],
+    "meals_per_day": 3,
+    "nutrient_deficits": [],
+    "workout_gaps_by_day": null
+   }
+  ],
+  "pool_trace": [
+   {
+    "pool_size": 6,
+    "pool_ids": [
+     "bk_yogurt_berry_bowl",
+     "ln_chickpea_salad",
+     "sn_carrots_almond_butter",
+     "sn_chia_seed_water",
+     "sn_edamame_cup",
+     "sn_whey_water"
+    ],
+    "code": "FM-1",
+    "tagged": 6,
+    "hard_attr": 6
+   },
+   {
+    "pool_size": 7,
+    "pool_ids": [
+     "bk_yogurt_berry_bowl",
+     "llm_791d52b496218e33",
+     "ln_chickpea_salad",
+     "sn_carrots_almond_butter",
+     "sn_chia_seed_water",
+     "sn_edamame_cup",
+     "sn_whey_water"
+    ],
+    "code": "FM-1",
+    "tagged": 6,
+    "hard_attr": 6
+   },
+   {
+    "pool_size": 7,
+    "pool_ids": [
+     "bk_yogurt_berry_bowl",
+     "llm_791d52b496218e33",
+     "ln_chickpea_salad",
+     "sn_carrots_almond_butter",
+     "sn_chia_seed_water",
+     "sn_edamame_cup",
+     "sn_whey_water"
+    ],
+    "code": "FM-1",
+    "tagged": 6,
+    "hard_attr": 6
+   }
+  ],
+  "persisted_llm_recipes": [
+   [
+    "llm_791d52b496218e33",
+    "Dragonfruit tilapia",
+    5,
+    [
+     "dragonfruit granola",
+     "moon salt"
+    ]
+   ]
+  ],
+  "cache_files_written": 0,
+  "feedback_cache_keys": 1,
+  "intent_violations": [
+   "retry pool lost hard-eligible tag attributes on some recipes",
+   "1 recipe(s) persisted although the request failed",
+   "persisted recipe has demoted (to-taste) ingredients"
+  ],
+  "observed_terminal": "NO_USEFUL_RECOVERY_FOUND"
+ },
+ {
+  "id": "R-04",
+  "title": "one recipe, three slots (HC-2); LLM supplies two",
+  "expected_terminal": "SUCCESS",
+  "recipes_could_help": "yes",
+  "exception": null,
+  "final_success": true,
+  "final_code": "OK",
+  "history": [
+   {
+    "attempt": 1,
+    "status": "fail",
+    "failure_type": "FM-1",
+    "recipes_generated": 2,
+    "accepted": 2,
+    "persisted_ids": [
+     "llm_4fec5f65dc6c6424",
+     "llm_34cfa92b324c2dc5"
+    ],
+    "validation_error": null
+   }
+  ],
+  "plan": [
+   "llm_4fec5f65dc6c6424",
+   "llm_34cfa92b324c2dc5",
+   "bk_yogurt_berry_bowl"
+  ],
+  "initial_code": "FM-1",
+  "planner_runs": 2,
+  "llm_calls": 1,
+  "llm_contexts": [
+   {
+    "busyness_by_day": [
+     [
+      4,
+      4,
+      4
+     ]
+    ],
+    "days": 1,
+    "failure_type": "FM-1",
+    "macro_violations": [],
+    "meals_per_day": 3,
+    "nutrient_deficits": [],
+    "workout_gaps_by_day": null
+   }
+  ],
+  "pool_trace": [
+   {
+    "pool_size": 5,
+    "pool_ids": [
+     "bk_yogurt_berry_bowl",
+     "sn_carrots_almond_butter",
+     "sn_chia_seed_water",
+     "sn_edamame_cup",
+     "sn_whey_water"
+    ],
+    "code": "FM-1",
+    "tagged": 5,
+    "hard_attr": 5
+   },
+   {
+    "pool_size": 7,
+    "pool_ids": [
+     "bk_yogurt_berry_bowl",
+     "llm_34cfa92b324c2dc5",
+     "llm_4fec5f65dc6c6424",
+     "sn_carrots_almond_butter",
+     "sn_chia_seed_water",
+     "sn_edamame_cup",
+     "sn_whey_water"
+    ],
+    "code": "OK",
+    "tagged": 5,
+    "hard_attr": 5
+   }
+  ],
+  "persisted_llm_recipes": [
+   [
+    "llm_4fec5f65dc6c6424",
+    "Mediterranean Chickpea Salad",
+    5,
+    []
+   ],
+   [
+    "llm_34cfa92b324c2dc5",
+    "Lemon Butter Tilapia with Rice",
+    5,
+    []
+   ]
+  ],
+  "cache_files_written": 0,
+  "feedback_cache_keys": 1,
+  "intent_violations": [
+   "retry pool lost hard-eligible tag attributes on some recipes"
+  ],
+  "observed_terminal": "SUCCESS"
+ },
+ {
+  "id": "R-05",
+  "title": "negative derived carbs (infeasible by construction)",
+  "expected_terminal": "UNRECOVERABLE_INFEASIBILITY",
+  "recipes_could_help": "no",
+  "exception": null,
+  "final_success": false,
+  "final_code": "FM-1",
+  "history": [
+   {
+    "attempt": 1,
+    "status": "fail",
+    "failure_type": "FM-1",
+    "recipes_generated": 2,
+    "accepted": 2,
+    "persisted_ids": [
+     "llm_a325b5be79b1454a"
+    ],
+    "validation_error": null
+   },
+   {
+    "attempt": 2,
+    "status": "abort",
+    "failure_type": "FM-1",
+    "recipes_generated": 0,
+    "accepted": 0,
+    "persisted_ids": [],
+    "validation_error": null
+   }
+  ],
+  "plan": null,
+  "initial_code": "FM-1",
+  "planner_runs": 3,
+  "llm_calls": 1,
+  "llm_contexts": [
+   {
+    "busyness_by_day": [
+     [
+      4,
+      4,
+      4
+     ]
+    ],
+    "days": 1,
+    "failure_type": "FM-1",
+    "macro_violations": [],
+    "meals_per_day": 3,
+    "nutrient_deficits": [],
+    "workout_gaps_by_day": null
+   }
+  ],
+  "pool_trace": [
+   {
+    "pool_size": 7,
+    "pool_ids": [
+     "bk_yogurt_berry_bowl",
+     "dn_tilapia_rice",
+     "ln_chickpea_salad",
+     "sn_carrots_almond_butter",
+     "sn_chia_seed_water",
+     "sn_edamame_cup",
+     "sn_whey_water"
+    ],
+    "code": "FM-1",
+    "tagged": 7,
+    "hard_attr": 7
+   },
+   {
+    "pool_size": 8,
+    "pool_ids": [
+     "bk_yogurt_berry_bowl",
+     "dn_tilapia_rice",
+     "llm_a325b5be79b1454a",
+     "ln_chickpea_salad",
+     "sn_carrots_almond_butter",
+     "sn_chia_seed_water",
+     "sn_edamame_cup",
+     "sn_whey_water"
+    ],
+    "code": "FM-1",
+    "tagged": 7,
+    "hard_attr": 7
+   },
+   {
+    "pool_size": 8,
+    "pool_ids": [
+     "bk_yogurt_berry_bowl",
+     "dn_tilapia_rice",
+     "llm_a325b5be79b1454a",
+     "ln_chickpea_salad",
+     "sn_carrots_almond_butter",
+     "sn_chia_seed_water",
+     "sn_edamame_cup",
+     "sn_whey_water"
+    ],
+    "code": "FM-1",
+    "tagged": 7,
+    "hard_attr": 7
+   }
+  ],
+  "persisted_llm_recipes": [
+   [
+    "llm_a325b5be79b1454a",
+    "Banana with Peanut Butter",
+    5,
+    []
+   ]
+  ],
+  "cache_files_written": 0,
+  "feedback_cache_keys": 1,
+  "intent_violations": [
+   "retry pool lost hard-eligible tag attributes on some recipes",
+   "1 recipe(s) persisted although the request failed"
+  ],
+  "observed_terminal": "NO_USEFUL_RECOVERY_FOUND"
+ },
+ {
+  "id": "R-06",
+  "title": "pool emptied by a user tag filter; LLM drafts fit",
+  "expected_terminal": "UNRECOVERABLE_INFEASIBILITY",
+  "recipes_could_help": "no (would bypass filter)",
+  "exception": null,
+  "final_success": true,
+  "final_code": "OK",
+  "history": [
+   {
+    "attempt": 1,
+    "status": "fail",
+    "failure_type": "FM-1",
+    "recipes_generated": 3,
+    "accepted": 3,
+    "persisted_ids": [
+     "llm_75cd372a0d4bccb6",
+     "llm_4fec5f65dc6c6424",
+     "llm_34cfa92b324c2dc5"
+    ],
+    "validation_error": null
+   }
+  ],
+  "plan": [
+   "llm_4fec5f65dc6c6424",
+   "llm_34cfa92b324c2dc5",
+   "llm_75cd372a0d4bccb6"
+  ],
+  "initial_code": "FM-1",
+  "planner_runs": 2,
+  "llm_calls": 1,
+  "llm_contexts": [
+   {
+    "busyness_by_day": [
+     [
+      4,
+      4,
+      4
+     ]
+    ],
+    "days": 1,
+    "failure_type": "FM-1",
+    "macro_violations": [],
+    "meals_per_day": 3,
+    "nutrient_deficits": [],
+    "workout_gaps_by_day": null
+   }
+  ],
+  "pool_trace": [
+   {
+    "pool_size": 0,
+    "pool_ids": [],
+    "code": "FM-1",
+    "tagged": 0,
+    "hard_attr": 0
+   },
+   {
+    "pool_size": 3,
+    "pool_ids": [
+     "llm_34cfa92b324c2dc5",
+     "llm_4fec5f65dc6c6424",
+     "llm_75cd372a0d4bccb6"
+    ],
+    "code": "OK",
+    "tagged": 0,
+    "hard_attr": 0
+   }
+  ],
+  "persisted_llm_recipes": [
+   [
+    "llm_75cd372a0d4bccb6",
+    "Greek Yogurt Berry Bowl",
+    5,
+    []
+   ],
+   [
+    "llm_4fec5f65dc6c6424",
+    "Mediterranean Chickpea Salad",
+    5,
+    []
+   ],
+   [
+    "llm_34cfa92b324c2dc5",
+    "Lemon Butter Tilapia with Rice",
+    5,
+    []
+   ]
+  ],
+  "cache_files_written": 0,
+  "feedback_cache_keys": 1,
+  "intent_violations": [
+   "success bypassed the user's tag filter"
+  ],
+  "observed_terminal": "SUCCESS"
+ },
+ {
+  "id": "R-07",
+  "title": "required tag 'vegan' on slot 1; pool lacks it; drafts untagged",
+  "expected_terminal": "UNRECOVERABLE_INFEASIBILITY",
+  "recipes_could_help": "no (needs tag, not recipe)",
+  "exception": null,
+  "final_success": false,
+  "final_code": "FM-1",
+  "history": [
+   {
+    "attempt": 1,
+    "status": "fail",
+    "failure_type": "FM-1",
+    "recipes_generated": 1,
+    "accepted": 1,
+    "persisted_ids": [
+     "llm_4cbf8ce4963b61b5"
+    ],
+    "validation_error": null
+   },
+   {
+    "attempt": 2,
+    "status": "fail",
+    "failure_type": "FM-1",
+    "recipes_generated": 1,
+    "accepted": 1,
+    "persisted_ids": [
+     "llm_bc035e3e5f323efb"
+    ],
+    "validation_error": null
+   },
+   {
+    "attempt": 3,
+    "status": "fail",
+    "failure_type": "FM-1",
+    "recipes_generated": 1,
+    "accepted": 1,
+    "persisted_ids": [
+     "llm_7ef92dc46b0c897f"
+    ],
+    "validation_error": null
+   }
+  ],
+  "plan": null,
+  "initial_code": "FM-1",
+  "planner_runs": 4,
+  "llm_calls": 3,
+  "llm_contexts": [
+   {
+    "busyness_by_day": [
+     [
+      4,
+      4,
+      4
+     ]
+    ],
+    "days": 1,
+    "failure_type": "FM-1",
+    "macro_violations": [],
+    "meals_per_day": 3,
+    "nutrient_deficits": [],
+    "workout_gaps_by_day": null
+   },
+   {
+    "busyness_by_day": [
+     [
+      4,
+      4,
+      4
+     ]
+    ],
+    "days": 1,
+    "failure_type": "FM-1",
+    "macro_violations": [],
+    "meals_per_day": 3,
+    "nutrient_deficits": [],
+    "workout_gaps_by_day": null
+   },
+   {
+    "busyness_by_day": [
+     [
+      4,
+      4,
+      4
+     ]
+    ],
+    "days": 1,
+    "failure_type": "FM-1",
+    "macro_violations": [],
+    "meals_per_day": 3,
+    "nutrient_deficits": [],
+    "workout_gaps_by_day": null
+   }
+  ],
+  "pool_trace": [
+   {
+    "pool_size": 7,
+    "pool_ids": [
+     "bk_yogurt_berry_bowl",
+     "dn_tilapia_rice",
+     "ln_chickpea_salad",
+     "sn_carrots_almond_butter",
+     "sn_chia_seed_water",
+     "sn_edamame_cup",
+     "sn_whey_water"
+    ],
+    "code": "FM-1",
+    "tagged": 7,
+    "hard_attr": 7
+   },
+   {
+    "pool_size": 8,
+    "pool_ids": [
+     "bk_yogurt_berry_bowl",
+     "dn_tilapia_rice",
+     "llm_4cbf8ce4963b61b5",
+     "ln_chickpea_salad",
+     "sn_carrots_almond_butter",
+     "sn_chia_seed_water",
+     "sn_edamame_cup",
+     "sn_whey_water"
+    ],
+    "code": "FM-1",
+    "tagged": 7,
+    "hard_attr": 7
+   },
+   {
+    "pool_size": 9,
+    "pool_ids": [
+     "bk_yogurt_berry_bowl",
+     "dn_tilapia_rice",
+     "llm_4cbf8ce4963b61b5",
+     "llm_bc035e3e5f323efb",
+     "ln_chickpea_salad",
+     "sn_carrots_almond_butter",
+     "sn_chia_seed_water",
+     "sn_edamame_cup",
+     "sn_whey_water"
+    ],
+    "code": "FM-1",
+    "tagged": 7,
+    "hard_attr": 7
+   },
+   {
+    "pool_size": 10,
+    "pool_ids": [
+     "bk_yogurt_berry_bowl",
+     "dn_tilapia_rice",
+     "llm_4cbf8ce4963b61b5",
+     "llm_7ef92dc46b0c897f",
+     "llm_bc035e3e5f323efb",
+     "ln_chickpea_salad",
+     "sn_carrots_almond_butter",
+     "sn_chia_seed_water",
+     "sn_edamame_cup",
+     "sn_whey_water"
+    ],
+    "code": "FM-1",
+    "tagged": 7,
+    "hard_attr": 7
+   }
+  ],
+  "persisted_llm_recipes": [
+   [
+    "llm_4cbf8ce4963b61b5",
+    "Tofu Vegetable Stir Fry",
+    5,
+    []
+   ],
+   [
+    "llm_bc035e3e5f323efb",
+    "Sesame Tofu Quinoa Salad",
+    5,
+    []
+   ],
+   [
+    "llm_7ef92dc46b0c897f",
+    "Tofu Scramble Wrap",
+    5,
+    []
+   ]
+  ],
+  "cache_files_written": 0,
+  "feedback_cache_keys": 3,
+  "intent_violations": [
+   "retry pool lost hard-eligible tag attributes on some recipes",
+   "3 recipe(s) persisted although the request failed"
+  ],
+  "observed_terminal": "RECOVERY_LIMIT_REACHED"
+ },
+ {
+  "id": "R-08",
+  "title": "micronutrient (iron) structural gap; LLM supplies iron-rich fitting recipe",
+  "expected_terminal": "SUCCESS",
+  "recipes_could_help": "yes",
+  "exception": null,
+  "final_success": true,
+  "final_code": "OK",
+  "history": [
+   {
+    "attempt": 1,
+    "status": "fail",
+    "failure_type": "FM-4",
+    "recipes_generated": 1,
+    "accepted": 1,
+    "persisted_ids": [
+     "llm_bc035e3e5f323efb"
+    ],
+    "validation_error": null
+   }
+  ],
+  "plan": [
+   "llm_bc035e3e5f323efb",
+   "bk_yogurt_berry_bowl",
+   "sn_yogurt_honey"
+  ],
+  "initial_code": "FM-4",
+  "planner_runs": 2,
+  "llm_calls": 1,
+  "llm_contexts": [
+   {
+    "busyness_by_day": [
+     [
+      4,
+      4,
+      4
+     ]
+    ],
+    "days": 1,
+    "failure_type": "FM-4",
+    "macro_violations": [],
+    "meals_per_day": 3,
+    "nutrient_deficits": [
+     {
+      "achieved": 0.0,
+      "classification": "structural",
+      "deficit": 9.1,
+      "nutrient": "iron_mg",
+      "required": 9.1
+     }
+    ],
+    "workout_gaps_by_day": null
+   }
+  ],
+  "pool_trace": [
+   {
+    "pool_size": 4,
+    "pool_ids": [
+     "bk_yogurt_berry_bowl",
+     "sn_chia_seed_water",
+     "sn_whey_water",
+     "sn_yogurt_honey"
+    ],
+    "code": "FM-4",
+    "tagged": 4,
+    "hard_attr": 4
+   },
+   {
+    "pool_size": 5,
+    "pool_ids": [
+     "bk_yogurt_berry_bowl",
+     "llm_bc035e3e5f323efb",
+     "sn_chia_seed_water",
+     "sn_whey_water",
+     "sn_yogurt_honey"
+    ],
+    "code": "OK",
+    "tagged": 4,
+    "hard_attr": 4
+   }
+  ],
+  "persisted_llm_recipes": [
+   [
+    "llm_bc035e3e5f323efb",
+    "Sesame Tofu Quinoa Salad",
+    5,
+    []
+   ]
+  ],
+  "cache_files_written": 0,
+  "feedback_cache_keys": 1,
+  "intent_violations": [
+   "retry pool lost hard-eligible tag attributes on some recipes"
+  ],
+  "observed_terminal": "SUCCESS"
+ },
+ {
+  "id": "R-09",
+  "title": "slot 0 needs <=5 min; pool all slow; LLM draft has 1 instruction (fabricated 5 min)",
+  "expected_terminal": "SUCCESS-but-fabricated",
+  "recipes_could_help": "yes (only with a real quick recipe)",
+  "exception": null,
+  "final_success": true,
+  "final_code": "OK",
+  "history": [
+   {
+    "attempt": 1,
+    "status": "fail",
+    "failure_type": "FM-1",
+    "recipes_generated": 1,
+    "accepted": 1,
+    "persisted_ids": [
+     "llm_16b67d965b5515e2"
+    ],
+    "validation_error": null
+   }
+  ],
+  "plan": [
+   "llm_16b67d965b5515e2",
+   "dn_tilapia_rice",
+   "ln_chickpea_salad"
+  ],
+  "initial_code": "FM-1",
+  "planner_runs": 2,
+  "llm_calls": 1,
+  "llm_contexts": [
+   {
+    "busyness_by_day": [
+     [
+      1,
+      3,
+      3
+     ]
+    ],
+    "days": 1,
+    "failure_type": "FM-1",
+    "macro_violations": [],
+    "meals_per_day": 3,
+    "nutrient_deficits": [],
+    "workout_gaps_by_day": null
+   }
+  ],
+  "pool_trace": [
+   {
+    "pool_size": 6,
+    "pool_ids": [
+     "dn_tilapia_rice",
+     "ln_chickpea_salad",
+     "sn_carrots_almond_butter",
+     "sn_chia_seed_water",
+     "sn_edamame_cup",
+     "sn_whey_water"
+    ],
+    "code": "FM-1",
+    "tagged": 6,
+    "hard_attr": 6
+   },
+   {
+    "pool_size": 7,
+    "pool_ids": [
+     "dn_tilapia_rice",
+     "llm_16b67d965b5515e2",
+     "ln_chickpea_salad",
+     "sn_carrots_almond_butter",
+     "sn_chia_seed_water",
+     "sn_edamame_cup",
+     "sn_whey_water"
+    ],
+    "code": "OK",
+    "tagged": 6,
+    "hard_attr": 6
+   }
+  ],
+  "persisted_llm_recipes": [
+   [
+    "llm_16b67d965b5515e2",
+    "Greek Yogurt Berry Bowl",
+    5,
+    []
+   ]
+  ],
+  "cache_files_written": 0,
+  "feedback_cache_keys": 1,
+  "intent_violations": [
+   "success relies on fabricated cook time (library says 3 min real, but any draft would get 5)",
+   "retry pool lost hard-eligible tag attributes on some recipes"
+  ],
+  "observed_terminal": "SUCCESS"
+ },
+ {
+  "id": "R-10",
+  "title": "batch lock recipe exceeds slot cook time",
+  "expected_terminal": "UNRECOVERABLE_INFEASIBILITY",
+  "recipes_could_help": "no",
+  "exception": null,
+  "final_success": false,
+  "final_code": "FM-3",
+  "history": [],
+  "plan": null,
+  "initial_code": "FM-3",
+  "planner_runs": 1,
+  "llm_calls": 0,
+  "llm_contexts": [],
+  "pool_trace": [
+   {
+    "pool_size": 7,
+    "pool_ids": [
+     "bk_yogurt_berry_bowl",
+     "dn_tilapia_rice",
+     "ln_chickpea_salad",
+     "sn_carrots_almond_butter",
+     "sn_chia_seed_water",
+     "sn_edamame_cup",
+     "sn_whey_water"
+    ],
+    "code": "FM-3",
+    "tagged": 7,
+    "hard_attr": 7
+   }
+  ],
+  "persisted_llm_recipes": [],
+  "cache_files_written": 0,
+  "feedback_cache_keys": 0,
+  "intent_violations": [],
+  "observed_terminal": "UNRECOVERABLE_INFEASIBILITY (code-declared)"
+ },
+ {
+  "id": "R-11",
+  "title": "feasible instance hits attempt cap (FM-5)",
+  "expected_terminal": "UNRECOVERABLE_INFEASIBILITY (search, not inventory)",
+  "recipes_could_help": "no",
+  "exception": null,
+  "final_success": false,
+  "final_code": "FM-5",
+  "history": [
+   {
+    "attempt": 1,
+    "status": "fail",
+    "failure_type": "FM-5",
+    "recipes_generated": 1,
+    "accepted": 1,
+    "persisted_ids": [
+     "llm_a325b5be79b1454a"
+    ],
+    "validation_error": null
+   },
+   {
+    "attempt": 2,
+    "status": "abort",
+    "failure_type": "FM-5",
+    "recipes_generated": 0,
+    "accepted": 0,
+    "persisted_ids": [],
+    "validation_error": null
+   }
+  ],
+  "plan": null,
+  "initial_code": "FM-5",
+  "planner_runs": 3,
+  "llm_calls": 1,
+  "llm_contexts": [
+   {
+    "busyness_by_day": [
+     [
+      4,
+      4,
+      4
+     ]
+    ],
+    "days": 1,
+    "failure_type": "FM-5",
+    "macro_violations": [],
+    "meals_per_day": 3,
+    "nutrient_deficits": [],
+    "workout_gaps_by_day": null
+   }
+  ],
+  "pool_trace": [
+   {
+    "pool_size": 7,
+    "pool_ids": [
+     "bk_yogurt_berry_bowl",
+     "dn_tilapia_rice",
+     "ln_chickpea_salad",
+     "sn_carrots_almond_butter",
+     "sn_chia_seed_water",
+     "sn_edamame_cup",
+     "sn_whey_water"
+    ],
+    "code": "FM-5",
+    "tagged": 7,
+    "hard_attr": 7
+   },
+   {
+    "pool_size": 8,
+    "pool_ids": [
+     "bk_yogurt_berry_bowl",
+     "dn_tilapia_rice",
+     "llm_a325b5be79b1454a",
+     "ln_chickpea_salad",
+     "sn_carrots_almond_butter",
+     "sn_chia_seed_water",
+     "sn_edamame_cup",
+     "sn_whey_water"
+    ],
+    "code": "FM-5",
+    "tagged": 7,
+    "hard_attr": 7
+   },
+   {
+    "pool_size": 8,
+    "pool_ids": [
+     "bk_yogurt_berry_bowl",
+     "dn_tilapia_rice",
+     "llm_a325b5be79b1454a",
+     "ln_chickpea_salad",
+     "sn_carrots_almond_butter",
+     "sn_chia_seed_water",
+     "sn_edamame_cup",
+     "sn_whey_water"
+    ],
+    "code": "FM-5",
+    "tagged": 7,
+    "hard_attr": 7
+   }
+  ],
+  "persisted_llm_recipes": [
+   [
+    "llm_a325b5be79b1454a",
+    "Banana with Peanut Butter",
+    5,
+    []
+   ]
+  ],
+  "cache_files_written": 0,
+  "feedback_cache_keys": 1,
+  "intent_violations": [
+   "retry pool lost hard-eligible tag attributes on some recipes",
+   "1 recipe(s) persisted although the request failed"
+  ],
+  "observed_terminal": "NO_USEFUL_RECOVERY_FOUND"
+ },
+ {
+  "id": "R-12",
+  "title": "LLM returns garbage",
+  "expected_terminal": "DATA_SOURCE_FAILURE with planner result preserved",
+  "recipes_could_help": "n/a",
+  "exception": {
+   "type": "RecipeGenerationError",
+   "msg": "LLM returned the wrong number of drafts."
+  },
+  "final_success": false,
+  "final_code": null,
+  "history": [],
+  "plan": null,
+  "initial_code": "FM-1",
+  "planner_runs": 1,
+  "llm_calls": 1,
+  "llm_contexts": [
+   {
+    "busyness_by_day": [
+     [
+      4,
+      4,
+      4
+     ]
+    ],
+    "days": 1,
+    "failure_type": "FM-1",
+    "macro_violations": [],
+    "meals_per_day": 3,
+    "nutrient_deficits": [],
+    "workout_gaps_by_day": null
+   }
+  ],
+  "pool_trace": [
+   {
+    "pool_size": 6,
+    "pool_ids": [
+     "bk_yogurt_berry_bowl",
+     "ln_chickpea_salad",
+     "sn_carrots_almond_butter",
+     "sn_chia_seed_water",
+     "sn_edamame_cup",
+     "sn_whey_water"
+    ],
+    "code": "FM-1",
+    "tagged": 6,
+    "hard_attr": 6
+   }
+  ],
+  "persisted_llm_recipes": [],
+  "cache_files_written": 0,
+  "feedback_cache_keys": 0,
+  "intent_violations": [],
+  "observed_terminal": "DATA_SOURCE_FAILURE"
+ },
+ {
+  "id": "R-13",
+  "title": "'peanuts' excluded; draft with peanut butter fits",
+  "expected_terminal": "reject or never plan it",
+  "recipes_could_help": "yes (with a safe recipe)",
+  "exception": null,
+  "final_success": true,
+  "final_code": "OK",
+  "history": [
+   {
+    "attempt": 1,
+    "status": "fail",
+    "failure_type": "FM-1",
+    "recipes_generated": 1,
+    "accepted": 1,
+    "persisted_ids": [
+     "llm_a325b5be79b1454a"
+    ],
+    "validation_error": null
+   }
+  ],
+  "plan": [
+   "ln_chickpea_salad",
+   "bk_yogurt_berry_bowl",
+   "llm_a325b5be79b1454a"
+  ],
+  "initial_code": "FM-1",
+  "planner_runs": 2,
+  "llm_calls": 1,
+  "llm_contexts": [
+   {
+    "busyness_by_day": [
+     [
+      4,
+      4,
+      4
+     ]
+    ],
+    "days": 1,
+    "failure_type": "FM-1",
+    "macro_violations": [],
+    "meals_per_day": 3,
+    "nutrient_deficits": [],
+    "workout_gaps_by_day": null
+   }
+  ],
+  "pool_trace": [
+   {
+    "pool_size": 6,
+    "pool_ids": [
+     "bk_yogurt_berry_bowl",
+     "ln_chickpea_salad",
+     "sn_carrots_almond_butter",
+     "sn_chia_seed_water",
+     "sn_edamame_cup",
+     "sn_whey_water"
+    ],
+    "code": "FM-1",
+    "tagged": 6,
+    "hard_attr": 6
+   },
+   {
+    "pool_size": 7,
+    "pool_ids": [
+     "bk_yogurt_berry_bowl",
+     "llm_a325b5be79b1454a",
+     "ln_chickpea_salad",
+     "sn_carrots_almond_butter",
+     "sn_chia_seed_water",
+     "sn_edamame_cup",
+     "sn_whey_water"
+    ],
+    "code": "OK",
+    "tagged": 6,
+    "hard_attr": 6
+   }
+  ],
+  "persisted_llm_recipes": [
+   [
+    "llm_a325b5be79b1454a",
+    "Banana with Peanut Butter",
+    5,
+    []
+   ]
+  ],
+  "cache_files_written": 0,
+  "feedback_cache_keys": 1,
+  "intent_violations": [
+   "plan contains excluded-class ingredient via llm_a325b5be79b1454a",
+   "retry pool lost hard-eligible tag attributes on some recipes"
+  ],
+  "observed_terminal": "SUCCESS"
+ },
+ {
+  "id": "R-14",
+  "title": "LLM re-proposes the same non-fitting draft",
+  "expected_terminal": "NO_USEFUL_RECOVERY_FOUND",
+  "recipes_could_help": "no (as offered)",
+  "exception": null,
+  "final_success": false,
+  "final_code": "FM-1",
+  "history": [
+   {
+    "attempt": 1,
+    "status": "fail",
+    "failure_type": "FM-1",
+    "recipes_generated": 1,
+    "accepted": 1,
+    "persisted_ids": [
+     "llm_ab56aef1758fb355"
+    ],
+    "validation_error": null
+   },
+   {
+    "attempt": 2,
+    "status": "abort",
+    "failure_type": "FM-1",
+    "recipes_generated": 0,
+    "accepted": 0,
+    "persisted_ids": [],
+    "validation_error": null
+   }
+  ],
+  "plan": null,
+  "initial_code": "FM-1",
+  "planner_runs": 3,
+  "llm_calls": 1,
+  "llm_contexts": [
+   {
+    "busyness_by_day": [
+     [
+      4,
+      4,
+      4
+     ]
+    ],
+    "days": 1,
+    "failure_type": "FM-1",
+    "macro_violations": [],
+    "meals_per_day": 3,
+    "nutrient_deficits": [],
+    "workout_gaps_by_day": null
+   }
+  ],
+  "pool_trace": [
+   {
+    "pool_size": 6,
+    "pool_ids": [
+     "bk_yogurt_berry_bowl",
+     "ln_chickpea_salad",
+     "sn_carrots_almond_butter",
+     "sn_chia_seed_water",
+     "sn_edamame_cup",
+     "sn_whey_water"
+    ],
+    "code": "FM-1",
+    "tagged": 6,
+    "hard_attr": 6
+   },
+   {
+    "pool_size": 7,
+    "pool_ids": [
+     "bk_yogurt_berry_bowl",
+     "llm_ab56aef1758fb355",
+     "ln_chickpea_salad",
+     "sn_carrots_almond_butter",
+     "sn_chia_seed_water",
+     "sn_edamame_cup",
+     "sn_whey_water"
+    ],
+    "code": "FM-1",
+    "tagged": 6,
+    "hard_attr": 6
+   },
+   {
+    "pool_size": 7,
+    "pool_ids": [
+     "bk_yogurt_berry_bowl",
+     "llm_ab56aef1758fb355",
+     "ln_chickpea_salad",
+     "sn_carrots_almond_butter",
+     "sn_chia_seed_water",
+     "sn_edamame_cup",
+     "sn_whey_water"
+    ],
+    "code": "FM-1",
+    "tagged": 6,
+    "hard_attr": 6
+   }
+  ],
+  "persisted_llm_recipes": [
+   [
+    "llm_ab56aef1758fb355",
+    "Rice Krispies Treat and Banana",
+    5,
+    []
+   ]
+  ],
+  "cache_files_written": 0,
+  "feedback_cache_keys": 1,
+  "intent_violations": [
+   "retry pool lost hard-eligible tag attributes on some recipes",
+   "1 recipe(s) persisted although the request failed"
+  ],
+  "observed_terminal": "NO_USEFUL_RECOVERY_FOUND"
+ },
+ {
+  "id": "R-15",
+  "title": "incremental pool update fails -> fallback rebuild from disk",
+  "expected_terminal": "retry pool == requested subset",
+  "recipes_could_help": "yes",
+  "exception": null,
+  "final_success": true,
+  "final_code": "OK",
+  "history": [
+   {
+    "attempt": 1,
+    "status": "fail",
+    "failure_type": "FM-1",
+    "recipes_generated": 1,
+    "accepted": 1,
+    "persisted_ids": [
+     "llm_34cfa92b324c2dc5"
+    ],
+    "validation_error": null
+   }
+  ],
+  "plan": [
+   "ln_black_bean_quinoa",
+   "ln_white_bean_soup",
+   "dn_tuna_steak_salad"
+  ],
+  "initial_code": "FM-1",
+  "planner_runs": 2,
+  "llm_calls": 1,
+  "llm_contexts": [
+   {
+    "busyness_by_day": [
+     [
+      4,
+      4,
+      4
+     ]
+    ],
+    "days": 1,
+    "failure_type": "FM-1",
+    "macro_violations": [],
+    "meals_per_day": 3,
+    "nutrient_deficits": [],
+    "workout_gaps_by_day": null
+   }
+  ],
+  "pool_trace": [
+   {
+    "pool_size": 6,
+    "pool_ids": [
+     "bk_yogurt_berry_bowl",
+     "ln_chickpea_salad",
+     "sn_carrots_almond_butter",
+     "sn_chia_seed_water",
+     "sn_edamame_cup",
+     "sn_whey_water"
+    ],
+    "code": "FM-1",
+    "tagged": 6,
+    "hard_attr": 6
+   },
+   {
+    "pool_size": 64,
+    "pool_ids": [
+     "bk_avocado_toast_feta",
+     "bk_big_oat_bowl",
+     "bk_chia_pudding",
+     "bk_cottage_papaya",
+     "bk_cream_of_rice_whey",
+     "bk_overnight_oats",
+     "bk_pb_banana_toast",
+     "bk_protein_oats",
+     "bk_salmon_toast",
+     "bk_tofu_scramble",
+     "bk_yogurt_berry_bowl",
+     "bk_yolk_spinach_toast",
+     "dh_chicken_breast_rice",
+     "dh_kiwi_smoothie",
+     "dh_oat_yogurt_parfait",
+     "dh_sweet_potato_hash",
+     "dh_veggie_egg_scramble",
+     "dn_bean_quesadilla",
+     "dn_beef_chili",
+     "dn_beef_rice_bowl",
+     "dn_big_pasta_night",
+     "dn_bolognese",
+     "dn_burger_bowl",
+     "dn_cauli_beef_bowl",
+     "dn_chickpea_curry",
+     "dn_edamame_fried_rice",
+     "dn_salmon_potatoes",
+     "dn_thigh_quinoa_prep",
+     "dn_thigh_sheet_pan",
+     "dn_tofu_stir_fry",
+     "dn_tuna_steak_salad",
+     "dn_veggie_pasta",
+     "dup_beef_rice_bowl_v2",
+     "dup_beef_rice_bowl_v3",
+     "hc_big_beef_rice",
+     "hc_double_burger_potatoes",
+     "hc_mass_gainer",
+     "hc_pasta_salmon_bake",
+     "llm_34cfa92b324c2dc5",
+     "ln_black_bean_quinoa",
+     "ln_chickpea_salad",
+     "ln_cottage_box",
+     "ln_roast_beef_wrap",
+     "ln_salami_plate",
+     "ln_salmon_salad",
+     "ln_tofu_quinoa_salad",
+     "ln_tuna_pasta_salad",
+     "ln_tuna_poke",
+     "ln_turkey_sandwich",
+     "ln_white_bean_soup",
+     "sn_almonds_chocolate",
+     "sn_banana_pb",
+     "sn_bedtime_cottage",
+     "sn_carrots_almond_butter",
+     "sn_chia_seed_water",
+     "sn_cottage_blueberry",
+     "sn_edamame_cup",
+     "sn_krispie_banana",
+     "sn_papaya_yogurt",
+     "sn_protein_shake",
+     "sn_trail_mix",
+     "sn_turkey_rollups",
+     "sn_whey_water",
+     "sn_yogurt_honey"
+    ],
+    "code": "OK",
+    "tagged": 0,
+    "hard_attr": 0
+   }
+  ],
+  "persisted_llm_recipes": [
+   [
+    "llm_34cfa92b324c2dc5",
+    "Lemon Butter Tilapia with Rice",
+    5,
+    []
+   ]
+  ],
+  "cache_files_written": 0,
+  "feedback_cache_keys": 1,
+  "intent_violations": [
+   "retry pool grew to 64 (requested subset 6)",
+   "retry pool lost hard-eligible tag attributes on some recipes"
+  ],
+  "observed_terminal": "SUCCESS"
+ }
+]

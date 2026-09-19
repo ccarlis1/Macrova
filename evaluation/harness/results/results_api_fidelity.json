@@ -1,0 +1,110 @@
+[
+ {
+  "id": "MB-019",
+  "active_batches": 0,
+  "needs_ceiling": true,
+  "secs": 0.0,
+  "success": true,
+  "tc": "TC-4",
+  "code": "OK",
+  "incomplete": null,
+  "stats": {},
+  "report_codes": [],
+  "report_first": "[]",
+  "warnings": "null",
+  "plan": {
+   "0": [
+    "bk_protein_oats",
+    "bk_salmon_toast",
+    "dn_burger_bowl"
+   ]
+  }
+ },
+ {
+  "id": "MB-035",
+  "active_batches": 0,
+  "needs_ceiling": true,
+  "secs": 0.0,
+  "success": true,
+  "tc": "TC-4",
+  "code": "OK",
+  "incomplete": null,
+  "stats": {},
+  "report_codes": [],
+  "report_first": "[]",
+  "warnings": "null",
+  "plan": {
+   "0": [
+    "bk_protein_oats",
+    "ln_tuna_poke",
+    "ln_tofu_quinoa_salad"
+   ]
+  }
+ },
+ {
+  "id": "MB-054",
+  "active_batches": 0,
+  "needs_ceiling": true,
+  "secs": 0.0,
+  "success": true,
+  "tc": "TC-4",
+  "code": "OK",
+  "incomplete": null,
+  "stats": {},
+  "report_codes": [],
+  "report_first": "[]",
+  "warnings": "null",
+  "plan": {
+   "0": [
+    "dn_bean_quesadilla",
+    "ln_tuna_poke",
+    "dn_bolognese"
+   ]
+  }
+ },
+ {
+  "id": "MB-074",
+  "active_batches": 0,
+  "needs_ceiling": true,
+  "secs": 0.0,
+  "success": true,
+  "tc": "TC-4",
+  "code": "OK",
+  "incomplete": null,
+  "stats": {},
+  "report_codes": [],
+  "report_first": "[]",
+  "warnings": "null",
+  "plan": {
+   "0": [
+    "bk_protein_oats",
+    "dn_tofu_stir_fry",
+    "dn_bolognese"
+   ]
+  }
+ },
+ {
+  "id": "MB-095",
+  "active_batches": 0,
+  "needs_ceiling": true,
+  "secs": 0.0,
+  "success": false,
+  "tc": "TC-2",
+  "code": "FM-1",
+  "incomplete": null,
+  "stats": {
+   "attempts": 0,
+   "backtracks": 0
+  },
+  "report_codes": [
+   "FM-1"
+  ],
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "warnings": "null",
+  "plan": {
+   "0": [
+    "dn_big_pasta_night"
+   ]
+  }
+ }
+]

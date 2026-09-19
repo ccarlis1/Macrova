@@ -30,6 +30,12 @@ from src.planning.planner import plan_meals
 from src.providers.api_provider import APIIngredientProvider
 from src.providers.ingredient_provider import IngredientDataProvider
 from src.llm.schemas import RecipeDraft
+from src.llm.recovery_types import AttemptRecord, GapSpec, RecoveryOutcome, RecoveryState, UnrecoverableReason
+from src.llm.recovery_diagnosis import diagnose, feasibility_signal, improved
+from src.llm.repository import generate_deterministic_recipe_id
+from src.llm.recipe_generator import RecipeGenerationError
+from src.llm.client import LLMClientError
+from src.providers.api_provider import IngredientResolutionError
 from src.llm.feedback_cache import (
     DEFAULT_FEEDBACK_CACHE_PATH,
     DEFAULT_CACHE_SCHEMA_VERSION,
@@ -284,50 +290,6 @@ def _default_llm_client() -> LLMClient:
     return LLMClient(llm_settings)
 
 
-def _rebuild_recipe_pool(
-    *,
-    recipes_path: str,
-    provider: IngredientDataProvider,
-) -> List[PlanningRecipe]:
-    recipe_db = RecipeDB(recipes_path)
-    all_recipes = recipe_db.get_all_recipes()
-    all_ingredient_names = extract_ingredient_names(all_recipes)
-    provider.resolve_all(all_ingredient_names)
-    calculator = NutritionCalculator(provider)
-    return convert_recipes(all_recipes, calculator)
-
-
-def _append_new_recipes_to_pool(
-    *,
-    recipes_path: str,
-    provider: IngredientDataProvider,
-    current_pool: List[PlanningRecipe],
-    persisted_ids: List[str],
-) -> List[PlanningRecipe]:
-    """Incrementally expand `current_pool` with newly persisted recipes."""
-    if not persisted_ids:
-        return current_pool
-
-    recipe_db = RecipeDB(recipes_path)
-    new_recipes: List[Any] = []
-    for rid in persisted_ids:
-        r = recipe_db.get_recipe_by_id(rid)
-        if r is not None:
-            new_recipes.append(r)
-
-    if not new_recipes:
-        return current_pool
-
-    ingredient_names = extract_ingredient_names(new_recipes)
-    provider.resolve_all(ingredient_names)
-    calculator = NutritionCalculator(provider)
-    new_pool = convert_recipes(new_recipes, calculator)
-
-    merged = list(current_pool) + list(new_pool)
-    merged.sort(key=lambda r: r.id)
-    return merged
-
-
 def _ensure_orchestrator_stats(result: MealPlanResult) -> None:
     if result.stats is None:
         result.stats = {}
@@ -379,6 +341,79 @@ def _draft_fingerprint(draft: RecipeDraft) -> str:
     return hashlib.sha256(payload_json.encode("utf-8")).hexdigest()
 
 
+def _attach_outcome(
+    result: MealPlanResult,
+    outcome: RecoveryOutcome,
+    history: List[Dict[str, Any]],
+    max_feedback_retries: int,
+) -> MealPlanResult:
+    """Attach the typed recovery outcome to the planner result (report + stats)."""
+    _ensure_orchestrator_stats(result)
+    stats = copy.deepcopy(result.stats) if result.stats else {}
+    stats["llm_feedback_attempts"] = history
+    result.stats = stats
+    result.report = copy.deepcopy(result.report or {})
+    result.report["llm_feedback"] = {"max_feedback_retries": max_feedback_retries}
+    outcome.max_attempts = max_feedback_retries
+    result.report["llm_recovery"] = outcome.to_dict()
+    return result
+
+
+_DATA_SOURCE_ERROR_TYPES: Tuple[type, ...] = (
+    RecipeGenerationError,
+    LLMClientError,
+    IngredientResolutionError,
+)
+
+
+def _classify_exception(exc: BaseException) -> Tuple[RecoveryState, Dict[str, str]]:
+    """Map an exception raised inside the loop to a typed terminal state."""
+    code = str(getattr(exc, "error_code", "") or type(exc).__name__)
+    info = {"type": type(exc).__name__, "code": code, "message": str(exc)[:300]}
+    if isinstance(exc, _DATA_SOURCE_ERROR_TYPES):
+        return RecoveryState.DATA_SOURCE_FAILURE, info
+    return RecoveryState.SYSTEM_ERROR, info
+
+
+def _known_ingredient_vocabulary(provider: Any, limit: int = 160) -> List[str]:
+    """Names the resolver is known to handle (from the on-disk USDA cache), for the LLM prompt."""
+    try:
+        cache_dir = provider._lookup.cache.cache_dir  # APIIngredientProvider -> CachedIngredientLookup -> IngredientCache
+    except Exception:
+        return []
+    names: List[str] = []
+    try:
+        for f in sorted(Path(cache_dir).glob("*.json")):
+            try:
+                names.append(str(json.load(open(f)).get("canonical_name", "")).strip())
+            except Exception:
+                continue
+            if len(names) >= limit:
+                break
+    except Exception:
+        return []
+    return sorted({n for n in names if n})
+
+
+def _candidate_planning_recipe(recipe: Any, provider: IngredientDataProvider) -> PlanningRecipe:
+    """Convert an accepted (validated) recipe into an in-memory planning candidate.
+
+    Deterministic tags only: the effort/time bucket derived from the cook time. No LLM tags.
+    """
+    calculator = NutritionCalculator(provider)
+    planning = convert_recipes([recipe], calculator)[0]
+    tags: Set[str] = set()
+    try:
+        from src.llm.time_bucket import time_bucket
+
+        tags.add(time_bucket(int(recipe.cooking_time_minutes)))
+    except Exception:
+        tags = set()
+    planning.canonical_tag_slugs = set(tags)
+    planning.hard_eligible_tag_slugs = set(tags)  # system-derived, hard-eligible by contract
+    return planning
+
+
 def plan_with_llm_feedback(
     profile: PlanningUserProfile,
     recipe_pool: List[PlanningRecipe],
@@ -393,25 +428,56 @@ def plan_with_llm_feedback(
     use_feedback_cache: bool = True,
     force_live_generation: bool = False,
 ) -> MealPlanResult:
-    """Wrap `plan_meals()` with a bounded LLM-driven recipe generation feedback loop.
+    """Deterministic planner first; bounded, diagnosed, validated LLM recovery second.
 
-    Invariant: the planner remains a black-box; we only add recipes between retries.
+    Control loop (see evaluation/llm_overhaul/LLM_OVERHAUL_PLAN.md):
+      plan -> diagnose (deterministic; may refuse) -> GapSpec -> drafts (LLM or cache)
+      -> semantic validation against the GapSpec -> in-memory candidate pool
+      -> feasibility signal -> plan again -> typed outcome.
+    Invariants:
+    - the LLM is called only with a GapSpec, never with a bare failure code;
+    - nothing is persisted unless the retried plan succeeds; then only the recipes the plan
+      uses are written, with provenance;
+    - the deterministic planner result is never replaced by an LLM-layer exception;
+    - the request's pool is never rebuilt from disk.
+    ``DeterministicCacheMissError`` still escapes in ``assisted_cached`` mode (caller contract).
     """
 
-    # Initial (non-LLM) attempt.
     result: MealPlanResult = plan_meals(profile, recipe_pool, days)
     if result.success:
-        return result
+        return _attach_outcome(
+            result, RecoveryOutcome(state=RecoveryState.NOT_ATTEMPTED, reason="planner_succeeded"), [], max_feedback_retries
+        )
+    initial_result = result
 
     if result.failure_mode not in _ELIGIBLE_FAILURE_MODES:
-        return result
+        return _attach_outcome(
+            result,
+            RecoveryOutcome(
+                state=RecoveryState.UNRECOVERABLE_INFEASIBILITY,
+                reason="failure_mode_not_recoverable",
+                unrecoverable={"code": "PIN_OR_BATCH_OR_TAG_CONFLICT", "message": f"{result.failure_mode} cannot be fixed by adding recipes.", "details": {}},
+            ),
+            [],
+            max_feedback_retries,
+        )
 
     if client is None:
         client = _default_llm_client()
     if provider is None:
         provider = _default_usda_provider()
-
     assert_usda_capable_provider(provider)
+
+    # --- Deterministic diagnosis: decide whether recipes can help, and what they must satisfy.
+    diagnosis = diagnose(result, profile, recipe_pool, days, known_ingredient_vocabulary=_known_ingredient_vocabulary(provider))
+    if isinstance(diagnosis, UnrecoverableReason):
+        return _attach_outcome(
+            result,
+            RecoveryOutcome(state=RecoveryState.UNRECOVERABLE_INFEASIBILITY, reason=diagnosis.code, unrecoverable=diagnosis.to_dict()),
+            [],
+            max_feedback_retries,
+        )
+    gap: GapSpec = diagnosis
 
     recipes_to_generate = (
         int(recipes_to_generate_per_attempt)
@@ -420,39 +486,26 @@ def plan_with_llm_feedback(
     )
 
     history: List[Dict[str, Any]] = []
+    outcome = RecoveryOutcome(state=RecoveryState.RECOVERY_LIMIT_REACHED, reason="attempts_exhausted", gap_spec=gap.to_dict())
     generated_fingerprints: Set[str] = set()
-
-    prev_failure_sig = _stable_failure_signature(result)
+    candidate_pool: List[PlanningRecipe] = list(recipe_pool)
+    candidates_by_id: Dict[str, ValidatedRecipeForPersistence] = {}
+    previous_rejections: List[Dict[str, str]] = []
+    any_accepted = False
 
     deterministic_strict = (
         _parse_bool_env(os.getenv("LLM_DETERMINISTIC_STRICT"), default=False)
         if deterministic_strict_override is None
         else bool(deterministic_strict_override)
     )
-    feedback_cache_path = os.getenv(
-        "LLM_FEEDBACK_CACHE_PATH", DEFAULT_FEEDBACK_CACHE_PATH
-    )
-    cache_schema_version = int(
-        os.getenv(
-            "LLM_FEEDBACK_CACHE_SCHEMA_VERSION",
-            str(DEFAULT_CACHE_SCHEMA_VERSION),
-        )
-    )
+    feedback_cache_path = os.getenv("LLM_FEEDBACK_CACHE_PATH", DEFAULT_FEEDBACK_CACHE_PATH)
+    cache_schema_version = int(os.getenv("LLM_FEEDBACK_CACHE_SCHEMA_VERSION", str(DEFAULT_CACHE_SCHEMA_VERSION)))
     cache_enabled = use_feedback_cache and not force_live_generation
     if cache_enabled:
-        feedback_cache = load_feedback_cache(
-            feedback_cache_path,
-            cache_schema_version=cache_schema_version,
-        )
+        feedback_cache = load_feedback_cache(feedback_cache_path, cache_schema_version=cache_schema_version)
     else:
-        # Avoid disk reads/writes and ensure cache-miss behavior is explicit.
-        feedback_cache = FeedbackCache(
-            path=feedback_cache_path,
-            cache_schema_version=cache_schema_version,
-            entries_by_key={},
-        )
+        feedback_cache = FeedbackCache(path=feedback_cache_path, cache_schema_version=cache_schema_version, entries_by_key={})
 
-    # Use the configured LLM model as part of the cache key.
     model_version = ""
     try:
         settings = getattr(client, "_settings", None)
@@ -463,207 +516,140 @@ def plan_with_llm_feedback(
     if not model_version:
         model_version = os.getenv("LLM_MODEL", "")
 
-    result_recipe_pool = recipe_pool
+    signal_before = feasibility_signal(profile, candidate_pool, gap, days)
 
     for attempt_idx in range(1, max_feedback_retries + 1):
-        # Create deterministic prompt context from planner diagnostics.
-        curr_failure_sig = _stable_failure_signature(result)
-        feedback_context = build_feedback_context(result, profile)
-
+        # The LLM sees the GapSpec (what to satisfy) plus what was rejected so far and why.
+        feedback_context: Dict[str, Any] = gap.to_dict()
+        feedback_context["attempt"] = attempt_idx
+        if previous_rejections:
+            feedback_context["previous_attempt_rejections"] = previous_rejections[-12:]
+        failure_sig = _stable_failure_signature(result)
         cache_key = build_feedback_cache_key(
-            failure_signature=curr_failure_sig,
+            failure_signature=failure_sig,
             feedback_context=feedback_context,
             recipes_to_generate=recipes_to_generate,
             model_version=model_version,
             cache_schema_version=cache_schema_version,
         )
 
-        cached_drafts = (
-            get_cached_drafts(feedback_cache, cache_key) if cache_enabled else None
-        )
+        cached_drafts = get_cached_drafts(feedback_cache, cache_key) if cache_enabled else None
+        llm_called = False
         if cached_drafts is not None:
             drafts = cached_drafts
         else:
             if deterministic_strict and cache_enabled:
-                history.append(
-                    {
-                        "attempt": attempt_idx,
-                        "status": "deterministic_cache_miss_abort",
-                        "failure_type": result.failure_mode,
-                        "recipes_generated": recipes_to_generate,
-                        "accepted": 0,
-                        "persisted_ids": [],
-                        "validation_error": "DETERMINISTIC_CACHE_MISS",
-                    }
-                )
-                raise DeterministicCacheMissError(
-                    f"DETERMINISTIC_CACHE_MISS: cache miss for key={cache_key}"
-                )
-
-            drafts = suggest_targeted_recipe_drafts(
-                client=client,
-                context=feedback_context,
-                count=recipes_to_generate,
-            )
-
-            canonical_payload = [d.model_dump() for d in drafts]
-            # Keep in-memory cache warm for additional retries in this call.
+                history.append({"attempt": attempt_idx, "status": "deterministic_cache_miss_abort", "failure_type": result.failure_mode,
+                                "recipes_generated": recipes_to_generate, "accepted": 0, "persisted_ids": [], "validation_error": "DETERMINISTIC_CACHE_MISS"})
+                raise DeterministicCacheMissError(f"DETERMINISTIC_CACHE_MISS: cache miss for key={cache_key}")
+            try:
+                drafts = suggest_targeted_recipe_drafts(client=client, context=feedback_context, count=recipes_to_generate)
+            except Exception as exc:
+                state, info = _classify_exception(exc)
+                outcome.llm_calls += 1
+                history.append({"attempt": attempt_idx, "status": "error", "error_code": info["code"], "failure_type": result.failure_mode,
+                                "recipes_generated": 0, "accepted": 0, "persisted_ids": [], "validation_error": info["code"]})
+                outcome.state, outcome.reason, outcome.error, outcome.attempts = state, "draft_generation_failed", info, list(history)
+                return _attach_outcome(result, outcome, history, max_feedback_retries)
+            llm_called = True
+            outcome.llm_calls += 1
             if cache_enabled and feedback_cache.entries_by_key is not None:
-                feedback_cache.entries_by_key[cache_key] = canonical_payload
-
+                feedback_cache.entries_by_key[cache_key] = [d.model_dump() for d in drafts]
             if cache_enabled:
-                upsert_cached_drafts(
-                    cache_path=feedback_cache_path,
-                    cache_schema_version=cache_schema_version,
-                    cache_key=cache_key,
-                    drafts=drafts,
-                )
+                upsert_cached_drafts(cache_path=feedback_cache_path, cache_schema_version=cache_schema_version, cache_key=cache_key, drafts=drafts)
 
-        # Pre-validation dedupe: remove drafts already present in the accepted
-        # fingerprint set, and de-dupe within this attempt too.
+        drafts_received = len(drafts)
         local_seen: Set[str] = set()
-        duplicate_only = False
-        filtered_drafts: List[RecipeDraft] = []
+        filtered: List[RecipeDraft] = []
         for d in drafts:
             fp = _draft_fingerprint(d)
             if fp in generated_fingerprints or fp in local_seen:
-                duplicate_only = True
                 continue
             local_seen.add(fp)
-            filtered_drafts.append(d)
-
-        if filtered_drafts:
-            drafts = filtered_drafts
-        else:
-            drafts = []
-
-        duplicate_only = duplicate_only and len(drafts) == 0
-
-        accepted_wrapped: List[ValidatedRecipeForPersistence] = []
-        persisted_ids: List[str] = []
-        accepted_count = 0
+            filtered.append(d)
+        drafts = filtered
 
         try:
-            accepted_wrapped, _failures = validate_recipe_drafts(drafts, provider)
+            accepted_wrapped, failures = validate_recipe_drafts(
+                drafts, provider, gap_spec=gap, existing_recipes=candidate_pool, source="llm_feedback"
+            )
         except Exception as exc:
-            history.append(
-                {
-                    "attempt": attempt_idx,
-                    "status": "error",
-                    "error_code": "VALIDATION_EXCEPTION",
-                    "failure_type": result.failure_mode,
-                    "recipes_generated": len(drafts),
-                    "accepted": 0,
-                    "persisted_ids": [],
-                    "validation_error": "LLM_RECIPE_VALIDATION_RAISED",
-                }
-            )
-            raise LLMFeedbackOrchestratorError(
-                error_code="VALIDATION_EXCEPTION",
-                message="LLM recipe validation raised an unexpected error.",
-            ) from exc
+            state, info = _classify_exception(exc)
+            history.append({"attempt": attempt_idx, "status": "error", "error_code": "VALIDATION_EXCEPTION", "failure_type": result.failure_mode,
+                            "recipes_generated": len(drafts), "accepted": 0, "persisted_ids": [], "validation_error": "LLM_RECIPE_VALIDATION_RAISED"})
+            outcome.state, outcome.reason, outcome.error, outcome.attempts = state, "draft_validation_failed", info, list(history)
+            return _attach_outcome(result, outcome, history, max_feedback_retries)
 
-        accepted_count = len(accepted_wrapped)
-        if accepted_count:
-            # Maintain our own fingerprint-set for loop progress detection.
-            newly_accepted_fps: Set[str] = set()
-            accepted_recipes = [w.recipe for w in accepted_wrapped]
-            for r in accepted_recipes:
-                newly_accepted_fps.add(compute_recipe_fingerprint(r))
-            generated_fingerprints.update(newly_accepted_fps)
+        rejected = [{"code": f.error_code, "message": f.message} for f in failures]
+        previous_rejections.extend({"name": d.name, **r} for d, r in zip([x for x in drafts if x.name not in {w.recipe.name for w in accepted_wrapped}], rejected))
 
-            persisted_ids = append_validated_recipes(
-                path=recipes_path,
-                recipes=accepted_wrapped,
-            )
-
-        history.append(
-            {
-                "attempt": attempt_idx,
-                "status": "duplicate_only" if duplicate_only else "fail",
-                "failure_type": result.failure_mode,
-                "recipes_generated": len(drafts),
-                "accepted": accepted_count,
-                "persisted_ids": list(persisted_ids),
-                "validation_error": None,
-            }
-        )
-
-        # Incremental expansion when we actually persisted new recipes; otherwise
-        # avoid full rebuild since the recipe pool is unchanged.
-        if persisted_ids:
+        new_candidate_ids: List[str] = []
+        for w in accepted_wrapped:
+            recipe = w.recipe
+            fp = compute_recipe_fingerprint(recipe)
+            generated_fingerprints.add(fp)
+            recipe.id = generate_deterministic_recipe_id(recipe, set(candidates_by_id) | {r.id for r in candidate_pool})
+            recipe.provenance = dict(recipe.provenance or {})
+            recipe.provenance.update({"source": "llm_feedback", "gap_kind": gap.kind, "attempt": attempt_idx, "model": model_version or None})
             try:
-                result_recipe_pool = _append_new_recipes_to_pool(
-                    recipes_path=recipes_path,
-                    provider=provider,
-                    current_pool=result_recipe_pool,
-                    persisted_ids=persisted_ids,
-                )
-            except Exception:
-                # Safety fallback: full rebuild if incremental update fails.
-                # Observability: emit structured signal without changing behavior.
-                print(
-                    json.dumps(
-                        {
-                            "fallback_triggered": True,
-                            "reason": "incremental_update_failed",
-                        },
-                        sort_keys=True,
-                        ensure_ascii=True,
-                    ),
-                    file=sys.stderr,
-                )
-                result_recipe_pool = _rebuild_recipe_pool(
-                    recipes_path=recipes_path,
-                    provider=provider,
-                )
+                candidate_pool.append(_candidate_planning_recipe(recipe, provider))
+            except Exception as exc:
+                state, info = _classify_exception(exc)
+                history.append({"attempt": attempt_idx, "status": "error", "error_code": "POOL_UPDATE_FAILED", "failure_type": result.failure_mode,
+                                "recipes_generated": len(drafts), "accepted": len(accepted_wrapped), "persisted_ids": [], "validation_error": "POOL_UPDATE_FAILED"})
+                outcome.state, outcome.reason, outcome.error, outcome.attempts = state, "pool_update_failed", info, list(history)
+                return _attach_outcome(result, outcome, history, max_feedback_retries)
+            candidates_by_id[recipe.id] = w
+            new_candidate_ids.append(recipe.id)
+        accepted_count = len(new_candidate_ids)
+        any_accepted = any_accepted or accepted_count > 0
 
-        # Retry planner with the same profile object so caller-injected batch locks/pins
-        # keep identical precedence across the initial attempt and every feedback retry.
-        result = plan_meals(profile, result_recipe_pool, days)
+        signal_after = feasibility_signal(profile, candidate_pool, gap, days)
+        did_improve = improved(signal_before, signal_after, gap)
+
+        record = {
+            "attempt": attempt_idx, "status": "fail", "failure_type": result.failure_mode,
+            "recipes_generated": len(drafts), "accepted": accepted_count, "persisted_ids": [], "validation_error": None,
+            "llm_called": llm_called, "drafts_received": drafts_received, "rejected": rejected,
+            "candidate_ids": list(new_candidate_ids), "signal_before": signal_before, "signal_after": signal_after, "improved": did_improve,
+        }
+        history.append(record)
+
+        if accepted_count == 0:
+            # Nothing new to plan over; the next attempt sees the rejection reasons.
+            continue
+
+        result = plan_meals(profile, candidate_pool, days)
+        outcome.planner_runs += 1
+        record["planner_code_after"] = "OK" if result.success else result.failure_mode
+
         if result.success:
-            _ensure_orchestrator_stats(result)
-            stats = copy.deepcopy(result.stats) if result.stats else {}
-            stats["llm_feedback_attempts"] = history
-            result.stats = stats
-            result.report = copy.deepcopy(result.report or {})
-            result.report["llm_feedback"] = {"max_feedback_retries": max_feedback_retries}
-            return result
+            used_ids = {a.recipe_id for a in (result.plan or [])}
+            to_persist = [candidates_by_id[rid] for rid in sorted(used_ids) if rid in candidates_by_id]
+            try:
+                persisted_ids = append_validated_recipes(path=recipes_path, recipes=to_persist) if to_persist else []
+            except Exception as exc:
+                state, info = _classify_exception(exc)
+                record["status"] = "error"
+                outcome.state, outcome.reason, outcome.error, outcome.attempts = RecoveryState.SYSTEM_ERROR, "persist_failed", info, list(history)
+                return _attach_outcome(initial_result, outcome, history, max_feedback_retries)
+            record["status"] = "success"
+            record["persisted_ids"] = list(persisted_ids)
+            outcome.persisted_recipe_ids = list(persisted_ids)
+            outcome.state, outcome.reason, outcome.attempts = RecoveryState.SUCCESS, "planner_succeeded_after_recovery", list(history)
+            return _attach_outcome(result, outcome, history, max_feedback_retries)
 
         if result.failure_mode not in _ELIGIBLE_FAILURE_MODES:
-            _ensure_orchestrator_stats(result)
-            stats = copy.deepcopy(result.stats) if result.stats else {}
-            stats["llm_feedback_attempts"] = history
-            result.stats = stats
-            result.report = copy.deepcopy(result.report or {})
-            result.report["llm_feedback"] = {"max_feedback_retries": max_feedback_retries}
-            return result
+            outcome.state, outcome.reason, outcome.attempts = RecoveryState.UNRECOVERABLE_INFEASIBILITY, "failure_mode_not_recoverable_after_retry", list(history)
+            return _attach_outcome(result, outcome, history, max_feedback_retries)
 
-        curr_failure_sig = _stable_failure_signature(result)
+        if not did_improve:
+            record["status"] = "abort"
+            outcome.state, outcome.reason, outcome.attempts = RecoveryState.NO_USEFUL_RECOVERY_FOUND, "no_progress_in_gap_dimension", list(history)
+            return _attach_outcome(result, outcome, history, max_feedback_retries)
+        signal_before = signal_after
 
-        # Abort if planner is stuck on the same failure signature AND we didn't
-        # append any new recipes.
-        if curr_failure_sig == prev_failure_sig:
-            # If append_validated_recipes returned nothing, treat as no progress.
-            if not persisted_ids:
-                # Mark the last feedback attempt as aborted (avoid double-logging).
-                if history:
-                    history[-1]["status"] = "abort"
-                _ensure_orchestrator_stats(result)
-                stats = copy.deepcopy(result.stats) if result.stats else {}
-                stats["llm_feedback_attempts"] = history
-                result.stats = stats
-                result.report = copy.deepcopy(result.report or {})
-                result.report["llm_feedback"] = {"max_feedback_retries": max_feedback_retries}
-                return result
-
-        prev_failure_sig = curr_failure_sig
-
-    _ensure_orchestrator_stats(result)
-    stats = copy.deepcopy(result.stats) if result.stats else {}
-    stats["llm_feedback_attempts"] = history
-    result.stats = stats
-    result.report = copy.deepcopy(result.report or {})
-    result.report["llm_feedback"] = {"max_feedback_retries": max_feedback_retries}
-    return result
-
+    outcome.state = RecoveryState.RECOVERY_LIMIT_REACHED if any_accepted else RecoveryState.INVALID_RECOVERY_OUTPUT
+    outcome.reason = "attempts_exhausted" if any_accepted else "no_draft_accepted"
+    outcome.attempts = list(history)
+    return _attach_outcome(result, outcome, history, max_feedback_retries)

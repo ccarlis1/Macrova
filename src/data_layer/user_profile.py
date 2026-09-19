@@ -425,13 +425,43 @@ def user_profile_from_planner_config(cfg: PlannerConfigJson) -> UserProfile:
         )
 
     cuisine = [str(c).strip() for c in cfg.preferences.cuisine or [] if str(c).strip()]
+    constraints = cfg.constraints
 
-    if cfg.schedule_days is not None:
-        expanded = _expand_schedule_days(list(cfg.schedule_days), cfg.days)
+    # Explicit fat range wins over the budget-derived one (the budget is an economic
+    # preference; it only stands in for fat when the user said nothing about fat).
+    if constraints is not None and (constraints.fat_g_min is not None or constraints.fat_g_max is not None):
+        lo = float(constraints.fat_g_min if constraints.fat_g_min is not None else 0.0)
+        hi = float(constraints.fat_g_max if constraints.fat_g_max is not None else max(lo, fat_g_max))
+        fat_g_min, fat_g_max = lo, hi
+        median_fat_g = (fat_g_min + fat_g_max) / 2.0
+        daily_carbs_g = (daily_calories - daily_protein_g * 4.0 - median_fat_g * 9.0) / 4.0
+        if daily_carbs_g < 0:
+            raise PlannerConfigMappingError(
+                error_code="NEGATIVE_CARBS_DERIVED",
+                message="Derived carbs was negative with the stated fat range; targets are inconsistent.",
+                details={"daily_calories": float(daily_calories), "daily_protein_g": daily_protein_g,
+                         "fat_g_min": fat_g_min, "fat_g_max": fat_g_max, "daily_carbs_g": daily_carbs_g},
+            )
+
+    # An invented schedule is a hard constraint the user never stated: drop it when the model
+    # told us what was stated and schedule_days was not among it.
+    schedule_days_in = cfg.schedule_days
+    if schedule_days_in is not None and cfg.stated_fields and "schedule_days" not in cfg.stated_fields:
+        schedule_days_in = None
+
+    if schedule_days_in is not None:
+        expanded = _expand_schedule_days(list(schedule_days_in), cfg.days)
         schedule_dict, _ = schedule_days_to_meal_only_legacy_dict(expanded)
     else:
         expanded = None
         schedule_dict = _schedule_dict_from_meals_per_day(cfg.meals_per_day)
+
+    allergies = [str(a).strip() for a in (constraints.allergies if constraints else []) if str(a).strip()]
+    disliked = [str(d).strip() for d in (constraints.disliked_foods if constraints else []) if str(d).strip()]
+    liked = cuisine + [str(l).strip() for l in (constraints.liked_foods if constraints else []) if str(l).strip()]
+    micro = dict(constraints.micronutrient_goals) if constraints and constraints.micronutrient_goals else None
+    tau = float(constraints.micronutrient_weekly_min_fraction) if constraints and constraints.micronutrient_weekly_min_fraction is not None else 1.0
+    ceiling = int(constraints.max_daily_calories) if constraints and constraints.max_daily_calories is not None else None
 
     return UserProfile(
         daily_calories=daily_calories,
@@ -439,13 +469,32 @@ def user_profile_from_planner_config(cfg: PlannerConfigJson) -> UserProfile:
         daily_fat_g=(float(fat_g_min), float(fat_g_max)),
         daily_carbs_g=float(daily_carbs_g),
         schedule={str(k): int(v) for k, v in schedule_dict.items()},
-        liked_foods=cuisine,
-        disliked_foods=[],
-        allergies=[],
-        max_daily_calories=None,
-        daily_micronutrient_targets=None,
-        micronutrient_weekly_min_fraction=1.0,
+        liked_foods=liked,
+        disliked_foods=disliked,
+        allergies=allergies,
+        max_daily_calories=ceiling,
+        daily_micronutrient_targets=micro,
+        micronutrient_weekly_min_fraction=tau,
         schedule_days=expanded,
         pins=None,
     )
+
+
+def planner_config_interpretation_report(cfg: PlannerConfigJson) -> Dict[str, object]:
+    """Machine-readable account of what the NL interpretation stated, defaulted, derived or dropped."""
+    constraints = cfg.constraints
+    derived: List[str] = []
+    if not (constraints is not None and (constraints.fat_g_min is not None or constraints.fat_g_max is not None)):
+        derived.append("fat_range_from_budget")
+    derived.append("carbs_from_remaining_calories")
+    dropped: List[str] = []
+    if cfg.schedule_days is not None and cfg.stated_fields and "schedule_days" not in cfg.stated_fields:
+        dropped.append("schedule_days_not_stated")
+    return {
+        "stated_fields": list(cfg.stated_fields),
+        "defaulted_fields": cfg.defaulted_fields(),
+        "derived_fields": derived,
+        "dropped_fields": dropped,
+        "stated_fields_reported_by_model": bool(cfg.stated_fields),
+    }
 

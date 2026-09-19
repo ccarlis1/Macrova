@@ -31,7 +31,7 @@ from dataclasses import dataclass, asdict, fields
 from pathlib import Path
 from typing import Optional, Dict, Any
 
-from src.ingestion.nutrient_mapper import MappedNutrition, NutrientMapper
+from src.ingestion.nutrient_mapper import MappedNutrition, NutrientMapper, MAPPER_VERSION
 from src.ingestion.ingredient_ranker import rank_candidates
 from src.data_layer.models import MicronutrientProfile
 from src.ingestion.usda_client import USDALookupError
@@ -56,14 +56,19 @@ class CacheEntry:
     description: str
     data_type: str
     nutrition: MappedNutrition
-    
+    # Provenance record (Step 2.7b). Legacy entries have None. Keys:
+    # query, cache_key, fdc_id, description, data_type, method
+    # (deterministic|llm_tiebreak|legacy_cache), rank_confidence, margin,
+    # mapper_version, resolved_at, selection_reasons.
+    provenance: Optional[Dict[str, Any]] = None
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization.
         
         Returns:
             Dictionary representation of cache entry
         """
-        return {
+        out: Dict[str, Any] = {
             "canonical_name": self.canonical_name,
             "fdc_id": self.fdc_id,
             "description": self.description,
@@ -78,6 +83,26 @@ class CacheEntry:
                     for field in fields(self.nutrition.micronutrients)
                 }
             }
+        }
+        if self.provenance is not None:
+            out["provenance"] = dict(self.provenance)
+        return out
+
+    def provenance_record(self) -> Dict[str, Any]:
+        """Provenance for consumers; legacy entries are labelled as such."""
+        if self.provenance:
+            return dict(self.provenance)
+        return {
+            "query": self.canonical_name,
+            "cache_key": self.canonical_name,
+            "fdc_id": self.fdc_id,
+            "description": self.description,
+            "data_type": self.data_type,
+            "method": "legacy_cache",
+            "rank_confidence": None,
+            "margin": None,
+            "mapper_version": None,
+            "resolved_at": None,
         }
     
     @classmethod
@@ -109,7 +134,8 @@ class CacheEntry:
             fdc_id=data.get("fdc_id", 0),
             description=data.get("description", ""),
             data_type=data.get("data_type", ""),
-            nutrition=nutrition
+            nutrition=nutrition,
+            provenance=data.get("provenance") if isinstance(data.get("provenance"), dict) else None,
         )
 
 
@@ -317,6 +343,7 @@ class CachedIngredientLookup:
         selected_fdc_id = ranked.selected.fdc_id
         if selected_fdc_id is None:
             return None
+        selection_method = "deterministic"
 
         # Confidence/mode gates:
         # - Deterministic mode: never call LLM.
@@ -345,6 +372,8 @@ class CachedIngredientLookup:
                     ],
                 )
                 if isinstance(llm_answer, int) and llm_answer in candidate_ids:
+                    if llm_answer != selected_fdc_id:
+                        selection_method = "llm_tiebreak"
                     selected_fdc_id = llm_answer
 
         # Step 2.3: Get nutrition data
@@ -355,13 +384,31 @@ class CachedIngredientLookup:
         # Step 2.4: Map nutrients
         nutrition = self.mapper.map_nutrients(details.raw_payload)
         
+        selected = next((c for c in ranked.top_candidates if c.fdc_id == selected_fdc_id), ranked.selected)
+        from datetime import datetime, timezone
+
+        provenance = {
+            "query": canonical_name,
+            "cache_key": canonical_name,
+            "fdc_id": selected_fdc_id,
+            "description": selected.description or "",
+            "data_type": selected.data_type or "",
+            "method": selection_method,
+            "rank_confidence": float(ranked.confidence),
+            "margin": None if ranked.margin == float("inf") else float(ranked.margin),
+            "mapper_version": MAPPER_VERSION,
+            "resolved_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+            "selection_reasons": list(ranked.selection_reasons),
+        }
+
         # Create cache entry
         entry = CacheEntry(
             canonical_name=canonical_name,
             fdc_id=selected_fdc_id,
-            description=ranked.selected.description or "",
-            data_type=ranked.selected.data_type or "",
-            nutrition=nutrition
+            description=selected.description or "",
+            data_type=selected.data_type or "",
+            nutrition=nutrition,
+            provenance=provenance,
         )
         
         # Write to cache

@@ -1,0 +1,6359 @@
+{
+ "model": "gpt-4o-mini",
+ "summary": {
+  "n_cases": 42,
+  "field_accuracy": {
+   "allergies": "3/3",
+   "budget": "3/3",
+   "busyness": "2/2",
+   "calories": "34/34",
+   "cuisine": "3/3",
+   "days": "36/36",
+   "diet": "2/2",
+   "dislikes": "2/2",
+   "fat_max": "1/1",
+   "fat_min": "1/1",
+   "liked": "1/1",
+   "max_calories": "1/1",
+   "meals_by_day": "1/1",
+   "meals_per_day": "34/34",
+   "micronutrients": "1/1",
+   "protein": "33/33",
+   "required_tags": "0/1",
+   "tau": "1/1",
+   "workouts": "3/3"
+  },
+  "cases_with_structural_omission": 0,
+  "structural_omissions_total": 0,
+  "model_omissions_total": 0,
+  "misplaced_into_cuisine": [],
+  "cases_with_invented_nondefault": [
+   [
+    "NL-18",
+    [
+     "schedule_days (dropped by mapping)"
+    ]
+   ]
+  ],
+  "cases_with_documented_defaults": 34,
+  "hard_soft_misclassifications": 0,
+  "structural_omissions_under_old_schema": 13,
+  "stated_fields_reported_rate": "36/37",
+  "stated_fields_precision_mean": 0.96,
+  "stated_fields_recall_mean": 0.92,
+  "invented_schedule_kept_after_mapping": 0,
+  "allergies_reaching_profile": "3/3",
+  "invalid_expected": [
+   "NL-27",
+   "NL-28",
+   "NL-29",
+   "NL-42"
+  ],
+  "invalid_unexpected": [
+   [
+    "NL-16",
+    "MAPPING:NEGATIVE_CARBS_DERIVED"
+   ]
+  ],
+  "expected_invalid_but_accepted": [],
+  "ambiguous_values": {
+   "NL-13": {
+    "calories": 1500
+   },
+   "NL-25": {
+    "calories": 2000,
+    "protein": 120.0
+   },
+   "NL-31": {
+    "meals_per_day": 2
+   },
+   "NL-41": {
+    "protein": 150.0
+   }
+  },
+  "determinism_agreement": "37/42",
+  "nondeterministic_cases": [
+   "NL-06",
+   "NL-20",
+   "NL-22",
+   "NL-36",
+   "NL-40"
+  ]
+ },
+ "runs": [
+  [
+   {
+    "id": "NL-01",
+    "cat": [
+     "baseline"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 3,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2200,
+      "protein": 160.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      48.53333333333334,
+      60.666666666666664
+     ],
+     "carbs": 267.15,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 2.78
+   },
+   {
+    "id": "NL-02",
+    "cat": [
+     "defaults"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": false,
+    "stated_fields_precision": null,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {},
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "days",
+     "calories",
+     "protein",
+     "budget",
+     "meals_per_day=3"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 120.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      47.28888888888889,
+      59.111111111111114
+     ],
+     "carbs": 260.3,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.59
+   },
+   {
+    "id": "NL-03",
+    "cat": [
+     "allergy"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "allergies": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 2,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 150.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": {
+      "allergies": [
+       "peanuts"
+      ],
+      "disliked_foods": [],
+      "liked_foods": [],
+      "max_daily_calories": null,
+      "fat_g_min": null,
+      "fat_g_max": null,
+      "micronutrient_goals": null,
+      "dietary_flags": [],
+      "micronutrient_weekly_min_fraction": null
+     },
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein",
+      "allergies"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      43.555555555555564,
+      54.444444444444436
+     ],
+     "carbs": 239.75,
+     "allergies": [
+      "peanuts"
+     ],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 4.48
+   },
+   {
+    "id": "NL-04",
+    "cat": [
+     "allergy",
+     "dislike"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "allergies": true,
+     "dislikes": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2100,
+      "protein": 140.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": {
+      "allergies": [
+       "shellfish"
+      ],
+      "disliked_foods": [
+       "mushrooms"
+      ],
+      "liked_foods": [],
+      "max_daily_calories": null,
+      "fat_g_min": null,
+      "fat_g_max": null,
+      "micronutrient_goals": null,
+      "dietary_flags": [],
+      "micronutrient_weekly_min_fraction": null
+     },
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein",
+      "allergies",
+      "disliked_foods"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      47.91111111111112,
+      59.888888888888886
+     ],
+     "carbs": 263.725,
+     "allergies": [
+      "shellfish"
+     ],
+     "dislikes": [
+      "mushrooms"
+     ],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 2.53
+   },
+   {
+    "id": "NL-05",
+    "cat": [
+     "cuisine_soft"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "cuisine": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 1800,
+      "protein": 120.0
+     },
+     "preferences": {
+      "cuisine": [
+       "Mexican"
+      ],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein",
+      "cuisine"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      41.06666666666667,
+      51.33333333333333
+     ],
+     "carbs": 226.05,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 2.59
+   },
+   {
+    "id": "NL-06",
+    "cat": [
+     "cuisine_hard"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "cuisine": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 130.0
+     },
+     "preferences": {
+      "cuisine": [
+       "Italian"
+      ],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein",
+      "cuisine"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      46.04444444444445,
+      57.55555555555556
+     ],
+     "carbs": 253.45,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.74
+   },
+   {
+    "id": "NL-07",
+    "cat": [
+     "budget"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "budget": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 5,
+     "meals_per_day": 4,
+     "targets": {
+      "calories": 2400,
+      "protein": 170.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "cheap"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein",
+      "budget"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      47.77777777777778,
+      57.333333333333336
+     ],
+     "carbs": 311.75,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4,
+      "19:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.49
+   },
+   {
+    "id": "NL-08",
+    "cat": [
+     "budget"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "budget": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 2,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2600,
+      "protein": 180.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "premium"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein",
+      "budget"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      62.666666666666664,
+      83.55555555555556
+     ],
+     "carbs": 305.5,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.32
+   },
+   {
+    "id": "NL-09",
+    "cat": [
+     "units"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 4,
+     "targets": {
+      "calories": 2500,
+      "protein": 144.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": {
+      "allergies": [],
+      "disliked_foods": [],
+      "liked_foods": [],
+      "max_daily_calories": 2500,
+      "fat_g_min": null,
+      "fat_g_max": null,
+      "micronutrient_goals": null,
+      "dietary_flags": [],
+      "micronutrient_weekly_min_fraction": null
+     },
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      59.857777777777784,
+      74.82222222222222
+     ],
+     "carbs": 329.485,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": 2500,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4,
+      "19:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.63
+   },
+   {
+    "id": "NL-10",
+    "cat": [
+     "units"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 2,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2300,
+      "protein": 128.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      55.62666666666667,
+      69.53333333333333
+     ],
+     "carbs": 306.195,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 2.28
+   },
+   {
+    "id": "NL-11",
+    "cat": [
+     "units"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 150.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      43.555555555555564,
+      54.444444444444436
+     ],
+     "carbs": 239.75,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.77
+   },
+   {
+    "id": "NL-12",
+    "cat": [
+     "units"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 5,
+     "meals_per_day": 4,
+     "targets": {
+      "calories": 2200,
+      "protein": 140.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      51.022222222222226,
+      63.77777777777778
+     ],
+     "carbs": 280.85,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4,
+      "19:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 2.36
+   },
+   {
+    "id": "NL-13",
+    "cat": [
+     "ceiling"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 0.75,
+    "stated_fields_recall": 0.75,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "protein": true,
+     "max_calories": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {
+     "calories": 1500
+    },
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 1500,
+      "protein": 110.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": {
+      "allergies": [],
+      "disliked_foods": [],
+      "liked_foods": [],
+      "max_daily_calories": 1500,
+      "fat_g_min": null,
+      "fat_g_max": null,
+      "micronutrient_goals": null,
+      "dietary_flags": [],
+      "micronutrient_weekly_min_fraction": null
+     },
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      32.97777777777778,
+      41.22222222222222
+     ],
+     "carbs": 181.52499999999998,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": 1500,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.84
+   },
+   {
+    "id": "NL-14",
+    "cat": [
+     "micro"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 0.8,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "micronutrients": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 3,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 120.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": {
+      "allergies": [],
+      "disliked_foods": [],
+      "liked_foods": [],
+      "max_daily_calories": null,
+      "fat_g_min": null,
+      "fat_g_max": null,
+      "micronutrient_goals": {
+       "fiber_g": 30.0,
+       "iron_mg": 18.0
+      },
+      "dietary_flags": [],
+      "micronutrient_weekly_min_fraction": null
+     },
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      47.28888888888889,
+      59.111111111111114
+     ],
+     "carbs": 260.3,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": {
+      "fiber_g": 30.0,
+      "iron_mg": 18.0
+     },
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.64
+   },
+   {
+    "id": "NL-15",
+    "cat": [
+     "fat"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 0.8,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "fat_min": true,
+     "fat_max": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2200,
+      "protein": 150.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": {
+      "allergies": [],
+      "disliked_foods": [],
+      "liked_foods": [],
+      "max_daily_calories": null,
+      "fat_g_min": 50.0,
+      "fat_g_max": 70.0,
+      "micronutrient_goals": null,
+      "dietary_flags": [],
+      "micronutrient_weekly_min_fraction": null
+     },
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      50.0,
+      70.0
+     ],
+     "carbs": 265.0,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 2.62
+   },
+   {
+    "id": "NL-16",
+    "cat": [
+     "diet_hard"
+    ],
+    "error": "MAPPING:NEGATIVE_CARBS_DERIVED",
+    "invalid": true,
+    "expected_invalid": false,
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 150.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": {
+      "allergies": [],
+      "disliked_foods": [],
+      "liked_foods": [],
+      "max_daily_calories": 2000,
+      "fat_g_min": 166.67,
+      "fat_g_max": 166.67,
+      "micronutrient_goals": null,
+      "dietary_flags": [],
+      "micronutrient_weekly_min_fraction": null
+     },
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": null,
+    "secs": 3.33
+   },
+   {
+    "id": "NL-17",
+    "cat": [
+     "schedule"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 0.8,
+    "schedule_dropped_by_mapping": true,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "workouts": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 140.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": [
+      {
+       "day_index": 1,
+       "meals": [
+        {
+         "index": 1,
+         "busyness_level": 3,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 2,
+         "busyness_level": 3,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 3,
+         "busyness_level": 3,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        }
+       ],
+       "workouts": [
+        {
+         "after_meal_index": 2,
+         "type": "PM",
+         "intensity": null
+        }
+       ]
+      }
+     ]
+    },
+    "mapping": {
+     "fat": [
+      44.800000000000004,
+      55.99999999999999
+     ],
+     "carbs": 246.60000000000002,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 4.85
+   },
+   {
+    "id": "NL-18",
+    "cat": [
+     "schedule",
+     "ambiguous"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": true,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [
+     "schedule_days (dropped by mapping)"
+    ],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 140.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": [
+      {
+       "day_index": 1,
+       "meals": [
+        {
+         "index": 1,
+         "busyness_level": 4,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 2,
+         "busyness_level": 4,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 3,
+         "busyness_level": 4,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        }
+       ],
+       "workouts": [
+        {
+         "after_meal_index": 1,
+         "type": "AM",
+         "intensity": null
+        }
+       ]
+      }
+     ]
+    },
+    "mapping": {
+     "fat": [
+      44.800000000000004,
+      55.99999999999999
+     ],
+     "carbs": 246.60000000000002,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 2.78
+   },
+   {
+    "id": "NL-19",
+    "cat": [
+     "schedule"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 0.8,
+    "schedule_dropped_by_mapping": true,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "busyness": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 140.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": [
+      {
+       "day_index": 1,
+       "meals": [
+        {
+         "index": 1,
+         "busyness_level": 1,
+         "tags": [
+          "breakfast"
+         ],
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 2,
+         "busyness_level": 3,
+         "tags": [
+          "lunch"
+         ],
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 3,
+         "busyness_level": 4,
+         "tags": [
+          "dinner"
+         ],
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        }
+       ],
+       "workouts": []
+      }
+     ]
+    },
+    "mapping": {
+     "fat": [
+      44.800000000000004,
+      55.99999999999999
+     ],
+     "carbs": 246.60000000000002,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 3.08
+   },
+   {
+    "id": "NL-20",
+    "cat": [
+     "schedule"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 0.75,
+    "stated_fields_recall": 0.75,
+    "schedule_dropped_by_mapping": true,
+    "field_ok": {
+     "days": true,
+     "calories": true,
+     "protein": true,
+     "meals_by_day": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 3,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2100,
+      "protein": 150.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": [
+      {
+       "day_index": 1,
+       "meals": [
+        {
+         "index": 1,
+         "busyness_level": 3,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 2,
+         "busyness_level": 3,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 3,
+         "busyness_level": 3,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        }
+       ],
+       "workouts": []
+      },
+      {
+       "day_index": 2,
+       "meals": [
+        {
+         "index": 1,
+         "busyness_level": 3,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 2,
+         "busyness_level": 3,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 3,
+         "busyness_level": 3,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 4,
+         "busyness_level": 3,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        }
+       ],
+       "workouts": []
+      },
+      {
+       "day_index": 3,
+       "meals": [
+        {
+         "index": 1,
+         "busyness_level": 3,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 2,
+         "busyness_level": 3,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 3,
+         "busyness_level": 3,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        }
+       ],
+       "workouts": []
+      }
+     ]
+    },
+    "mapping": {
+     "fat": [
+      46.66666666666667,
+      58.333333333333336
+     ],
+     "carbs": 256.875,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 6.58
+   },
+   {
+    "id": "NL-21",
+    "cat": [
+     "diet_tag"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 0.8,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "diet": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 2,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 100.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": {
+      "allergies": [],
+      "disliked_foods": [],
+      "liked_foods": [],
+      "max_daily_calories": null,
+      "fat_g_min": null,
+      "fat_g_max": null,
+      "micronutrient_goals": null,
+      "dietary_flags": [
+       "vegan"
+      ],
+      "micronutrient_weekly_min_fraction": null
+     },
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      49.777777777777786,
+      62.22222222222222
+     ],
+     "carbs": 274.0,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.64
+   },
+   {
+    "id": "NL-22",
+    "cat": [
+     "diet_tag"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 0.8,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "diet": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 1900,
+      "protein": 120.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": {
+      "allergies": [],
+      "disliked_foods": [],
+      "liked_foods": [],
+      "max_daily_calories": null,
+      "fat_g_min": null,
+      "fat_g_max": null,
+      "micronutrient_goals": null,
+      "dietary_flags": [
+       "gluten_free",
+       "dairy_free"
+      ],
+      "micronutrient_weekly_min_fraction": null
+     },
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      44.17777777777778,
+      55.222222222222214
+     ],
+     "carbs": 243.175,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.71
+   },
+   {
+    "id": "NL-23",
+    "cat": [
+     "required_tag"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 0.8,
+    "schedule_dropped_by_mapping": true,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "required_tags": false
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 130.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": [
+      {
+       "day_index": 1,
+       "meals": [
+        {
+         "index": 1,
+         "busyness_level": 2,
+         "tags": [
+          "breakfast"
+         ],
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 2,
+         "busyness_level": 3,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 3,
+         "busyness_level": 3,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        }
+       ],
+       "workouts": []
+      }
+     ]
+    },
+    "mapping": {
+     "fat": [
+      46.04444444444445,
+      57.55555555555556
+     ],
+     "carbs": 253.45,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 3.92
+   },
+   {
+    "id": "NL-24",
+    "cat": [
+     "likes"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 0.8,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "liked": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 140.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": {
+      "allergies": [],
+      "disliked_foods": [],
+      "liked_foods": [
+       "salmon",
+       "eggs"
+      ],
+      "max_daily_calories": null,
+      "fat_g_min": null,
+      "fat_g_max": null,
+      "micronutrient_goals": null,
+      "dietary_flags": [],
+      "micronutrient_weekly_min_fraction": null
+     },
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      44.800000000000004,
+      55.99999999999999
+     ],
+     "carbs": 246.60000000000002,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 2.44
+   },
+   {
+    "id": "NL-25",
+    "cat": [
+     "ambiguous"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 0.5,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {
+     "calories": 2000,
+     "protein": 120.0
+    },
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 120.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      47.28888888888889,
+      59.111111111111114
+     ],
+     "carbs": 260.3,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.87
+   },
+   {
+    "id": "NL-26",
+    "cat": [
+     "defaults"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "protein",
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 120.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      47.28888888888889,
+      59.111111111111114
+     ],
+     "carbs": 260.3,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.33
+   },
+   {
+    "id": "NL-27",
+    "cat": [
+     "invalid"
+    ],
+    "error": "PARSE:LLM_SCHEMA_VALIDATION_ERROR:['meals_per_day: Input should be less than or equal to 8']",
+    "invalid": true,
+    "expected_invalid": true,
+    "raw": null,
+    "mapping": null,
+    "secs": 1.23
+   },
+   {
+    "id": "NL-28",
+    "cat": [
+     "invalid"
+    ],
+    "error": "PARSE:LLM_SCHEMA_VALIDATION_ERROR:['days: Input should be greater than or equal to 1']",
+    "invalid": true,
+    "expected_invalid": true,
+    "raw": null,
+    "mapping": null,
+    "secs": 1.53
+   },
+   {
+    "id": "NL-29",
+    "cat": [
+     "invalid"
+    ],
+    "error": "PARSE:LLM_SCHEMA_VALIDATION_ERROR:['days: Input should be less than or equal to 7']",
+    "invalid": true,
+    "expected_invalid": true,
+    "raw": null,
+    "mapping": null,
+    "secs": 1.61
+   },
+   {
+    "id": "NL-30",
+    "cat": [
+     "adversarial"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 120.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      47.28888888888889,
+      59.111111111111114
+     ],
+     "carbs": 260.3,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.42
+   },
+   {
+    "id": "NL-31",
+    "cat": [
+     "contradiction"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 0.75,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "calories": true,
+     "protein": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {
+     "meals_per_day": 2
+    },
+    "raw": {
+     "days": 1,
+     "meals_per_day": 2,
+     "targets": {
+      "calories": 2000,
+      "protein": 120.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      47.28888888888889,
+      59.111111111111114
+     ],
+     "carbs": 260.3,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.78
+   },
+   {
+    "id": "NL-32",
+    "cat": [
+     "schedule"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 2,
+     "targets": {
+      "calories": 2200,
+      "protein": 150.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      49.777777777777786,
+      62.22222222222222
+     ],
+     "carbs": 274.0,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.71
+   },
+   {
+    "id": "NL-33",
+    "cat": [
+     "units"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 150.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": {
+      "allergies": [],
+      "disliked_foods": [],
+      "liked_foods": [],
+      "max_daily_calories": 2000,
+      "fat_g_min": null,
+      "fat_g_max": null,
+      "micronutrient_goals": null,
+      "dietary_flags": [],
+      "micronutrient_weekly_min_fraction": null
+     },
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      43.555555555555564,
+      54.444444444444436
+     ],
+     "carbs": 239.75,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": 2000,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.95
+   },
+   {
+    "id": "NL-34",
+    "cat": [
+     "units"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 150.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      43.555555555555564,
+      54.444444444444436
+     ],
+     "carbs": 239.75,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 2.95
+   },
+   {
+    "id": "NL-35",
+    "cat": [
+     "schedule"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 7,
+     "meals_per_day": 1,
+     "targets": {
+      "calories": 800,
+      "protein": 60.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      17.422222222222224,
+      21.77777777777778
+     ],
+     "carbs": 95.9,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.26
+   },
+   {
+    "id": "NL-36",
+    "cat": [
+     "schedule"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 0.8,
+    "schedule_dropped_by_mapping": true,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "workouts": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 4,
+     "targets": {
+      "calories": 2400,
+      "protein": 160.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": [
+      {
+       "day_index": 1,
+       "meals": [
+        {
+         "index": 1,
+         "busyness_level": 2,
+         "tags": [
+          "breakfast"
+         ],
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 2,
+         "busyness_level": 2,
+         "tags": [
+          "lunch"
+         ],
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 3,
+         "busyness_level": 3,
+         "tags": [],
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 4,
+         "busyness_level": 3,
+         "tags": [],
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        }
+       ],
+       "workouts": [
+        {
+         "after_meal_index": 1,
+         "type": "AM",
+         "intensity": null
+        },
+        {
+         "after_meal_index": 2,
+         "type": "PM",
+         "intensity": null
+        }
+       ]
+      }
+     ]
+    },
+    "mapping": {
+     "fat": [
+      54.75555555555556,
+      68.44444444444444
+     ],
+     "carbs": 301.4,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4,
+      "19:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 4.62
+   },
+   {
+    "id": "NL-37",
+    "cat": [
+     "tau"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 0.8,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "tau": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 7,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 120.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": {
+      "allergies": [],
+      "disliked_foods": [],
+      "liked_foods": [],
+      "max_daily_calories": null,
+      "fat_g_min": null,
+      "fat_g_max": null,
+      "micronutrient_goals": null,
+      "dietary_flags": [],
+      "micronutrient_weekly_min_fraction": 0.8
+     },
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      47.28888888888889,
+      59.111111111111114
+     ],
+     "carbs": 260.3,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 0.8,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.54
+   },
+   {
+    "id": "NL-38",
+    "cat": [
+     "dislike"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 0.8,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "dislikes": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 140.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": {
+      "allergies": [],
+      "disliked_foods": [
+       "cilantro",
+       "olives",
+       "liver"
+      ],
+      "liked_foods": [],
+      "max_daily_calories": null,
+      "fat_g_min": null,
+      "fat_g_max": null,
+      "micronutrient_goals": null,
+      "dietary_flags": [],
+      "micronutrient_weekly_min_fraction": null
+     },
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      44.800000000000004,
+      55.99999999999999
+     ],
+     "carbs": 246.60000000000002,
+     "allergies": [],
+     "dislikes": [
+      "cilantro",
+      "olives",
+      "liver"
+     ],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.78
+   },
+   {
+    "id": "NL-39",
+    "cat": [
+     "robustness"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 2,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 130.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      46.04444444444445,
+      57.55555555555556
+     ],
+     "carbs": 253.45,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 2.13
+   },
+   {
+    "id": "NL-40",
+    "cat": [
+     "stress"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 0.75,
+    "schedule_dropped_by_mapping": true,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "cuisine": true,
+     "budget": true,
+     "allergies": true,
+     "workouts": true,
+     "busyness": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 4,
+     "meals_per_day": 4,
+     "targets": {
+      "calories": 2600,
+      "protein": 180.0
+     },
+     "preferences": {
+      "cuisine": [
+       "Mediterranean"
+      ],
+      "budget": "standard"
+     },
+     "constraints": {
+      "allergies": [
+       "tree nuts"
+      ],
+      "disliked_foods": [],
+      "liked_foods": [],
+      "max_daily_calories": null,
+      "fat_g_min": null,
+      "fat_g_max": null,
+      "micronutrient_goals": null,
+      "dietary_flags": [],
+      "micronutrient_weekly_min_fraction": null
+     },
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein",
+      "budget",
+      "allergies"
+     ],
+     "schedule_days": [
+      {
+       "day_index": 1,
+       "meals": [
+        {
+         "index": 1,
+         "busyness_level": 4,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 2,
+         "busyness_level": 2,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 3,
+         "busyness_level": 4,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 4,
+         "busyness_level": 4,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        }
+       ],
+       "workouts": [
+        {
+         "after_meal_index": 3,
+         "type": "PM",
+         "intensity": null
+        }
+       ]
+      }
+     ]
+    },
+    "mapping": {
+     "fat": [
+      58.4888888888889,
+      73.11111111111111
+     ],
+     "carbs": 321.95,
+     "allergies": [
+      "tree nuts"
+     ],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4,
+      "19:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 4.28
+   },
+   {
+    "id": "NL-41",
+    "cat": [
+     "nonsense"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 0.75,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {
+     "protein": 150.0
+    },
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 150.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      43.555555555555564,
+      54.444444444444436
+     ],
+     "carbs": 239.75,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.72
+   },
+   {
+    "id": "NL-42",
+    "cat": [
+     "invalid_mapping"
+    ],
+    "error": "MAPPING:NEGATIVE_REMAINING_AFTER_PROTEIN",
+    "invalid": true,
+    "expected_invalid": true,
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 1000,
+      "protein": 300.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": null,
+    "secs": 1.64
+   }
+  ],
+  [
+   {
+    "id": "NL-01",
+    "cat": [
+     "baseline"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 3,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2200,
+      "protein": 160.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      48.53333333333334,
+      60.666666666666664
+     ],
+     "carbs": 267.15,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.42
+   },
+   {
+    "id": "NL-02",
+    "cat": [
+     "defaults"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": false,
+    "stated_fields_precision": null,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {},
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "days",
+     "calories",
+     "protein",
+     "budget",
+     "meals_per_day=3"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 120.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      47.28888888888889,
+      59.111111111111114
+     ],
+     "carbs": 260.3,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.28
+   },
+   {
+    "id": "NL-03",
+    "cat": [
+     "allergy"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "allergies": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 2,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 150.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": {
+      "allergies": [
+       "peanuts"
+      ],
+      "disliked_foods": [],
+      "liked_foods": [],
+      "max_daily_calories": null,
+      "fat_g_min": null,
+      "fat_g_max": null,
+      "micronutrient_goals": null,
+      "dietary_flags": [],
+      "micronutrient_weekly_min_fraction": null
+     },
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein",
+      "allergies"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      43.555555555555564,
+      54.444444444444436
+     ],
+     "carbs": 239.75,
+     "allergies": [
+      "peanuts"
+     ],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.73
+   },
+   {
+    "id": "NL-04",
+    "cat": [
+     "allergy",
+     "dislike"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "allergies": true,
+     "dislikes": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2100,
+      "protein": 140.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": {
+      "allergies": [
+       "shellfish"
+      ],
+      "disliked_foods": [
+       "mushrooms"
+      ],
+      "liked_foods": [],
+      "max_daily_calories": null,
+      "fat_g_min": null,
+      "fat_g_max": null,
+      "micronutrient_goals": null,
+      "dietary_flags": [],
+      "micronutrient_weekly_min_fraction": null
+     },
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein",
+      "allergies",
+      "disliked_foods"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      47.91111111111112,
+      59.888888888888886
+     ],
+     "carbs": 263.725,
+     "allergies": [
+      "shellfish"
+     ],
+     "dislikes": [
+      "mushrooms"
+     ],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.95
+   },
+   {
+    "id": "NL-05",
+    "cat": [
+     "cuisine_soft"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "cuisine": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 1800,
+      "protein": 120.0
+     },
+     "preferences": {
+      "cuisine": [
+       "Mexican"
+      ],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein",
+      "cuisine"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      41.06666666666667,
+      51.33333333333333
+     ],
+     "carbs": 226.05,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 2.34
+   },
+   {
+    "id": "NL-06",
+    "cat": [
+     "cuisine_hard"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 0.83,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "cuisine": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 130.0
+     },
+     "preferences": {
+      "cuisine": [
+       "Italian"
+      ],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein",
+      "cuisine",
+      "budget"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      46.04444444444445,
+      57.55555555555556
+     ],
+     "carbs": 253.45,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.64
+   },
+   {
+    "id": "NL-07",
+    "cat": [
+     "budget"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "budget": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 5,
+     "meals_per_day": 4,
+     "targets": {
+      "calories": 2400,
+      "protein": 170.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "cheap"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein",
+      "budget"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      47.77777777777778,
+      57.333333333333336
+     ],
+     "carbs": 311.75,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4,
+      "19:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.49
+   },
+   {
+    "id": "NL-08",
+    "cat": [
+     "budget"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "budget": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 2,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2600,
+      "protein": 180.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "premium"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein",
+      "budget"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      62.666666666666664,
+      83.55555555555556
+     ],
+     "carbs": 305.5,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.14
+   },
+   {
+    "id": "NL-09",
+    "cat": [
+     "units"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 4,
+     "targets": {
+      "calories": 2500,
+      "protein": 144.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": {
+      "allergies": [],
+      "disliked_foods": [],
+      "liked_foods": [],
+      "max_daily_calories": 2500,
+      "fat_g_min": null,
+      "fat_g_max": null,
+      "micronutrient_goals": null,
+      "dietary_flags": [],
+      "micronutrient_weekly_min_fraction": null
+     },
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      59.857777777777784,
+      74.82222222222222
+     ],
+     "carbs": 329.485,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": 2500,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4,
+      "19:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 2.24
+   },
+   {
+    "id": "NL-10",
+    "cat": [
+     "units"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 2,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2300,
+      "protein": 128.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      55.62666666666667,
+      69.53333333333333
+     ],
+     "carbs": 306.195,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.68
+   },
+   {
+    "id": "NL-11",
+    "cat": [
+     "units"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 150.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      43.555555555555564,
+      54.444444444444436
+     ],
+     "carbs": 239.75,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.33
+   },
+   {
+    "id": "NL-12",
+    "cat": [
+     "units"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 5,
+     "meals_per_day": 4,
+     "targets": {
+      "calories": 2200,
+      "protein": 140.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      51.022222222222226,
+      63.77777777777778
+     ],
+     "carbs": 280.85,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4,
+      "19:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.61
+   },
+   {
+    "id": "NL-13",
+    "cat": [
+     "ceiling"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 0.75,
+    "stated_fields_recall": 0.75,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "protein": true,
+     "max_calories": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {
+     "calories": 1500
+    },
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 1500,
+      "protein": 110.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": {
+      "allergies": [],
+      "disliked_foods": [],
+      "liked_foods": [],
+      "max_daily_calories": 1500,
+      "fat_g_min": null,
+      "fat_g_max": null,
+      "micronutrient_goals": null,
+      "dietary_flags": [],
+      "micronutrient_weekly_min_fraction": null
+     },
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      32.97777777777778,
+      41.22222222222222
+     ],
+     "carbs": 181.52499999999998,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": 1500,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.59
+   },
+   {
+    "id": "NL-14",
+    "cat": [
+     "micro"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 0.8,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "micronutrients": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 3,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 120.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": {
+      "allergies": [],
+      "disliked_foods": [],
+      "liked_foods": [],
+      "max_daily_calories": null,
+      "fat_g_min": null,
+      "fat_g_max": null,
+      "micronutrient_goals": {
+       "fiber_g": 30.0,
+       "iron_mg": 18.0
+      },
+      "dietary_flags": [],
+      "micronutrient_weekly_min_fraction": null
+     },
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      47.28888888888889,
+      59.111111111111114
+     ],
+     "carbs": 260.3,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": {
+      "fiber_g": 30.0,
+      "iron_mg": 18.0
+     },
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.62
+   },
+   {
+    "id": "NL-15",
+    "cat": [
+     "fat"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 0.8,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "fat_min": true,
+     "fat_max": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2200,
+      "protein": 150.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": {
+      "allergies": [],
+      "disliked_foods": [],
+      "liked_foods": [],
+      "max_daily_calories": null,
+      "fat_g_min": 50.0,
+      "fat_g_max": 70.0,
+      "micronutrient_goals": null,
+      "dietary_flags": [],
+      "micronutrient_weekly_min_fraction": null
+     },
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      50.0,
+      70.0
+     ],
+     "carbs": 265.0,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.54
+   },
+   {
+    "id": "NL-16",
+    "cat": [
+     "diet_hard"
+    ],
+    "error": "MAPPING:NEGATIVE_CARBS_DERIVED",
+    "invalid": true,
+    "expected_invalid": false,
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 150.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": {
+      "allergies": [],
+      "disliked_foods": [],
+      "liked_foods": [],
+      "max_daily_calories": 2000,
+      "fat_g_min": 166.67,
+      "fat_g_max": 166.67,
+      "micronutrient_goals": null,
+      "dietary_flags": [],
+      "micronutrient_weekly_min_fraction": null
+     },
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": null,
+    "secs": 2.15
+   },
+   {
+    "id": "NL-17",
+    "cat": [
+     "schedule"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 0.8,
+    "schedule_dropped_by_mapping": true,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "workouts": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 140.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": [
+      {
+       "day_index": 1,
+       "meals": [
+        {
+         "index": 1,
+         "busyness_level": 3,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 2,
+         "busyness_level": 3,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 3,
+         "busyness_level": 3,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        }
+       ],
+       "workouts": [
+        {
+         "after_meal_index": 2,
+         "type": "PM",
+         "intensity": null
+        }
+       ]
+      }
+     ]
+    },
+    "mapping": {
+     "fat": [
+      44.800000000000004,
+      55.99999999999999
+     ],
+     "carbs": 246.60000000000002,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 2.36
+   },
+   {
+    "id": "NL-18",
+    "cat": [
+     "schedule",
+     "ambiguous"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": true,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [
+     "schedule_days (dropped by mapping)"
+    ],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 140.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": [
+      {
+       "day_index": 1,
+       "meals": [
+        {
+         "index": 1,
+         "busyness_level": 4,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 2,
+         "busyness_level": 4,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 3,
+         "busyness_level": 4,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        }
+       ],
+       "workouts": [
+        {
+         "after_meal_index": 1,
+         "type": "AM",
+         "intensity": null
+        }
+       ]
+      }
+     ]
+    },
+    "mapping": {
+     "fat": [
+      44.800000000000004,
+      55.99999999999999
+     ],
+     "carbs": 246.60000000000002,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 2.36
+   },
+   {
+    "id": "NL-19",
+    "cat": [
+     "schedule"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 0.8,
+    "schedule_dropped_by_mapping": true,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "busyness": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 140.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": [
+      {
+       "day_index": 1,
+       "meals": [
+        {
+         "index": 1,
+         "busyness_level": 1,
+         "tags": [
+          "breakfast"
+         ],
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 2,
+         "busyness_level": 3,
+         "tags": [
+          "lunch"
+         ],
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 3,
+         "busyness_level": 4,
+         "tags": [
+          "dinner"
+         ],
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        }
+       ],
+       "workouts": []
+      }
+     ]
+    },
+    "mapping": {
+     "fat": [
+      44.800000000000004,
+      55.99999999999999
+     ],
+     "carbs": 246.60000000000002,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 2.91
+   },
+   {
+    "id": "NL-20",
+    "cat": [
+     "schedule"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 0.75,
+    "stated_fields_recall": 0.75,
+    "schedule_dropped_by_mapping": true,
+    "field_ok": {
+     "days": true,
+     "calories": true,
+     "protein": true,
+     "meals_by_day": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 3,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2100,
+      "protein": 150.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": [
+      {
+       "day_index": 1,
+       "meals": [
+        {
+         "index": 1,
+         "busyness_level": 4,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 2,
+         "busyness_level": 4,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 3,
+         "busyness_level": 4,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        }
+       ],
+       "workouts": []
+      },
+      {
+       "day_index": 2,
+       "meals": [
+        {
+         "index": 1,
+         "busyness_level": 4,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 2,
+         "busyness_level": 4,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 3,
+         "busyness_level": 4,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 4,
+         "busyness_level": 4,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        }
+       ],
+       "workouts": []
+      },
+      {
+       "day_index": 3,
+       "meals": [
+        {
+         "index": 1,
+         "busyness_level": 4,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 2,
+         "busyness_level": 4,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 3,
+         "busyness_level": 4,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        }
+       ],
+       "workouts": []
+      }
+     ]
+    },
+    "mapping": {
+     "fat": [
+      46.66666666666667,
+      58.333333333333336
+     ],
+     "carbs": 256.875,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 4.87
+   },
+   {
+    "id": "NL-21",
+    "cat": [
+     "diet_tag"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 0.8,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "diet": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 2,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 100.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": {
+      "allergies": [],
+      "disliked_foods": [],
+      "liked_foods": [],
+      "max_daily_calories": null,
+      "fat_g_min": null,
+      "fat_g_max": null,
+      "micronutrient_goals": null,
+      "dietary_flags": [
+       "vegan"
+      ],
+      "micronutrient_weekly_min_fraction": null
+     },
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      49.777777777777786,
+      62.22222222222222
+     ],
+     "carbs": 274.0,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 2.02
+   },
+   {
+    "id": "NL-22",
+    "cat": [
+     "diet_tag"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "diet": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 1900,
+      "protein": 120.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": {
+      "allergies": [],
+      "disliked_foods": [],
+      "liked_foods": [],
+      "max_daily_calories": null,
+      "fat_g_min": null,
+      "fat_g_max": null,
+      "micronutrient_goals": null,
+      "dietary_flags": [
+       "gluten_free",
+       "dairy_free"
+      ],
+      "micronutrient_weekly_min_fraction": null
+     },
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein",
+      "dietary_flags"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      44.17777777777778,
+      55.222222222222214
+     ],
+     "carbs": 243.175,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.85
+   },
+   {
+    "id": "NL-23",
+    "cat": [
+     "required_tag"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 0.8,
+    "schedule_dropped_by_mapping": true,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "required_tags": false
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 130.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": [
+      {
+       "day_index": 1,
+       "meals": [
+        {
+         "index": 1,
+         "busyness_level": 2,
+         "tags": [
+          "breakfast"
+         ],
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 2,
+         "busyness_level": 3,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 3,
+         "busyness_level": 3,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        }
+       ],
+       "workouts": []
+      }
+     ]
+    },
+    "mapping": {
+     "fat": [
+      46.04444444444445,
+      57.55555555555556
+     ],
+     "carbs": 253.45,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 2.96
+   },
+   {
+    "id": "NL-24",
+    "cat": [
+     "likes"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 0.8,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "liked": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 140.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": {
+      "allergies": [],
+      "disliked_foods": [],
+      "liked_foods": [
+       "salmon",
+       "eggs"
+      ],
+      "max_daily_calories": null,
+      "fat_g_min": null,
+      "fat_g_max": null,
+      "micronutrient_goals": null,
+      "dietary_flags": [],
+      "micronutrient_weekly_min_fraction": null
+     },
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      44.800000000000004,
+      55.99999999999999
+     ],
+     "carbs": 246.60000000000002,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.93
+   },
+   {
+    "id": "NL-25",
+    "cat": [
+     "ambiguous"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 0.5,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {
+     "calories": 2000,
+     "protein": 120.0
+    },
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 120.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      47.28888888888889,
+      59.111111111111114
+     ],
+     "carbs": 260.3,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.06
+   },
+   {
+    "id": "NL-26",
+    "cat": [
+     "defaults"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "protein",
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 120.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      47.28888888888889,
+      59.111111111111114
+     ],
+     "carbs": 260.3,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.29
+   },
+   {
+    "id": "NL-27",
+    "cat": [
+     "invalid"
+    ],
+    "error": "PARSE:LLM_SCHEMA_VALIDATION_ERROR:['meals_per_day: Input should be less than or equal to 8']",
+    "invalid": true,
+    "expected_invalid": true,
+    "raw": null,
+    "mapping": null,
+    "secs": 1.18
+   },
+   {
+    "id": "NL-28",
+    "cat": [
+     "invalid"
+    ],
+    "error": "PARSE:LLM_SCHEMA_VALIDATION_ERROR:['days: Input should be greater than or equal to 1']",
+    "invalid": true,
+    "expected_invalid": true,
+    "raw": null,
+    "mapping": null,
+    "secs": 1.44
+   },
+   {
+    "id": "NL-29",
+    "cat": [
+     "invalid"
+    ],
+    "error": "PARSE:LLM_SCHEMA_VALIDATION_ERROR:['days: Input should be less than or equal to 7']",
+    "invalid": true,
+    "expected_invalid": true,
+    "raw": null,
+    "mapping": null,
+    "secs": 1.33
+   },
+   {
+    "id": "NL-30",
+    "cat": [
+     "adversarial"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 120.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      47.28888888888889,
+      59.111111111111114
+     ],
+     "carbs": 260.3,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.43
+   },
+   {
+    "id": "NL-31",
+    "cat": [
+     "contradiction"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 0.75,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "calories": true,
+     "protein": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {
+     "meals_per_day": 2
+    },
+    "raw": {
+     "days": 1,
+     "meals_per_day": 2,
+     "targets": {
+      "calories": 2000,
+      "protein": 120.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      47.28888888888889,
+      59.111111111111114
+     ],
+     "carbs": 260.3,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.18
+   },
+   {
+    "id": "NL-32",
+    "cat": [
+     "schedule"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 2,
+     "targets": {
+      "calories": 2200,
+      "protein": 150.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      49.777777777777786,
+      62.22222222222222
+     ],
+     "carbs": 274.0,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.48
+   },
+   {
+    "id": "NL-33",
+    "cat": [
+     "units"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 150.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": {
+      "allergies": [],
+      "disliked_foods": [],
+      "liked_foods": [],
+      "max_daily_calories": 2000,
+      "fat_g_min": null,
+      "fat_g_max": null,
+      "micronutrient_goals": null,
+      "dietary_flags": [],
+      "micronutrient_weekly_min_fraction": null
+     },
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      43.555555555555564,
+      54.444444444444436
+     ],
+     "carbs": 239.75,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": 2000,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.58
+   },
+   {
+    "id": "NL-34",
+    "cat": [
+     "units"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 150.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      43.555555555555564,
+      54.444444444444436
+     ],
+     "carbs": 239.75,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.57
+   },
+   {
+    "id": "NL-35",
+    "cat": [
+     "schedule"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 7,
+     "meals_per_day": 1,
+     "targets": {
+      "calories": 800,
+      "protein": 60.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      17.422222222222224,
+      21.77777777777778
+     ],
+     "carbs": 95.9,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.42
+   },
+   {
+    "id": "NL-36",
+    "cat": [
+     "schedule"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 0.8,
+    "schedule_dropped_by_mapping": true,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "workouts": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 4,
+     "targets": {
+      "calories": 2400,
+      "protein": 160.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": [
+      {
+       "day_index": 1,
+       "meals": [
+        {
+         "index": 1,
+         "busyness_level": 2,
+         "tags": [
+          "breakfast"
+         ],
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 2,
+         "busyness_level": 2,
+         "tags": [
+          "lunch"
+         ],
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 3,
+         "busyness_level": 3,
+         "tags": [
+          "dinner"
+         ],
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 4,
+         "busyness_level": 1,
+         "tags": [
+          "snack"
+         ],
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        }
+       ],
+       "workouts": [
+        {
+         "after_meal_index": 1,
+         "type": "AM",
+         "intensity": null
+        },
+        {
+         "after_meal_index": 2,
+         "type": "PM",
+         "intensity": null
+        }
+       ]
+      }
+     ]
+    },
+    "mapping": {
+     "fat": [
+      54.75555555555556,
+      68.44444444444444
+     ],
+     "carbs": 301.4,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4,
+      "19:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 4.38
+   },
+   {
+    "id": "NL-37",
+    "cat": [
+     "tau"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 0.8,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "tau": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 7,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 120.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": {
+      "allergies": [],
+      "disliked_foods": [],
+      "liked_foods": [],
+      "max_daily_calories": null,
+      "fat_g_min": null,
+      "fat_g_max": null,
+      "micronutrient_goals": null,
+      "dietary_flags": [],
+      "micronutrient_weekly_min_fraction": 0.8
+     },
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      47.28888888888889,
+      59.111111111111114
+     ],
+     "carbs": 260.3,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 0.8,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.53
+   },
+   {
+    "id": "NL-38",
+    "cat": [
+     "dislike"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 0.8,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "dislikes": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 140.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": {
+      "allergies": [],
+      "disliked_foods": [
+       "cilantro",
+       "olives",
+       "liver"
+      ],
+      "liked_foods": [],
+      "max_daily_calories": null,
+      "fat_g_min": null,
+      "fat_g_max": null,
+      "micronutrient_goals": null,
+      "dietary_flags": [],
+      "micronutrient_weekly_min_fraction": null
+     },
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      44.800000000000004,
+      55.99999999999999
+     ],
+     "carbs": 246.60000000000002,
+     "allergies": [],
+     "dislikes": [
+      "cilantro",
+      "olives",
+      "liver"
+     ],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 2.59
+   },
+   {
+    "id": "NL-39",
+    "cat": [
+     "robustness"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 2,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 130.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      46.04444444444445,
+      57.55555555555556
+     ],
+     "carbs": 253.45,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.48
+   },
+   {
+    "id": "NL-40",
+    "cat": [
+     "stress"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 1.0,
+    "stated_fields_recall": 0.75,
+    "schedule_dropped_by_mapping": true,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true,
+     "protein": true,
+     "cuisine": true,
+     "budget": true,
+     "allergies": true,
+     "workouts": true,
+     "busyness": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [],
+    "hard_soft": [],
+    "ambiguous_values": {},
+    "raw": {
+     "days": 4,
+     "meals_per_day": 4,
+     "targets": {
+      "calories": 2600,
+      "protein": 180.0
+     },
+     "preferences": {
+      "cuisine": [
+       "Mediterranean"
+      ],
+      "budget": "standard"
+     },
+     "constraints": {
+      "allergies": [
+       "tree nut"
+      ],
+      "disliked_foods": [],
+      "liked_foods": [],
+      "max_daily_calories": null,
+      "fat_g_min": null,
+      "fat_g_max": null,
+      "micronutrient_goals": null,
+      "dietary_flags": [],
+      "micronutrient_weekly_min_fraction": null
+     },
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein",
+      "budget",
+      "allergies"
+     ],
+     "schedule_days": [
+      {
+       "day_index": 1,
+       "meals": [
+        {
+         "index": 1,
+         "busyness_level": 4,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 2,
+         "busyness_level": 2,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 3,
+         "busyness_level": 4,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        },
+        {
+         "index": 4,
+         "busyness_level": 4,
+         "tags": null,
+         "preferred_time": null,
+         "required_tag_slugs": null,
+         "preferred_tag_slugs": null
+        }
+       ],
+       "workouts": [
+        {
+         "after_meal_index": 3,
+         "type": "PM",
+         "intensity": null
+        }
+       ]
+      }
+     ]
+    },
+    "mapping": {
+     "fat": [
+      58.4888888888889,
+      73.11111111111111
+     ],
+     "carbs": 321.95,
+     "allergies": [
+      "tree nut"
+     ],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4,
+      "19:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 3.66
+   },
+   {
+    "id": "NL-41",
+    "cat": [
+     "nonsense"
+    ],
+    "error": null,
+    "invalid": false,
+    "expected_invalid": false,
+    "stated_fields_reported": true,
+    "stated_fields_precision": 0.75,
+    "stated_fields_recall": 1.0,
+    "schedule_dropped_by_mapping": false,
+    "field_ok": {
+     "days": true,
+     "meals_per_day": true,
+     "calories": true
+    },
+    "omitted_model": [],
+    "omitted_structural": [],
+    "misplaced": [],
+    "invented": [],
+    "defaulted": [
+     "budget"
+    ],
+    "hard_soft": [],
+    "ambiguous_values": {
+     "protein": 150.0
+    },
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 2000,
+      "protein": 150.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": {
+     "fat": [
+      43.555555555555564,
+      54.444444444444436
+     ],
+     "carbs": 239.75,
+     "allergies": [],
+     "dislikes": [],
+     "max_calories": null,
+     "micro": null,
+     "tau": 1.0,
+     "schedule": {
+      "07:00": 4,
+      "12:00": 4,
+      "18:00": 4
+     },
+     "schedule_days_kept": false
+    },
+    "secs": 1.74
+   },
+   {
+    "id": "NL-42",
+    "cat": [
+     "invalid_mapping"
+    ],
+    "error": "MAPPING:NEGATIVE_REMAINING_AFTER_PROTEIN",
+    "invalid": true,
+    "expected_invalid": true,
+    "raw": {
+     "days": 1,
+     "meals_per_day": 3,
+     "targets": {
+      "calories": 1000,
+      "protein": 300.0
+     },
+     "preferences": {
+      "cuisine": [],
+      "budget": "standard"
+     },
+     "constraints": null,
+     "stated_fields": [
+      "days",
+      "meals_per_day",
+      "calories",
+      "protein"
+     ],
+     "schedule_days": null
+    },
+    "mapping": null,
+    "secs": 1.85
+   }
+  ]
+ ]
+}

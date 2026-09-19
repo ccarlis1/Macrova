@@ -86,8 +86,27 @@ def _normalize_recipe_draft_raw(
         normalization_applied = True
         normalization_actions.append("drop draft.title")
 
+    # Cook-time aliases: keep the author's claim under the schema key (integer minutes only).
+    for alias in ("cook_time", "cooking_time", "cook_time_minutes", "total_time_minutes"):
+        if alias in draft and "cooking_time_minutes" not in draft:
+            val = draft.get(alias)
+            if isinstance(val, bool) or not isinstance(val, (int, float)):
+                draft.pop(alias, None)
+                normalization_applied = True
+                normalization_actions.append(f"drop draft.{alias} (non-numeric)")
+                continue
+            draft["cooking_time_minutes"] = int(round(float(val)))
+            normalization_applied = True
+            normalization_actions.append(f"remap draft.{alias}->draft.cooking_time_minutes")
+        if alias in draft:
+            draft.pop(alias, None)
+            normalization_applied = True
+            normalization_actions.append(f"drop draft.{alias}")
+    if "cooking_time_minutes" in draft and isinstance(draft["cooking_time_minutes"], float):
+        draft["cooking_time_minutes"] = int(round(draft["cooking_time_minutes"]))
+
     # Drop known non-schema metadata keys (they are forbidden by schema).
-    for forbidden_key in ("servings", "prep_time", "cook_time"):
+    for forbidden_key in ("servings", "prep_time"):
         if forbidden_key in draft:
             draft.pop(forbidden_key, None)
             normalization_applied = True
@@ -210,7 +229,7 @@ def generate_recipe_drafts(
         'The JSON must be an object with exactly one key: "drafts". '
         "The value of `drafts` must be an array of recipe draft objects. "
         "\n\nRecipeDraft contract (each draft object):\n"
-        '- Required keys: "name" (string), "ingredients" (array of objects), "instructions" (array of strings)\n'
+        '- Required keys: "name" (string), "ingredients" (array of objects), "instructions" (array of strings), "cooking_time_minutes" (integer, total active+passive minutes)\n'
         '- Optional key: "tags"\n'
         '- Ingredients objects (each ingredient): required keys "name", "quantity", "unit"\n'
         '- Ingredients objects must NOT include extra keys\n'
@@ -222,7 +241,14 @@ def generate_recipe_drafts(
         "  - otherwise quantity > 0\n"
         "- Spices/tiny-count items: represent as {\"unit\": \"to taste\", \"quantity\": 0} (do NOT put count words like 'cloves' into the `unit` field).\n"
         "\nForbidden keys/aliases (must not appear):\n"
-        '- Draft: "title", "servings", "prep_time", "cook_time"\n'
+        '- Draft: "title", "servings", "prep_time", "cook_time" (use "cooking_time_minutes")\n'
+        "\nGeneration context rules (the context JSON is a GapSpec from a deterministic planner):\n"
+        "- excluded_ingredients: NEVER use these or any product made from them (e.g. 'peanuts' excludes peanut butter).\n"
+        "- cook_time_cap_minutes: cooking_time_minutes must be <= this value when present.\n"
+        "- per_meal_calories / per_meal_protein_g / per_meal_fat_g_max / per_meal_carbs_g: aim each draft at these per-serving amounts.\n"
+        "- nutrient_min_per_recipe: each draft must supply at least these amounts per serving of the listed nutrients.\n"
+        "- known_ingredient_vocabulary: prefer ingredient names from this list; use plain generic USDA-style names otherwise.\n"
+        "- existing_recipe_names: do not propose these or trivial variations of them.\n"
         "- Ingredient alias: do NOT output `ingredients[].amount`; use `ingredients[].quantity` instead\n"
         "\nJSON template (example):\n"
         "{\n"
@@ -233,7 +259,8 @@ def generate_recipe_drafts(
         '        {"name": "chicken breast", "quantity": 200.0, "unit": "g"},\n'
         '        {"name": "salt", "quantity": 0.0, "unit": "to taste"}\n'
         "      ],\n"
-        '      "instructions": ["Cook it."]\n'
+        '      "instructions": ["Cook it."],\n'
+        '      "cooking_time_minutes": 20\n'
         "    }\n"
         "  ]\n"
         "}\n"
@@ -282,24 +309,38 @@ def generate_recipe_drafts(
         )
 
     parsed: List[RecipeDraft] = []
+    first_failure: Dict[str, Any] | None = None
     for idx, draft_raw in enumerate(drafts_raw):
-        normalized_draft_raw, normalization_applied, normalization_actions = (
-            _normalize_recipe_draft_raw(draft_raw, draft_index=idx)
-        )
+        try:
+            normalized_draft_raw, normalization_applied, normalization_actions = (
+                _normalize_recipe_draft_raw(draft_raw, draft_index=idx)
+            )
+        except RecipeGenerationError as exc:
+            # Per-draft rejection: one malformed draft must not discard its siblings.
+            if first_failure is None:
+                first_failure = {"draft_index": idx, "error_code": exc.error_code, "details": exc.details}
+            continue
 
         parsed_or_failure = parse_llm_json(RecipeDraft, normalized_draft_raw)
         if isinstance(parsed_or_failure, ValidationFailure):
-            raise RecipeGenerationError(
-                error_code="LLM_DRAFT_SCHEMA_VALIDATION_FAILED",
-                message="A generated draft failed strict schema validation.",
-                details={
+            if first_failure is None:
+                first_failure = {
                     "draft_index": idx,
                     "validation_failure": parsed_or_failure.model_dump(),
                     "normalization_applied": normalization_applied,
                     "normalization_actions": normalization_actions,
-                },
-            )
+                }
+            continue
         parsed.append(parsed_or_failure)
+
+    if not parsed:
+        details = dict(first_failure or {"draft_index": 0})
+        code = details.pop("error_code", "LLM_DRAFT_SCHEMA_VALIDATION_FAILED")
+        raise RecipeGenerationError(
+            error_code=code,
+            message="A generated draft failed strict schema validation." if code == "LLM_DRAFT_SCHEMA_VALIDATION_FAILED" else "Draft normalization failed.",
+            details=details if "details" not in details else details["details"],
+        )
 
     return parsed
 

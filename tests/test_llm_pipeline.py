@@ -107,7 +107,7 @@ def test_generate_validate_persist_recipes_partial_acceptance(tmp_path):
     assert summary["generated"] == 2
     assert summary["accepted"] == 1
     assert len(summary["rejected"]) == 1
-    assert summary["rejected"][0]["error_code"] == "EMPTY_RECIPE"
+    assert summary["rejected"][0]["error_code"] == "INGREDIENT_UNRESOLVED"
 
     data = json.loads((tmp_path / "recipes.json").read_text(encoding="utf-8"))
     assert len(data["recipes"]) == 1

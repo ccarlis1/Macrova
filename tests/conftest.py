@@ -66,3 +66,13 @@ def setup_test_config():
         _REPO_ROOT / "data" / "recipes" / "recipes.json",
         _REPO_ROOT / "data" / "recipes" / "recipes.json.example",
     )
+
+
+@pytest.fixture(autouse=True)
+def _isolate_llm_feedback_cache(tmp_path, monkeypatch):
+    """Never let a test read or write the repository's committed feedback cache.
+
+    Tests that need a specific cache path still override the variable themselves;
+    this default only guarantees isolation for tests that do not care.
+    """
+    monkeypatch.setenv("LLM_FEEDBACK_CACHE_PATH", str(tmp_path / "llm_feedback_cache.json"))

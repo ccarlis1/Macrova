@@ -4,7 +4,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List, Optional, Set
 
 from src.data_layer.models import Ingredient, Recipe
 from src.llm.types import ValidatedRecipeForPersistence
@@ -84,6 +84,32 @@ def generate_deterministic_recipe_id(recipe: Recipe, existing_ids: Set[str]) -> 
 
     # Extremely unlikely; surface a clear error.
     raise RuntimeError("Failed to generate collision-free recipe id.")
+
+
+def _normalized_name(s: str) -> str:
+    return " ".join(str(s).strip().lower().split())
+
+
+def _ingredient_name_set(recipe: Recipe) -> Set[str]:
+    return {str(i.name).strip().lower() for i in recipe.ingredients if not i.is_to_taste and str(i.name).strip()}
+
+
+def find_near_duplicate(recipe: Recipe, existing: List[Recipe], *, jaccard_threshold: float = 0.8) -> Optional[str]:
+    """Return the id of an existing recipe that is the same dish under a different quantity/unit spelling.
+
+    Deterministic: same normalized name, or measurable-ingredient-name Jaccard >= threshold.
+    """
+    name = _normalized_name(recipe.name)
+    mine = _ingredient_name_set(recipe)
+    for other in existing:
+        if _normalized_name(other.name) == name and name:
+            return other.id
+        theirs = _ingredient_name_set(other)
+        if mine and theirs:
+            j = len(mine & theirs) / float(len(mine | theirs))
+            if j >= jaccard_threshold:
+                return other.id
+    return None
 
 
 def _load_recipe_json(path: Path) -> Dict[str, Any]:
@@ -168,6 +194,7 @@ def append_validated_recipes(
                 "cooking_time_minutes": int(recipe.cooking_time_minutes),
                 "instructions": list(recipe.instructions),
                 "default_servings": int(getattr(recipe, "default_servings", 1)),
+                **({"provenance": dict(recipe.provenance)} if getattr(recipe, "provenance", None) else {}),
             }
         )
 

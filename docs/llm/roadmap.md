@@ -40,6 +40,8 @@ isProject: false
 
 # LLM Integration Plan (Deterministic-First)
 
+> **Overhaul note (2026-09):** the recovery loop, validator, tagger write path and NL schema were replaced or extended after a diagnostic evaluation; the current contracts, evidence and before/after measurements are in `evaluation/llm_overhaul/` (start with `LLM_OVERHAUL_PLAN.md` and `FINAL_VALIDATION.md`). Where this roadmap's Phase 5/6 text disagrees with `AGENTS.md`, `AGENTS.md` is current.
+>
 > **Implementation status (2025):** Core LLM modules under `src/llm/` are implemented — client, schemas, recipe generation/validation/persistence, ingredient matching, NL config parsing, tagging, and planner feedback (`src/planning/orchestrator.py`). See `tests/test_llm_*.py` and API routes in `src/api/server.py`. Remaining work is UX polish, expanded creativity, and operational hardening — not greenfield implementation.
 
 ## Architecture Overview

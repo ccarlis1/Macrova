@@ -106,6 +106,7 @@ class RecipeDB:
             instructions=recipe_data.get("instructions", []),
             default_servings=int(recipe_data.get("default_servings", 1)),
             tags=self._derive_tags_from_canonical(recipe_id),
+            provenance=recipe_data.get("provenance") if isinstance(recipe_data.get("provenance"), dict) else None,
         )
 
     def _parse_ingredient(self, ing_data: dict) -> Ingredient:
@@ -162,23 +163,24 @@ class RecipeDB:
         """
         recipes_payload = []
         for recipe in self._recipes:
-            recipes_payload.append(
-                {
-                    "id": recipe.id,
-                    "name": recipe.name,
-                    "ingredients": [
-                        {
-                            "name": ing.name,
-                            "quantity": ing.quantity,
-                            "unit": ing.unit,
-                        }
-                        for ing in recipe.ingredients
-                    ],
-                    "cooking_time_minutes": recipe.cooking_time_minutes,
-                    "instructions": list(recipe.instructions),
-                    "default_servings": int(recipe.default_servings),
-                }
-            )
+            row = {
+                "id": recipe.id,
+                "name": recipe.name,
+                "ingredients": [
+                    {
+                        "name": ing.name,
+                        "quantity": ing.quantity,
+                        "unit": ing.unit,
+                    }
+                    for ing in recipe.ingredients
+                ],
+                "cooking_time_minutes": recipe.cooking_time_minutes,
+                "instructions": list(recipe.instructions),
+                "default_servings": int(recipe.default_servings),
+            }
+            if recipe.provenance:
+                row["provenance"] = dict(recipe.provenance)
+            recipes_payload.append(row)
 
         payload = {"recipes": recipes_payload}
         with open(self.json_path, "w", encoding="utf-8") as f:

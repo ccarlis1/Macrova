@@ -22,6 +22,18 @@ class DummyProvider:
         return None
 
 
+def _fake_pool():
+    """Non-empty, non-fitting pool so the recovery loop diagnoses a gap (empty pools are refused before any cache lookup)."""
+    from src.data_layer.models import Ingredient, MicronutrientProfile, NutritionProfile
+    from src.planning.phase0_models import PlanningRecipe
+
+    def r(rid):
+        return PlanningRecipe(id=rid, name=rid, ingredients=[Ingredient("x", 100, "g")], cooking_time_minutes=5,
+                              nutrition=NutritionProfile(100.0, 5.0, 2.0, 10.0, MicronutrientProfile()))
+
+    return [r("a"), r("b"), r("c")]
+
+
 def test_api_plan_strict_deterministic_cache_miss_is_mapped(monkeypatch, tmp_path):
     monkeypatch.setenv("LLM_DETERMINISTIC_STRICT", "true")
     monkeypatch.setenv("LLM_MODEL", "model-A")
@@ -44,6 +56,7 @@ def test_api_plan_strict_deterministic_cache_miss_is_mapped(monkeypatch, tmp_pat
     )
     monkeypatch.setattr("src.api.server.build_llm_client", lambda: object())
     monkeypatch.setattr("src.api.server.build_usda_provider", lambda: DummyProvider())
+    monkeypatch.setattr("src.api.server.convert_recipes", lambda *_a, **_k: _fake_pool())
 
     failure = MealPlanResult(
         success=False,

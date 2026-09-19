@@ -69,7 +69,7 @@ def test_validate_recipe_draft_ingredient_not_found_rejects():
 
     ok, res = validate_recipe_draft(draft, provider)
     assert ok is False
-    assert res.error_code == "EMPTY_RECIPE"
+    assert res.error_code == "INGREDIENT_UNRESOLVED"
 
 
 def test_validate_recipe_draft_nutrition_computation_failed_rejects():
@@ -123,10 +123,10 @@ def test_validate_recipe_drafts_partial_acceptance_returns_both_sets():
 
     accepted, rejected = validate_recipe_drafts([ok_1, bad], provider)
     assert [w.recipe.name for w in accepted] == ["Accept"]
-    assert [f.error_code for f in rejected] == ["EMPTY_RECIPE"]
+    assert [f.error_code for f in rejected] == ["INGREDIENT_UNRESOLVED"]
 
 
-def test_validate_recipe_draft_to_taste_fallback_after_resolve_all_failure():
+def test_validate_recipe_draft_unresolvable_after_resolve_all_failure_rejects():
     class ResolveFailProvider(IngredientDataProvider):
         usda_capable = True
 
@@ -163,16 +163,14 @@ def test_validate_recipe_draft_to_taste_fallback_after_resolve_all_failure():
     )
 
     ok, res = validate_recipe_draft(draft, provider)
-    assert ok is True
-    recipe = res
-
-    cherry = next(i for i in recipe.ingredients if i.name == "cherry tomatoes")
-    assert cherry.is_to_taste is True
-    assert cherry.unit == "to taste"
-    assert cherry.quantity == 0.0
+    # Overhaul contract: an unresolvable ingredient rejects the draft; it is never
+    # silently demoted to "to taste" (that persisted oat-less oatmeal, see evaluation).
+    assert ok is False
+    assert res.error_code == "INGREDIENT_UNRESOLVED"
+    assert "cherry tomatoes" in res.message
 
 
-def test_validate_recipe_draft_to_taste_fallback_after_get_ingredient_info_none():
+def test_validate_recipe_draft_unresolvable_get_ingredient_info_none_rejects():
     class MissingInfoProvider(IngredientDataProvider):
         usda_capable = True
 
@@ -206,16 +204,11 @@ def test_validate_recipe_draft_to_taste_fallback_after_get_ingredient_info_none(
     )
 
     ok, res = validate_recipe_draft(draft, provider)
-    assert ok is True
-    recipe = res
-
-    cherry = next(i for i in recipe.ingredients if i.name == "cherry tomatoes")
-    assert cherry.is_to_taste is True
-    assert cherry.unit == "to taste"
-    assert cherry.quantity == 0.0
+    assert ok is False
+    assert res.error_code == "INGREDIENT_UNRESOLVED"
 
 
-def test_validate_recipe_draft_to_taste_fallback_rejects_if_measurable_empty():
+def test_validate_recipe_draft_unresolvable_single_ingredient_rejects():
     class ResolveFailProvider(IngredientDataProvider):
         usda_capable = True
 
@@ -241,7 +234,7 @@ def test_validate_recipe_draft_to_taste_fallback_rejects_if_measurable_empty():
 
     ok, res = validate_recipe_draft(draft, provider)
     assert ok is False
-    assert res.error_code == "EMPTY_RECIPE"
+    assert res.error_code == "INGREDIENT_UNRESOLVED"
 
 
 def test_validate_recipe_draft_rejects_non_usda_provider():

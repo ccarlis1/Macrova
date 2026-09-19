@@ -225,6 +225,9 @@ class Recipe:
     # Deprecated compatibility projection only. Canonical planner/filter tags live in
     # data/recipes/recipe_tags.json -> tags_by_id.
     tags: List[Dict[str, str]] = field(default_factory=list)
+    # Optional provenance for generated/synced recipes: source, created_at, model,
+    # cooking_time_source, resolved ingredient fdc_ids, validation version.
+    provenance: Optional[Dict[str, object]] = None
 
     @property
     def is_meal_prep_capable(self) -> bool:

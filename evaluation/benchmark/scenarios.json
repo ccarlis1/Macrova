@@ -1,7 +1,7 @@
 {
   "benchmark": "macrova-planning-v1",
   "spec": "docs/planner/mealplan-specification-v3.md",
-  "scenario_count": 150,
+  "scenario_count": 151,
   "scenarios": [
     {
       "id": "MB-001",
@@ -18081,11 +18081,9 @@
         "outcome": "failure",
         "primary_failure_code": "FM-3",
         "acceptable_failure_codes": [
-          "FM-2",
-          "FM-3",
-          "FM-5"
+          "FM-3"
         ],
-        "failure_stage": "search",
+        "failure_stage": "pre_search",
         "derived_daily_carbs_g": 288.1,
         "oracle": {
           "pins_overridden_by_locks": [],
@@ -30161,6 +30159,209 @@
               "dh_sweet_potato_hash"
             ]
           ]
+        }
+      }
+    },
+    {
+      "id": "MB-151",
+      "title": "Fully pinned day inside a two-day plan",
+      "user_request": "Day one is fixed: protein oats, turkey sandwich, almonds and chocolate. Plan day two around 1,800 kcal, 115 g protein, 45-60 g fat.",
+      "categories": [
+        "pin-conflict",
+        "nutrition-conflict",
+        "multi-day"
+      ],
+      "intended_class": "infeasible",
+      "profile": {
+        "daily_calories": 1800,
+        "daily_protein_g": 115,
+        "daily_fat_g": {
+          "min": 45,
+          "max": 60
+        },
+        "max_daily_calories": null,
+        "excluded_ingredients": [],
+        "liked_foods": [],
+        "demographic": "adult_male",
+        "micronutrient_targets": {},
+        "micronutrient_weekly_min_fraction": 1.0
+      },
+      "horizon_days": 2,
+      "schedule_days": [
+        {
+          "day_index": 1,
+          "meals": [
+            {
+              "index": 1,
+              "busyness_level": 2,
+              "tags": [
+                "breakfast"
+              ],
+              "preferred_time": "07:30"
+            },
+            {
+              "index": 2,
+              "busyness_level": 3,
+              "tags": [
+                "lunch"
+              ],
+              "preferred_time": "12:30"
+            },
+            {
+              "index": 3,
+              "busyness_level": 4,
+              "tags": [
+                "dinner"
+              ],
+              "preferred_time": "18:30"
+            }
+          ],
+          "workouts": []
+        },
+        {
+          "day_index": 2,
+          "meals": [
+            {
+              "index": 1,
+              "busyness_level": 4,
+              "tags": [
+                "breakfast"
+              ],
+              "preferred_time": "07:30"
+            },
+            {
+              "index": 2,
+              "busyness_level": 4,
+              "tags": [
+                "lunch"
+              ],
+              "preferred_time": "12:30"
+            },
+            {
+              "index": 3,
+              "busyness_level": 4,
+              "tags": [
+                "dinner"
+              ],
+              "preferred_time": "18:30"
+            }
+          ],
+          "workouts": []
+        }
+      ],
+      "pins": [
+        {
+          "day_index": 0,
+          "slot_index": 0,
+          "recipe_id": "bk_protein_oats"
+        },
+        {
+          "day_index": 0,
+          "slot_index": 1,
+          "recipe_id": "ln_turkey_sandwich"
+        },
+        {
+          "day_index": 0,
+          "slot_index": 2,
+          "recipe_id": "sn_almonds_chocolate"
+        }
+      ],
+      "meal_prep_batches": [],
+      "recipe_pool": {
+        "recipe_ids": [
+          "bk_yogurt_berry_bowl",
+          "bk_overnight_oats",
+          "bk_protein_oats",
+          "bk_cottage_papaya",
+          "bk_avocado_toast_feta",
+          "bk_cream_of_rice_whey",
+          "bk_tofu_scramble",
+          "bk_pb_banana_toast",
+          "bk_chia_pudding",
+          "bk_salmon_toast",
+          "bk_yolk_spinach_toast",
+          "bk_big_oat_bowl",
+          "ln_turkey_sandwich",
+          "ln_roast_beef_wrap",
+          "ln_tuna_poke",
+          "ln_chickpea_salad",
+          "ln_black_bean_quinoa",
+          "ln_salmon_salad",
+          "ln_white_bean_soup",
+          "ln_salami_plate",
+          "ln_cottage_box",
+          "ln_tuna_pasta_salad",
+          "ln_tofu_quinoa_salad",
+          "dn_beef_rice_bowl",
+          "dn_beef_chili",
+          "dn_thigh_sheet_pan",
+          "dn_tilapia_rice",
+          "dn_bolognese",
+          "dn_tofu_stir_fry",
+          "dn_salmon_potatoes",
+          "dn_burger_bowl",
+          "dn_veggie_pasta",
+          "dn_thigh_quinoa_prep",
+          "dn_edamame_fried_rice",
+          "dn_cauli_beef_bowl",
+          "dn_big_pasta_night",
+          "dn_bean_quesadilla",
+          "dn_tuna_steak_salad",
+          "dn_chickpea_curry",
+          "sn_protein_shake",
+          "sn_whey_water",
+          "sn_banana_pb",
+          "sn_almonds_chocolate",
+          "sn_yogurt_honey",
+          "sn_krispie_banana",
+          "sn_cottage_blueberry",
+          "sn_carrots_almond_butter",
+          "sn_turkey_rollups",
+          "sn_papaya_yogurt",
+          "sn_bedtime_cottage",
+          "sn_trail_mix",
+          "sn_edamame_cup",
+          "sn_chia_seed_water",
+          "hc_mass_gainer",
+          "hc_double_burger_potatoes",
+          "hc_big_beef_rice",
+          "hc_pasta_salmon_bake"
+        ],
+        "size": 57,
+        "description": "full local library (core recipes, no duplicates)"
+      },
+      "preferences_note": "",
+      "spec_notes": [
+        "C3 probe P2: day 0 is fully pinned well under the kcal/protein/carbs windows; day 1 is free. Must fail as FM-3, not success."
+      ],
+      "safety_expectation": null,
+      "expected": {
+        "class": "infeasible",
+        "outcome": "failure",
+        "primary_failure_code": "FM-3",
+        "acceptable_failure_codes": [
+          "FM-3"
+        ],
+        "failure_stage": "pre_search",
+        "derived_daily_carbs_g": 216.9,
+        "oracle": {
+          "pins_overridden_by_locks": [],
+          "valid_assignments_per_day": [
+            0,
+            3336
+          ],
+          "distinct_meal_sets_per_day": [
+            0,
+            556
+          ],
+          "day_enumeration_capped": [
+            false,
+            false
+          ],
+          "infeasible_days": [
+            0
+          ],
+          "min_tolerance_for_feasibility": null
         }
       }
     }

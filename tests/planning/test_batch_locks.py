@@ -170,3 +170,30 @@ def test_locked_recipe_counts_in_daily_nutrition_totals():
     assert result.success is True
     assert result.daily_trackers is not None
     assert result.daily_trackers[0].calories_consumed == 1000.0
+
+
+def test_fully_batch_locked_day_that_misses_macros_returns_fm3():
+    """C3: a fully locked day is normalized to pins and fails daily validation as FM-3."""
+    profile = _profile(
+        schedule=[[_slot(), _slot()]],
+        batch_locks=[
+            PlanningBatchLock(batch_id="batch-a", recipe_id="r_a", day_index=0, slot_index=0),
+            PlanningBatchLock(batch_id="batch-b", recipe_id="r_b", day_index=0, slot_index=1),
+        ],
+        daily_calories=2000,
+    )
+    result = plan_meals(
+        profile,
+        [
+            _recipe("r_a", calories=700.0, protein_g=50.0, fat_g=32.0, carbs_g=125.0),
+            _recipe("r_b", calories=700.0, protein_g=50.0, fat_g=32.0, carbs_g=125.0),
+        ],
+        days=1,
+    )
+    assert result.success is False
+    assert result.failure_mode == "FM-3"
+    assert result.termination_code == "TC-3"
+    conflicts = result.report.get("pinned_conflicts", [])
+    assert len(conflicts) == 1
+    assert conflicts[0]["violation_type"] == "downstream"
+    assert {p["slot_index"] for p in conflicts[0]["pinned_slots"]} == {0, 1}

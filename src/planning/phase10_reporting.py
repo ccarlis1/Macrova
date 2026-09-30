@@ -202,6 +202,10 @@ def _fm3_failures_from_report(report: Dict[str, Any]) -> List[Dict[str, Any]]:
             "violation_type": conflict.get("violation_type"),
             "remaining_budget": remaining_budget if isinstance(remaining_budget, dict) else {},
         }
+        if conflict.get("constraint") is not None:
+            details["constraint"] = conflict.get("constraint")
+        if conflict.get("pinned_slots") is not None:
+            details["pinned_slots"] = conflict.get("pinned_slots")
         out.append(
             normalize_failure_object(
                 {
@@ -408,6 +412,11 @@ def build_report_fm2(
         "failed_days": failed_days,
         "closest_plan": closest_plan,
     }
+
+
+# FM-3 pinned_conflicts[].violation_type vocabulary.
+PIN_VIOLATION_DIRECT = "direct"  # a single pin breaks a hard constraint
+PIN_VIOLATION_DOWNSTREAM = "downstream"  # a fully pinned day fails daily validation
 
 
 def build_report_fm3(

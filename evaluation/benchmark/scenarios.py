@@ -1182,6 +1182,15 @@ S("Sweet potato hash with zero-calorie potatoes",
   pool_note="full library + data-hazard hash", pins=[(0, 2, "dh_sweet_potato_hash")],
   spec_notes=["Cached sweet potato has 0 kcal but 17 g carbs/100 g, so the hash is ~170 kcal under-counted; kcal and carb windows disagree about it."])
 
+S("Fully pinned day inside a two-day plan",
+  "Day one is fixed: protein oats, turkey sandwich, almonds and chocolate. Plan day two around 1,800 kcal, 115 g protein, 45-60 g fat.",
+  cats=["pin-conflict", "nutrition-conflict", "multi-day"], intended="infeasible",
+  profile=P(1800, 115, 45, 60),
+  days=[day(std3(b=(2, 3, 4))), day(std3(b=(4, 4, 4)))],
+  pool_ids=CORE, pool_note=FULL,
+  pins=[(0, 0, "bk_protein_oats"), (0, 1, "ln_turkey_sandwich"), (0, 2, "sn_almonds_chocolate")],
+  spec_notes=["C3 probe P2: day 0 is fully pinned well under the kcal/protein/carbs windows; day 1 is free. Must fail as FM-3, not success."])
+
 # ======================================================================
 # Saved-profile preferences (liked foods, preferred tags). These come from the
 # user's stored profile rather than the request text, and never change
@@ -1228,5 +1237,5 @@ for _sc in SCENARIOS:
         if not _sc["preferences_note"]:
             _sc["preferences_note"] = ("liked_foods / preferred_tag_slugs come from the saved profile; "
                                        "soft signals only, must not change feasibility")
-assert len(SCENARIOS) == 150, len(SCENARIOS)
+assert len(SCENARIOS) == 151, len(SCENARIOS)
 assert not [t for t in _ENRICH if t not in {s["title"] for s in SCENARIOS}]

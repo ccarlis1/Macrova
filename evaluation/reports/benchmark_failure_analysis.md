@@ -71,6 +71,8 @@ On a day where no combination of recipes fits the macro targets, the search almo
 
 ### C3. A day where every slot is pinned is never validated (1 scenario, plus probes)
 
+**Status:** fixed. Fully pinned days are validated before search (FM-3 on failure) and completed through the shared day-completion / end-of-plan path on success. Covered by MB-099, MB-151, and `evaluation/harness/probes.py`.
+
 **Type:** planner defect; a hard constraint can go unchecked. **Scenarios:** MB-099, plus MB-098, which got an acceptable code by coincidence.
 
 **Cause:** a pinned slot is already filled when the search starts, so the loop just moves past it with `i += 1; continue` (`phase7_search.py:703-706`). That skips the day-completion step (`_daily_validation`, `_update_weekly_after_day`, `completed_days`) and the end-of-plan success check. A day with at least one free slot is still validated when its last *free* slot is filled. **A day with no free slots never is.**

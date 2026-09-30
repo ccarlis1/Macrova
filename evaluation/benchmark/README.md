@@ -1,10 +1,10 @@
 # Macrova planning benchmark (v1)
 
-150 realistic meal-planning requests with oracle-verified expected outcomes, built only from the locally cached ingredients in `.cache/ingredients/`.
+151 realistic meal-planning requests with oracle-verified expected outcomes, built only from the locally cached ingredients in `.cache/ingredients/`.
 
 | File | What it is |
 |---|---|
-| `scenarios.json` | The benchmark: 150 scenarios, each with request inputs and an `expected` block |
+| `scenarios.json` | The benchmark: 151 scenarios, each with request inputs and an `expected` block |
 | `scenarios_index.md` | One row per scenario: categories, horizon, pool size, class, expected code |
 | `recipes.json` | 64 single-serving recipes (57 core, 2 duplicate-content, 5 data-hazard) with nutrition computed from the cache |
 | `recipe_tags.json` | Tag registry plus `tags_by_id` fixture in the canonical `recipe_tags.json` shape, including LLM-`proposed` tags |
@@ -28,9 +28,9 @@ The build uses only the standard library, takes about 6 seconds, and writes byte
 |---|---|---|
 | feasible | 70 | A valid plan exists, and the tightest day has more than 12 distinct valid recipe sets |
 | borderline | 23 | Either a plan exists but the tightest day has 12 or fewer valid recipe sets, or no plan exists at ±10% but one does at ±15% or less |
-| infeasible | 57 | No valid plan exists, or the request or batch is rejected before planning |
+| infeasible | 58 | No valid plan exists, or the request or batch is rejected before planning |
 
-Expected codes: OK 91, FM-2 17, FM-3 17, FM-1 10, FM-4 5, FM-TAG-EMPTY 6, FM-BATCH-CONFLICT 1, BATCH_REJECTED 2, INVALID_REQUEST 1.
+Expected codes: OK 91, FM-2 17, FM-3 18, FM-1 10, FM-4 5, FM-TAG-EMPTY 6, FM-BATCH-CONFLICT 1, BATCH_REJECTED 2, INVALID_REQUEST 1.
 
 ## Coverage by theme
 
@@ -38,15 +38,15 @@ A scenario can carry several themes, and each class is computed by the oracle.
 
 | Theme | n | feasible | borderline | infeasible |
 |---|---|---|---|---|
-| multi-day | 43 | 34 | 4 | 5 |
-| nutrition-conflict | 30 | 9 | 8 | 13 |
+| multi-day | 44 | 34 | 4 | 6 |
+| nutrition-conflict | 31 | 9 | 8 | 14 |
 | micronutrients | 19 | 13 | 1 | 5 |
 | recipe-inventory | 19 | 1 | 5 | 13 |
 | meal-timing | 15 | 11 | 2 | 2 |
 | preferences | 15 | 7 | 2 | 6 |
 | multi-day-conflict | 15 | 0 | 1 | 14 |
 | tags | 14 | 13 | 1 | 0 |
-| pin-conflict | 13 | 0 | 1 | 12 |
+| pin-conflict | 14 | 0 | 1 | 13 |
 | cook-time | 11 | 3 | 1 | 7 |
 | pins | 11 | 7 | 3 | 1 |
 | data-quality | 10 | 5 | 2 | 3 |
@@ -58,7 +58,7 @@ A scenario can carry several themes, and each class is computed by the oracle.
 | safety | 4 | 4 | 0 | 0 |
 | input-validation | 3 | 0 | 0 | 3 |
 
-Horizons: 83 one-day, 18 two-day, 22 three-day, 4 four-day, 10 five-day and 13 seven-day. 24 scenarios have pins, 15 have meal-prep batches, 21 have required tags, 19 track micronutrients and 10 have workouts.
+Horizons: 83 one-day, 19 two-day, 22 three-day, 4 four-day, 10 five-day and 13 seven-day. 25 scenarios have pins, 15 have meal-prep batches, 21 have required tags, 19 track micronutrients and 10 have workouts.
 
 Several scenarios look like conflicts but are feasible. The benchmark keeps these on purpose, because a planner that gives up on hard-looking requests should score badly. Examples:
 

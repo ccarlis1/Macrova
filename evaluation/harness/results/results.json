@@ -80,7 +80,7 @@
   "id": "MB-004",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.01,
+  "secs": 0.02,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -639,7 +639,7 @@
   "report_codes": [
    "FM-3"
   ],
-  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 1, \"slot_index\": 2, \"slot_id\": \"day-2-slot-2\", \"date\": \"day-2\", \"details\": {\"recipe_id\": \"dn_salmon_potatoes\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"recipe_id\": \"dn_salmon_potatoes\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
   "warnings": "null"
  },
  {
@@ -688,7 +688,7 @@
   "id": "MB-027",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 1.23,
+  "secs": 1.28,
   "success": false,
   "tc": "TC-2",
   "code": "FM-1",
@@ -849,7 +849,7 @@
   "id": "MB-033",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.0,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -1398,7 +1398,7 @@
   "id": "MB-054",
   "active_batches": 0,
   "needs_ceiling": true,
-  "secs": 0.21,
+  "secs": 0.19,
   "success": false,
   "tc": "TC-2",
   "code": "FM-1",
@@ -1605,7 +1605,7 @@
   "id": "MB-063",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.08,
+  "secs": 0.07,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -1650,7 +1650,7 @@
   "id": "MB-065",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 3.3,
+  "secs": 3.13,
   "success": false,
   "tc": "TC-2",
   "code": "FM-1",
@@ -1711,7 +1711,7 @@
   "id": "MB-067",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 11.18,
+  "secs": 12.39,
   "success": false,
   "tc": "TC-3",
   "code": "FM-5",
@@ -1742,7 +1742,7 @@
   "id": "MB-068",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 11.0,
+  "secs": 11.19,
   "success": false,
   "tc": "TC-3",
   "code": "FM-5",
@@ -1821,7 +1821,7 @@
   "id": "MB-071",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 7.02,
+  "secs": 7.25,
   "success": false,
   "tc": "TC-3",
   "code": "FM-5",
@@ -1935,7 +1935,7 @@
   "id": "MB-075",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.01,
+  "secs": 0.0,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -2280,7 +2280,7 @@
   "report_codes": [
    "FM-3"
   ],
-  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 1, \"slot_index\": 2, \"slot_id\": \"day-2-slot-2\", \"date\": \"day-2\", \"details\": {\"recipe_id\": \"bk_protein_oats\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"recipe_id\": \"bk_protein_oats\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
   "warnings": "null"
  },
  {
@@ -2299,7 +2299,7 @@
   "report_codes": [
    "FM-3"
   ],
-  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 2, \"slot_index\": 0, \"slot_id\": \"day-3-slot-0\", \"date\": \"day-3\", \"details\": {\"recipe_id\": \"bk_yogurt_berry_bowl\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 1, \"slot_index\": 0, \"slot_id\": \"day-2-slot-0\", \"date\": \"day-2\", \"details\": {\"recipe_id\": \"bk_yogurt_berry_bowl\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
   "warnings": "null"
  },
  {
@@ -2349,7 +2349,7 @@
   "report_codes": [
    "FM-3"
   ],
-  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 1, \"slot_index\": 0, \"slot_id\": \"day-2-slot-0\", \"date\": \"day-2\", \"details\": {\"recipe_id\": \"bk_pb_banana_toast\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"recipe_id\": \"bk_pb_banana_toast\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
   "warnings": "null"
  },
  {
@@ -2368,7 +2368,7 @@
   "report_codes": [
    "FM-3"
   ],
-  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 1, \"slot_index\": 2, \"slot_id\": \"day-2-slot-2\", \"date\": \"day-2\", \"details\": {\"recipe_id\": \"dn_thigh_sheet_pan\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"recipe_id\": \"dn_thigh_sheet_pan\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
   "warnings": "null"
  },
  {
@@ -2387,7 +2387,7 @@
   "report_codes": [
    "FM-3"
   ],
-  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 1, \"slot_index\": 2, \"slot_id\": \"day-2-slot-2\", \"date\": \"day-2\", \"details\": {\"recipe_id\": \"dn_big_pasta_night\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"recipe_id\": \"dn_big_pasta_night\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
   "warnings": "null"
  },
  {
@@ -2406,7 +2406,7 @@
   "report_codes": [
    "FM-3"
   ],
-  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 1, \"slot_index\": 3, \"slot_id\": \"day-2-slot-3\", \"date\": \"day-2\", \"details\": {\"recipe_id\": \"sn_trail_mix\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_index\": 3, \"slot_id\": \"day-1-slot-3\", \"date\": \"day-1\", \"details\": {\"recipe_id\": \"sn_trail_mix\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
   "warnings": "null"
  },
  {
@@ -2425,7 +2425,7 @@
   "report_codes": [
    "FM-3"
   ],
-  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 1, \"slot_index\": 2, \"slot_id\": \"day-2-slot-2\", \"date\": \"day-2\", \"details\": {\"recipe_id\": \"hc_pasta_salmon_bake\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"recipe_id\": \"hc_pasta_salmon_bake\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
   "warnings": "null"
  },
  {
@@ -2434,17 +2434,17 @@
   "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
-  "tc": "TC-2",
-  "code": "FM-2",
+  "tc": "TC-3",
+  "code": "FM-3",
   "incomplete": null,
   "stats": {
    "attempts": 0,
    "backtracks": 0
   },
   "report_codes": [
-   "FM-MACRO-INFEASIBLE"
+   "FM-3"
   ],
-  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {\"calories\": -629.3599999999999, \"protein_g\": -45.88000000000001, \"fat_g\": -4.810000000000002, \"carbs_g\": -72.215}, \"constraint\": \"exhaustion\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"recipe_id\": null, \"violation_type\": \"downstream\", \"remaining_budget\": {\"calories\": 629.3599999999999, \"protein_g\": 45.88000000000001, \"carbs_g\": 72.215, \"fat_g\": {\"min\": 55.0, \"max\": 80.0, \"consumed\": 50.19}}, \"constraint\": \"calories\", \"pinned_slots\": [{\"slot_index\": 0, \"recipe_id\": \"bk_protein_oats\"}, {\"slot_index\": 1, \"recipe_id\": \"ln_turkey_sandwich\"}, {\"slot_index\": 2, \"recipe_id\": \"dn_beef_rice_bowl\"}]}, \"fix_hint\": \"A pinned meal conflicts wit",
   "warnings": "null",
   "plan": {
    "0": [
@@ -2459,18 +2459,13 @@
   "active_batches": 0,
   "needs_ceiling": false,
   "secs": 0.0,
-  "success": false,
-  "tc": "TC-2",
-  "code": "FM-2",
+  "success": true,
+  "tc": "TC-4",
+  "code": "OK",
   "incomplete": null,
-  "stats": {
-   "attempts": 0,
-   "backtracks": 0
-  },
-  "report_codes": [
-   "FM-MACRO-INFEASIBLE"
-  ],
-  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {\"calories\": -29.3599999999999, \"protein_g\": -0.8800000000000097, \"fat_g\": 0.0, \"carbs_g\": -0.9650000000000034}, \"constraint\": \"exhaustion\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
+  "stats": {},
+  "report_codes": [],
+  "report_first": "[]",
   "warnings": "null",
   "plan": {
    "0": [
@@ -2907,7 +2902,7 @@
   "id": "MB-118",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.02,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -2938,7 +2933,7 @@
   "id": "MB-119",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.01,
+  "secs": 0.0,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3186,7 +3181,7 @@
   "id": "MB-129",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.02,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3248,7 +3243,7 @@
   "id": "MB-131",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.03,
+  "secs": 0.02,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3492,14 +3487,14 @@
   "report_codes": [
    "FM-3"
   ],
-  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 2, \"slot_index\": 0, \"slot_id\": \"day-3-slot-0\", \"date\": \"day-3\", \"details\": {\"recipe_id\": \"dn_bolognese\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 1, \"slot_index\": 0, \"slot_id\": \"day-2-slot-0\", \"date\": \"day-2\", \"details\": {\"recipe_id\": \"dn_bolognese\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
   "warnings": "null"
  },
  {
   "id": "MB-138",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.57,
+  "secs": 0.51,
   "success": false,
   "tc": "TC-2",
   "code": "FM-1",
@@ -3525,7 +3520,7 @@
   "id": "MB-139",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.01,
+  "secs": 0.0,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3551,7 +3546,7 @@
   "id": "MB-140",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.02,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3874,6 +3869,32 @@
     "ln_tuna_poke",
     "bk_protein_oats",
     "dh_sweet_potato_hash"
+   ]
+  }
+ },
+ {
+  "id": "MB-151",
+  "active_batches": 0,
+  "needs_ceiling": false,
+  "secs": 0.0,
+  "success": false,
+  "tc": "TC-3",
+  "code": "FM-3",
+  "incomplete": null,
+  "stats": {
+   "attempts": 0,
+   "backtracks": 0
+  },
+  "report_codes": [
+   "FM-3"
+  ],
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"recipe_id\": null, \"violation_type\": \"downstream\", \"remaining_budget\": {\"calories\": 424.26, \"protein_g\": 35.650000000000006, \"carbs_g\": 59.88499999999999, \"fat_g\": {\"min\": 45.0, \"max\": 60.0, \"consumed\": 50.980000000000004}}, \"constraint\": \"calories\", \"pinned_slots\": [{\"slot_index\": 0, \"recipe_id\": \"bk_protein_oats\"}, {\"slot_index\": 1, \"recipe_id\": \"ln_turkey_sandwich\"}, {\"slot_index\": 2, \"recipe_id\": \"sn_almonds_chocolate\"}]}, \"fix_hint\": \"A pinned m",
+  "warnings": "null",
+  "plan": {
+   "0": [
+    "bk_protein_oats",
+    "ln_turkey_sandwich",
+    "sn_almonds_chocolate"
    ]
   }
  }

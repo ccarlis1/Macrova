@@ -1614,6 +1614,8 @@ When the algorithm terminates without a valid plan, or rejects input-derived loc
 
 - Whether the conflict is a hard constraint violation of the pinned recipe itself, or a downstream infeasibility.
 
+*Implementation note:* `pinned_conflicts[].violation_type` is `"direct"` when a single pin breaks a hard constraint. It is `"downstream"` for an aggregate day-level failure, which includes a fully pinned day whose totals fail daily validation (detected in pre-validation, with `slot_index` and `recipe_id` null). In that case "downstream" does not mean a search step caused the failure. The report's `date` is a synthetic 1-based `day-<n>` label; `day_index` (0-based) is authoritative.
+
 ### FM-BATCH-CONFLICT: Meal-Prep Batch Lock Conflict
 
 **Condition:** Two or more meal-prep batch locks target the same canonical `SlotAddress` with incompatible locked recipes, or otherwise cannot be normalized into a single deterministic effective pin.

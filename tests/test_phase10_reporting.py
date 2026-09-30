@@ -245,6 +245,24 @@ def test_normalize_planner_report_maps_legacy_codes():
         "fix_hint": fix_hint_for_code("FM-3"),
     }
 
+    fm3_downstream = normalize_planner_report(
+        failure_mode="FM-3",
+        report={
+            "pinned_conflicts": [
+                {
+                    "day": 0,
+                    "slot_index": 0,
+                    "recipe_id": "r1",
+                    "violation_type": "downstream",
+                    "constraint": "calories",
+                }
+            ],
+            "remaining_budget": {"calories": -400.0},
+        },
+    )
+    assert fm3_downstream["failures"][0]["details"]["constraint"] == "calories"
+    assert fm3_downstream["failures"][0]["details"]["violation_type"] == "downstream"
+
     fm4 = normalize_planner_report(
         failure_mode="FM-4",
         report={"deficient_nutrients": [{"nutrient": "iron_mg", "deficit": 1.0}]},

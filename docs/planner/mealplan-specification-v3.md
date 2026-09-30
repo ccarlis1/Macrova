@@ -400,7 +400,7 @@ The initial state S₀ is constructed as follows:
 
   
 
-**Pinned assignment pre-validation:** Before the search begins, all pinned assignments shall be validated against hard constraints. If any pinned recipe violates HC-1 (excluded ingredient), HC-2 (two pinned assignments on the same day use the same recipe ID), HC-3 (cooking time), HC-5 (would single-handedly exceed calorie ceiling), or HC-8 (consecutive-day non-workout repetition with another pinned assignment), the algorithm shall reject immediately with failure mode FM-3 (Section 11) without entering the search.
+**Pinned assignment pre-validation:** Before the search begins, all pinned assignments shall be validated against hard constraints. If any pinned recipe violates HC-1 (excluded ingredient), HC-2 (two pinned assignments on the same day use the same recipe ID), HC-3 (cooking time), HC-5 (would single-handedly exceed calorie ceiling), or HC-8 (consecutive-day non-workout repetition with another pinned assignment), the algorithm shall reject immediately with failure mode FM-3 (Section 11) without entering the search. If every slot of a day is pinned (or locked into an effective pin) and that day's totals fail daily validation (Section 6.5), the algorithm shall likewise reject immediately with FM-3 without entering the search.
 
 **Precedence:** Slot resolution is deterministic and shall follow this order: batch lock > explicit pin > required tags > preferred tags/scoring. Required tags participate only in non-pinned candidate generation. Preferred tags are soft-only and may influence scoring or tie-breaking but shall not reject a candidate.
 
@@ -568,7 +568,7 @@ If `U.pinned_assignments` contains an entry `(d, s) → recipe_id`, then:
 
   
 
-Pinned assignments are validated before the search begins (Section 3.5). A pinned recipe that violates HC-1, HC-2, HC-3, HC-5, or HC-8 is an immediate failure (FM-3).
+Pinned assignments are validated before the search begins (Section 3.5). A pinned recipe that violates HC-1, HC-2, HC-3, HC-5, or HC-8 is an immediate failure (FM-3). A fully pinned day that fails daily validation is also an immediate failure (FM-3).
 
   
 
@@ -1598,9 +1598,11 @@ When the algorithm terminates without a valid plan, or rejects input-derived loc
 
 - Two pinned non-workout recipes on consecutive days use the same recipe (violates HC-8).
 
-  
+- A fully pinned day whose totals fail daily calorie, macro, ceiling, or UL validation.
 
-**Detection:** Pinned recipes that directly violate HC-1, HC-2, HC-3, HC-5, or HC-8 are caught during pre-validation (Section 3.5) before the search begins. Downstream nutritional infeasibility caused by pinned assignments is detected during the search via feasibility checks or backtracking exhaustion.
+
+
+**Detection:** Pinned recipes that directly violate HC-1, HC-2, HC-3, HC-5, or HC-8 are caught during pre-validation (Section 3.5) before the search begins. A fully pinned day that fails daily validation is also rejected during pre-validation with FM-3. Downstream nutritional infeasibility caused by pinned assignments that leave some free slots is detected during the search via feasibility checks or backtracking exhaustion.
 
   
 

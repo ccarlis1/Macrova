@@ -6,7 +6,7 @@
 Outputs (evaluation/benchmark/):
     recipes.json        benchmark recipe library with nutrition computed from .cache/ingredients
     recipe_tags.json    tag registry + tags_by_id fixture (recipe_tags.json shape)
-    scenarios.json      150 scenarios with oracle-verified expected outcomes
+    scenarios.json      151 scenarios with oracle-verified expected outcomes
     scenarios_index.md  one-line-per-scenario summary table
 
 Pure standard library; does not import src/.

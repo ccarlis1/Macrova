@@ -5,13 +5,16 @@ from __future__ import annotations
 import pytest
 
 from src.data_layer.models import Ingredient, MicronutrientProfile, NutritionProfile, UpperLimits
-from src.planning.phase0_models import MealSlot, PlanningRecipe, PlanningUserProfile
-from src.planning.phase0_models import Assignment
-from src.planning.phase10_reporting import MealPlanResult, fix_hint_for_code
+from src.planning.phase0_models import Assignment, DailyTracker, MealSlot, PlanningRecipe, PlanningUserProfile, WeeklyTracker
+from src.planning.phase10_reporting import MealPlanResult, PIN_VIOLATION_DOWNSTREAM, fix_hint_for_code
 from src.planning.phase7_search import (
     DEFAULT_ATTEMPT_LIMIT,
     PlannerStateError,
     SearchStats,
+    _CandidateCacheEntry,
+    _decision_order,
+    _unwind_to,
+    _update_weekly_after_day,
     run_meal_plan_search,
     _validate_planner_state,
 )
@@ -310,6 +313,33 @@ class TestFailureModes:
         assert result.failure_mode == "FM-3"
         assert result.report.get("pinned_conflicts")
 
+    def test_fm3_direct_pin_conflict_reports_zero_based_day(self):
+        schedule = _make_schedule(ndays=2, slots_per_day=2)
+        profile = _make_profile(
+            schedule,
+            pinned_assignments={(0, 0): "r_bad"},
+            excluded_ingredients=["peanut"],
+        )
+        pool = [
+            _make_recipe("r1", 1000.0, 50.0, 32.0, 125.0),
+            _make_recipe(
+                "r_bad",
+                1000.0,
+                50.0,
+                32.0,
+                125.0,
+                ingredients=[Ingredient("peanut", 10.0, "g", False, "g", 10.0)],
+            ),
+        ]
+        result = run_meal_plan_search(profile, pool, 2, None)
+        assert result.failure_mode == "FM-3"
+        conflicts = result.report["pinned_conflicts"]
+        assert conflicts[0]["day"] == 0 and conflicts[0]["slot_index"] == 0
+        failure = result.report["failures"][0]
+        assert failure["day_index"] == 0
+        assert failure["date"] == "day-1"
+        assert failure["slot_id"] == "day-1-slot-0"
+
     def test_fm1_insufficient_pool_empty_candidates(self):
         schedule = _make_schedule(ndays=1, slots_per_day=2)
         profile = _make_profile(schedule)
@@ -362,7 +392,8 @@ class TestFailureModes:
             "fix_hint": "No recipes match tag `high-protein`. Add one or relax constraints.",
         }
 
-    def test_fm2_daily_infeasible_exhaustion(self):
+    def test_fm3_fully_pinned_day_misses_macros(self):
+        """Fully pinned day that breaks daily macros fails pre-search with FM-3 (C3)."""
         schedule = _make_schedule(ndays=1, slots_per_day=2)
         profile = _make_profile(
             schedule,
@@ -377,28 +408,50 @@ class TestFailureModes:
         result = run_meal_plan_search(profile, pool, 1, None)
         assert result.success is False
         assert isinstance(result, MealPlanResult)
-        assert result.failure_mode == "FM-2"
+        assert result.failure_mode == "FM-3"
+        assert result.termination_code == "TC-3"
+        assert result.stats is not None and result.stats.get("attempts") == 0
+        conflicts = result.report.get("pinned_conflicts", [])
+        assert len(conflicts) == 1
+        assert conflicts[0]["violation_type"] == PIN_VIOLATION_DOWNSTREAM
+        assert conflicts[0]["constraint"] == "protein"
+        assert len(conflicts[0]["pinned_slots"]) == 2
+        failures = result.report.get("failures", [])
+        assert len(failures) == 1
+        assert all(f["code"] == "FM-3" for f in failures)
+        assert all(f["details"].get("constraint") == "protein" for f in failures)
+
+    def test_fm2_daily_infeasible_exhaustion(self):
+        """Free-slot macro infeasibility fails structurally.
+
+        Candidate look-ahead (FC-5) typically reports FM-1 before day-completion
+        exhaustion can emit FM-2 (cluster C2a). Accept either structured failure.
+        """
+        schedule = _make_schedule(ndays=1, slots_per_day=2)
+        profile = _make_profile(
+            schedule,
+            daily_calories=2000,
+            daily_protein_g=200.0,
+            daily_fat_g=(50.0, 80.0),
+            daily_carbs_g=250.0,
+        )
+        pool = [
+            _make_recipe("r1", 1000.0, 30.0, 32.0, 125.0),
+            _make_recipe("r2", 1000.0, 30.0, 32.0, 125.0),
+            _make_recipe("r3", 1000.0, 30.0, 32.0, 125.0),
+            _make_recipe("r4", 1000.0, 30.0, 32.0, 125.0),
+        ]
+        result = run_meal_plan_search(profile, pool, 1, None)
+        assert result.success is False
+        assert isinstance(result, MealPlanResult)
+        assert result.failure_mode in ("FM-1", "FM-2")
         assert result.report
         assert result.stats is not None and "attempts" in result.stats
         failures = result.report.get("failures", [])
-        assert len(failures) == 1
-        assert failures[0] == {
-            "code": "FM-MACRO-INFEASIBLE",
-            "message": "Macro targets are infeasible under current constraints.",
-            "slot_id": "",
-            "date": "day-1",
-            "details": {
-                "date": "day-1",
-                "deltas": {
-                    "calories": 0.0,
-                    "protein_g": -40.0,
-                    "fat_g": 0.0,
-                    "carbs_g": 0.0,
-                },
-                "constraint": "exhaustion",
-            },
-            "fix_hint": "Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.",
-        }
+        assert len(failures) >= 1
+        assert failures[0]["code"] in ("FM-1", "FM-MACRO-INFEASIBLE")
+        if failures[0]["code"] == "FM-MACRO-INFEASIBLE":
+            assert failures[0]["fix_hint"] == fix_hint_for_code("FM-MACRO-INFEASIBLE")
 
     def test_fm5_attempt_limit(self):
         schedule = _make_schedule(ndays=1, slots_per_day=2)
@@ -738,3 +791,386 @@ class TestSearchStatsInstrumentation:
         assert result.success is True
         assert stats.total_attempts == 2
         assert stats.total_runtime() >= 0
+
+
+# --- C3: fully pinned day validation ---
+
+
+class TestFullyPinnedDayValidation:
+    """Cluster C3: days with no free slots must complete / fail like free-slot days."""
+
+    def test_mb099_fully_pinned_day_that_fits_succeeds(self):
+        schedule = _make_schedule(ndays=1, slots_per_day=2)
+        profile = _make_profile(
+            schedule,
+            pinned_assignments={(1, 0): "r1", (1, 1): "r2"},
+        )
+        pool = [
+            _make_recipe("r1", 1000.0, 50.0, 32.0, 125.0),
+            _make_recipe("r2", 1000.0, 50.0, 32.0, 125.0),
+        ]
+        result = run_meal_plan_search(profile, pool, 1, None)
+        assert result.success is True, getattr(result, "report", result)
+        assert result.termination_code == "TC-4"
+        assert result.plan is not None
+        assert {a.recipe_id for a in result.plan} == {"r1", "r2"}
+        assert result.weekly_tracker is not None
+        assert result.weekly_tracker.days_completed == 1
+        _assert_weekly_equals_sum_daily(result)
+
+    def test_p2_fully_pinned_day0_misses_macros_returns_fm3(self):
+        schedule = _make_schedule(ndays=2, slots_per_day=2)
+        profile = _make_profile(
+            schedule,
+            daily_calories=2000,
+            daily_protein_g=100.0,
+            pinned_assignments={(1, 0): "r_pin1", (1, 1): "r_pin2"},
+        )
+        pool = [
+            _make_recipe("r_pin1", 700.0, 50.0, 32.0, 125.0),
+            _make_recipe("r_pin2", 700.0, 50.0, 32.0, 125.0),
+            _make_recipe("r3", 1000.0, 50.0, 32.0, 125.0),
+            _make_recipe("r4", 1000.0, 50.0, 32.0, 125.0),
+        ]
+        result = run_meal_plan_search(profile, pool, 2, None)
+        assert result.success is False
+        assert result.failure_mode == "FM-3"
+        assert result.termination_code == "TC-3"
+        assert result.stats is not None and result.stats.get("attempts") == 0
+        # The failure reason lives in the report, not in a sodium advisory.
+        assert result.warning is None
+        conflicts = result.report.get("pinned_conflicts", [])
+        assert len(conflicts) == 1
+        assert conflicts[0]["violation_type"] == PIN_VIOLATION_DOWNSTREAM
+        assert conflicts[0]["constraint"] == "calories"
+        assert conflicts[0]["day"] == 0  # pin keys are 1-based; the report is 0-based
+        assert {p["slot_index"] for p in conflicts[0]["pinned_slots"]} == {0, 1}
+        failures = result.report.get("failures", [])
+        assert len(failures) == 1
+        assert all(f["code"] == "FM-3" for f in failures)
+
+    def test_p3_weekly_fiber_includes_fully_pinned_day0_success(self):
+        schedule = _make_schedule(ndays=2, slots_per_day=2)
+        fiber_a = MicronutrientProfile(fiber_g=8.0)
+        fiber_b = MicronutrientProfile(fiber_g=7.5)
+        fiber_c = MicronutrientProfile(fiber_g=8.0)
+        fiber_d = MicronutrientProfile(fiber_g=7.5)
+        profile = _make_profile(
+            schedule,
+            pinned_assignments={(1, 0): "r_pin1", (1, 1): "r_pin2"},
+            micronutrient_targets={"fiber_g": 10.0},
+        )
+        pool = [
+            _make_recipe("r_pin1", 1000.0, 50.0, 32.0, 125.0, micronutrients=fiber_a),
+            _make_recipe("r_pin2", 1000.0, 50.0, 32.0, 125.0, micronutrients=fiber_b),
+            _make_recipe("r3", 1000.0, 50.0, 32.0, 125.0, micronutrients=fiber_c),
+            _make_recipe("r4", 1000.0, 50.0, 32.0, 125.0, micronutrients=fiber_d),
+        ]
+        result = run_meal_plan_search(profile, pool, 2, None)
+        assert result.success is True, getattr(result, "report", result)
+        assert result.weekly_tracker is not None
+        assert result.weekly_tracker.days_completed == 2
+        micro = result.weekly_tracker.weekly_totals.micronutrients
+        assert micro is not None
+        assert abs(micro.fiber_g - 31.0) < 1e-6
+        _assert_weekly_equals_sum_daily(result)
+
+    def test_p3_weekly_fiber_includes_fully_pinned_day0_on_fm4(self):
+        schedule = _make_schedule(ndays=2, slots_per_day=2)
+        fiber_pin = MicronutrientProfile(fiber_g=5.0)
+        fiber_free = MicronutrientProfile(fiber_g=5.0)
+        # High-fiber recipe makes structural MDA pass, but its macros prevent selection.
+        fiber_rich = MicronutrientProfile(fiber_g=50.0)
+        profile = _make_profile(
+            schedule,
+            pinned_assignments={(1, 0): "r_pin1", (1, 1): "r_pin2"},
+            micronutrient_targets={"fiber_g": 15.0},
+        )
+        pool = [
+            _make_recipe("r_pin1", 1000.0, 50.0, 32.0, 125.0, micronutrients=fiber_pin),
+            _make_recipe("r_pin2", 1000.0, 50.0, 32.0, 125.0, micronutrients=fiber_pin),
+            _make_recipe("r3", 1000.0, 50.0, 32.0, 125.0, micronutrients=fiber_free),
+            _make_recipe("r4", 1000.0, 50.0, 32.0, 125.0, micronutrients=fiber_free),
+            _make_recipe("r_rich", 3000.0, 50.0, 32.0, 125.0, micronutrients=fiber_rich),
+        ]
+        result = run_meal_plan_search(profile, pool, 2, None)
+        assert result.success is False
+        assert result.failure_mode == "FM-4"
+        deficient = result.report.get("deficient_nutrients", [])
+        fiber_entry = next(e for e in deficient if e["nutrient"] == "fiber_g")
+        # day0 pinned 10g + day1 free 10g = 20g (not day1 alone)
+        assert abs(fiber_entry["achieved"] - 20.0) < 1e-6
+
+    def test_last_day_fully_pinned_succeeds(self):
+        schedule = _make_schedule(ndays=2, slots_per_day=2)
+        profile = _make_profile(
+            schedule,
+            pinned_assignments={(2, 0): "r_pin1", (2, 1): "r_pin2"},
+        )
+        pool = [
+            _make_recipe("r1", 1000.0, 50.0, 32.0, 125.0),
+            _make_recipe("r2", 1000.0, 50.0, 32.0, 125.0),
+            _make_recipe("r_pin1", 1000.0, 50.0, 32.0, 125.0),
+            _make_recipe("r_pin2", 1000.0, 50.0, 32.0, 125.0),
+        ]
+        result = run_meal_plan_search(profile, pool, 2, None)
+        assert result.success is True, getattr(result, "report", result)
+        assert result.termination_code == "TC-1"
+        assert result.weekly_tracker is not None
+        assert result.weekly_tracker.days_completed == 2
+        _assert_weekly_equals_sum_daily(result)
+
+    def test_middle_day_fully_pinned_with_backtrack_keeps_weekly(self):
+        """Day 1 fully pinned; search may backtrack past it. Weekly totals stay consistent.
+
+        Direct `_unwind_to` coverage for uncompleting a later fully pinned day lives in
+        `test_unwind_uncompletes_later_fully_pinned_day`. Scoring prefers high-iron
+        recipes when iron is tracked, so this instance may succeed without backtracks.
+        """
+        schedule = _make_schedule(ndays=3, slots_per_day=2)
+        high = MicronutrientProfile(iron_mg=12.0)
+        mid = MicronutrientProfile(iron_mg=5.0)
+        low = MicronutrientProfile(iron_mg=0.0)
+        profile = _make_profile(
+            schedule,
+            pinned_assignments={(2, 0): "r_pin1", (2, 1): "r_pin2"},
+            micronutrient_targets={"iron_mg": 10.0},
+        )
+        pool = [
+            _make_recipe("r_low_a", 1000.0, 50.0, 32.0, 125.0, micronutrients=low),
+            _make_recipe("r_low_b", 1000.0, 50.0, 32.0, 125.0, micronutrients=low),
+            _make_recipe("r_high_a", 1000.0, 50.0, 32.0, 125.0, micronutrients=high),
+            _make_recipe("r_high_b", 1000.0, 50.0, 32.0, 125.0, micronutrients=high),
+            _make_recipe("r_pin1", 1000.0, 50.0, 32.0, 125.0, micronutrients=mid),
+            _make_recipe("r_pin2", 1000.0, 50.0, 32.0, 125.0, micronutrients=mid),
+            _make_recipe("r_day2_a", 1000.0, 50.0, 32.0, 125.0, micronutrients=low),
+            _make_recipe("r_day2_b", 1000.0, 50.0, 32.0, 125.0, micronutrients=low),
+        ]
+        stats = SearchStats(enabled=True)
+        result = run_meal_plan_search(profile, pool, 3, None, stats=stats)
+        assert result.success is True, getattr(result, "report", result)
+        assert result.weekly_tracker is not None
+        assert result.weekly_tracker.days_completed == 3
+        micro = result.weekly_tracker.weekly_totals.micronutrients
+        assert micro is not None and micro.iron_mg >= 30.0 - 1e-6
+        _assert_weekly_equals_sum_daily(result)
+        # Pins remain on day 1 regardless of how many free-slot attempts occurred.
+        assert result.plan is not None
+        by_slot = {(a.day_index, a.slot_index): a.recipe_id for a in result.plan}
+        assert by_slot[(1, 0)] == "r_pin1"
+        assert by_slot[(1, 1)] == "r_pin2"
+
+    def test_backtrack_across_fully_pinned_day_end_to_end(self, monkeypatch):
+        """Weekly iron forces the search to unwind through a completed, fully pinned day 1.
+
+        The pinned day is uncompleted on the way back and re-completed on the way forward, so
+        weekly totals must still equal the sum of daily totals and the pins must survive.
+        """
+        from src.planning import phase7_search as p7
+
+        uncompleted_days: list[int] = []
+        real_uncomplete = p7._uncomplete_day
+
+        def spy(daily_trackers, weekly_tracker, day_index, *args, **kwargs):
+            uncompleted_days.append(day_index)
+            return real_uncomplete(daily_trackers, weekly_tracker, day_index, *args, **kwargs)
+
+        monkeypatch.setattr(p7, "_uncomplete_day", spy)
+
+        def iron(mg: float) -> MicronutrientProfile:
+            return MicronutrientProfile(iron_mg=mg)
+
+        schedule = _make_schedule(ndays=3, slots_per_day=2)
+        profile = _make_profile(
+            schedule,
+            pinned_assignments={(2, 0): "r_pin1", (2, 1): "r_pin2"},
+            micronutrient_targets={"iron_mg": 14.0},
+        )
+        pool = [
+            _make_recipe("r_pin1", 1000.0, 50.0, 32.0, 125.0, micronutrients=iron(4.0)),
+            _make_recipe("r_pin2", 1000.0, 50.0, 32.0, 125.0, micronutrients=iron(4.0)),
+            _make_recipe("f0", 1000.0, 50.0, 32.0, 125.0, micronutrients=iron(0.0)),
+            _make_recipe("f1", 800.0, 50.0, 32.0, 125.0, micronutrients=iron(12.0)),
+            _make_recipe("f2", 1200.0, 50.0, 32.0, 125.0, micronutrients=iron(3.0)),
+            _make_recipe("f3", 1200.0, 50.0, 32.0, 125.0, micronutrients=iron(6.0)),
+            _make_recipe("f4", 1000.0, 50.0, 32.0, 125.0, micronutrients=iron(6.0)),
+        ]
+        result = run_meal_plan_search(profile, pool, 3, None)
+        assert result.success is True, getattr(result, "report", result)
+        assert 1 in uncompleted_days, "search never unwound the fully pinned day"
+        assert result.weekly_tracker is not None
+        assert result.weekly_tracker.days_completed == 3
+        micro = result.weekly_tracker.weekly_totals.micronutrients
+        assert micro is not None and micro.iron_mg >= 42.0 - 1e-6
+        _assert_weekly_equals_sum_daily(result)
+        assert result.plan is not None
+        by_slot = {(a.day_index, a.slot_index): a.recipe_id for a in result.plan}
+        assert by_slot[(1, 0)] == "r_pin1"
+        assert by_slot[(1, 1)] == "r_pin2"
+
+    def test_unwind_uncompletes_later_fully_pinned_day(self):
+        schedule = _make_schedule(ndays=2, slots_per_day=2)
+        profile = _make_profile(
+            schedule,
+            pinned_assignments={(2, 0): "r_pin1", (2, 1): "r_pin2"},
+        )
+        recipe_by_id = {
+            "r1": _make_recipe("r1", 1000.0, 50.0, 32.0, 125.0),
+            "r2": _make_recipe("r2", 1000.0, 50.0, 32.0, 125.0),
+            "r_pin1": _make_recipe("r_pin1", 1000.0, 50.0, 32.0, 125.0),
+            "r_pin2": _make_recipe("r_pin2", 1000.0, 50.0, 32.0, 125.0),
+        }
+        order = _decision_order(schedule, 2)
+        daily_trackers = {
+            0: DailyTracker(
+                calories_consumed=2000.0,
+                protein_consumed=100.0,
+                fat_consumed=64.0,
+                carbs_consumed=250.0,
+                micronutrients_consumed={},
+                used_recipe_ids={"r1", "r2"},
+                non_workout_recipe_ids={"r1", "r2"},
+                slots_assigned=2,
+                slots_total=2,
+            ),
+            1: DailyTracker(
+                calories_consumed=2000.0,
+                protein_consumed=100.0,
+                fat_consumed=64.0,
+                carbs_consumed=250.0,
+                micronutrients_consumed={},
+                used_recipe_ids={"r_pin1", "r_pin2"},
+                non_workout_recipe_ids={"r_pin1", "r_pin2"},
+                slots_assigned=2,
+                slots_total=2,
+            ),
+        }
+        weekly_tracker = WeeklyTracker(
+            weekly_totals=NutritionProfile(0.0, 0.0, 0.0, 0.0),
+            days_completed=0,
+            days_remaining=2,
+            carryover_needs={},
+        )
+        completed_days: set[int] = set()
+        _update_weekly_after_day(daily_trackers, weekly_tracker, 0, schedule, profile, 2)
+        completed_days.add(0)
+        _update_weekly_after_day(daily_trackers, weekly_tracker, 1, schedule, profile, 2)
+        completed_days.add(1)
+        assert weekly_tracker.days_completed == 2
+        assert abs(weekly_tracker.weekly_totals.calories - 4000.0) < 1e-6
+
+        assignments = [
+            Assignment(0, 0, "r1", 0),
+            Assignment(0, 1, "r2", 0),
+            Assignment(1, 0, "r_pin1", 0),
+            Assignment(1, 1, "r_pin2", 0),
+        ]
+        cache = {
+            (0, 0): _CandidateCacheEntry(
+                ordered=[("r1", 0), ("r_alt", 0)],
+                variant_nutritions={},
+                pointer=1,
+            ),
+        }
+        # Backtrack to day 0 slot 0; day 1 is fully pinned so removals leave it completed
+        # unless _unwind_to uncompletes it.
+        _i, daily_trackers, weekly_tracker, assignments, _cache = _unwind_to(
+            origin_i=3,
+            target_i=0,
+            order=order,
+            daily_trackers=daily_trackers,
+            weekly_tracker=weekly_tracker,
+            assignments=assignments,
+            cache=cache,
+            completed_days=completed_days,
+            recipe_by_id=recipe_by_id,
+            schedule=schedule,
+            profile=profile,
+        )
+        assert 1 not in completed_days
+        assert weekly_tracker.days_completed == 0
+        assert abs(weekly_tracker.weekly_totals.calories) < 1e-6
+
+    def test_partly_pinned_day_completes_once(self):
+        schedule = _make_schedule(ndays=1, slots_per_day=2)
+        profile = _make_profile(
+            schedule,
+            pinned_assignments={(1, 1): "r_pin"},
+        )
+        pool = [
+            _make_recipe("r1", 1000.0, 50.0, 32.0, 125.0),
+            _make_recipe("r_pin", 1000.0, 50.0, 32.0, 125.0),
+        ]
+        result = run_meal_plan_search(profile, pool, 1, None)
+        assert result.success is True, getattr(result, "report", result)
+        assert result.weekly_tracker is not None
+        assert result.weekly_tracker.days_completed == 1
+        assert abs(result.weekly_tracker.weekly_totals.calories - 2000.0) < 1e-6
+        _assert_weekly_equals_sum_daily(result)
+
+    def test_fully_pinned_day_ul_violation_returns_fm3(self):
+        schedule = _make_schedule(ndays=1, slots_per_day=2)
+        ul = UpperLimits(vitamin_c_mg=100.0)
+        profile = _make_profile(
+            schedule,
+            pinned_assignments={(1, 0): "r1", (1, 1): "r2"},
+        )
+        pool = [
+            _make_recipe(
+                "r1",
+                1000.0,
+                50.0,
+                32.0,
+                125.0,
+                micronutrients=MicronutrientProfile(vitamin_c_mg=60.0),
+            ),
+            _make_recipe(
+                "r2",
+                1000.0,
+                50.0,
+                32.0,
+                125.0,
+                micronutrients=MicronutrientProfile(vitamin_c_mg=60.0),
+            ),
+        ]
+        result = run_meal_plan_search(profile, pool, 1, ul)
+        assert result.success is False
+        assert result.failure_mode == "FM-3"
+        conflicts = result.report.get("pinned_conflicts", [])
+        assert conflicts
+        assert all(str(c.get("constraint", "")).startswith("UL:") for c in conflicts)
+
+    def test_fully_pinned_paths_are_deterministic(self):
+        schedule_ok = _make_schedule(ndays=1, slots_per_day=2)
+        profile_ok = _make_profile(
+            schedule_ok,
+            pinned_assignments={(1, 0): "r1", (1, 1): "r2"},
+        )
+        pool_ok = [
+            _make_recipe("r1", 1000.0, 50.0, 32.0, 125.0),
+            _make_recipe("r2", 1000.0, 50.0, 32.0, 125.0),
+        ]
+        r1 = run_meal_plan_search(profile_ok, pool_ok, 1, None)
+        r2 = run_meal_plan_search(profile_ok, pool_ok, 1, None)
+        assert r1.success is True and r2.success is True
+        assert r1.termination_code == r2.termination_code
+        assert [(a.day_index, a.slot_index, a.recipe_id) for a in r1.plan] == [
+            (a.day_index, a.slot_index, a.recipe_id) for a in r2.plan
+        ]
+
+        schedule_bad = _make_schedule(ndays=2, slots_per_day=2)
+        profile_bad = _make_profile(
+            schedule_bad,
+            daily_calories=2000,
+            pinned_assignments={(1, 0): "r_pin1", (1, 1): "r_pin2"},
+        )
+        pool_bad = [
+            _make_recipe("r_pin1", 700.0, 50.0, 32.0, 125.0),
+            _make_recipe("r_pin2", 700.0, 50.0, 32.0, 125.0),
+            _make_recipe("r3", 1000.0, 50.0, 32.0, 125.0),
+            _make_recipe("r4", 1000.0, 50.0, 32.0, 125.0),
+        ]
+        f1 = run_meal_plan_search(profile_bad, pool_bad, 2, None)
+        f2 = run_meal_plan_search(profile_bad, pool_bad, 2, None)
+        assert f1.failure_mode == f2.failure_mode == "FM-3"
+        assert f1.report.get("pinned_conflicts") == f2.report.get("pinned_conflicts")

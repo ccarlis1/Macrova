@@ -281,7 +281,11 @@ class Oracle:
                 unpinned = self.enumerate_day(pool, days[d0], d0, {}, excluded, prof, want_solutions=False)
                 if unpinned.count > 0:
                     code = "FM-3"
-            out.update(stage="search", failure_code=code)
+            stage = "search"
+            if code == "FM-3" and all((zero_days[0], s) in pins for s in range(len(days[zero_days[0]]["meals"]))):
+                # A fully pinned day that fails daily validation is rejected before search.
+                stage = "pre_search"
+            out.update(stage=stage, failure_code=code)
             out["details"]["infeasible_days"] = zero_days
             out["details"]["min_tolerance_for_feasibility"] = self._min_tol(pool, days, zero_days[0], pins, excluded, prof)
             return out

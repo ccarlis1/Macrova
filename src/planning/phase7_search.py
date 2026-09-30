@@ -64,6 +64,8 @@ from src.planning.phase10_reporting import (
     build_report_fm5,
     build_sodium_warning,
     ensure_report_failures,
+    PIN_VIOLATION_DIRECT,
+    PIN_VIOLATION_DOWNSTREAM,
     result_from_failure,
     result_from_success,
 )
@@ -334,6 +336,63 @@ def _apply_assignment(
 # --- Remove assignment (unwind) ---
 
 
+def _uncomplete_day(
+    daily_trackers: Dict[int, DailyTracker],
+    weekly_tracker: WeeklyTracker,
+    day_index: int,
+    schedule: List[List[MealSlot]],
+    profile: PlanningUserProfile,
+    completed_days: Set[int],
+) -> None:
+    """Subtract a completed day's totals from weekly and mark the day incomplete.
+
+    Used when removing an assignment from a completed day, and when unwinding
+    past a fully pinned completed day (pins are never removed from assignments).
+    """
+    if day_index not in completed_days:
+        return
+    tracker = daily_trackers.get(day_index)
+    if tracker is None:
+        completed_days.discard(day_index)
+        return
+    D = len(schedule)
+    valid = list(MicronutrientProfile.__dataclass_fields__.keys())
+    kwargs = {k: tracker.micronutrients_consumed.get(k, 0.0) for k in valid}
+    day_micro = MicronutrientProfile(**kwargs) if tracker.micronutrients_consumed else None
+    day_nut = NutritionProfile(
+        tracker.calories_consumed,
+        tracker.protein_consumed,
+        tracker.fat_consumed,
+        tracker.carbs_consumed,
+        micronutrients=day_micro,
+    )
+    weekly_tracker.weekly_totals = _subtract_nutrition(weekly_tracker.weekly_totals, day_nut)
+    _normalize_nutrition_profile(weekly_tracker.weekly_totals)
+    completed_days.discard(day_index)
+    weekly_tracker.days_completed = max(0, weekly_tracker.days_completed - 1)
+    weekly_tracker.days_remaining = D - weekly_tracker.days_completed
+    _recompute_carryover(weekly_tracker, profile, D)
+    _debug_log("day_uncomplete", day_index=day_index)
+
+
+def _remaining_budget_from_tracker(
+    tracker: DailyTracker,
+    profile: PlanningUserProfile,
+) -> Dict[str, Any]:
+    """Budget remaining after a day's pinned (or locked) assignments."""
+    fat_min, fat_max = profile.daily_fat_g
+    return {
+        "calories": float(profile.daily_calories - tracker.calories_consumed),
+        "protein_g": float(profile.daily_protein_g - tracker.protein_consumed),
+        "carbs_g": float(profile.daily_carbs_g - tracker.carbs_consumed),
+        "fat_g": {
+            "min": float(fat_min),
+            "max": float(fat_max),
+            "consumed": float(tracker.fat_consumed),
+        },
+    }
+
+
 def _remove_assignment(
     daily_trackers: Dict[int, DailyTracker],
     weekly_tracker: WeeklyTracker,
@@ -349,7 +408,6 @@ def _remove_assignment(
     day_index, slot_index, recipe_id = assignment.day_index, assignment.slot_index, assignment.recipe_id
     _debug_log("remove", day_index=day_index, slot_index=slot_index, recipe_id=recipe_id)
     tracker = daily_trackers[day_index]
-    D = len(schedule)
     if assignment.variant_index > 0:
         nut = compute_variant_nutrition(recipe, assignment.variant_index, profile)
     else:
@@ -360,23 +418,9 @@ def _remove_assignment(
 
     # Per-day contract: if this day was completed, subtract full-day totals from weekly once and uncomplete the day.
     if completed_days is not None and day_index in completed_days:
-        valid = list(MicronutrientProfile.__dataclass_fields__.keys())
-        kwargs = {k: tracker.micronutrients_consumed.get(k, 0.0) for k in valid}
-        day_micro = MicronutrientProfile(**kwargs) if tracker.micronutrients_consumed else None
-        day_nut = NutritionProfile(
-            tracker.calories_consumed,
-            tracker.protein_consumed,
-            tracker.fat_consumed,
-            tracker.carbs_consumed,
-            micronutrients=day_micro,
+        _uncomplete_day(
+            daily_trackers, weekly_tracker, day_index, schedule, profile, completed_days
         )
-        weekly_tracker.weekly_totals = _subtract_nutrition(weekly_tracker.weekly_totals, day_nut)
-        _normalize_nutrition_profile(weekly_tracker.weekly_totals)
-        completed_days.discard(day_index)
-        weekly_tracker.days_completed = max(0, weekly_tracker.days_completed - 1)
-        weekly_tracker.days_remaining = D - weekly_tracker.days_completed
-        _recompute_carryover(weekly_tracker, profile, D)
-        _debug_log("day_uncomplete", day_index=day_index)
 
     if new_slots_assigned == 0:
         if day_index in daily_trackers:
@@ -589,9 +633,9 @@ def run_meal_plan_search(
             stats._end_time = time.perf_counter()
             stats.total_attempts = 0
         report = build_report_fm3(
-            pinned_conflicts=[{"day": 0, "slot_index": 0, "recipe_id": "", "violation_type": "direct", "remaining_budget": {}}],
+            pinned_conflicts=[{"day": 0, "slot_index": 0, "recipe_id": "", "violation_type": PIN_VIOLATION_DIRECT, "remaining_budget": {}}],
         )
-        return result_from_failure("TC-3", "FM-3", report, [], {}, 0, 0, "Schedule length != D", {"attempts": 0, "backtracks": 0})
+        return result_from_failure("TC-3", "FM-3", report, [], {}, 0, 0, None, {"attempts": 0, "backtracks": 0})
     recipe_by_id = {r.id: r for r in recipe_pool}
 
     # Pinned pre-validation (Section 3.5)
@@ -600,13 +644,14 @@ def run_meal_plan_search(
         if stats is not None and stats.enabled:
             stats._end_time = time.perf_counter()
             stats.total_attempts = 0
-        day_1 = pin_result.failed_pin_day_1based or 0
+        # pinned_conflicts[].day is 0-based (see _fm3_failures_from_report).
+        day_0 = max((pin_result.failed_pin_day_1based or 1) - 1, 0)
         slot_0 = pin_result.failed_pin_slot_index if pin_result.failed_pin_slot_index is not None else 0
         rid = pin_result.failed_pin_recipe_id or ""
         report = build_report_fm3(
-            pinned_conflicts=[{"day": day_1, "slot_index": slot_0, "recipe_id": rid, "violation_type": "direct", "remaining_budget": {}}],
+            pinned_conflicts=[{"day": day_0, "slot_index": slot_0, "recipe_id": rid, "violation_type": PIN_VIOLATION_DIRECT, "remaining_budget": {}}],
         )
-        return result_from_failure("TC-3", "FM-3", report, [], {}, 0, 0, pin_result.failed_hc, {"attempts": 0, "backtracks": 0})
+        return result_from_failure("TC-3", "FM-3", report, [], {}, 0, 0, None, {"attempts": 0, "backtracks": 0})
 
     # Initial state: pinned only; zero weekly totals for search (we add on day completion)
     initial = build_initial_state(profile, recipe_by_id, D)
@@ -618,6 +663,50 @@ def run_meal_plan_search(
         carryover_needs={n: 0.0 for n in profile.micronutrient_targets},
     )
     assignments: List[Assignment] = list(initial.assignments)
+
+    # Fully pinned days: daily validation cannot depend on search decisions (pins use
+    # variant 0). Fail early with FM-3 rather than searching earlier free days for nothing.
+    for d in range(D):
+        tracker = daily_trackers.get(d)
+        if tracker is None or tracker.slots_assigned != tracker.slots_total:
+            continue
+        ok, reason = _daily_validation(d, tracker, profile, resolved_ul)
+        if ok:
+            continue
+        if stats is not None and stats.enabled:
+            stats._end_time = time.perf_counter()
+            stats.total_attempts = 0
+        # The violation belongs to the whole day, so report one day-level conflict.
+        pinned_slots = [
+            {"slot_index": slot_idx, "recipe_id": rid}
+            for slot_idx in range(len(schedule[d]))
+            for rid in [_get_pinned_recipe_id(profile, d, slot_idx)]
+            if rid is not None
+        ]
+        pinned_conflicts: List[Dict[str, Any]] = [{
+            "day": d,
+            "slot_index": None,
+            "recipe_id": None,
+            "violation_type": PIN_VIOLATION_DOWNSTREAM,
+            "constraint": reason,
+            "pinned_slots": pinned_slots,
+        }]
+        remaining = _remaining_budget_from_tracker(tracker, profile)
+        report = build_report_fm3(
+            pinned_conflicts=pinned_conflicts,
+            remaining_budget=remaining,
+        )
+        return result_from_failure(
+            "TC-3",
+            "FM-3",
+            report,
+            list(assignments),
+            dict(daily_trackers),
+            0,
+            0,
+            None,
+            {"attempts": 0, "backtracks": 0},
+        )
 
     macro_bounds = precompute_macro_bounds(recipe_pool, max_slots=8)
     slot_counts: Set[int] = set()
@@ -704,73 +793,91 @@ def run_meal_plan_search(
             assigned_slots = {(a.day_index, a.slot_index) for a in assignments}
             if (day_index, slot_index) in assigned_slots:
                 i += 1
-                continue
-            recipe_id = _get_pinned_recipe_id(profile, day_index, slot_index)
-            recipe = recipe_by_id[recipe_id]
-            day_slots = schedule[day_index]
-            next_first = schedule[day_index + 1][0] if day_index + 1 < D else None
-            act_ctx = activity_context_for_profile(
-                profile, day_index, day_slots[slot_index], slot_index, day_slots, next_first
-            )
-            is_w = is_workout_slot(act_ctx)
-            _apply_assignment(daily_trackers, assignments, day_index, slot_index, recipe_id, recipe, is_w, schedule, variant_index=0)
-            _validate_planner_state(daily_trackers, weekly_tracker, completed_days, D, schedule)
-            i += 1
-            attempt_count += 1
-            if stats is not None and stats.enabled:
-                stats.attempts_per_slot[(day_index, slot_index)] = stats.attempts_per_slot.get((day_index, slot_index), 0) + 1
-                stats.attempts_per_day[day_index] = stats.attempts_per_day.get(day_index, 0) + 1
-            if _update_best(assignments, daily_trackers, best_assignments, best_daily_trackers):
-                pass
-            continue
-
-        # Non-pinned: use cache or generate
-        key = (day_index, slot_index)
-        if key not in cache:
-            cg = generate_candidates(
-                recipe_pool, day_index, slot_index,
-                dict(daily_trackers), copy.deepcopy(weekly_tracker), schedule,
-                profile, resolved_ul, macro_bounds,
-                scalable_sources=scalable_sources,
-            )
-            if cg.trigger_backtrack:
-                target = _find_backtrack_target(order, i, cache, profile)
-                if target is None:
-                    if stats is not None and stats.enabled:
-                        stats._end_time = time.perf_counter()
-                        stats.total_attempts = attempt_count
-                    if (
-                        not cg.candidates
-                        and cg.required_tag_filter_applied
-                        and cg.candidate_count_before_required > 0
-                        and cg.candidate_count_after_required == 0
-                    ):
-                        report = ensure_report_failures(build_report_fm_tag_empty(
-                            day_index=day_index,
-                            slot_index=slot_index,
-                            required_tag_slugs=cg.required_tag_slugs,
-                            candidate_count_before=cg.candidate_count_before_required,
-                            candidate_count_after=cg.candidate_count_after_required,
-                            reason="No planner candidates satisfy required tag slugs for this slot.",
-                        ))
-                        missing_tag = str(cg.required_tag_slugs[0]) if cg.required_tag_slugs else ""
-                        slot_id = f"day-{day_index + 1}-slot-{slot_index}"
-                        report["failures"] = [
-                            build_failure(
-                                code="FM-TAG-EMPTY",
+                # Fall through to shared day-completion / end-of-plan tail.
+            else:
+                recipe_id = _get_pinned_recipe_id(profile, day_index, slot_index)
+                recipe = recipe_by_id[recipe_id]
+                day_slots = schedule[day_index]
+                next_first = schedule[day_index + 1][0] if day_index + 1 < D else None
+                act_ctx = activity_context_for_profile(
+                    profile, day_index, day_slots[slot_index], slot_index, day_slots, next_first
+                )
+                is_w = is_workout_slot(act_ctx)
+                _apply_assignment(daily_trackers, assignments, day_index, slot_index, recipe_id, recipe, is_w, schedule, variant_index=0)
+                _validate_planner_state(daily_trackers, weekly_tracker, completed_days, D, schedule)
+                i += 1
+                attempt_count += 1
+                if stats is not None and stats.enabled:
+                    stats.attempts_per_slot[(day_index, slot_index)] = stats.attempts_per_slot.get((day_index, slot_index), 0) + 1
+                    stats.attempts_per_day[day_index] = stats.attempts_per_day.get(day_index, 0) + 1
+                if _update_best(assignments, daily_trackers, best_assignments, best_daily_trackers):
+                    pass
+                # Fall through to shared day-completion / end-of-plan tail.
+        else:
+            # Non-pinned: use cache or generate
+            key = (day_index, slot_index)
+            if key not in cache:
+                cg = generate_candidates(
+                    recipe_pool, day_index, slot_index,
+                    dict(daily_trackers), copy.deepcopy(weekly_tracker), schedule,
+                    profile, resolved_ul, macro_bounds,
+                    scalable_sources=scalable_sources,
+                )
+                if cg.trigger_backtrack:
+                    target = _find_backtrack_target(order, i, cache, profile)
+                    if target is None:
+                        if stats is not None and stats.enabled:
+                            stats._end_time = time.perf_counter()
+                            stats.total_attempts = attempt_count
+                        if (
+                            not cg.candidates
+                            and cg.required_tag_filter_applied
+                            and cg.candidate_count_before_required > 0
+                            and cg.candidate_count_after_required == 0
+                        ):
+                            report = ensure_report_failures(build_report_fm_tag_empty(
                                 day_index=day_index,
                                 slot_index=slot_index,
-                                slot_id=slot_id,
-                                date="",
-                                details={
-                                    "missing_tag": missing_tag,
-                                    "recipe_count": int(cg.candidate_count_after_required),
-                                },
+                                required_tag_slugs=cg.required_tag_slugs,
+                                candidate_count_before=cg.candidate_count_before_required,
+                                candidate_count_after=cg.candidate_count_after_required,
+                                reason="No planner candidates satisfy required tag slugs for this slot.",
+                            ))
+                            missing_tag = str(cg.required_tag_slugs[0]) if cg.required_tag_slugs else ""
+                            slot_id = f"day-{day_index + 1}-slot-{slot_index}"
+                            report["failures"] = [
+                                build_failure(
+                                    code="FM-TAG-EMPTY",
+                                    day_index=day_index,
+                                    slot_index=slot_index,
+                                    slot_id=slot_id,
+                                    date="",
+                                    details={
+                                        "missing_tag": missing_tag,
+                                        "recipe_count": int(cg.candidate_count_after_required),
+                                    },
+                                )
+                            ]
+                            return result_from_failure(
+                                "TC-2",
+                                "FM-TAG-EMPTY",
+                                report,
+                                list(assignments),
+                                dict(daily_trackers),
+                                attempt_count,
+                                backtrack_count,
+                                None,
+                                _stats_dict,
                             )
-                        ]
+                        report = build_report_fm1(
+                            day_index,
+                            slot_index,
+                            "Empty candidate set or FC-5",
+                            eligible_recipe_count=len(cg.candidates),
+                        )
                         return result_from_failure(
                             "TC-2",
-                            "FM-TAG-EMPTY",
+                            "FM-1",
                             report,
                             list(assignments),
                             dict(daily_trackers),
@@ -779,23 +886,95 @@ def run_meal_plan_search(
                             None,
                             _stats_dict,
                         )
-                    report = build_report_fm1(
+                    if stats is not None and stats.enabled:
+                        stats._backtrack_depths.append(i - target)
+                    backtrack_count += 1
+                    i, daily_trackers, weekly_tracker, assignments, cache = _unwind_to(
+                        i, target, order, daily_trackers, weekly_tracker, assignments, cache,
+                        completed_days, recipe_by_id, schedule, profile,
+                    )
+                    continue
+                scored_triples: List[Tuple[str, int, PlanningRecipe, float]] = []
+                for (rid, vi) in sorted(cg.candidates):
+                    r = recipe_by_id[rid]
+                    nut = cg.variant_nutritions.get((rid, vi)) or get_effective_nutrition(r, vi, None)
+                    recipe_view = PlanningRecipe(
+                        id=r.id,
+                        name=r.name,
+                        ingredients=r.ingredients,
+                        cooking_time_minutes=r.cooking_time_minutes,
+                        nutrition=nut,
+                        primary_carb_contribution=r.primary_carb_contribution,
+                        primary_carb_source=r.primary_carb_source,
+                        canonical_tag_slugs=set(getattr(r, "canonical_tag_slugs", set()) or set()),
+                        hard_eligible_tag_slugs=(
+                            None
+                            if getattr(r, "hard_eligible_tag_slugs", None) is None
+                            else set(getattr(r, "hard_eligible_tag_slugs", set()) or set())
+                        ),
+                    )
+                    # No meal-prep provenance is currently carried in planner runtime state.
+                    # Keep this unset so scoring does not infer meal-prep exemptions from unrelated signals.
+                    state_view = ScoringStateView(
+                        daily_trackers=dict(daily_trackers),
+                        weekly_tracker=weekly_tracker,
+                        schedule=schedule,
+                        meal_prep_recipe_ids=None,
+                    )
+                    sc = composite_score(recipe_view, day_index, slot_index, state_view, profile)
+                    scored_triples.append((rid, vi, recipe_view, sc))
+                ord_state = OrderingStateView(daily_trackers=dict(daily_trackers), weekly_tracker=weekly_tracker)
+                slot = schedule[day_index][slot_index]
+                ordered_triples = sorted(
+                    scored_triples,
+                    key=lambda t: ordering_key(
+                        (t[2], t[3]),
+                        ord_state,
+                        profile,
                         day_index,
-                        slot_index,
-                        "Empty candidate set or FC-5",
-                        eligible_recipe_count=len(cg.candidates),
+                        slot=slot,
+                        tie_break_seed="phase7-search-seed",
+                    ),
+                )
+                ordered_ids = [(rid, vi) for rid, vi, _rv, _sc in ordered_triples]
+                cache[key] = _CandidateCacheEntry(
+                    ordered=ordered_ids,
+                    variant_nutritions=cg.variant_nutritions,
+                    pointer=0,
+                )
+                if stats is not None and stats.enabled:
+                    stats.branching_factors[key] = len(cache[key].ordered)
+
+            entry = cache[key]
+            if entry.pointer >= len(entry.ordered):
+                target = _find_backtrack_target(order, i, cache, profile)
+                if target is None:
+                    if stats is not None and stats.enabled:
+                        stats._end_time = time.perf_counter()
+                        stats.total_attempts = attempt_count
+                    report = ensure_report_failures(
+                        build_report_fm2(None, "exhaustion", {}, {}, build_plan_snapshot(best_assignments, best_daily_trackers))
                     )
-                    return result_from_failure(
-                        "TC-2",
-                        "FM-1",
-                        report,
-                        list(assignments),
-                        dict(daily_trackers),
-                        attempt_count,
-                        backtrack_count,
-                        None,
-                        _stats_dict,
+                    failure_day_index = max(best_daily_trackers) if best_daily_trackers else None
+                    failure_tracker = (
+                        best_daily_trackers.get(failure_day_index)
+                        if failure_day_index is not None
+                        else None
                     )
+                    report["failures"] = [
+                        build_failure(
+                            code="FM-MACRO-INFEASIBLE",
+                            details=_macro_failure_details(
+                                day_index=failure_day_index,
+                                reason="exhaustion",
+                                tracker=failure_tracker,
+                                profile=profile,
+                            ),
+                            slot_id="",
+                            date=f"day-{failure_day_index + 1}" if failure_day_index is not None else "",
+                        )
+                    ]
+                    return result_from_failure("TC-2", "FM-2", report, best_assignments, best_daily_trackers, attempt_count, backtrack_count, sodium_advisory, _stats_dict)
                 if stats is not None and stats.enabled:
                     stats._backtrack_depths.append(i - target)
                 backtrack_count += 1
@@ -804,123 +983,38 @@ def run_meal_plan_search(
                     completed_days, recipe_by_id, schedule, profile,
                 )
                 continue
-            scored_triples: List[Tuple[str, int, PlanningRecipe, float]] = []
-            for (rid, vi) in sorted(cg.candidates):
-                r = recipe_by_id[rid]
-                nut = cg.variant_nutritions.get((rid, vi)) or get_effective_nutrition(r, vi, None)
-                recipe_view = PlanningRecipe(
-                    id=r.id,
-                    name=r.name,
-                    ingredients=r.ingredients,
-                    cooking_time_minutes=r.cooking_time_minutes,
-                    nutrition=nut,
-                    primary_carb_contribution=r.primary_carb_contribution,
-                    primary_carb_source=r.primary_carb_source,
-                    canonical_tag_slugs=set(getattr(r, "canonical_tag_slugs", set()) or set()),
-                    hard_eligible_tag_slugs=(
-                        None
-                        if getattr(r, "hard_eligible_tag_slugs", None) is None
-                        else set(getattr(r, "hard_eligible_tag_slugs", set()) or set())
-                    ),
-                )
-                # No meal-prep provenance is currently carried in planner runtime state.
-                # Keep this unset so scoring does not infer meal-prep exemptions from unrelated signals.
-                state_view = ScoringStateView(
-                    daily_trackers=dict(daily_trackers),
-                    weekly_tracker=weekly_tracker,
-                    schedule=schedule,
-                    meal_prep_recipe_ids=None,
-                )
-                sc = composite_score(recipe_view, day_index, slot_index, state_view, profile)
-                scored_triples.append((rid, vi, recipe_view, sc))
-            ord_state = OrderingStateView(daily_trackers=dict(daily_trackers), weekly_tracker=weekly_tracker)
-            slot = schedule[day_index][slot_index]
-            ordered_triples = sorted(
-                scored_triples,
-                key=lambda t: ordering_key(
-                    (t[2], t[3]),
-                    ord_state,
-                    profile,
-                    day_index,
-                    slot=slot,
-                    tie_break_seed="phase7-search-seed",
-                ),
-            )
-            ordered_ids = [(rid, vi) for rid, vi, _rv, _sc in ordered_triples]
-            cache[key] = _CandidateCacheEntry(
-                ordered=ordered_ids,
-                variant_nutritions=cg.variant_nutritions,
-                pointer=0,
-            )
-            if stats is not None and stats.enabled:
-                stats.branching_factors[key] = len(cache[key].ordered)
 
-        entry = cache[key]
-        if entry.pointer >= len(entry.ordered):
-            target = _find_backtrack_target(order, i, cache, profile)
-            if target is None:
-                if stats is not None and stats.enabled:
-                    stats._end_time = time.perf_counter()
-                    stats.total_attempts = attempt_count
-                report = ensure_report_failures(
-                    build_report_fm2(None, "exhaustion", {}, {}, build_plan_snapshot(best_assignments, best_daily_trackers))
-                )
-                failure_day_index = max(best_daily_trackers) if best_daily_trackers else None
-                failure_tracker = (
-                    best_daily_trackers.get(failure_day_index)
-                    if failure_day_index is not None
-                    else None
-                )
-                report["failures"] = [
-                    build_failure(
-                        code="FM-MACRO-INFEASIBLE",
-                        details=_macro_failure_details(
-                            day_index=failure_day_index,
-                            reason="exhaustion",
-                            tracker=failure_tracker,
-                            profile=profile,
-                        ),
-                        slot_id="",
-                        date=f"day-{failure_day_index + 1}" if failure_day_index is not None else "",
-                    )
-                ]
-                return result_from_failure("TC-2", "FM-2", report, best_assignments, best_daily_trackers, attempt_count, backtrack_count, sodium_advisory, _stats_dict)
-            if stats is not None and stats.enabled:
-                stats._backtrack_depths.append(i - target)
-            backtrack_count += 1
-            i, daily_trackers, weekly_tracker, assignments, cache = _unwind_to(
-                i, target, order, daily_trackers, weekly_tracker, assignments, cache,
-                completed_days, recipe_by_id, schedule, profile,
+            recipe_id, variant_index = entry.ordered[entry.pointer]
+            recipe = recipe_by_id[recipe_id]
+            variant_nutrition = entry.variant_nutritions.get((recipe_id, variant_index)) if variant_index > 0 else None
+            day_slots = schedule[day_index]
+            next_first = schedule[day_index + 1][0] if day_index + 1 < D else None
+            act_ctx = activity_context_for_profile(
+                profile, day_index, day_slots[slot_index], slot_index, day_slots, next_first
             )
-            continue
-
-        recipe_id, variant_index = entry.ordered[entry.pointer]
-        recipe = recipe_by_id[recipe_id]
-        variant_nutrition = entry.variant_nutritions.get((recipe_id, variant_index)) if variant_index > 0 else None
-        day_slots = schedule[day_index]
-        next_first = schedule[day_index + 1][0] if day_index + 1 < D else None
-        act_ctx = activity_context_for_profile(
-            profile, day_index, day_slots[slot_index], slot_index, day_slots, next_first
-        )
-        is_w = is_workout_slot(act_ctx)
-        _apply_assignment(
-            daily_trackers, assignments, day_index, slot_index, recipe_id, recipe, is_w, schedule,
-            variant_index=variant_index,
-            variant_nutrition=variant_nutrition,
-        )
-        _validate_planner_state(daily_trackers, weekly_tracker, completed_days, D, schedule)
-        entry.pointer += 1
-        i += 1
-        attempt_count += 1
-        if stats is not None and stats.enabled:
-            stats.attempts_per_slot[(day_index, slot_index)] = stats.attempts_per_slot.get((day_index, slot_index), 0) + 1
-            stats.attempts_per_day[day_index] = stats.attempts_per_day.get(day_index, 0) + 1
-        if _update_best(assignments, daily_trackers, best_assignments, best_daily_trackers):
-            pass
+            is_w = is_workout_slot(act_ctx)
+            _apply_assignment(
+                daily_trackers, assignments, day_index, slot_index, recipe_id, recipe, is_w, schedule,
+                variant_index=variant_index,
+                variant_nutrition=variant_nutrition,
+            )
+            _validate_planner_state(daily_trackers, weekly_tracker, completed_days, D, schedule)
+            entry.pointer += 1
+            i += 1
+            attempt_count += 1
+            if stats is not None and stats.enabled:
+                stats.attempts_per_slot[(day_index, slot_index)] = stats.attempts_per_slot.get((day_index, slot_index), 0) + 1
+                stats.attempts_per_day[day_index] = stats.attempts_per_day.get(day_index, 0) + 1
+            if _update_best(assignments, daily_trackers, best_assignments, best_daily_trackers):
+                pass
 
         # Day completion (Section 6.5)
         tracker = daily_trackers.get(day_index)
-        if tracker is not None and tracker.slots_assigned == tracker.slots_total:
+        if (
+            tracker is not None
+            and tracker.slots_assigned == tracker.slots_total
+            and day_index not in completed_days
+        ):
             ok, reason = _daily_validation(day_index, tracker, profile, resolved_ul)
             if not ok:
                 target = _find_backtrack_target(order, i, cache, profile)
@@ -1153,6 +1247,13 @@ def _unwind_to(
         is_w = is_workout_slot(act_ctx)
         _remove_assignment(
             daily_trackers, weekly_tracker, assignments, a, recipe, is_w, schedule, profile, completed_days
+        )
+
+    # Fully pinned completed days past the target have no free assignments to remove,
+    # so _remove_assignment never uncompletes them. Drop them from weekly totals here.
+    for d in sorted((x for x in completed_days if x > target_day), reverse=True):
+        _uncomplete_day(
+            daily_trackers, weekly_tracker, d, schedule, profile, completed_days
         )
 
     cache_cleaned: Dict[Tuple[int, int], _CandidateCacheEntry] = {}

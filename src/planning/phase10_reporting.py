@@ -416,7 +416,9 @@ def build_report_fm2(
 
 # FM-3 pinned_conflicts[].violation_type vocabulary.
 PIN_VIOLATION_DIRECT = "direct"  # a single pin breaks a hard constraint
-PIN_VIOLATION_DOWNSTREAM = "downstream"  # a fully pinned day fails daily validation
+# "downstream" means an aggregate day-level failure: a fully pinned day fails daily
+# validation (slot_index/recipe_id are None). Found pre-search; no search step caused it.
+PIN_VIOLATION_DOWNSTREAM = "downstream"
 
 
 def build_report_fm3(

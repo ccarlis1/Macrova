@@ -136,6 +136,10 @@ Warnings remain separate (`warnings`) and are not merged with failures.
 - **Details payload:** `{ "batch_ids": ["<existing>", "<incoming>"], "date": "", "slot_id": "day-<n>-slot-<i>" }`
 - **UI purpose:** Point to conflicting prep assignments so the user can remove one lock.
 
+### Note on `date` labels
+
+In planning failure details, `date` is a synthetic 1-based label `day-<index+1>` (not a calendar date); the 0-based `day_index` is authoritative. For FM-3 `pinned_conflicts[].violation_type`, `"downstream"` means an aggregate day-level failure (e.g. a fully pinned day missing its daily targets), while `"direct"` means a single pin violates a hard constraint.
+
 ### FM-MACRO-INFEASIBLE
 
 - **When emitted:** Daily macro validation fails or search exhausts without meeting macro constraints.

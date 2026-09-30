@@ -71,6 +71,17 @@ python3 scripts/run_export_openapi.py --check    # fail if the snapshot is stale
 
 Do **not** run bare `python3 scripts/export_openapi.py` on the system interpreter unless it already has all deps installed. If you must call the export script directly, use `.venv/bin/python scripts/export_openapi.py`. The script itself prints this remediation when deps are missing.
 
+### Planning Benchmark
+
+After any change to `src/planning/`, pins/batches/tags, the oracle, or benchmark scenarios, run a regression check against the committed baseline. The full procedure and rules are in `.claude/skills/benchmark-audit/SKILL.md`.
+
+```bash
+.venv/bin/python evaluation/harness/run_benchmark.py
+.venv/bin/python evaluation/harness/compare.py
+.venv/bin/python evaluation/harness/probes.py
+.venv/bin/python evaluation/harness/diff_results.py --base main   # exit 1 = regression or unmapped disagreement
+```
+
 ### Frontend Commands
 
 Run from the Flutter app directory (`frontend/`), not the repo root:

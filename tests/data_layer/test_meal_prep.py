@@ -175,7 +175,7 @@ def test_status_transitions_computed_on_read(tmp_path):
 
     active = repo.create(_batch(cook_date=yesterday, total_servings=3))
     planned = repo.create(_batch(cook_date=tomorrow, total_servings=3))
-    consumed = repo.create(
+    fully_assigned_active = repo.create(
         _batch(
             cook_date=yesterday,
             total_servings=2,
@@ -185,22 +185,70 @@ def test_status_transitions_computed_on_read(tmp_path):
             ],
         )
     )
+    fully_assigned_planned = repo.create(
+        _batch(
+            cook_date=tomorrow,
+            total_servings=2,
+            assignments=[
+                BatchAssignment(day_index=0, slot_index=2, servings=1.0),
+                BatchAssignment(day_index=0, slot_index=3, servings=1.0),
+            ],
+        )
+    )
+    cancelled = repo.create(_batch(cook_date=yesterday, total_servings=3))
+    assert repo.cancel(cancelled.id) is True
 
     assert repo.get(active.id).status == "active"
     assert repo.get(planned.id).status == "planned"
-    assert repo.get(consumed.id).status == "consumed"
+    assert repo.get(fully_assigned_active.id).status == "active"
+    assert repo.get(fully_assigned_planned.id).status == "planned"
+    assert repo.get(cancelled.id).status == "consumed"
 
     active_ids = {b.id for b in repo.list_active()}
     assert active.id in active_ids
     assert planned.id in active_ids
-    assert consumed.id not in active_ids
+    assert fully_assigned_active.id in active_ids
+    assert fully_assigned_planned.id in active_ids
+    assert cancelled.id not in active_ids
 
 
 def test_list_all_includes_inactive_batches(tmp_path):
     db_path = tmp_path / "data" / "meal_prep" / "batches.json"
     repo = MealPrepBatchRepository(str(db_path))
-    active = repo.create(_batch(total_servings=3))
-    consumed = repo.create(
+    active = repo.create(_batch(recipe_id="recipe-active", total_servings=3))
+    to_cancel = repo.create(
+        _batch(
+            recipe_id="recipe-cancel",
+            total_servings=3,
+            assignments=[BatchAssignment(day_index=0, slot_index=0, servings=1.0)],
+        )
+    )
+    to_orphan = repo.create(
+        _batch(
+            recipe_id="recipe-orphan",
+            total_servings=3,
+            assignments=[BatchAssignment(day_index=0, slot_index=1, servings=1.0)],
+        )
+    )
+    assert repo.cancel(to_cancel.id) is True
+    assert repo.mark_orphaned_for_recipe("recipe-orphan") == 1
+
+    by_id = {b.id: b for b in repo.list_all()}
+    assert set(by_id) == {active.id, to_cancel.id, to_orphan.id}
+    assert by_id[active.id].status == "active"
+    assert by_id[to_cancel.id].status == "consumed"
+    assert by_id[to_orphan.id].status == "orphaned"
+
+    active_ids = {b.id for b in repo.list_active()}
+    assert active.id in active_ids
+    assert to_cancel.id not in active_ids
+    assert to_orphan.id not in active_ids
+
+
+def test_fully_assigned_batch_stays_active_after_reload(tmp_path):
+    db_path = tmp_path / "data" / "meal_prep" / "batches.json"
+    repo = MealPrepBatchRepository(str(db_path))
+    created = repo.create(
         _batch(
             total_servings=2,
             assignments=[
@@ -210,10 +258,28 @@ def test_list_all_includes_inactive_batches(tmp_path):
         )
     )
 
-    all_ids = {b.id for b in repo.list_all()}
+    reloaded = MealPrepBatchRepository(str(db_path))
+    batch = reloaded.get(created.id)
+    assert batch is not None
+    assert batch.servings_remaining == 0
+    assert batch.status == "active"
+    assert created.id in {b.id for b in reloaded.list_active()}
 
-    assert active.id in all_ids
-    assert consumed.id in all_ids
+
+def test_status_precedence_orphaned_over_consumed(tmp_path):
+    db_path = tmp_path / "data" / "meal_prep" / "batches.json"
+    repo = MealPrepBatchRepository(str(db_path))
+    created = repo.create(
+        _batch(
+            recipe_id="recipe-orphan-over-consumed",
+            total_servings=3,
+            assignments=[BatchAssignment(day_index=0, slot_index=0, servings=1.0)],
+        )
+    )
+    assert repo.cancel(created.id) is True
+    assert repo.get(created.id).status == "consumed"
+    assert repo.mark_orphaned_for_recipe("recipe-orphan-over-consumed") == 1
+    assert repo.get(created.id).status == "orphaned"
 
 
 def test_cancel_soft_deletes_assigned_batch(tmp_path):

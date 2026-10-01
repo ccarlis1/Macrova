@@ -1226,11 +1226,8 @@
    "OK"
   ],
   "got": "OK",
-  "status": "INVALID_PLAN",
-  "viol": [
-   "d0s1: pin/lock not honored (ln_chickpea_salad -> ln_tuna_poke)",
-   "d2s1: pin/lock not honored (ln_chickpea_salad -> ln_tuna_poke)"
-  ],
+  "status": "MATCH",
+  "viol": [],
   "tc": "TC-1",
   "incomplete": null,
   "report_codes": [],
@@ -5340,17 +5337,15 @@
   "acceptable": [
    "FM-3"
   ],
-  "got": "OK",
-  "status": "MISMATCH+INVALID",
-  "viol": [
-   "d0s1: pin/lock not honored (dn_beef_chili -> dn_tuna_steak_salad)",
-   "d1s1: pin/lock not honored (dn_beef_chili -> bk_big_oat_bowl)",
-   "d2s1: pin/lock not honored (dn_beef_chili -> dn_tuna_steak_salad)"
-  ],
-  "tc": "TC-1",
+  "got": "FM-3",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-3",
   "incomplete": null,
-  "report_codes": [],
-  "report_first": "[]",
+  "report_codes": [
+   "FM-3"
+  ],
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_index\": 1, \"slot_id\": \"day-1-slot-1\", \"date\": \"day-1\", \"details\": {\"recipe_id\": \"dn_beef_chili\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
   "detail": null,
   "stage_exp": "pre_search",
   "oracle": {
@@ -5385,17 +5380,15 @@
   "acceptable": [
    "FM-3"
   ],
-  "got": "OK",
-  "status": "MISMATCH+INVALID",
-  "viol": [
-   "d0s1: pin/lock not honored (dn_beef_chili -> dn_thigh_sheet_pan)",
-   "d1s1: pin/lock not honored (dn_beef_chili -> dn_bolognese)",
-   "d2s1: pin/lock not honored (dn_beef_chili -> dn_thigh_sheet_pan)"
-  ],
-  "tc": "TC-1",
+  "got": "FM-3",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-3",
   "incomplete": null,
-  "report_codes": [],
-  "report_first": "[]",
+  "report_codes": [
+   "FM-3"
+  ],
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 1, \"slot_index\": 0, \"slot_id\": \"day-2-slot-0\", \"date\": \"day-2\", \"details\": {\"recipe_id\": \"dn_beef_chili\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
   "detail": null,
   "stage_exp": "pre_search",
   "oracle": {
@@ -5434,15 +5427,15 @@
   "acceptable": [
    "FM-3"
   ],
-  "got": "OK",
-  "status": "MISMATCH+INVALID",
-  "viol": [
-   "d0s1: pin/lock not honored (ln_chickpea_salad -> ln_tuna_poke)"
-  ],
-  "tc": "TC-1",
+  "got": "FM-3",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-3",
   "incomplete": null,
-  "report_codes": [],
-  "report_first": "[]",
+  "report_codes": [
+   "FM-3"
+  ],
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 1, \"slot_index\": 0, \"slot_id\": \"day-2-slot-0\", \"date\": \"day-2\", \"details\": {\"recipe_id\": \"ln_chickpea_salad\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
   "detail": null,
   "stage_exp": "pre_search",
   "oracle": {
@@ -5481,10 +5474,8 @@
    "OK"
   ],
   "got": "OK",
-  "status": "INVALID_PLAN",
-  "viol": [
-   "d1s1: pin/lock not honored (dn_thigh_quinoa_prep -> hc_pasta_salmon_bake)"
-  ],
+  "status": "MATCH",
+  "viol": [],
   "tc": "TC-1",
   "incomplete": null,
   "report_codes": [],
@@ -5639,16 +5630,15 @@
   "acceptable": [
    "FM-3"
   ],
-  "got": "OK",
-  "status": "MISMATCH+INVALID",
-  "viol": [
-   "d0s2: pin/lock not honored (dn_beef_chili -> dn_tofu_stir_fry)",
-   "d2s2: pin/lock not honored (dn_beef_chili -> dn_tofu_stir_fry)"
-  ],
-  "tc": "TC-1",
+  "got": "FM-3",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-3",
   "incomplete": null,
-  "report_codes": [],
-  "report_first": "[]",
+  "report_codes": [
+   "FM-3"
+  ],
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"recipe_id\": \"dn_beef_chili\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
   "detail": null,
   "stage_exp": "pre_search",
   "oracle": {
@@ -5732,11 +5722,8 @@
    "OK"
   ],
   "got": "OK",
-  "status": "INVALID_PLAN",
-  "viol": [
-   "d0s2: pin/lock not honored (hc_pasta_salmon_bake -> bk_cottage_papaya)",
-   "d2s2: pin/lock not honored (hc_pasta_salmon_bake -> bk_cottage_papaya)"
-  ],
+  "status": "MATCH",
+  "viol": [],
   "tc": "TC-1",
   "incomplete": null,
   "report_codes": [],
@@ -5783,12 +5770,8 @@
    "OK"
   ],
   "got": "OK",
-  "status": "INVALID_PLAN",
-  "viol": [
-   "d0s2: pin/lock not honored (dn_chickpea_curry -> hc_mass_gainer)",
-   "d2s2: pin/lock not honored (dn_chickpea_curry -> hc_big_beef_rice)",
-   "d4s2: pin/lock not honored (dn_chickpea_curry -> dn_bolognese)"
-  ],
+  "status": "MATCH",
+  "viol": [],
   "tc": "TC-1",
   "incomplete": null,
   "report_codes": [],
@@ -5841,13 +5824,8 @@
    "OK"
   ],
   "got": "OK",
-  "status": "INVALID_PLAN",
-  "viol": [
-   "d0s2: pin/lock not honored (dn_beef_chili -> dn_bolognese)",
-   "d1s2: pin/lock not honored (dn_chickpea_curry -> ln_tuna_pasta_salad)",
-   "d2s2: pin/lock not honored (dn_beef_chili -> dn_bolognese)",
-   "d3s2: pin/lock not honored (dn_chickpea_curry -> dn_tilapia_rice)"
-  ],
+  "status": "MATCH",
+  "viol": [],
   "tc": "TC-1",
   "incomplete": null,
   "report_codes": [],
@@ -5897,11 +5875,8 @@
    "OK"
   ],
   "got": "OK",
-  "status": "INVALID_PLAN",
-  "viol": [
-   "d0s2: pin/lock not honored (dn_thigh_quinoa_prep -> ln_tuna_poke)",
-   "d2s2: pin/lock not honored (dn_thigh_quinoa_prep -> ln_tuna_poke)"
-  ],
+  "status": "MATCH",
+  "viol": [],
   "tc": "TC-1",
   "incomplete": null,
   "report_codes": [],
@@ -5948,15 +5923,15 @@
   "acceptable": [
    "FM-3"
   ],
-  "got": "OK",
-  "status": "MISMATCH+INVALID",
-  "viol": [
-   "d0s2: pin/lock not honored (dn_chickpea_curry -> hc_mass_gainer)"
-  ],
-  "tc": "TC-1",
+  "got": "FM-3",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-3",
   "incomplete": null,
-  "report_codes": [],
-  "report_first": "[]",
+  "report_codes": [
+   "FM-3"
+  ],
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"recipe_id\": \"\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
   "detail": null,
   "stage_exp": "pre_search",
   "oracle": {

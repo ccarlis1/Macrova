@@ -37,7 +37,8 @@ Unblocks: BE-2, BE-5, BE-6, FE-3, FE-7.
 - Use `uuid4().hex` for `id`.
 - `cook_date` remains an ISO string (`YYYY-MM-DD`) for display/audit metadata only.
 - Canonical planner/storage addressing uses `SlotAddress = (day_index, slot_index)` across entity, APIs, and planner.
-- `status` state machine (simple): `planned` → `active` (once `cook_date <= today`) → `consumed` (once `servings_remaining == 0`). Transitions computed on read; don't store stale state.
+- `status` state machine (simple): `planned` → `active` (once `cook_date <= today`, computed on read) → `consumed` (only via an explicit saved action such as `cancel()`).
+  - **Superseded by C1:** an earlier version derived `consumed` from `servings_remaining == 0`. That is no longer the rule: fully assigned batches remain `planned`/`active` and stay in `list_active()`, so their locks reach the planner and the conflict check.
 - Validate on create: `total_servings >= 2`, `len(assignments) <= total_servings`, no two assignments share the same `(day_index, slot_index)`, `sum(assignment.servings) <= total_servings`.
 
 ## Out of scope

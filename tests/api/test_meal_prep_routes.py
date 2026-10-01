@@ -13,7 +13,7 @@ from typing import List, Optional
 from fastapi.testclient import TestClient
 
 from src.api.server import app
-from src.data_layer.meal_prep import BatchAssignment, MealPrepBatch
+from src.data_layer.meal_prep import BatchAssignment, MealPrepBatch, MealPrepBatchRepository
 
 
 @dataclass
@@ -227,6 +227,114 @@ def test_create_meal_prep_batch_conflict(monkeypatch):
     )
     assert res.status_code == 409
     assert res.json()["error"]["code"] == "BATCH_CONFLICT"
+
+
+def test_create_conflicts_with_fully_assigned_batch(tmp_path, monkeypatch):
+    batches_path = tmp_path / "batches.json"
+    seed = MealPrepBatchRepository(str(batches_path))
+    seed.create(
+        MealPrepBatch(
+            id="fully-assigned",
+            recipe_id="r-existing",
+            total_servings=2,
+            cook_date="2026-04-27",
+            assignments=[
+                BatchAssignment(day_index=0, slot_index=2, servings=1.0),
+                BatchAssignment(day_index=0, slot_index=3, servings=1.0),
+            ],
+            status="planned",
+        )
+    )
+    monkeypatch.setattr(
+        "src.api.meal_prep_routes.MealPrepBatchRepository",
+        lambda: MealPrepBatchRepository(str(batches_path)),
+    )
+    monkeypatch.setattr(
+        "src.api.meal_prep_routes.RecipeDB",
+        lambda *_a, **_k: _RecipeDBStub(_RecipeStub(id="r1", is_meal_prep_capable=True)),
+    )
+
+    res = _client().post(
+        "/api/v1/meal_prep_batches",
+        json={
+            "recipe_id": "r1",
+            "total_servings": 2,
+            "cook_date": "2026-04-27",
+            "assignments": [{"day_index": 0, "slot_index": 2, "servings": 1.0}],
+        },
+    )
+    assert res.status_code == 409
+    assert res.json()["error"]["code"] == "BATCH_CONFLICT"
+
+
+def test_create_allowed_into_slot_of_cancelled_batch(tmp_path, monkeypatch):
+    batches_path = tmp_path / "batches.json"
+    seed = MealPrepBatchRepository(str(batches_path))
+    created = seed.create(
+        MealPrepBatch(
+            id="to-cancel",
+            recipe_id="r-existing",
+            total_servings=2,
+            cook_date="2026-04-27",
+            assignments=[
+                BatchAssignment(day_index=0, slot_index=2, servings=1.0),
+                BatchAssignment(day_index=0, slot_index=3, servings=1.0),
+            ],
+            status="planned",
+        )
+    )
+    assert seed.cancel(created.id) is True
+    monkeypatch.setattr(
+        "src.api.meal_prep_routes.MealPrepBatchRepository",
+        lambda: MealPrepBatchRepository(str(batches_path)),
+    )
+    monkeypatch.setattr(
+        "src.api.meal_prep_routes.RecipeDB",
+        lambda *_a, **_k: _RecipeDBStub(_RecipeStub(id="r1", is_meal_prep_capable=True)),
+    )
+
+    res = _client().post(
+        "/api/v1/meal_prep_batches",
+        json={
+            "recipe_id": "r1",
+            "total_servings": 2,
+            "cook_date": "2026-04-27",
+            "assignments": [{"day_index": 0, "slot_index": 2, "servings": 1.0}],
+        },
+    )
+    assert res.status_code == 200
+    assert res.json()["status"] != "consumed"
+
+
+def test_list_active_includes_fully_assigned_batch(tmp_path, monkeypatch):
+    batches_path = tmp_path / "batches.json"
+    seed = MealPrepBatchRepository(str(batches_path))
+    created = seed.create(
+        MealPrepBatch(
+            id="fully-listed",
+            recipe_id="r1",
+            total_servings=2,
+            cook_date="2026-04-27",
+            assignments=[
+                BatchAssignment(day_index=0, slot_index=0, servings=1.0),
+                BatchAssignment(day_index=0, slot_index=1, servings=1.0),
+            ],
+            status="planned",
+        )
+    )
+    monkeypatch.setattr(
+        "src.api.meal_prep_routes.MealPrepBatchRepository",
+        lambda: MealPrepBatchRepository(str(batches_path)),
+    )
+
+    res = _client().get("/api/v1/meal_prep_batches")
+    assert res.status_code == 200
+    batches = res.json()["batches"]
+    assert len(batches) == 1
+    body = batches[0]
+    assert body["id"] == created.id
+    assert body["remaining_servings"] == 0.0
+    assert body["status"] != "consumed"
 
 
 def test_list_get_delete_meal_prep_batches(monkeypatch):

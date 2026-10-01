@@ -6,7 +6,8 @@ Usage (from repo root):
 Writes evaluation/harness/results/results.json unless OUT is set.
 Counterfactual switches (environment variables):
     ALL_BATCHES=1   pass every non-orphaned batch to the planner, bypassing
-                    list_active() (isolates the "fully allocated = consumed" bug)
+                    list_active() (guard: list_active drops only explicitly
+                    consumed or orphaned batches)
     API_FIDELITY=1  drop max_daily_calories, as /api/v1/plan does today
     LIMIT=<n>       planner attempt_limit (default 50000)
 

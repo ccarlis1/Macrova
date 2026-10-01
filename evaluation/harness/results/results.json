@@ -80,7 +80,7 @@
   "id": "MB-004",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.02,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -688,7 +688,7 @@
   "id": "MB-027",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 1.28,
+  "secs": 1.58,
   "success": false,
   "tc": "TC-2",
   "code": "FM-1",
@@ -715,9 +715,9 @@
  },
  {
   "id": "MB-028",
-  "active_batches": 0,
+  "active_batches": 1,
   "needs_ceiling": false,
-  "secs": 0.01,
+  "secs": 0.0,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -728,19 +728,19 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "dn_bean_quesadilla",
-    "ln_tuna_poke",
-    "dn_tofu_stir_fry"
-   ],
-   "1": [
     "bk_protein_oats",
     "ln_chickpea_salad",
     "hc_big_beef_rice"
    ],
-   "2": [
+   "1": [
     "dn_bean_quesadilla",
     "ln_tuna_poke",
     "dn_tofu_stir_fry"
+   ],
+   "2": [
+    "hc_mass_gainer",
+    "ln_chickpea_salad",
+    "bk_salmon_toast"
    ]
   }
  },
@@ -849,7 +849,7 @@
   "id": "MB-033",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.01,
+  "secs": 0.0,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -1225,7 +1225,7 @@
   "id": "MB-047",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.0,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -1398,7 +1398,7 @@
   "id": "MB-054",
   "active_batches": 0,
   "needs_ceiling": true,
-  "secs": 0.19,
+  "secs": 0.18,
   "success": false,
   "tc": "TC-2",
   "code": "FM-1",
@@ -1605,7 +1605,7 @@
   "id": "MB-063",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.07,
+  "secs": 0.11,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -1650,7 +1650,7 @@
   "id": "MB-065",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 3.13,
+  "secs": 3.43,
   "success": false,
   "tc": "TC-2",
   "code": "FM-1",
@@ -1711,7 +1711,7 @@
   "id": "MB-067",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 12.39,
+  "secs": 11.53,
   "success": false,
   "tc": "TC-3",
   "code": "FM-5",
@@ -1742,7 +1742,7 @@
   "id": "MB-068",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 11.19,
+  "secs": 13.03,
   "success": false,
   "tc": "TC-3",
   "code": "FM-5",
@@ -1821,7 +1821,7 @@
   "id": "MB-071",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 7.25,
+  "secs": 8.17,
   "success": false,
   "tc": "TC-3",
   "code": "FM-5",
@@ -2869,97 +2869,66 @@
  },
  {
   "id": "MB-117",
-  "active_batches": 0,
+  "active_batches": 1,
   "needs_ceiling": false,
-  "secs": 0.01,
-  "success": true,
-  "tc": "TC-1",
-  "code": "OK",
+  "secs": 0.0,
+  "success": false,
+  "tc": "TC-3",
+  "code": "FM-3",
   "incomplete": null,
-  "stats": {},
-  "report_codes": [],
-  "report_first": "[]",
-  "warnings": "null",
-  "plan": {
-   "0": [
-    "dn_bean_quesadilla",
-    "dn_tuna_steak_salad",
-    "hc_big_beef_rice"
-   ],
-   "1": [
-    "ln_tuna_poke",
-    "bk_big_oat_bowl",
-    "dn_cauli_beef_bowl"
-   ],
-   "2": [
-    "dn_bean_quesadilla",
-    "dn_tuna_steak_salad",
-    "hc_big_beef_rice"
-   ]
-  }
+  "stats": {
+   "attempts": 0,
+   "backtracks": 0
+  },
+  "report_codes": [
+   "FM-3"
+  ],
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_index\": 1, \"slot_id\": \"day-1-slot-1\", \"date\": \"day-1\", \"details\": {\"recipe_id\": \"dn_beef_chili\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "warnings": "null"
  },
  {
   "id": "MB-118",
-  "active_batches": 0,
+  "active_batches": 1,
   "needs_ceiling": false,
-  "secs": 0.01,
-  "success": true,
-  "tc": "TC-1",
-  "code": "OK",
+  "secs": 0.0,
+  "success": false,
+  "tc": "TC-3",
+  "code": "FM-3",
   "incomplete": null,
-  "stats": {},
-  "report_codes": [],
-  "report_first": "[]",
-  "warnings": "null",
-  "plan": {
-   "0": [
-    "dn_bean_quesadilla",
-    "dn_thigh_sheet_pan",
-    "dn_tofu_stir_fry"
-   ],
-   "1": [
-    "ln_tuna_poke",
-    "dn_bolognese",
-    "dn_beef_rice_bowl"
-   ],
-   "2": [
-    "dn_bean_quesadilla",
-    "dn_thigh_sheet_pan",
-    "dn_tofu_stir_fry"
-   ]
-  }
+  "stats": {
+   "attempts": 0,
+   "backtracks": 0
+  },
+  "report_codes": [
+   "FM-3"
+  ],
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 1, \"slot_index\": 0, \"slot_id\": \"day-2-slot-0\", \"date\": \"day-2\", \"details\": {\"recipe_id\": \"dn_beef_chili\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "warnings": "null"
  },
  {
   "id": "MB-119",
-  "active_batches": 0,
+  "active_batches": 1,
   "needs_ceiling": false,
   "secs": 0.0,
-  "success": true,
-  "tc": "TC-1",
-  "code": "OK",
+  "success": false,
+  "tc": "TC-3",
+  "code": "FM-3",
   "incomplete": null,
-  "stats": {},
-  "report_codes": [],
-  "report_first": "[]",
-  "warnings": "null",
-  "plan": {
-   "0": [
-    "dn_bean_quesadilla",
-    "ln_tuna_poke",
-    "dn_tofu_stir_fry"
-   ],
-   "1": [
-    "bk_protein_oats",
-    "ln_chickpea_salad",
-    "hc_big_beef_rice"
-   ]
-  }
+  "stats": {
+   "attempts": 0,
+   "backtracks": 0
+  },
+  "report_codes": [
+   "FM-3"
+  ],
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 1, \"slot_index\": 0, \"slot_id\": \"day-2-slot-0\", \"date\": \"day-2\", \"details\": {\"recipe_id\": \"ln_chickpea_salad\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "warnings": "null"
  },
  {
   "id": "MB-120",
-  "active_batches": 0,
+  "active_batches": 1,
   "needs_ceiling": false,
-  "secs": 0.01,
+  "secs": 0.0,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -2975,9 +2944,9 @@
     "hc_big_beef_rice"
    ],
    "1": [
-    "dn_bean_quesadilla",
-    "hc_pasta_salmon_bake",
-    "ln_tuna_poke"
+    "hc_mass_gainer",
+    "dn_thigh_quinoa_prep",
+    "bk_salmon_toast"
    ]
   }
  },
@@ -3014,34 +2983,22 @@
  },
  {
   "id": "MB-124",
-  "active_batches": 0,
+  "active_batches": 1,
   "needs_ceiling": false,
-  "secs": 0.02,
-  "success": true,
-  "tc": "TC-1",
-  "code": "OK",
+  "secs": 0.0,
+  "success": false,
+  "tc": "TC-3",
+  "code": "FM-3",
   "incomplete": null,
-  "stats": {},
-  "report_codes": [],
-  "report_first": "[]",
-  "warnings": "null",
-  "plan": {
-   "0": [
-    "dn_bean_quesadilla",
-    "dn_tilapia_rice",
-    "dn_tofu_stir_fry"
-   ],
-   "1": [
-    "ln_tuna_poke",
-    "dn_edamame_fried_rice",
-    "dn_thigh_quinoa_prep"
-   ],
-   "2": [
-    "dn_bean_quesadilla",
-    "dn_tilapia_rice",
-    "dn_tofu_stir_fry"
-   ]
-  }
+  "stats": {
+   "attempts": 0,
+   "backtracks": 0
+  },
+  "report_codes": [
+   "FM-3"
+  ],
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"recipe_id\": \"dn_beef_chili\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "warnings": "null"
  },
  {
   "id": "MB-125",
@@ -3071,9 +3028,9 @@
  },
  {
   "id": "MB-126",
-  "active_batches": 0,
+  "active_batches": 1,
   "needs_ceiling": false,
-  "secs": 0.01,
+  "secs": 0.0,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3084,25 +3041,25 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "ln_cottage_box",
-    "bk_salmon_toast",
-    "bk_cottage_papaya"
+    "sn_turkey_rollups",
+    "sn_whey_water",
+    "hc_pasta_salmon_bake"
    ],
    "1": [
-    "ln_turkey_sandwich",
-    "ln_roast_beef_wrap",
-    "sn_bedtime_cottage"
-   ],
-   "2": [
     "ln_cottage_box",
     "bk_salmon_toast",
     "bk_cottage_papaya"
+   ],
+   "2": [
+    "sn_turkey_rollups",
+    "sn_whey_water",
+    "hc_pasta_salmon_bake"
    ]
   }
  },
  {
   "id": "MB-127",
-  "active_batches": 0,
+  "active_batches": 1,
   "needs_ceiling": false,
   "secs": 0.01,
   "success": true,
@@ -3115,35 +3072,35 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "sn_trail_mix",
-    "bk_protein_oats",
-    "hc_mass_gainer"
+    "ln_tuna_poke",
+    "dn_bolognese",
+    "dn_chickpea_curry"
    ],
    "1": [
-    "bk_salmon_toast",
-    "bk_big_oat_bowl",
-    "dn_bolognese"
-   ],
-   "2": [
-    "ln_chickpea_salad",
-    "dn_bean_quesadilla",
-    "hc_big_beef_rice"
-   ],
-   "3": [
     "sn_trail_mix",
     "bk_protein_oats",
     "hc_mass_gainer"
    ],
-   "4": [
+   "2": [
+    "ln_tuna_poke",
+    "dn_bolognese",
+    "dn_chickpea_curry"
+   ],
+   "3": [
     "bk_salmon_toast",
     "bk_big_oat_bowl",
-    "dn_bolognese"
+    "dn_tofu_stir_fry"
+   ],
+   "4": [
+    "ln_salmon_salad",
+    "hc_mass_gainer",
+    "dn_chickpea_curry"
    ]
   }
  },
  {
   "id": "MB-128",
-  "active_batches": 0,
+  "active_batches": 2,
   "needs_ceiling": false,
   "secs": 0.01,
   "success": true,
@@ -3157,29 +3114,29 @@
   "plan": {
    "0": [
     "dn_bean_quesadilla",
-    "dn_beef_rice_bowl",
-    "dn_bolognese"
+    "dn_edamame_fried_rice",
+    "dn_beef_chili"
    ],
    "1": [
-    "bk_protein_oats",
-    "dn_tofu_stir_fry",
-    "ln_tuna_pasta_salad"
+    "hc_mass_gainer",
+    "dn_tuna_steak_salad",
+    "dn_chickpea_curry"
    ],
    "2": [
     "dn_bean_quesadilla",
-    "dn_beef_rice_bowl",
-    "dn_bolognese"
+    "dn_edamame_fried_rice",
+    "dn_beef_chili"
    ],
    "3": [
-    "bk_pb_banana_toast",
-    "dn_tofu_stir_fry",
-    "dn_tilapia_rice"
+    "hc_mass_gainer",
+    "dn_tuna_steak_salad",
+    "dn_chickpea_curry"
    ]
   }
  },
  {
   "id": "MB-129",
-  "active_batches": 0,
+  "active_batches": 1,
   "needs_ceiling": false,
   "secs": 0.01,
   "success": true,
@@ -3193,8 +3150,8 @@
   "plan": {
    "0": [
     "hc_mass_gainer",
-    "dn_tofu_stir_fry",
-    "ln_tuna_poke"
+    "dn_beef_rice_bowl",
+    "dn_thigh_quinoa_prep"
    ],
    "1": [
     "bk_salmon_toast",
@@ -3203,41 +3160,29 @@
    ],
    "2": [
     "hc_mass_gainer",
-    "dn_tofu_stir_fry",
-    "ln_tuna_poke"
+    "dn_beef_rice_bowl",
+    "dn_thigh_quinoa_prep"
    ]
   }
  },
  {
   "id": "MB-130",
-  "active_batches": 0,
+  "active_batches": 1,
   "needs_ceiling": false,
-  "secs": 0.01,
-  "success": true,
-  "tc": "TC-1",
-  "code": "OK",
+  "secs": 0.0,
+  "success": false,
+  "tc": "TC-3",
+  "code": "FM-3",
   "incomplete": null,
-  "stats": {},
-  "report_codes": [],
-  "report_first": "[]",
-  "warnings": "null",
-  "plan": {
-   "0": [
-    "sn_trail_mix",
-    "bk_protein_oats",
-    "hc_mass_gainer"
-   ],
-   "1": [
-    "bk_salmon_toast",
-    "bk_big_oat_bowl",
-    "dn_bolognese"
-   ],
-   "2": [
-    "ln_chickpea_salad",
-    "dn_bean_quesadilla",
-    "hc_big_beef_rice"
-   ]
-  }
+  "stats": {
+   "attempts": 0,
+   "backtracks": 0
+  },
+  "report_codes": [
+   "FM-3"
+  ],
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"recipe_id\": \"\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "warnings": "null"
  },
  {
   "id": "MB-131",
@@ -3494,7 +3439,7 @@
   "id": "MB-138",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.51,
+  "secs": 0.52,
   "success": false,
   "tc": "TC-2",
   "code": "FM-1",

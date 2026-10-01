@@ -121,8 +121,6 @@ class MealPrepBatchRepository:
             return "orphaned"
         if batch.status == "consumed":
             return "consumed"
-        if batch.servings_remaining == 0:
-            return "consumed"
         if batch.cook_date <= date.today().isoformat():
             return "active"
         return "planned"

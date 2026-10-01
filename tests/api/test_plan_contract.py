@@ -403,6 +403,185 @@ def test_meal_prep_api_create_persists_canonical_and_plan_lock_round_trip(
     assert meal["servings"] == 2.0
 
 
+def test_fully_assigned_batch_locks_reach_plan_meals(tmp_path, monkeypatch):
+    """Fully assigned batch stays active; both locks reach plan_meals."""
+    profile_path = tmp_path / "user_profile.yaml"
+    _write_profile(profile_path)
+    monkeypatch.setenv("NUTRITION_USER_PROFILE_PATH", str(profile_path))
+
+    batches_path = tmp_path / "batches.json"
+
+    def _repo() -> MealPrepBatchRepository:
+        return MealPrepBatchRepository(str(batches_path))
+
+    monkeypatch.setattr("src.api.meal_prep_routes.MealPrepBatchRepository", _repo)
+    monkeypatch.setattr("src.planning.orchestrator.MealPrepBatchRepository", _repo)
+    monkeypatch.setattr("src.api.meal_prep_routes.RecipeDB", _RecipeDBForMealPrepCreate)
+    monkeypatch.setattr("src.api.server.RecipeDB", _RecipeDBWithKnown)
+    monkeypatch.setattr("src.api.server.NutritionDB", lambda *_a, **_k: object())
+    monkeypatch.setattr(
+        "src.api.server.LocalIngredientProvider", lambda *_a, **_k: _DummyProvider()
+    )
+
+    locks_seen: list[list[PlanningBatchLock]] = []
+
+    def _spy_plan(profile, pool, days):
+        locks_seen.append(list(profile.batch_locks))
+        return MealPlanResult(
+            success=True,
+            termination_code="TC-1",
+            plan=[
+                Assignment(0, 0, "known-recipe", 0),
+                Assignment(0, 1, "known-recipe", 1),
+            ],
+            daily_trackers={
+                0: DailyTracker(
+                    calories_consumed=200.0,
+                    protein_consumed=20.0,
+                    fat_consumed=10.0,
+                    carbs_consumed=20.0,
+                    slots_assigned=2,
+                    slots_total=2,
+                )
+            },
+            weekly_tracker=None,
+            report={},
+            stats=None,
+        )
+
+    monkeypatch.setattr("src.api.server.plan_meals", _spy_plan)
+
+    client = TestClient(app)
+    create = client.post(
+        "/api/v1/meal_prep_batches",
+        json={
+            "recipe_id": "known-recipe",
+            "total_servings": 2,
+            "cook_date": "2026-04-27",
+            "assignments": [
+                {"day_index": 0, "slot_index": 0, "servings": 1.0},
+                {"day_index": 0, "slot_index": 1, "servings": 1.0},
+            ],
+        },
+    )
+    assert create.status_code == 200
+    created = create.json()
+    batch_id = created["id"]
+    assert created["remaining_servings"] == 0.0
+    assert created["status"] != "consumed"
+
+    plan_resp = client.post(
+        "/api/v1/plan",
+        json={
+            "daily_calories": 2200,
+            "daily_protein_g": 140.0,
+            "daily_fat_g_min": 60.0,
+            "daily_fat_g_max": 90.0,
+            "liked_foods": [],
+            "disliked_foods": [],
+            "allergies": [],
+            "days": 1,
+            "ingredient_source": "local",
+            "schedule": {"08:00": 3, "12:00": 3},
+        },
+    )
+    assert plan_resp.status_code == 200
+    assert len(locks_seen) == 1
+    assert len(locks_seen[0]) == 2
+    lock_slots = {(lock.day_index, lock.slot_index, lock.servings) for lock in locks_seen[0]}
+    assert lock_slots == {(0, 0, 1.0), (0, 1, 1.0)}
+    assert {lock.batch_id for lock in locks_seen[0]} == {batch_id}
+    assert {lock.recipe_id for lock in locks_seen[0]} == {"known-recipe"}
+
+    meals = plan_resp.json()["daily_plans"][0]["meals"]
+    assert len(meals) == 2
+    assert all(meal["source"] == "meal_prep_batch" for meal in meals)
+    assert all(meal["batch_id"] == batch_id for meal in meals)
+
+
+class _RecipeDBSlowRecipe(_RecipeDBWithKnown):
+    """``known-recipe`` takes 20 min, over the busyness-1 slot cap (5 min)."""
+
+    def get_all_recipes(self):
+        return [
+            Recipe(
+                id="known-recipe",
+                name="Known Recipe",
+                ingredients=[Ingredient("egg", 2.0, "large", is_to_taste=False)],
+                cooking_time_minutes=20,
+                instructions=["cook"],
+            )
+        ]
+
+
+def test_plan_fm3_for_fully_assigned_batch_violating_rule(tmp_path, monkeypatch):
+    """C1 regression: a fully assigned batch is still locked, so a rule violation yields FM-3.
+
+    Unmocked ``plan_meals``: the lock merges into a pin, pre-validation rejects it (HC-3),
+    and the failure is reported structurally rather than the lock being silently dropped.
+    """
+    profile_path = tmp_path / "user_profile.yaml"
+    _write_profile(profile_path)
+    monkeypatch.setenv("NUTRITION_USER_PROFILE_PATH", str(profile_path))
+    monkeypatch.setattr("src.api.server.RecipeDB", _RecipeDBSlowRecipe)
+    monkeypatch.setattr("src.api.server.NutritionDB", lambda *_a, **_k: object())
+    monkeypatch.setattr(
+        "src.api.server.LocalIngredientProvider", lambda *_a, **_k: _DummyProvider()
+    )
+
+    batches_path = tmp_path / "batches.json"
+    repo = MealPrepBatchRepository(str(batches_path))
+    repo.create(
+        MealPrepBatch(
+            id="batch-full",
+            recipe_id="known-recipe",
+            total_servings=2,
+            cook_date="2026-04-27",
+            status="planned",
+            assignments=[BatchAssignment(day_index=0, slot_index=0, servings=2.0)],
+        )
+    )
+    assert repo.list_active()[0].servings_remaining == 0
+    monkeypatch.setattr(
+        "src.planning.orchestrator.MealPrepBatchRepository",
+        lambda *_a, **_k: MealPrepBatchRepository(str(batches_path)),
+    )
+
+    client = TestClient(app)
+    resp = client.post(
+        "/api/v1/plan",
+        json={
+            "daily_calories": 2200,
+            "daily_protein_g": 140.0,
+            "daily_fat_g_min": 60.0,
+            "daily_fat_g_max": 90.0,
+            "liked_foods": [],
+            "disliked_foods": [],
+            "allergies": [],
+            "days": 1,
+            "ingredient_source": "local",
+            "schedule_days": [
+                {
+                    "day_index": 1,
+                    "meals": [{"index": 1, "busyness_level": 1, "tags": ["breakfast"]}],
+                    "workouts": [],
+                }
+            ],
+        },
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["plan_status"] == "failed"
+    failures = body["report"]["failures"]
+    hit = next((f for f in failures if f.get("code") == "FM-3"), None)
+    assert hit is not None, failures
+    assert hit["day_index"] == 0
+    assert hit["slot_index"] == 0
+    assert hit["details"]["recipe_id"] == "known-recipe"
+    assert hit["details"]["violation_type"] == "direct"
+    assert hit["fix_hint"]
+
+
 def test_plan_fm_batch_conflict_two_active_batches_same_slot(tmp_path, monkeypatch):
     profile_path = tmp_path / "user_profile.yaml"
     _write_profile(profile_path)

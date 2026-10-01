@@ -11,11 +11,11 @@
 
 | Result | Count |
 |---|---|
-| Exact match with oracle | 109 |
-| Different code, but listed in `acceptable_failure_codes` | 2 (MB-067, MB-098) |
-| Disagreement | **39** |
+| Exact match with oracle | 123 (was 109 before the C1 fix; 112 after C3) |
+| Different code, but listed in `acceptable_failure_codes` | 1 (MB-067) |
+| Disagreement | **27** (24 MISMATCH, 1 MISMATCH+INVALID, 2 INVALID_PLAN) |
 
-The 39 disagreements come from **7 root causes**, not 39 separate bugs.
+The original 39 disagreements came from **7 root causes**, not 39 separate bugs. C1 is now fixed; the open clusters account for the remaining 27.
 
 - **17 give the user a wrong answer:** a success that should be a failure, a failure that should be a success, a plan that breaks a constraint, or an unsafe plan.
 - **22 reach the right outcome with the wrong failure code**, so the fix hint points the user at the wrong problem.
@@ -36,16 +36,18 @@ The harness follows the same steps as `/api/v1/plan`: `PlanRequest` validation, 
 
 ### C1. Meal-prep batches with every serving assigned are silently dropped (11 scenarios)
 
+**Status:** fixed. `consumed` is set only by an explicit saved action (`cancel()`); assignment count no longer changes status, so fully assigned batches stay in `list_active()` and all 11 C1 scenarios match.
+
 **Type:** API/contract issue (what a batch's lifecycle status means). **Scenarios:** MB-028, 117, 118, 119, 120, 124, 126, 127, 128, 129, 130.
 
-**Cause:** `src/data_layer/meal_prep.py:124` sets a batch's status to `"consumed"` when `servings_remaining == 0`. `servings_remaining` is `total_servings − Σ assigned servings` (`meal_prep.py:37`), so "every serving has a slot", which is the normal way to use meal prep, counts the same as "already eaten". `list_active()` then leaves the batch out, and the planner never sees its locks. A batch only reaches the planner if it has spare servings. That's why MB-121 and MB-125 work.
+**Cause (historical, fixed):** `_effective_status` in `src/data_layer/meal_prep.py` used to set a batch's status to `"consumed"` when `servings_remaining == 0`. `servings_remaining` is `total_servings − Σ assigned servings`, so "every serving has a slot", which is the normal way to use meal prep, counts the same as "already eaten". `list_active()` then leaves the batch out, and the planner never sees its locks. A batch only reaches the planner if it has spare servings. That's why MB-121 and MB-125 work.
 
 **Effect:**
 - 5 scenarios return **success** where the spec requires FM-3 (MB-117, 118, 119, 124, 130). The locked recipe breaks cook-time, HC-8 or exclusion rules, but because the lock was dropped, nothing checks it.
 - 6 scenarios return plans that put something else in the slot the user prepped for.
 - There is no warning in any of these cases.
 
-**Counterfactual:** with `ALL_BATCHES=1`, which hands every non-orphaned batch to the planner, **all 15 batch scenarios match the oracle**. Everything downstream of `list_active()` (lock-to-pin merge, pre-validation, the FM-BATCH-CONFLICT and FM-3 reports) is correct. The whole defect is this one status rule.
+**Counterfactual (now realized by the fix):** with `ALL_BATCHES=1`, which hands every non-orphaned batch to the planner, all 15 batch scenarios matched the oracle; after the fix the default `list_active()` path gives the same result. Since the fix, `ALL_BATCHES` differs from `list_active()` only by also including explicitly cancelled (`consumed`) batches, so it is no longer a pure counterfactual. Everything downstream of `list_active()` (lock-to-pin merge, pre-validation, the FM-BATCH-CONFLICT and FM-3 reports) is correct. The whole defect is this one status rule.
 
 ### C2a. When the search runs out of options, the failure code comes from the last event, not the cause (20 scenarios)
 
@@ -167,7 +169,7 @@ C2a appears in two rows: the code is wrong whatever the spec says, and the spec 
 
 | Order | Item | Why this position |
 |---|---|---|
-| 1 | C1 batch status | One condition; 11 scenarios; the counterfactual already confirms the fix |
+| 1 | C1 batch status | **Done.** One condition; 11 scenarios, all now match |
 | 2 | C3 fully pinned day validation | A hard constraint goes unchecked and the plan is returned as success |
 | 3 | §4.1 ceiling in `PlanRequest` | HC-5 doesn't work over HTTP; also update the OpenAPI snapshot and the frontend model |
 | 4 | C2a / C2b failure attribution | Corrects 22 diagnoses; needs a one-paragraph spec rule first |
@@ -191,7 +193,7 @@ If fixes 1–4 resolve their clusters, the benchmark should reach 145 of 150 (11
 ```
 
 Counterfactual runs set environment variables on `run_benchmark.py`:
-- `ALL_BATCHES=1`: pass every non-orphaned batch to the planner (tests C1);
+- `ALL_BATCHES=1`: pass every non-orphaned batch, including cancelled ones, to the planner (C1 counterfactual; now differs from the default only by cancelled batches);
 - `API_FIDELITY=1`: drop the calorie ceiling, as the API does (§4.1);
 - `LIMIT=200000`: raise the attempt limit (tests C4);
 - `OUT=<path>`: write results to a different file.

@@ -15,9 +15,10 @@ system interpreter.
 ## Mode 1: Regression check (verifying a fix)
 
 1. **Pick the baseline.** The committed `evaluation/harness/results/compare.json` is the
-   baseline. Use the ref it was committed at: usually `main` or the branch's merge base
-   (`git merge-base HEAD main`). If the working tree already has modified results files,
-   stop and ask. Don't overwrite someone's uncommitted run.
+   baseline. Rebase onto `main` first, then use `--base main`. Without rebasing, use
+   `--base $(git merge-base HEAD main)`, or other merged PRs' changes will show up as yours.
+   Run on the **final commit** of the change, from a clean tree. If the working tree already
+   has modified results files, stop and ask. Don't overwrite someone's uncommitted run.
 2. **Run the harness** (about 40 s total):
    ```bash
    .venv/bin/python evaluation/harness/run_benchmark.py
@@ -83,3 +84,39 @@ Use after large planner changes, a new batch of scenarios, or when unmapped disa
   sends the user to the wrong fix hint.
 - **Every disagreement belongs to a cluster, or it's new.** Don't hand-wave unmapped rows.
 - **Don't commit or push results files without asking.** They're the baseline for the next check.
+
+## Best practices
+
+- **Confirm the cause before coding.** Use a counterfactual or the oracle's `details` to show
+  what the defect is before planning a fix. (`ALL_BATCHES=1` proved C1 was one status rule.)
+  Put the expected score in the spec, e.g. "123 → 125", so a fix that does more or less than
+  intended stands out.
+- **Results only count from the code being merged.** Refreshed `results.json`/`compare.json`
+  in a PR must come from running the PR's final commit, not an earlier session.
+- **Ignore `secs`.** Timing is the only field that varies between runs. Any other difference is
+  real, because the planner is deterministic.
+- **Keep oracle and scenario changes visible.** Put label or scenario changes in their own
+  commit and call them out in the PR, so `ACCEPTABLE → MATCH` from a stricter label isn't
+  mistaken for a fix.
+- **Mark the cluster fixed in the fix PR** (`**Status:** fixed`). From then on,
+  `diff_results.py` fails if any of that cluster's scenarios start failing again.
+- **The reviewer re-runs it, isolated.** The implementer runs the check before opening the PR. The
+  reviewer re-runs it on the merged code in a separate worktree, so in-progress work in the
+  main checkout is never touched:
+  ```bash
+  git worktree add --detach /tmp/macrova-verify origin/main
+  cd /tmp/macrova-verify && <repo>/.venv/bin/python evaluation/harness/run_benchmark.py   # then compare, probes, diff
+  git worktree remove --force /tmp/macrova-verify
+  ```
+- **Record the scorecard line** in the PR description and the project notes, so the score
+  history lives outside git too.
+- **Switch to Mode 2** when unmapped disagreements appear, after a design change (e.g. search
+  order), or when the failure analysis's summary sections (§5–7) no longer match the open clusters.
+
+## What a passing run doesn't cover
+
+- **The ingredient and data layer.** The harness supplies stored per-serving nutrition (§4.4).
+- **The real HTTP API.** Fields `PlanRequest` can't carry (e.g. the calorie ceiling, §4.1) work
+  in the harness but not over HTTP. Run `API_FIDELITY=1` to see that gap.
+- **Situations no scenario covers.** C3 stayed hidden until a scenario had a fully pinned day inside a
+  longer plan. A clean score covers the scenarios in the benchmark, not every case.

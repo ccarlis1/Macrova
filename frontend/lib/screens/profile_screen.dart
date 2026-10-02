@@ -543,7 +543,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         labelText: 'Carbs (derived)',
                         suffixText: 'g',
                         helperText:
-                            'Computed from calories, protein, and fat median',
+                            'Computed from calories, protein, and fat median (fat min if needed)',
                       ),
                       keyboardType: TextInputType.number,
                     ),

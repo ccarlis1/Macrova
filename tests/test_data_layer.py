@@ -539,12 +539,12 @@ class TestUserProfileLoader:
             Path(temp_path).unlink()
 
     def test_load_rejects_negative_derived_carbs(self):
-        """MB-053 profile numbers → MacroTargetsError(NEGATIVE_CARBS_DERIVED)."""
+        """Carbs still negative at the fat min → MacroTargetsError(NEGATIVE_CARBS_DERIVED)."""
         profile_data = {
             "nutrition_goals": {
                 "daily_calories": 2000,
                 "daily_protein_g": 150,
-                "daily_fat_g": {"min": 150, "max": 170},
+                "daily_fat_g": {"min": 160, "max": 180},
             },
             "schedule": {"07:00": 2, "12:00": 3, "18:00": 3},
             "preferences": {"liked_foods": [], "disliked_foods": [], "allergies": []},

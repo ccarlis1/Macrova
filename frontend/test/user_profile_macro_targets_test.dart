@@ -3,12 +3,17 @@ import 'package:macrova/models/user_profile.dart';
 
 void main() {
   group('UserProfile macro targets (§4.2)', () {
-    test('fromRepoYamlMap keeps negative derived carbs', () {
+    test('MB-053 targets fall back to fat min (D9)', () {
+      expect(UserProfile.deriveCarbsG(2000, 150, 150, 170), closeTo(12.5, 1e-9));
+      expect(UserProfile.macroTargetsErrorFor(2000, 150, 150, 170), isNull);
+    });
+
+    test('fromRepoYamlMap keeps carbs still negative at fat min', () {
       final profile = UserProfile.fromRepoYamlMap({
         'nutrition_goals': {
           'daily_calories': 2000,
           'daily_protein_g': 150,
-          'daily_fat_g': {'min': 150, 'max': 170},
+          'daily_fat_g': {'min': 160, 'max': 180},
         },
         'preferences': {'allergies': <String>[]},
       });

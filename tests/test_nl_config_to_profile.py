@@ -80,7 +80,7 @@ def test_user_profile_from_planner_config_rejects_stated_fat_range_negative_carb
         meals_per_day=3,
         targets=PlannerTargets(calories=2000, protein=150.0),
         preferences=PlannerPreferences(cuisine=[], budget=BudgetLevel.standard),
-        constraints=PlannerConstraints(fat_g_min=150.0, fat_g_max=170.0),
+        constraints=PlannerConstraints(fat_g_min=160.0, fat_g_max=180.0),
     )
 
     with pytest.raises(PlannerConfigMappingError) as exc:

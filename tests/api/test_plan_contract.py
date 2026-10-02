@@ -734,7 +734,7 @@ def test_plan_response_meal_metadata_slot_index_matches_batch_assignment(tmp_pat
 
 
 def test_plan_rejects_negative_derived_carbs_before_planner(monkeypatch):
-    """MB-053 macros → 400 INVALID_REQUEST / NEGATIVE_CARBS_DERIVED; planner never runs."""
+    """Carbs still negative at the fat min → 400 INVALID_REQUEST / NEGATIVE_CARBS_DERIVED; planner never runs."""
     called = {"plan_meals": False}
 
     def _should_not_run(*_a, **_k):
@@ -753,8 +753,8 @@ def test_plan_rejects_negative_derived_carbs_before_planner(monkeypatch):
         json={
             "daily_calories": 2000,
             "daily_protein_g": 150.0,
-            "daily_fat_g_min": 150.0,
-            "daily_fat_g_max": 170.0,
+            "daily_fat_g_min": 160.0,
+            "daily_fat_g_max": 180.0,
             "liked_foods": [],
             "disliked_foods": [],
             "allergies": [],

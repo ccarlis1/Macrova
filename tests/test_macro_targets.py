@@ -7,15 +7,27 @@ import pytest
 from src.data_layer.macro_targets import MacroTargetsError, validate_macro_targets
 
 
-def test_mb053_negative_derived_carbs_rejected():
-    """2,000 kcal / 150 g protein / fat 150–170 → −10 g carbs."""
+def test_mb053_falls_back_to_fat_min():
+    """D9: 2,000 kcal / 150 g protein / fat 150–170 → −10 g at the median, 12.5 g at the fat min."""
+    carbs = validate_macro_targets(2000, 150, 150, 170)
+    assert carbs == pytest.approx(12.5)
+
+
+def test_negative_carbs_at_fat_min_rejected():
+    """2,000 kcal / 150 g protein / fat 160–180 → −32.5 g at the median, still −10 g at the fat min."""
     with pytest.raises(MacroTargetsError) as exc:
-        validate_macro_targets(2000, 150, 150, 170)
+        validate_macro_targets(2000, 150, 160, 180)
     assert exc.value.reason == "NEGATIVE_CARBS_DERIVED"
     assert exc.value.details["daily_carbs_g"] == pytest.approx(-10.0)
     assert exc.value.details["protein_kcal"] == pytest.approx(600.0)
-    assert exc.value.details["fat_kcal_median"] == pytest.approx(1440.0)
+    assert exc.value.details["fat_kcal_min"] == pytest.approx(1440.0)
+    assert exc.value.details["fat_kcal_median"] == pytest.approx(1530.0)
     assert exc.value.details["daily_calories"] == pytest.approx(2000.0)
+
+
+def test_median_used_when_non_negative():
+    """The fat-min fallback only applies when the median leaves negative carbs."""
+    assert validate_macro_targets(2000, 150, 60, 80) == pytest.approx((2000 - 600 - 70 * 9) / 4)
 
 
 def test_mb050_low_but_non_negative_carbs_valid():

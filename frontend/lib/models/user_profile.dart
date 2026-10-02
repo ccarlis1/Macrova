@@ -258,9 +258,10 @@ class UserProfile {
   /// Midpoint of [fatGMin]–[fatGMax] (e.g. for single-value macro displays).
   double get fatG => (fatGMin + fatGMax) / 2;
 
-  /// Derive carbs from calories / protein / fat median (§2.1).
+  /// Derive carbs from calories / protein / fat median (§2.1), falling back
+  /// to the fat minimum when the median leaves negative carbs (D9).
   ///
-  /// Returns the raw value (may be negative or NaN); callers that need a
+  /// Returns the raw value (may still be negative or NaN); callers that need a
   /// validity check should use [macroTargetsErrorFor] or [macroTargetsError].
   static double deriveCarbsG(
     double calories,
@@ -268,8 +269,13 @@ class UserProfile {
     double fatGMin,
     double fatGMax,
   ) {
+    final remainingKcal = calories - proteinG * 4;
     final medianFatG = (fatGMin + fatGMax) / 2;
-    return (calories - proteinG * 4 - medianFatG * 9) / 4;
+    final carbs = (remainingKcal - medianFatG * 9) / 4;
+    if (carbs < 0) {
+      return (remainingKcal - fatGMin * 9) / 4;
+    }
+    return carbs;
   }
 
   /// User-facing error when macro targets are invalid (§2.1 / §4.2), or null.
@@ -297,10 +303,10 @@ class UserProfile {
     }
     if (carbs < 0) {
       final proteinKcal = proteinG * 4;
-      final fatKcal = ((fatGMin + fatGMax) / 2) * 9;
+      final fatKcal = fatGMin * 9;
       final used = (proteinKcal + fatKcal).round();
       final cal = calories.round();
-      return 'Protein and fat already use $used of your $cal kcal.';
+      return 'Protein and minimum fat already use $used of your $cal kcal.';
     }
     return null;
   }

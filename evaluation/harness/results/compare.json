@@ -2516,7 +2516,7 @@
   "report_codes": [
    "FM-MACRO-INFEASIBLE"
   ],
-  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {\"calories\": -826.0999999999999, \"protein_g\": -171.79, \"fat_g\": 0.0, \"carbs_g\": -33.0}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {\"calories\": -1139.5, \"protein_g\": -176.15, \"fat_g\": 0.0, \"carbs_g\": -101.75999999999999}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {

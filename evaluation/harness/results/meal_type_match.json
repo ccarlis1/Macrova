@@ -1,0 +1,27 @@
+{
+ "planner_slots_known": 646,
+ "planner_slots_mismatched": 125,
+ "planner_mismatch_rate": 0.19349845201238391,
+ "by_meal_type": {
+  "breakfast": {
+   "known": 204,
+   "mismatched": 19,
+   "mismatch_rate": 0.09313725490196079
+  },
+  "dinner": {
+   "known": 190,
+   "mismatched": 42,
+   "mismatch_rate": 0.22105263157894736
+  },
+  "lunch": {
+   "known": 201,
+   "mismatched": 59,
+   "mismatch_rate": 0.2935323383084577
+  },
+  "snack": {
+   "known": 51,
+   "mismatched": 5,
+   "mismatch_rate": 0.09803921568627451
+  }
+ }
+}

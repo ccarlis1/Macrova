@@ -161,8 +161,11 @@ def main():
     parser.add_argument(
         "--ingredients",
         type=str,
-        default="data/ingredients/custom_ingredients.json",
-        help="Path to ingredients JSON file (default: data/ingredients/custom_ingredients.json)"
+        default="data/reference/ingredient_nutrition.json",
+        help=(
+            "Path to ingredients JSON file "
+            "(default: data/reference/ingredient_nutrition.json)"
+        ),
     )
     parser.add_argument(
         "--output",
@@ -394,7 +397,18 @@ def main():
             sys.exit(3)
 
         calculator = NutritionCalculator(provider)
-        recipe_pool = convert_recipes(all_recipes, calculator)
+        nutrition_unresolved_log = []
+        recipe_pool = convert_recipes(
+            all_recipes,
+            calculator,
+            unresolved_log=nutrition_unresolved_log,
+        )
+        for row in nutrition_unresolved_log:
+            print(
+                f"Warning: recipe {row['recipe_id']!r} removed from pool; "
+                f"unresolved ingredients {row['unresolved_ingredients']}",
+                file=sys.stderr,
+            )
         recipe_by_id = {r.id: r for r in recipe_pool}
         planning_profile = convert_profile(user_profile, args.days)
         effective_plan_request = build_plan_request_from_profile(

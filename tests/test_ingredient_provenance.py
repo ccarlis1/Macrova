@@ -33,7 +33,12 @@ class _FakeUSDA:
         return [{"fdcId": 1, "description": "Oats", "dataType": "SR Legacy"}, {"fdcId": 2, "description": "Oil, oat", "dataType": "SR Legacy"}]
 
     def get_food_details(self, fdc_id):
-        return FoodDetailsResult(success=True, fdc_id=fdc_id, raw_payload={"foodNutrients": [{"nutrient": {"id": 1008}, "amount": 389.0}]})
+        return FoodDetailsResult(success=True, fdc_id=fdc_id, raw_payload={"foodNutrients": [
+            {"nutrient": {"id": 1008}, "amount": 389.0},
+            {"nutrient": {"id": 1003}, "amount": 13.0},
+            {"nutrient": {"id": 1004}, "amount": 7.0},
+            {"nutrient": {"id": 1005}, "amount": 66.0},
+        ]})
 
 
 def test_new_cache_entries_record_provenance(tmp_path):

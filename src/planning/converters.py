@@ -165,14 +165,41 @@ def convert_recipes(
     recipes: List[Recipe],
     calculator: NutritionCalculator,
     canonical_tag_slugs_by_id: Optional[Dict[str, Set[str]]] = None,
+    *,
+    drop_unresolved: bool = True,
+    unresolved_log: Optional[List[Dict[str, Any]]] = None,
 ) -> List[PlanningRecipe]:
     """Convert data-layer recipes to planning recipes with pre-computed nutrition.
 
     Calls calculator.calculate_recipe_nutrition for each recipe. Output is sorted
     by recipe.id for determinism. No provider access; calculator only.
+
+    When ``drop_unresolved`` is True (default, §4.4), recipes with any
+    non-to-taste ingredient the calculator cannot resolve are omitted from the
+    pool. If ``unresolved_log`` is provided, each dropped recipe is appended as
+    ``{"recipe_id", "recipe_name", "unresolved_ingredients"}``.
     """
     out: List[PlanningRecipe] = []
     for recipe in recipes:
+        unresolved: List[str] = []
+        lookup = getattr(calculator, "unresolved_ingredient_names", None)
+        if callable(lookup):
+            unresolved = list(lookup(recipe))
+        if unresolved and drop_unresolved:
+            if unresolved_log is not None:
+                unresolved_log.append(
+                    {
+                        "recipe_id": recipe.id,
+                        "recipe_name": recipe.name,
+                        "unresolved_ingredients": unresolved,
+                    }
+                )
+            logger.warning(
+                "Dropping recipe %s from pool: unresolved ingredients %s",
+                recipe.id,
+                unresolved,
+            )
+            continue
         nutrition = calculator.calculate_recipe_nutrition(recipe)
         out.append(
             PlanningRecipe(

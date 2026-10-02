@@ -133,12 +133,35 @@ class NutritionCalculator:
             micronutrients=micronutrients,
         )
 
+    def unresolved_ingredient_names(self, recipe: Recipe) -> List[str]:
+        """Return sorted unique names of non-to-taste ingredients that cannot be resolved.
+
+        Used by ``convert_recipes`` to drop incomplete recipes from the pool
+        (§4.4: no silent zeros). Does not mutate state.
+        """
+        missing: set[str] = set()
+        for ingredient in recipe.ingredients:
+            if ingredient.is_to_taste:
+                continue
+            try:
+                self.calculate_ingredient_nutrition(ingredient)
+            except IngredientNotFoundError:
+                missing.add(ingredient.name)
+            except RuntimeError:
+                # API provider: name not pre-resolved via resolve_all
+                missing.add(ingredient.name)
+        return sorted(missing)
+
     def calculate_recipe_nutrition(self, recipe: Recipe) -> NutritionProfile:
         """Calculate total nutrition for a recipe.
-        
+
+        Sums resolved ingredients only. Callers that build a planning pool
+        must use ``unresolved_ingredient_names`` / ``convert_recipes(..., drop_unresolved=True)``
+        so recipes with gaps never enter search with understated macros.
+
         Args:
             recipe: Recipe object with ingredients
-        
+
         Returns:
             NutritionProfile with summed nutrition (excludes "to taste" ingredients)
         """
@@ -164,8 +187,7 @@ class NutritionCalculator:
                 if ingredient_nutrition.micronutrients is not None:
                     self._add_micronutrients(total_micros, ingredient_nutrition.micronutrients)
             except IngredientNotFoundError:
-                # Log warning but continue with other ingredients
-                # In MVP, we'll skip missing ingredients
+                # Partial totals only — pool builders must drop the recipe (§4.4).
                 continue
 
         return NutritionProfile(

@@ -401,7 +401,13 @@ def _candidate_planning_recipe(recipe: Any, provider: IngredientDataProvider) ->
     Deterministic tags only: the effort/time bucket derived from the cook time. No LLM tags.
     """
     calculator = NutritionCalculator(provider)
-    planning = convert_recipes([recipe], calculator)[0]
+    converted = convert_recipes([recipe], calculator, drop_unresolved=True)
+    if not converted:
+        unresolved = calculator.unresolved_ingredient_names(recipe)
+        raise ValueError(
+            f"Cannot add recipe to candidate pool: unresolved ingredients {unresolved}"
+        )
+    planning = converted[0]
     tags: Set[str] = set()
     try:
         from src.llm.time_bucket import time_bucket

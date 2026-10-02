@@ -36,6 +36,66 @@ from src.ingestion.ingredient_ranker import rank_candidates
 from src.data_layer.models import MicronutrientProfile
 from src.ingestion.usda_client import USDALookupError
 
+# Q2(a): Atwater macro energy must agree with labeled kcal within this relative band.
+PLAUSIBILITY_REL_TOLERANCE = 0.15
+
+
+class NutritionPlausibilityError(ValueError):
+    """Raised when per-100g macros fail the Atwater plausibility gate (§4.4 / Q2a)."""
+
+
+def macro_energy_kcal(protein_g: float, carbs_g: float, fat_g: float) -> float:
+    """Atwater estimate: 4·P + 4·C + 9·F."""
+    return 4.0 * float(protein_g) + 4.0 * float(carbs_g) + 9.0 * float(fat_g)
+
+
+def _query_looks_like_pure_fat(name: str) -> bool:
+    n = (name or "").lower()
+    return any(
+        token in n
+        for token in ("oil", "butter", "lard", "shortening", "ghee", "tallow", "mayonnaise")
+    )
+
+
+def check_nutrition_plausibility(
+    *,
+    calories: float,
+    protein_g: float,
+    carbs_g: float,
+    fat_g: float,
+    query_name: str = "",
+    rel_tolerance: float = PLAUSIBILITY_REL_TOLERANCE,
+) -> None:
+    """Raise NutritionPlausibilityError if macros are implausible per 100 g.
+
+    Rejects:
+    - zero (or near-zero) kcal with meaningful macros (missing energy fields)
+    - Atwater energy outside ±rel_tolerance of reported kcal
+    - near-pure fat (≥90 g fat / 100 g) when the query is not an oil/fat name
+      (catches ``oats`` → oat oil)
+    """
+    kcal = float(calories)
+    p, c, f = float(protein_g), float(carbs_g), float(fat_g)
+    atwater = macro_energy_kcal(p, c, f)
+    if kcal <= 0.5 and atwater >= 5.0:
+        raise NutritionPlausibilityError(
+            f"implausible energy: calories={kcal} but Atwater={atwater:.1f} "
+            f"from P={p} C={c} F={f}"
+        )
+    if f >= 90.0 and not _query_looks_like_pure_fat(query_name):
+        raise NutritionPlausibilityError(
+            f"implausible pure-fat profile for query {query_name!r}: fat_g={f}"
+        )
+    if kcal <= 0.5 and atwater < 5.0:
+        # Both near zero — allow water-like entries
+        return
+    denom = max(abs(kcal), 1e-6)
+    if abs(atwater - kcal) / denom > rel_tolerance:
+        raise NutritionPlausibilityError(
+            f"implausible macros: calories={kcal}, Atwater={atwater:.1f} "
+            f"(P={p}, C={c}, F={f}), tol=±{rel_tolerance:.0%}"
+        )
+
 
 @dataclass
 class CacheEntry:
@@ -400,6 +460,18 @@ class CachedIngredientLookup:
             "resolved_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
             "selection_reasons": list(ranked.selection_reasons),
         }
+
+        # Q2(a): refuse to cache implausible per-100g macros (quarantined wrong foods).
+        try:
+            check_nutrition_plausibility(
+                calories=nutrition.calories,
+                protein_g=nutrition.protein_g,
+                carbs_g=nutrition.carbs_g,
+                fat_g=nutrition.fat_g,
+                query_name=canonical_name,
+            )
+        except NutritionPlausibilityError:
+            return None
 
         # Create cache entry
         entry = CacheEntry(

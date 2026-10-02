@@ -6534,7 +6534,7 @@
    "multiday_nodes": 1
   },
   "spec_notes": [
-   "HC-1 is exact normalized-name matching; 'peanuts' does not match 'peanut butter' (reconciliation Q10)."
+   "Q10 answered (C6): allergy terms expand by allergen class, so 'peanuts' excludes 'peanut butter'. Dislikes stay exact-name only."
   ],
   "n_days": 1,
   "micro": false,

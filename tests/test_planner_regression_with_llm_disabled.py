@@ -138,7 +138,7 @@ def test_planner_regression_llm_disabled_golden_json(monkeypatch):
 
     monkeypatch.setattr(
         "src.api.server.convert_recipes",
-        lambda recipes, calculator: [recipe],
+        lambda recipes, calculator, **_k: [recipe],
     )
 
     def _fake_plan_meals(profile, recipe_pool, days):

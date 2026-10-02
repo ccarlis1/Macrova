@@ -333,10 +333,11 @@ def test_nutrition_summary_totals_match_local_db():
     )
     assert resp.status_code == 200
     body = resp.json()
+    # Values from data/reference/ingredient_nutrition.json (cream of rice alias).
     assert body["calories"] == 370.0
     assert body["per_serving_calories"] == 185.0
     assert body["servings"] == 2
-    assert body["protein_g"] == 7.5
+    assert body["protein_g"] == 6.3
 
 
 def test_plan_request_model_accepts_recipe_ids():

@@ -43,7 +43,11 @@ from src.planning.phase3_feasibility import (
 )
 from src.planning.phase4_scoring import ScoringStateView, composite_score
 from src.planning.phase5_ordering import OrderingStateView, ordering_key
-from src.planning.phase6_candidates import generate_candidates, CandidateGenerationResult
+from src.planning.phase6_candidates import (
+    CandidateGenerationResult,
+    check_slot_statically,
+    generate_candidates,
+)
 from src.planning.phase9_carb_scaling import compute_variant_nutrition, load_scalable_carb_sources
 from src.planning.micronutrient_policy import (
     MICRONUTRIENT_EPSILON as EPSILON,
@@ -612,6 +616,121 @@ def _decision_order(schedule: List[List[MealSlot]], D: int) -> List[Tuple[int, i
     return out
 
 
+def _tag_empty_failure(
+    *,
+    day_index: int,
+    slot_index: int,
+    required_tag_slugs: List[str],
+    candidate_count_before: int,
+    candidate_count_after: int,
+    missing_tag: str,
+    assignments: List[Assignment],
+    daily_trackers: Dict[int, DailyTracker],
+    attempt_count: int,
+    backtrack_count: int = 0,
+    stats_dict: Optional[Dict[str, Any]] = None,
+) -> MealPlanResult:
+    """Build FM-TAG-EMPTY result with stable report + failures[] shape."""
+    report = ensure_report_failures(
+        build_report_fm_tag_empty(
+            day_index=day_index,
+            slot_index=slot_index,
+            required_tag_slugs=required_tag_slugs,
+            candidate_count_before=candidate_count_before,
+            candidate_count_after=candidate_count_after,
+            reason="No planner candidates satisfy required tag slugs for this slot.",
+        )
+    )
+    slot_id = f"day-{day_index + 1}-slot-{slot_index}"
+    report["failures"] = [
+        build_failure(
+            code="FM-TAG-EMPTY",
+            day_index=day_index,
+            slot_index=slot_index,
+            slot_id=slot_id,
+            date="",
+            details={
+                "missing_tag": missing_tag,
+                "recipe_count": int(candidate_count_after),
+            },
+        )
+    ]
+    return result_from_failure(
+        "TC-2",
+        "FM-TAG-EMPTY",
+        report,
+        list(assignments),
+        dict(daily_trackers),
+        attempt_count,
+        backtrack_count,
+        None,
+        stats_dict,
+    )
+
+
+def _static_slot_precheck(
+    profile: PlanningUserProfile,
+    recipe_pool: List[PlanningRecipe],
+    schedule: List[List[MealSlot]],
+    D: int,
+    resolved_ul: Optional[UpperLimits],
+    stats: Optional[SearchStats] = None,
+) -> Optional[MealPlanResult]:
+    """Attribution step 1: first non-pinned slot that fails HC-1/HC-3 or required tags.
+
+    Runs before search so a tagged slot later in the day is diagnosed ahead of FC-5.
+    """
+    for day_index, slot_index in _decision_order(schedule, D):
+        if _is_pinned(profile, day_index, slot_index):
+            continue
+        slot = schedule[day_index][slot_index]
+        check = check_slot_statically(recipe_pool, day_index, slot, profile, resolved_ul)
+        if check.code is None:
+            continue
+        if stats is not None and stats.enabled:
+            stats._end_time = time.perf_counter()
+            stats.total_attempts = 0
+        if check.code == "FM-TAG-EMPTY":
+            missing_tag = ", ".join(check.missing_tag_slugs)
+            return _tag_empty_failure(
+                day_index=day_index,
+                slot_index=slot_index,
+                required_tag_slugs=check.required_tag_slugs,
+                candidate_count_before=check.eligible_count,
+                candidate_count_after=0,
+                missing_tag=missing_tag,
+                assignments=[],
+                daily_trackers={},
+                attempt_count=0,
+                backtrack_count=0,
+                stats_dict={"attempts": 0, "backtracks": 0},
+            )
+        # FM-1
+        constraint_detail = (
+            "; ".join(check.blocking_constraints)
+            if check.blocking_constraints
+            else "HC-1/HC-3"
+        )
+        report = build_report_fm1(
+            day_index,
+            slot_index,
+            constraint_detail,
+            eligible_recipe_count=0,
+        )
+        return result_from_failure(
+            "TC-2",
+            "FM-1",
+            report,
+            [],
+            {},
+            0,
+            0,
+            None,
+            {"attempts": 0, "backtracks": 0},
+        )
+    return None
+
+
 def run_meal_plan_search(
     profile: PlanningUserProfile,
     recipe_pool: List[PlanningRecipe],
@@ -652,6 +771,14 @@ def run_meal_plan_search(
             pinned_conflicts=[{"day": day_0, "slot_index": slot_0, "recipe_id": rid, "violation_type": PIN_VIOLATION_DIRECT, "remaining_budget": {}}],
         )
         return result_from_failure("TC-3", "FM-3", report, [], {}, 0, 0, None, {"attempts": 0, "backtracks": 0})
+
+    # Attribution step 1: static FM-1 / FM-TAG-EMPTY before search (C2b).
+    # Diagnose any unfillable non-pinned slot ahead of FC-5 look-ahead.
+    precheck_failure = _static_slot_precheck(
+        profile, recipe_pool, schedule, D, resolved_ul, stats=stats,
+    )
+    if precheck_failure is not None:
+        return precheck_failure
 
     # Initial state: pinned only; zero weekly totals for search (we add on day completion)
     initial = build_initial_state(profile, recipe_by_id, D)
@@ -835,39 +962,19 @@ def run_meal_plan_search(
                             and cg.candidate_count_before_required > 0
                             and cg.candidate_count_after_required == 0
                         ):
-                            report = ensure_report_failures(build_report_fm_tag_empty(
+                            missing_tag = str(cg.required_tag_slugs[0]) if cg.required_tag_slugs else ""
+                            return _tag_empty_failure(
                                 day_index=day_index,
                                 slot_index=slot_index,
                                 required_tag_slugs=cg.required_tag_slugs,
                                 candidate_count_before=cg.candidate_count_before_required,
                                 candidate_count_after=cg.candidate_count_after_required,
-                                reason="No planner candidates satisfy required tag slugs for this slot.",
-                            ))
-                            missing_tag = str(cg.required_tag_slugs[0]) if cg.required_tag_slugs else ""
-                            slot_id = f"day-{day_index + 1}-slot-{slot_index}"
-                            report["failures"] = [
-                                build_failure(
-                                    code="FM-TAG-EMPTY",
-                                    day_index=day_index,
-                                    slot_index=slot_index,
-                                    slot_id=slot_id,
-                                    date="",
-                                    details={
-                                        "missing_tag": missing_tag,
-                                        "recipe_count": int(cg.candidate_count_after_required),
-                                    },
-                                )
-                            ]
-                            return result_from_failure(
-                                "TC-2",
-                                "FM-TAG-EMPTY",
-                                report,
-                                list(assignments),
-                                dict(daily_trackers),
-                                attempt_count,
-                                backtrack_count,
-                                None,
-                                _stats_dict,
+                                missing_tag=missing_tag,
+                                assignments=list(assignments),
+                                daily_trackers=dict(daily_trackers),
+                                attempt_count=attempt_count,
+                                backtrack_count=backtrack_count,
+                                stats_dict=_stats_dict,
                             )
                         report = build_report_fm1(
                             day_index,

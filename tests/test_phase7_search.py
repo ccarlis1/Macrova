@@ -392,6 +392,150 @@ class TestFailureModes:
             "fix_hint": "No recipes match tag `high-protein`. Add one or relax constraints.",
         }
 
+    def test_fm_tag_empty_later_slot_before_fc5(self):
+        """C2b: tagged slot 2 diagnosed statically before FC-5 at earlier slots."""
+        schedule = [
+            [
+                _make_slot(),
+                _make_slot(),
+                _make_slot(required_tag_slugs=["dairy-free"]),
+            ]
+        ]
+        profile = _make_profile(schedule)
+        pool = [
+            _make_recipe("r1", 700.0, 35.0, 22.0, 85.0, canonical_tag_slugs={"quick"}),
+            _make_recipe("r2", 700.0, 35.0, 22.0, 85.0, canonical_tag_slugs={"comfort"}),
+            _make_recipe("r3", 700.0, 35.0, 22.0, 85.0, canonical_tag_slugs={"high-protein"}),
+        ]
+        result = run_meal_plan_search(profile, pool, 1, None)
+        assert result.success is False
+        assert result.failure_mode == "FM-TAG-EMPTY"
+        assert result.stats is not None and result.stats.get("attempts") == 0
+        slot_report = result.report["tag_empty_slots"][0]
+        assert slot_report["day_index"] == 0
+        assert slot_report["slot_index"] == 2
+        assert slot_report["required_tag_slugs"] == ["dairy-free"]
+        assert slot_report["candidate_count_before"] == 3
+        assert slot_report["candidate_count_after"] == 0
+        assert "dairy-free" in result.report["failures"][0]["fix_hint"]
+
+    def test_fm_tag_empty_day1_slot1(self):
+        """C2b: tagged slot on day 1 (second day) is reported at (1, 1)."""
+        schedule = [
+            [_make_slot(), _make_slot()],
+            [_make_slot(), _make_slot(required_tag_slugs=["portable"])],
+        ]
+        profile = _make_profile(schedule)
+        pool = [
+            _make_recipe(f"r{i}", 1000.0, 50.0, 32.0, 125.0, canonical_tag_slugs={"quick"})
+            for i in range(4)
+        ]
+        result = run_meal_plan_search(profile, pool, 2, None)
+        assert result.success is False
+        assert result.failure_mode == "FM-TAG-EMPTY"
+        slot_report = result.report["tag_empty_slots"][0]
+        assert slot_report["day_index"] == 1
+        assert slot_report["slot_index"] == 1
+        assert result.report["failures"][0]["details"]["missing_tag"] == "portable"
+        assert result.stats is not None and result.stats.get("attempts") == 0
+
+    def test_static_fm1_hc3_on_non_first_slot(self):
+        """Static FM-1 when every recipe fails HC-3 on a later busy slot."""
+        schedule = [
+            [
+                _make_slot(busyness=4),
+                _make_slot(busyness=1),  # 5 min cap
+            ]
+        ]
+        profile = _make_profile(schedule)
+        pool = [
+            _make_recipe("r1", 1000.0, 50.0, 32.0, 125.0, cooking_min=20),
+            _make_recipe("r2", 1000.0, 50.0, 32.0, 125.0, cooking_min=30),
+        ]
+        result = run_meal_plan_search(profile, pool, 1, None)
+        assert result.success is False
+        assert result.failure_mode == "FM-1"
+        assert result.stats is not None and result.stats.get("attempts") == 0
+        unfillable = result.report["unfillable_slots"][0]
+        assert unfillable["day"] == 0
+        assert unfillable["slot_index"] == 1
+        assert unfillable["eligible_recipe_count"] == 0
+        assert any("HC-3" in c for c in unfillable["blocking_constraints"])
+
+    def test_static_fm1_before_tag_empty(self):
+        """Decision-order: an earlier FM-1 slot wins over a later tag-empty slot."""
+        schedule = [
+            [
+                _make_slot(busyness=1),  # all recipes too slow → FM-1
+                _make_slot(required_tag_slugs=["portable"]),
+            ]
+        ]
+        profile = _make_profile(schedule)
+        pool = [
+            _make_recipe("r1", 1000.0, 50.0, 32.0, 125.0, cooking_min=20, canonical_tag_slugs={"quick"}),
+            _make_recipe("r2", 1000.0, 50.0, 32.0, 125.0, cooking_min=30, canonical_tag_slugs={"comfort"}),
+        ]
+        result = run_meal_plan_search(profile, pool, 1, None)
+        assert result.success is False
+        assert result.failure_mode == "FM-1"
+        unfillable = result.report["unfillable_slots"][0]
+        assert unfillable["slot_index"] == 0
+
+    def test_pinned_tagged_slot_skipped_by_static_precheck(self):
+        """Pinned slots are skipped; an empty free tagged slot still fires."""
+        schedule = [
+            [
+                _make_slot(required_tag_slugs=["portable"]),
+                _make_slot(required_tag_slugs=["dairy-free"]),
+            ]
+        ]
+        profile = _make_profile(
+            schedule,
+            pinned_assignments={(1, 0): "r-pin"},
+        )
+        pool = [
+            _make_recipe("r-pin", 1000.0, 50.0, 32.0, 125.0, canonical_tag_slugs={"quick"}),
+            _make_recipe("r2", 1000.0, 50.0, 32.0, 125.0, canonical_tag_slugs={"quick"}),
+        ]
+        result = run_meal_plan_search(profile, pool, 1, None)
+        assert result.success is False
+        assert result.failure_mode == "FM-TAG-EMPTY"
+        slot_report = result.report["tag_empty_slots"][0]
+        assert slot_report["slot_index"] == 1
+        assert slot_report["required_tag_slugs"] == ["dairy-free"]
+
+    def test_static_slot_check_before_fully_pinned_fm3(self):
+        """Slot check precedes fully-pinned-day FM-3 when both conditions hold."""
+        schedule = [
+            [
+                _make_slot(required_tag_slugs=["portable"]),
+                _make_slot(),
+            ],
+            [
+                _make_slot(),
+                _make_slot(),
+            ],
+        ]
+        # Day 1 fully pinned with macros that miss protein → would be FM-3;
+        # day 0 slot 0 is tag-empty → static check must win.
+        profile = _make_profile(
+            schedule,
+            daily_calories=2000,
+            daily_protein_g=200.0,
+            pinned_assignments={(2, 0): "r1", (2, 1): "r2"},
+        )
+        pool = [
+            _make_recipe("r1", 1000.0, 30.0, 32.0, 125.0, canonical_tag_slugs={"quick"}),
+            _make_recipe("r2", 1000.0, 30.0, 32.0, 125.0, canonical_tag_slugs={"comfort"}),
+            _make_recipe("r3", 1000.0, 30.0, 32.0, 125.0, canonical_tag_slugs={"comfort"}),
+            _make_recipe("r4", 1000.0, 30.0, 32.0, 125.0, canonical_tag_slugs={"comfort"}),
+        ]
+        result = run_meal_plan_search(profile, pool, 2, None)
+        assert result.success is False
+        assert result.failure_mode == "FM-TAG-EMPTY"
+        assert result.report["tag_empty_slots"][0]["slot_index"] == 0
+        assert result.stats is not None and result.stats.get("attempts") == 0
+
     def test_fm3_fully_pinned_day_misses_macros(self):
         """Fully pinned day that breaks daily macros fails pre-search with FM-3 (C3)."""
         schedule = _make_schedule(ndays=1, slots_per_day=2)

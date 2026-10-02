@@ -358,7 +358,7 @@
   "id": "MB-015",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.0,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -380,7 +380,7 @@
   "id": "MB-016",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.0,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -403,7 +403,7 @@
   "id": "MB-017",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.01,
+  "secs": 0.02,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -464,7 +464,7 @@
   "id": "MB-019",
   "active_batches": 0,
   "needs_ceiling": true,
-  "secs": 0.0,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -567,7 +567,7 @@
   "id": "MB-022",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.03,
+  "secs": 0.02,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -688,7 +688,7 @@
   "id": "MB-027",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 1.58,
+  "secs": 1.68,
   "success": false,
   "tc": "TC-2",
   "code": "FM-1",
@@ -849,7 +849,7 @@
   "id": "MB-033",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.0,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -871,7 +871,7 @@
   "id": "MB-034",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.0,
+  "secs": 0.02,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -991,7 +991,7 @@
   "id": "MB-039",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.01,
+  "secs": 0.02,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1042,7 +1042,7 @@
   "id": "MB-040",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.01,
+  "secs": 0.02,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1099,7 +1099,7 @@
   "id": "MB-042",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.01,
+  "secs": 0.02,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1130,7 +1130,7 @@
   "id": "MB-043",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.03,
+  "secs": 0.05,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -1177,7 +1177,7 @@
   "id": "MB-045",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.0,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -1200,7 +1200,7 @@
   "id": "MB-046",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.01,
+  "secs": 0.03,
   "success": false,
   "tc": "TC-2",
   "code": "FM-1",
@@ -1398,7 +1398,7 @@
   "id": "MB-054",
   "active_batches": 0,
   "needs_ceiling": true,
-  "secs": 0.18,
+  "secs": 0.27,
   "success": false,
   "tc": "TC-2",
   "code": "FM-1",
@@ -1572,7 +1572,7 @@
   "report_codes": [
    "FM-1"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"HC-1\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
   "warnings": "null"
  },
  {
@@ -1605,7 +1605,7 @@
   "id": "MB-063",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.11,
+  "secs": 0.07,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -1650,7 +1650,7 @@
   "id": "MB-065",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 3.43,
+  "secs": 3.75,
   "success": false,
   "tc": "TC-2",
   "code": "FM-1",
@@ -1711,7 +1711,7 @@
   "id": "MB-067",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 11.53,
+  "secs": 11.11,
   "success": false,
   "tc": "TC-3",
   "code": "FM-5",
@@ -1742,7 +1742,7 @@
   "id": "MB-068",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 13.03,
+  "secs": 10.85,
   "success": false,
   "tc": "TC-3",
   "code": "FM-5",
@@ -1821,7 +1821,7 @@
   "id": "MB-071",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 8.17,
+  "secs": 6.98,
   "success": false,
   "tc": "TC-3",
   "code": "FM-5",
@@ -2093,7 +2093,7 @@
   "report_codes": [
    "FM-1"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"HC-3: cook time <= 5 min\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
   "warnings": "null"
  },
  {
@@ -2614,7 +2614,7 @@
   "report_codes": [
    "FM-TAG-EMPTY"
   ],
-  "report_first": "[{\"code\": \"FM-TAG-EMPTY\", \"message\": \"No recipes satisfy required tag `breakfast` for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"\", \"details\": {\"missing_tag\": \"breakfast\", \"recipe_count\": 0}, \"fix_hint\": \"No recipes match tag `breakfast`. Add one or relax constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-TAG-EMPTY\", \"message\": \"No recipes satisfy required tag `breakfast, vegan, meal-prep` for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"\", \"details\": {\"missing_tag\": \"breakfast, vegan, meal-prep\", \"recipe_count\": 0}, \"fix_hint\": \"No recipes match tag `breakfast, vegan, meal-prep`. Add one or relax constraints.\"}]",
   "warnings": "null"
  },
  {
@@ -2633,7 +2633,7 @@
   "report_codes": [
    "FM-TAG-EMPTY"
   ],
-  "report_first": "[{\"code\": \"FM-TAG-EMPTY\", \"message\": \"No recipes satisfy required tag `breakfast` for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"\", \"details\": {\"missing_tag\": \"breakfast\", \"recipe_count\": 0}, \"fix_hint\": \"No recipes match tag `breakfast`. Add one or relax constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-TAG-EMPTY\", \"message\": \"No recipes satisfy required tag `breakfast, vegan, portable` for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"\", \"details\": {\"missing_tag\": \"breakfast, vegan, portable\", \"recipe_count\": 0}, \"fix_hint\": \"No recipes match tag `breakfast, vegan, portable`. Add one or relax constraints.\"}]",
   "warnings": "null"
  },
  {
@@ -2643,16 +2643,16 @@
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
-  "code": "FM-1",
+  "code": "FM-TAG-EMPTY",
   "incomplete": null,
   "stats": {
    "attempts": 0,
    "backtracks": 0
   },
   "report_codes": [
-   "FM-1"
+   "FM-TAG-EMPTY"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 34, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-TAG-EMPTY\", \"message\": \"No recipes satisfy required tag `kid-friendly, gluten-free` for this slot.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"\", \"details\": {\"missing_tag\": \"kid-friendly, gluten-free\", \"recipe_count\": 0}, \"fix_hint\": \"No recipes match tag `kid-friendly, gluten-free`. Add one or relax constraints.\"}]",
   "warnings": "null"
  },
  {
@@ -2758,7 +2758,7 @@
   "id": "MB-112",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.13,
+  "secs": 0.12,
   "success": false,
   "tc": "TC-2",
   "code": "FM-1",
@@ -2806,16 +2806,16 @@
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
-  "code": "FM-1",
+  "code": "FM-TAG-EMPTY",
   "incomplete": null,
   "stats": {
    "attempts": 0,
    "backtracks": 0
   },
   "report_codes": [
-   "FM-1"
+   "FM-TAG-EMPTY"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 5, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-TAG-EMPTY\", \"message\": \"No recipes satisfy required tag `dairy-free` for this slot.\", \"day_index\": 0, \"slot_index\": 1, \"slot_id\": \"day-1-slot-1\", \"date\": \"\", \"details\": {\"missing_tag\": \"dairy-free\", \"recipe_count\": 0}, \"fix_hint\": \"No recipes match tag `dairy-free`. Add one or relax constraints.\"}]",
   "warnings": "null"
  },
  {
@@ -3439,7 +3439,7 @@
   "id": "MB-138",
   "active_batches": 0,
   "needs_ceiling": false,
-  "secs": 0.52,
+  "secs": 0.51,
   "success": false,
   "tc": "TC-2",
   "code": "FM-1",

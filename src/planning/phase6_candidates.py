@@ -34,7 +34,11 @@ from src.planning.phase3_feasibility import (
     check_fc2_daily_macros,
     check_fc3_incremental_ul,
 )
-from src.planning.slot_attributes import activity_context_for_profile, is_workout_slot
+from src.planning.slot_attributes import (
+    activity_context_for_profile,
+    cooking_time_max,
+    is_workout_slot,
+)
 from src.planning.phase9_carb_scaling import generate_scaled_variants
 
 
@@ -103,6 +107,113 @@ def _matches_slot_required_tags(recipe: PlanningRecipe, slot: MealSlot) -> bool:
         decision_tags = set(hard_eligible_raw or set())
     recipe_tags = {str(slug).strip().lower() for slug in decision_tags if str(slug).strip()}
     return set(required).issubset(recipe_tags)
+
+
+@dataclass(frozen=True)
+class StaticSlotCheck:
+    """Result of a state-independent HC-1/HC-3/required-tag slot check.
+
+    code is None when the slot has at least one recipe that passes HC-1, HC-3,
+    and (when present) required tags. Spec §11 attribution step 1.
+    """
+
+    code: Optional[str]  # None | "FM-1" | "FM-TAG-EMPTY"
+    eligible_count: int  # recipes passing HC-1 and HC-3
+    blocking_constraints: List[str]
+    required_tag_slugs: List[str]
+    missing_tag_slugs: List[str]
+
+
+def _recipe_decision_tags(recipe: PlanningRecipe) -> Set[str]:
+    hard_eligible_raw = getattr(recipe, "hard_eligible_tag_slugs", None)
+    if hard_eligible_raw is None:
+        decision_tags = set(getattr(recipe, "canonical_tag_slugs", set()) or set())
+    else:
+        decision_tags = set(hard_eligible_raw or set())
+    return {str(slug).strip().lower() for slug in decision_tags if str(slug).strip()}
+
+
+def check_slot_statically(
+    recipe_pool: List[PlanningRecipe],
+    day_index: int,
+    slot: MealSlot,
+    profile: PlanningUserProfile,
+    resolved_ul: Optional[UpperLimits],
+) -> StaticSlotCheck:
+    """Static slot check: HC-1 + HC-3, then required tags. Spec §11 step 1.
+
+    Does not depend on search state (HC-2/HC-5/HC-8 are deferred to search).
+    Matches Oracle._slot_filter attribution.
+    """
+    required_tag_slugs = [
+        str(slug).strip().lower()
+        for slug in (getattr(slot, "required_tag_slugs", None) or [])
+        if str(slug).strip()
+    ]
+    empty_state = ConstraintStateView(daily_trackers={})
+
+    after_hc1: List[PlanningRecipe] = [
+        r
+        for r in recipe_pool
+        if check_hc1_excluded_ingredients(r, slot, day_index, empty_state, profile, resolved_ul)
+    ]
+    base: List[PlanningRecipe] = [
+        r
+        for r in after_hc1
+        if check_hc3_cooking_time_bound(r, slot, day_index, empty_state, profile, resolved_ul)
+    ]
+
+    if not base:
+        blocking: List[str] = []
+        if not after_hc1:
+            blocking.append("HC-1")
+        else:
+            cap = cooking_time_max(slot.busyness_level)
+            if cap is None:
+                blocking.append("HC-3")
+            else:
+                blocking.append(f"HC-3: cook time <= {cap} min")
+        return StaticSlotCheck(
+            code="FM-1",
+            eligible_count=0,
+            blocking_constraints=blocking,
+            required_tag_slugs=required_tag_slugs,
+            missing_tag_slugs=[],
+        )
+
+    if not required_tag_slugs:
+        return StaticSlotCheck(
+            code=None,
+            eligible_count=len(base),
+            blocking_constraints=[],
+            required_tag_slugs=[],
+            missing_tag_slugs=[],
+        )
+
+    tagged = [r for r in base if _matches_slot_required_tags(r, slot)]
+    if tagged:
+        return StaticSlotCheck(
+            code=None,
+            eligible_count=len(base),
+            blocking_constraints=[],
+            required_tag_slugs=required_tag_slugs,
+            missing_tag_slugs=[],
+        )
+
+    # Tags held by no recipe in base; if every slug appears somewhere but no
+    # recipe holds the full set, report all required slugs.
+    held_anywhere: Set[str] = set()
+    for r in base:
+        held_anywhere |= _recipe_decision_tags(r)
+    individually_missing = [t for t in required_tag_slugs if t not in held_anywhere]
+    missing = individually_missing if individually_missing else list(required_tag_slugs)
+    return StaticSlotCheck(
+        code="FM-TAG-EMPTY",
+        eligible_count=len(base),
+        blocking_constraints=[],
+        required_tag_slugs=required_tag_slugs,
+        missing_tag_slugs=missing,
+    )
 
 
 def _filter_step_1_through_7(

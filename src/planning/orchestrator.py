@@ -238,7 +238,7 @@ class LLMPlanningModeError(RuntimeError):
 
 
 
-_ELIGIBLE_FAILURE_MODES: Set[str] = {"FM-1", "FM-2", "FM-4", "FM-5"}
+_ELIGIBLE_FAILURE_MODES: Set[str] = {"FM-1", "FM-2", "FM-4", "FM-5", "FM-TAG-EMPTY"}
 
 
 def _stable_obj_for_hash(obj: Any) -> Any:

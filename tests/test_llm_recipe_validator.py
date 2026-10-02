@@ -6,6 +6,15 @@ from src.llm.usda_contract import USDAProviderRequiredError
 from src.providers.api_provider import IngredientResolutionError
 from src.providers.ingredient_provider import IngredientDataProvider
 
+_DEFAULT_MEAL_TAGS = {
+    "cuisine": "unknown",
+    "cost_level": "standard",
+    "prep_time_bucket": "weeknight_meal",
+    "dietary_flags": [],
+    "tag_slugs_by_type": {"context": ["lunch"]},
+}
+
+
 
 class FakeProvider(IngredientDataProvider):
     usda_capable = True
@@ -45,6 +54,7 @@ def test_validate_recipe_draft_happy_path_accepts_and_canonicalizes():
             {"name": "Large Chicken Breast", "quantity": 200.0, "unit": "g"},
         ],
         instructions=["Cook it.", "Serve it."],
+        tags=_DEFAULT_MEAL_TAGS,
     )
 
     ok, res = validate_recipe_draft(draft, provider)
@@ -65,6 +75,7 @@ def test_validate_recipe_draft_ingredient_not_found_rejects():
             {"name": "chicken breast", "quantity": 200.0, "unit": "g"},
         ],
         instructions=["Cook it."],
+        tags=_DEFAULT_MEAL_TAGS,
     )
 
     ok, res = validate_recipe_draft(draft, provider)
@@ -82,6 +93,7 @@ def test_validate_recipe_draft_nutrition_computation_failed_rejects():
             {"name": "chicken breast", "quantity": 200.0, "unit": "g"},
         ],
         instructions=["Cook it."],
+        tags=_DEFAULT_MEAL_TAGS,
     )
 
     ok, res = validate_recipe_draft(draft, provider)
@@ -96,6 +108,7 @@ def test_validate_recipe_draft_empty_recipe_rejects():
         name="To Taste Only",
         ingredients=[{"name": "salt", "quantity": 0.0, "unit": "to taste"}],
         instructions=["Season it."],
+        tags=_DEFAULT_MEAL_TAGS,
     )
 
     ok, res = validate_recipe_draft(draft, provider)
@@ -114,11 +127,13 @@ def test_validate_recipe_drafts_partial_acceptance_returns_both_sets():
         name="Accept",
         ingredients=[{"name": "chicken breast", "quantity": 200.0, "unit": "g"}],
         instructions=["Cook."],
+        tags=_DEFAULT_MEAL_TAGS,
     )
     bad = RecipeDraft(
         name="Reject",
         ingredients=[{"name": "missing ingredient", "quantity": 200.0, "unit": "g"}],
         instructions=["Cook."],
+        tags=_DEFAULT_MEAL_TAGS,
     )
 
     accepted, rejected = validate_recipe_drafts([ok_1, bad], provider)
@@ -160,6 +175,7 @@ def test_validate_recipe_draft_unresolvable_after_resolve_all_failure_rejects():
             {"name": "cherry tomatoes", "quantity": 100.0, "unit": "g"},
         ],
         instructions=["Cook."],
+        tags=_DEFAULT_MEAL_TAGS,
     )
 
     ok, res = validate_recipe_draft(draft, provider)
@@ -201,6 +217,7 @@ def test_validate_recipe_draft_unresolvable_get_ingredient_info_none_rejects():
             {"name": "cherry tomatoes", "quantity": 100.0, "unit": "g"},
         ],
         instructions=["Cook."],
+        tags=_DEFAULT_MEAL_TAGS,
     )
 
     ok, res = validate_recipe_draft(draft, provider)
@@ -230,6 +247,7 @@ def test_validate_recipe_draft_unresolvable_single_ingredient_rejects():
             {"name": "cherry tomatoes", "quantity": 100.0, "unit": "g"},
         ],
         instructions=["Cook."],
+        tags=_DEFAULT_MEAL_TAGS,
     )
 
     ok, res = validate_recipe_draft(draft, provider)
@@ -251,6 +269,7 @@ def test_validate_recipe_draft_rejects_non_usda_provider():
         name="My Recipe",
         ingredients=[{"name": "chicken breast", "quantity": 200.0, "unit": "g"}],
         instructions=["Cook it."],
+        tags=_DEFAULT_MEAL_TAGS,
     )
 
     with pytest.raises(USDAProviderRequiredError) as exc:
@@ -288,6 +307,7 @@ def test_validate_recipe_draft_memoizes_nutrition_computation_for_duplicate_ingr
             {"name": "chicken breast", "quantity": 200.0, "unit": "g"},
         ],
         instructions=["Cook it."],
+        tags=_DEFAULT_MEAL_TAGS,
     )
 
     ok, res = validate_recipe_draft(draft, provider)

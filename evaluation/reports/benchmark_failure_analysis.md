@@ -141,15 +141,23 @@ The benchmark README's run instructions ("build `PlanRequest` from each scenario
 
 **Status:** fixed. Per D9, derived carbs fall back from the fat median to the fat minimum when the median leaves them negative; shared `validate_macro_targets` rejects profiles still negative at the fat minimum (and related invalid macros) before planning. `/api/v1/plan`, the YAML loader, and plan-from-text all use it. MB-053 (−10 g at the median, 12.5 g at the fat minimum) is therefore valid and still expects FM-2 from search. MB-152 (fat 160–180 g, still −10 g at the fat minimum) covers the rejection: `INVALID_REQUEST` at `input_validation` (`NEGATIVE_CARBS_DERIVED`). The Flutter profile screen shows derived carbs read-only and blocks plan requests when targets are inconsistent.
 
-### 4.3 A slot's meal type is only a label (spec ambiguity and a gap in the benchmark)
+### 4.3 A slot's meal type is only a label (spec ambiguity and a gap in the benchmark) — **resolved**
 
-`MealSlot.meal_type` is described as a "Label" (spec line 129). It isn't used in the hard constraints, candidate generation or scoring. In the 94 successful plans:
+**Status:** fixed. `meal_type` is a soft scoring preference (`MealTypeBonus` / `w_meal_type=8.0`); mismatch never rejects a candidate. Strict slots opt in with `required_tag_slugs`. Canonical meal-role slugs (`breakfast`, `lunch`, `dinner`, `snack`) live in the tag registry with `semantic_class=meal_role`. Committed recipes carry hand-curated system tags; LLM drafts must include a meal-role slug (proposed / soft-only until curated). Plan responses report per-meal `meal_type_match` and `report.meal_type_summary`.
 
-- **45%** of slots (322 of 708) hold a recipe not tagged for that meal type;
-- **53%** of breakfast slots hold a non-breakfast recipe;
-- **85 of 94** plans have at least one mismatch.
+Weight sweep (`evaluation/harness/sweep_meal_type_weight.py` → `results/meal_type_weight_sweep.json`):
 
-The oracle doesn't check meal type either, so the benchmark reports these plans as correct. Whether "breakfast" on a slot is a constraint, a scoring preference or just a label is a product decision the spec hasn't made.
+| `w_meal_type` | Exact matches | Breakfast mismatch | Overall mismatch |
+|---|---|---|---|
+| 0 | 152/152 | 50.0% | 45.7% |
+| 2 | 152/152 | 35.8% | 37.0% |
+| 4 | 152/152 | 23.0% | 28.2% |
+| 6 | 152/152 | 15.7% | 23.8% |
+| **8** | **152/152** | **9.3%** | **19.3%** |
+| 12 | 152/152 | 4.4% | 14.1% |
+| 16 | 152/152 | 2.9% | 12.1% |
+
+Chosen: smallest weight with breakfast mismatch under 10% and no scorecard regressions. Harness metric: `evaluation/harness/results/meal_type_match.json` (via `compare.py`).
 
 ### 4.4 The data track is untested → measured (E0 / E1 / E1b)
 
@@ -199,11 +207,11 @@ Shipped: `data/reference/ingredient_nutrition.json` (default local source; `revi
 |---|---|---|
 | Planner algorithm defect | C4 fixed (C2a/C2b/C3 fixed) | 0 |
 | API/contract issue | §4.1 fixed, C1 fixed | 0 |
-| Specification ambiguity | C5 fixed (structural agreement); C6 done; §4.3 open; **§4.4 Q2 open** | 2 (meal-type + data acceptability) |
+| Specification ambiguity | C5 fixed (structural agreement); C6 done; §4.3 fixed; **§4.4 Q2 open** | 1 (data acceptability) |
 | Validation issue | §4.2 fixed | 0 |
 | Recipe/data limitation | **§4.4 measured** — coverage dominates local; resolution dominates api-cache | 0 planner mismatches (data track separate) |
 | Expected infeasibility | 57 of 57 infeasible scenarios fail correctly after C5 | — |
-| Test-design problem | no meal-type scoring (§4.3); no fully pinned day inside a multi-day plan (C3, fixed); **benchmark uses stored nutrition only** | 0 |
+| Test-design problem | meal-type scoring (§4.3) fixed; no fully pinned day inside a multi-day plan (C3, fixed); **benchmark uses stored nutrition only** | 0 |
 
 C2a's spec gap is closed in §11 attribution steps 2–3.
 
@@ -225,7 +233,7 @@ C2a's spec gap is closed in §11 attribution steps 2–3.
 | 6 | C6 allergy class expansion (Q10) | **Done.** Allergies expand via allergen class table; harness sends safety scenarios as allergies; 149 → 151 exact |
 | 7 | §4.4 data track (Q1) | **Measured.** E0/E1/E1b in `evaluation/data_track/`; coverage then resolution dominate. Fix blocked on Q2 gate. |
 | 8 | §4.2 negative derived carbs | **Done.** D9 fat-minimum fallback, then reject before planning if still negative; MB-053 falls back to 12.5 g and stays FM-2; MB-152 covers the rejection; 151 → 152 exact |
-| — | §4.3 | Remaining specification decision (meal type) |
+| 9 | §4.3 meal-type soft scoring | **Done.** Soft `MealTypeBonus` (`w_meal_type=8`); breakfast mismatch 50% → 9.3%; 152/152 exact retained |
 
 Fixes 1–6 have resolved their clusters: the benchmark is at **152 of 152** exact matches. MB-151 (a fully pinned day inside a two-day plan) keeps C3 covered by the benchmark.
 

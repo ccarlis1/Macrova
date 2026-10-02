@@ -272,6 +272,47 @@ class TestFormatResultMarkdownAndJson:
         assert "batch_id" not in data["daily_plans"][0]["meals"][0]
         assert data["daily_plans"][0]["totals"]["calories"] == 600.0
         assert data["goals"]["daily_calories"] == 2400
+        assert "meal_type_match" in data["daily_plans"][0]["meals"][0]
+        assert "meal_type_summary" in data["report"]
+
+    def test_json_meal_type_match_and_summary(self, sample_meal_plan_result_success, sample_planning_profile):
+        from src.output.formatters import format_result_json
+        from src.planning.phase0_models import PlanningRecipe
+
+        r1 = PlanningRecipe(
+            id="r1",
+            name="Breakfast Bowl",
+            ingredients=[Ingredient("egg", 2.0, "large", is_to_taste=False)],
+            cooking_time_minutes=10,
+            nutrition=NutritionProfile(350.0, 25.0, 15.0, 20.0),
+            primary_carb_contribution=None,
+            canonical_tag_slugs={"breakfast"},
+        )
+        r2 = PlanningRecipe(
+            id="r2",
+            name="Dinner Plate",
+            ingredients=[Ingredient("chicken", 150.0, "g", is_to_taste=False)],
+            cooking_time_minutes=25,
+            nutrition=NutritionProfile(250.0, 35.0, 8.0, 0.0),
+            primary_carb_contribution=None,
+            canonical_tag_slugs={"dinner"},
+        )
+        data = format_result_json(
+            sample_meal_plan_result_success,
+            {"r1": r1, "r2": r2},
+            sample_planning_profile,
+            D=1,
+        )
+        meals = data["daily_plans"][0]["meals"]
+        assert meals[0]["meal_type"] == "breakfast"
+        assert meals[0]["meal_type_match"] is True
+        assert meals[1]["meal_type"] == "lunch"
+        assert meals[1]["meal_type_match"] is False
+        summary = data["report"]["meal_type_summary"]
+        assert summary["matched"] == 1
+        assert summary["mismatched"] == 1
+        assert summary["unknown"] == 0
+        assert summary["planner_only_mismatch_rate"] == 0.5
 
     def test_json_string_roundtrip(self, sample_meal_plan_result_success, recipe_by_id, sample_planning_profile):
         from src.output.formatters import format_result_json_string

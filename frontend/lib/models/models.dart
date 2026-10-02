@@ -404,12 +404,15 @@ class Meal {
   final Map<String, dynamic> recipe;
   final NutritionProfile nutrition;
   final int busynessLevel;
+  /// §4.3: whether the recipe is tagged for [mealType]; null when unknown.
+  final bool? mealTypeMatch;
 
   const Meal({
     required this.mealType,
     required this.recipe,
     required this.nutrition,
     required this.busynessLevel,
+    this.mealTypeMatch,
   });
 
   factory Meal.fromJson(Map<String, dynamic> json) {
@@ -419,6 +422,7 @@ class Meal {
       nutrition:
           NutritionProfile.fromJson(json['nutrition'] as Map<String, dynamic>),
       busynessLevel: json['busyness_level'] as int,
+      mealTypeMatch: json['meal_type_match'] as bool?,
     );
   }
 
@@ -440,6 +444,7 @@ class Meal {
           carbsG: 0,
         ),
         busynessLevel: 3,
+        mealTypeMatch: m['meal_type_match'] as bool?,
       );
     }
 
@@ -461,6 +466,7 @@ class Meal {
       },
       nutrition: NutritionProfile.fromJson(nutritionMap),
       busynessLevel: m['busyness_level'] as int? ?? 3,
+      mealTypeMatch: m['meal_type_match'] as bool?,
     );
   }
 }

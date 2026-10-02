@@ -36,6 +36,13 @@ class DummyLLMClient:
                     {"name": "white rice", "quantity": 250.0, "unit": "g"},
                 ],
                 "instructions": ["Cook it.", "Serve it."],
+                "tags": {
+                    "cuisine": "unknown",
+                    "cost_level": "standard",
+                    "prep_time_bucket": "weeknight_meal",
+                    "dietary_flags": [],
+                    "tag_slugs_by_type": {"context": ["lunch"]},
+                },
             }
             for i in range(count)
         ]

@@ -42,10 +42,37 @@ TABLE = {"chicken breast": N(165, 31, 3.6, 0), "rice": N(130, 2.7, 0.3, 28), "oa
          "spinach": N(23, 2.9, 0.4, 3.6, iron_mg=2.7), "olive oil": N(884, 0, 100, 0)}
 
 
-def draft(name="D", ings=(("chicken breast", 200.0, "g"), ("rice", 150.0, "g")), steps=("Cook.",), cook=None):
-    d = {"name": name, "ingredients": [{"name": n, "quantity": q, "unit": u} for n, q, u in ings], "instructions": list(steps)}
+_DEFAULT_MEAL_TAGS = {
+    "cuisine": "unknown",
+    "cost_level": "standard",
+    "prep_time_bucket": "weeknight_meal",
+    "dietary_flags": [],
+    "tag_slugs_by_type": {"context": ["lunch"]},
+}
+
+
+def draft(
+    name="D",
+    ings=(("chicken breast", 200.0, "g"), ("rice", 150.0, "g")),
+    steps=("Cook.",),
+    cook=None,
+    *,
+    include_meal_tags: bool = True,
+    meal_role: str = "lunch",
+):
+    d = {
+        "name": name,
+        "ingredients": [{"name": n, "quantity": q, "unit": u} for n, q, u in ings],
+        "instructions": list(steps),
+    }
     if cook is not None:
         d["cooking_time_minutes"] = cook
+    if include_meal_tags:
+        tag_payload = dict(_DEFAULT_MEAL_TAGS)
+        by_type = dict(tag_payload.get("tag_slugs_by_type") or {})
+        by_type["context"] = [meal_role]
+        tag_payload["tag_slugs_by_type"] = by_type
+        d["tags"] = tag_payload
     return RecipeDraft.model_validate(d)
 
 
@@ -116,6 +143,24 @@ def test_fitness_against_nutrient_gap():
     assert ok is False and res.error_code == "NOT_USEFUL"
     ok2, rec = validate_recipe_draft(draft(ings=(("spinach", 200.0, "g"), ("rice", 100.0, "g"))), Provider(TABLE), gap_spec=gap)
     assert ok2 is True
+
+
+def test_missing_meal_type_rejected():
+    ok, res = validate_recipe_draft(draft(include_meal_tags=False), Provider(TABLE))
+    assert ok is False and res.error_code == "MISSING_MEAL_TYPE"
+
+    gap = GapSpec(
+        kind="macro_gap",
+        failure_mode="FM-2",
+        days=1,
+        meals_per_day=3,
+        per_meal_calories=500.0,
+        meal_types=["breakfast"],
+    )
+    ok2, res2 = validate_recipe_draft(draft(meal_role="dinner"), Provider(TABLE), gap_spec=gap)
+    assert ok2 is False and res2.error_code == "MISSING_MEAL_TYPE"
+    ok3, _ = validate_recipe_draft(draft(meal_role="breakfast"), Provider(TABLE), gap_spec=gap)
+    assert ok3 is True
 
 
 def test_fitness_against_macro_gap_band():

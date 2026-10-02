@@ -1,17 +1,88 @@
 {
   "tag_aliases": {
-    "batch-cook": "meal-prep"
+    "batch-cook": "meal-prep",
+    "fiber-rich": "high-fiber"
   },
   "tag_registry": {
+    "breakfast": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "Breakfast",
+      "display_only": false,
+      "eligibility": null,
+      "hard_filter_allowed": true,
+      "semantic_class": "meal_role",
+      "slug": "breakfast",
+      "soft_score_allowed": true,
+      "source": "system",
+      "tag_type": "context"
+    },
+    "dinner": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "Dinner",
+      "display_only": false,
+      "eligibility": null,
+      "hard_filter_allowed": true,
+      "semantic_class": "meal_role",
+      "slug": "dinner",
+      "soft_score_allowed": true,
+      "source": "system",
+      "tag_type": "context"
+    },
+    "high-calcium": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "High Calcium",
+      "display_only": false,
+      "eligibility": null,
+      "hard_filter_allowed": false,
+      "semantic_class": "nutrition_claim",
+      "slug": "high-calcium",
+      "soft_score_allowed": true,
+      "source": "system",
+      "tag_type": "nutrition"
+    },
     "high-fiber": {
       "aliases": [
         "fiber-rich"
       ],
       "created_at": "1970-01-01T00:00:00Z",
       "display": "High Fiber",
+      "display_only": false,
+      "eligibility": null,
+      "hard_filter_allowed": false,
+      "semantic_class": "nutrition_claim",
       "slug": "high-fiber",
+      "soft_score_allowed": true,
       "source": "system",
       "tag_type": "nutrition"
+    },
+    "high-omega-3": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "High Omega 3",
+      "display_only": false,
+      "eligibility": null,
+      "hard_filter_allowed": false,
+      "semantic_class": "nutrition_claim",
+      "slug": "high-omega-3",
+      "soft_score_allowed": true,
+      "source": "system",
+      "tag_type": "nutrition"
+    },
+    "lunch": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "Lunch",
+      "display_only": false,
+      "eligibility": null,
+      "hard_filter_allowed": true,
+      "semantic_class": "meal_role",
+      "slug": "lunch",
+      "soft_score_allowed": true,
+      "source": "system",
+      "tag_type": "context"
     },
     "meal-prep": {
       "aliases": [
@@ -19,7 +90,12 @@
       ],
       "created_at": "1970-01-01T00:00:00Z",
       "display": "Meal Prep",
+      "display_only": false,
+      "eligibility": null,
+      "hard_filter_allowed": true,
+      "semantic_class": "capability",
       "slug": "meal-prep",
+      "soft_score_allowed": true,
       "source": "system",
       "tag_type": "context"
     },
@@ -27,15 +103,38 @@
       "aliases": [],
       "created_at": "1970-01-01T00:00:00Z",
       "display": "No Shellfish",
+      "display_only": false,
+      "eligibility": null,
+      "hard_filter_allowed": true,
+      "semantic_class": "exclusion",
       "slug": "no-shellfish",
+      "soft_score_allowed": false,
       "source": "system",
       "tag_type": "constraint"
+    },
+    "snack": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "Snack",
+      "display_only": false,
+      "eligibility": null,
+      "hard_filter_allowed": true,
+      "semantic_class": "meal_role",
+      "slug": "snack",
+      "soft_score_allowed": true,
+      "source": "system",
+      "tag_type": "context"
     },
     "time-0": {
       "aliases": [],
       "created_at": "1970-01-01T00:00:00Z",
       "display": "Instant / No Prep",
+      "display_only": false,
+      "eligibility": null,
+      "hard_filter_allowed": true,
+      "semantic_class": "effort_system",
       "slug": "time-0",
+      "soft_score_allowed": true,
       "source": "system",
       "tag_type": "time"
     },
@@ -43,7 +142,12 @@
       "aliases": [],
       "created_at": "1970-01-01T00:00:00Z",
       "display": "Quick",
+      "display_only": false,
+      "eligibility": null,
+      "hard_filter_allowed": true,
+      "semantic_class": "effort_system",
       "slug": "time-1",
+      "soft_score_allowed": true,
       "source": "system",
       "tag_type": "time"
     },
@@ -51,7 +155,12 @@
       "aliases": [],
       "created_at": "1970-01-01T00:00:00Z",
       "display": "Fast",
+      "display_only": false,
+      "eligibility": null,
+      "hard_filter_allowed": true,
+      "semantic_class": "effort_system",
       "slug": "time-2",
+      "soft_score_allowed": true,
       "source": "system",
       "tag_type": "time"
     },
@@ -59,7 +168,12 @@
       "aliases": [],
       "created_at": "1970-01-01T00:00:00Z",
       "display": "Medium",
+      "display_only": false,
+      "eligibility": null,
+      "hard_filter_allowed": true,
+      "semantic_class": "effort_system",
       "slug": "time-3",
+      "soft_score_allowed": true,
       "source": "system",
       "tag_type": "time"
     },
@@ -67,10 +181,1250 @@
       "aliases": [],
       "created_at": "1970-01-01T00:00:00Z",
       "display": "Long",
+      "display_only": false,
+      "eligibility": null,
+      "hard_filter_allowed": true,
+      "semantic_class": "effort_system",
       "slug": "time-4",
+      "soft_score_allowed": true,
       "source": "system",
       "tag_type": "time"
     }
   },
-  "tags_by_id": {}
+  "tags_by_id": {
+    "llm_0415c122c1511957": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_metadata": {
+        "dinner": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Dinner",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "dinner",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        },
+        "lunch": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Lunch",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "lunch",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "lunch",
+          "dinner"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "llm_16c9b474887858c0": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_metadata": {
+        "breakfast": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Breakfast",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "breakfast",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "breakfast"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "llm_26427200aaed5fee": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_metadata": {
+        "dinner": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Dinner",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "dinner",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        },
+        "lunch": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Lunch",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "lunch",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "lunch",
+          "dinner"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "llm_59834f6218eb974e": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_metadata": {
+        "breakfast": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Breakfast",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "breakfast",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "breakfast"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "llm_5c5f3d587b74e77f": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_metadata": {
+        "dinner": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Dinner",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "dinner",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        },
+        "lunch": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Lunch",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "lunch",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "lunch",
+          "dinner"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "llm_60014bc2d768d321": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_metadata": {
+        "dinner": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Dinner",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "dinner",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        },
+        "lunch": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Lunch",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "lunch",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "lunch",
+          "dinner"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "llm_90733bb7dabee3a4": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_metadata": {
+        "breakfast": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Breakfast",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "breakfast",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "breakfast"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "llm_922a991802b00168": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_metadata": {
+        "dinner": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Dinner",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "dinner",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        },
+        "lunch": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Lunch",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "lunch",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "lunch",
+          "dinner"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "llm_99d4854635c4d95c": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_metadata": {
+        "breakfast": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Breakfast",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "breakfast",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "breakfast"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "llm_a76b0595681f00dc": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_metadata": {
+        "breakfast": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Breakfast",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "breakfast",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "breakfast"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "llm_b9f9293329997a31": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_metadata": {
+        "dinner": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Dinner",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "dinner",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        },
+        "lunch": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Lunch",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "lunch",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "lunch",
+          "dinner"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "llm_e404d7d8e053dacb": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_metadata": {
+        "dinner": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Dinner",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "dinner",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        },
+        "lunch": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Lunch",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "lunch",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "lunch",
+          "dinner"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "llm_ee4f05b19ed0ee4a": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_metadata": {
+        "dinner": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Dinner",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "dinner",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        },
+        "lunch": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Lunch",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "lunch",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "lunch",
+          "dinner"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "llm_f8976fb245a023e5": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_metadata": {
+        "breakfast": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Breakfast",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "breakfast",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "breakfast"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "recipe_001": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "quick_meal",
+      "tag_metadata": {
+        "dinner": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Dinner",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "dinner",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        },
+        "lunch": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Lunch",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "lunch",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "lunch",
+          "dinner"
+        ],
+        "time": [
+          "time-2"
+        ]
+      }
+    },
+    "recipe_002": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "meal_prep",
+      "tag_metadata": {
+        "dinner": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Dinner",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "dinner",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        },
+        "lunch": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Lunch",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "lunch",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "lunch",
+          "dinner"
+        ],
+        "time": [
+          "time-4"
+        ]
+      }
+    },
+    "recipe_003": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_metadata": {
+        "dinner": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Dinner",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "dinner",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        },
+        "lunch": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Lunch",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "lunch",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "lunch",
+          "dinner"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "recipe_004": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "meal_prep",
+      "tag_metadata": {
+        "dinner": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Dinner",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "dinner",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        },
+        "lunch": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Lunch",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "lunch",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "lunch",
+          "dinner"
+        ],
+        "time": [
+          "time-4"
+        ]
+      }
+    },
+    "recipe_005": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_metadata": {
+        "dinner": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Dinner",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "dinner",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        },
+        "lunch": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Lunch",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "lunch",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "lunch",
+          "dinner"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "recipe_006": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_metadata": {
+        "breakfast": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Breakfast",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "breakfast",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        },
+        "lunch": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Lunch",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "lunch",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "breakfast",
+          "lunch"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "recipe_007": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "quick_meal",
+      "tag_metadata": {
+        "dinner": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Dinner",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "dinner",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        },
+        "lunch": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Lunch",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "lunch",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "lunch",
+          "dinner"
+        ],
+        "time": [
+          "time-2"
+        ]
+      }
+    },
+    "recipe_008": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_metadata": {
+        "breakfast": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Breakfast",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "breakfast",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        },
+        "lunch": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Lunch",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "lunch",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "breakfast",
+          "lunch"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "recipe_009": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "snack",
+      "tag_metadata": {
+        "breakfast": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Breakfast",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "breakfast",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        },
+        "snack": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Snack",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "snack",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "breakfast",
+          "snack"
+        ],
+        "time": [
+          "time-1"
+        ]
+      }
+    },
+    "recipe_010": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "quick_meal",
+      "tag_metadata": {
+        "dinner": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Dinner",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "dinner",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        },
+        "lunch": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Lunch",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "lunch",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "lunch",
+          "dinner"
+        ],
+        "time": [
+          "time-2"
+        ]
+      }
+    },
+    "recipe_011": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "snack",
+      "tag_metadata": {
+        "breakfast": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Breakfast",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "breakfast",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        },
+        "snack": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Snack",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "snack",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "breakfast",
+          "snack"
+        ],
+        "time": [
+          "time-1"
+        ]
+      }
+    },
+    "recipe_012": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "snack",
+      "tag_metadata": {
+        "breakfast": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Breakfast",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "breakfast",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        },
+        "snack": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Snack",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "snack",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "snack",
+          "breakfast"
+        ],
+        "time": [
+          "time-1"
+        ]
+      }
+    },
+    "recipe_013": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "snack",
+      "tag_metadata": {
+        "breakfast": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Breakfast",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "breakfast",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        },
+        "snack": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Snack",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "snack",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "snack",
+          "breakfast"
+        ],
+        "time": [
+          "time-1"
+        ]
+      }
+    },
+    "recipe_014": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "snack",
+      "tag_metadata": {
+        "breakfast": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Breakfast",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "breakfast",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        },
+        "snack": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Snack",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "snack",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "snack",
+          "breakfast"
+        ],
+        "time": [
+          "time-1"
+        ]
+      }
+    },
+    "recipe_015": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_metadata": {
+        "dinner": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Dinner",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "dinner",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        },
+        "lunch": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Lunch",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "lunch",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "lunch",
+          "dinner"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "recipe_016": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "meal_prep",
+      "tag_metadata": {
+        "dinner": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Dinner",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "dinner",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        },
+        "lunch": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Lunch",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "lunch",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "lunch",
+          "dinner"
+        ],
+        "time": [
+          "time-4"
+        ]
+      }
+    },
+    "recipe_017": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "quick_meal",
+      "tag_metadata": {
+        "breakfast": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Breakfast",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "breakfast",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        },
+        "lunch": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Lunch",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "lunch",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "breakfast",
+          "lunch"
+        ],
+        "time": [
+          "time-2"
+        ]
+      }
+    },
+    "recipe_018": {
+      "cost_level": "standard",
+      "cuisine": "unknown",
+      "dietary_flags": [],
+      "prep_time_bucket": "snack",
+      "tag_metadata": {
+        "dinner": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Dinner",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "dinner",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        },
+        "lunch": {
+          "aliases": [],
+          "created_at": "1970-01-01T00:00:00Z",
+          "display": "Lunch",
+          "display_only": false,
+          "hard_filter_allowed": true,
+          "semantic_class": "meal_role",
+          "slug": "lunch",
+          "soft_score_allowed": true,
+          "source": "system",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "context": [
+          "lunch",
+          "dinner"
+        ],
+        "time": [
+          "time-1"
+        ]
+      }
+    }
+  }
 }

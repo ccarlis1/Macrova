@@ -106,7 +106,7 @@ def test_openapi_recipe_sync_and_detail_typed_fields():
 def test_openapi_planned_meal_metadata_fields():
     components = _openapi_components()
     meal_props = components["PlannedMeal"]["properties"]
-    for field in ("slot_index", "source", "batch_id", "servings"):
+    for field in ("slot_index", "source", "batch_id", "servings", "meal_type_match"):
         assert field in meal_props
 
     plan_response = components["PlanResponse"]

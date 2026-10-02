@@ -69,6 +69,7 @@ def test_planner_regression_llm_disabled_golden_json(monkeypatch):
                         "recipe_id": "r1",
                         "name": "Test Chicken",
                         "meal_type": "breakfast",
+                        "meal_type_match": False,
                         "slot_index": 0,
                         "source": "planner",
                         "cooking_time_minutes": 10,
@@ -85,6 +86,7 @@ def test_planner_regression_llm_disabled_golden_json(monkeypatch):
                         "recipe_id": "r1",
                         "name": "Test Chicken",
                         "meal_type": "lunch",
+                        "meal_type_match": False,
                         "slot_index": 1,
                         "source": "planner",
                         "cooking_time_minutes": 10,
@@ -118,7 +120,15 @@ def test_planner_regression_llm_disabled_golden_json(monkeypatch):
                 "Exclusion term 'mushroom' matched no allergen class and no ingredient in the recipe pool."
             ],
         },
-        "report": {"failures": []},
+        "report": {
+            "failures": [],
+            "meal_type_summary": {
+                "matched": 0,
+                "mismatched": 2,
+                "unknown": 0,
+                "planner_only_mismatch_rate": 1.0,
+            },
+        },
         "goals": {
             "daily_calories": 2400,
             "daily_protein_g": 150.0,

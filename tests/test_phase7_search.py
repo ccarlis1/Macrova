@@ -271,6 +271,66 @@ class TestSearchWithPinnedSlots:
         assert Assignment(0, 0, "r_pinned") in result.plan
         assert Assignment(0, 1, "r_match") in result.plan
 
+    def test_pinned_mismatch_meal_type_still_assigned(self):
+        """§4.3: pins are exempt from meal-type soft preference (assigned before scoring)."""
+        schedule = [[
+            MealSlot("08:00", 2, "breakfast"),
+            MealSlot("12:00", 2, "lunch"),
+        ]]
+        profile = _make_profile(
+            schedule,
+            pinned_assignments={(1, 0): "r_dinner"},
+        )
+        pool = [
+            _make_recipe(
+                "r_dinner",
+                1000.0,
+                50.0,
+                32.0,
+                125.0,
+                canonical_tag_slugs={"dinner"},
+            ),
+            _make_recipe(
+                "r_breakfast",
+                1000.0,
+                50.0,
+                32.0,
+                125.0,
+                canonical_tag_slugs={"breakfast"},
+            ),
+            _make_recipe(
+                "r_lunch",
+                1000.0,
+                50.0,
+                32.0,
+                125.0,
+                canonical_tag_slugs={"lunch"},
+            ),
+        ]
+        result = run_meal_plan_search(profile, pool, 1, None)
+        assert result.success is True, getattr(result, "report", result)
+        assert result.plan is not None
+        assert Assignment(0, 0, "r_dinner") in result.plan
+
+    def test_meal_type_mismatch_still_eligible_candidate(self):
+        """§4.3: meal_type is soft — a mismatched recipe remains selectable."""
+        schedule = [[MealSlot("08:00", 2, "breakfast")]]
+        profile = _make_profile(schedule)
+        pool = [
+            _make_recipe(
+                "only_dinner",
+                2000.0,
+                100.0,
+                65.0,
+                250.0,
+                canonical_tag_slugs={"dinner"},
+            ),
+        ]
+        result = run_meal_plan_search(profile, pool, 1, None)
+        assert result.success is True, getattr(result, "report", result)
+        assert result.plan is not None
+        assert Assignment(0, 0, "only_dinner") in result.plan
+
 
 # --- Failure modes ---
 

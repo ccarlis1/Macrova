@@ -17,6 +17,7 @@ from src.llm.schemas import RecipeDraft, ValidationFailure
 from src.llm.types import ValidatedRecipeForPersistence
 from src.llm.usda_contract import assert_usda_capable_provider
 from src.planning.allergens import is_classified
+from src.planning.phase4_scoring import MEAL_ROLE_SLUGS
 
 
 VALIDATION_VERSION = "2"  # bumped with the semantic gates (LLM overhaul Stage 4)
@@ -334,6 +335,50 @@ def validate_recipe_draft(
             t = float(gap_spec.per_meal_calories)
             if not (0.4 * t <= total_kcal <= 1.8 * t):
                 return (False, _validation_failure(error_code="NOT_USEFUL", message=f"Recipe is {total_kcal:.0f} kcal; a useful recipe for this gap lands near {t:.0f} kcal per meal.", field_errors=[f"kcal={total_kcal:.1f}", f"per_meal_target={t:.1f}"]))
+
+    # 7b) §4.3: every LLM draft must carry a meal-role slug.
+    required_meal_types = {
+        str(m).strip().lower()
+        for m in (getattr(gap_spec, "meal_types", None) or [])
+        if str(m).strip().lower() in MEAL_ROLE_SLUGS
+    } if gap_spec is not None else set()
+    draft_tags = getattr(draft, "tags", None)
+    context_slugs: set[str] = set()
+    if draft_tags is not None:
+        by_type = getattr(draft_tags, "tag_slugs_by_type", None) or {}
+        context_slugs = {
+            str(s).strip().lower()
+            for s in (by_type.get("context") or [])
+            if str(s).strip()
+        }
+    meal_roles_present = context_slugs & MEAL_ROLE_SLUGS
+    if not meal_roles_present:
+        return (
+            False,
+            _validation_failure(
+                error_code="MISSING_MEAL_TYPE",
+                message=(
+                    "Draft must include a meal-role slug in "
+                    "tags.tag_slugs_by_type.context (breakfast, lunch, dinner, or snack)."
+                ),
+                field_errors=[f"context={sorted(context_slugs)}"],
+            ),
+        )
+    if required_meal_types and not (meal_roles_present & required_meal_types):
+        return (
+            False,
+            _validation_failure(
+                error_code="MISSING_MEAL_TYPE",
+                message=(
+                    "Draft must include tags.tag_slugs_by_type.context with at least one "
+                    f"of meal_types {sorted(required_meal_types)}."
+                ),
+                field_errors=[
+                    f"meal_types={sorted(required_meal_types)}",
+                    f"context={sorted(context_slugs)}",
+                ],
+            ),
+        )
 
     recipe = Recipe(
         id="",

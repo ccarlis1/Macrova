@@ -49,6 +49,8 @@ class GapSpec:
     nutrient_min_per_recipe: Dict[str, float] = field(default_factory=dict)
     # Which (day_index, slot_index) pairs the gap concerns (empty = whole plan).
     slots: List[List[int]] = field(default_factory=list)
+    # §4.3: meal-role slugs the draft should carry (from gap slots / schedule).
+    meal_types: List[str] = field(default_factory=list)
     # Diversity / dedupe hints.
     existing_recipe_names: List[str] = field(default_factory=list)
     # Ingredient names the resolver is known to handle (helps the model avoid unresolvable names).

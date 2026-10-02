@@ -13,9 +13,9 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "dn_bean_quesadilla",
-    "dn_bolognese",
-    "ln_tuna_poke"
+    "hc_mass_gainer",
+    "ln_roast_beef_wrap",
+    "dn_tilapia_rice"
    ]
   },
   "nutrition_mode": "stored"
@@ -36,8 +36,8 @@
    "0": [
     "bk_protein_oats",
     "ln_chickpea_salad",
-    "ln_turkey_sandwich",
-    "dn_beef_rice_bowl"
+    "sn_bedtime_cottage",
+    "dn_edamame_fried_rice"
    ]
   },
   "nutrition_mode": "stored"
@@ -56,8 +56,8 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "dn_bean_quesadilla",
     "bk_protein_oats",
+    "dn_bean_quesadilla",
     "sn_whey_water",
     "hc_mass_gainer"
    ],
@@ -68,8 +68,8 @@
     "dn_beef_chili"
    ],
    "2": [
-    "dn_bean_quesadilla",
     "bk_protein_oats",
+    "dn_bean_quesadilla",
     "sn_yogurt_honey",
     "hc_mass_gainer"
    ]
@@ -79,7 +79,7 @@
  {
   "id": "MB-004",
   "active_batches": 0,
-  "secs": 0.01,
+  "secs": 0.02,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -90,29 +90,29 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "dn_bean_quesadilla",
+    "bk_protein_oats",
     "ln_tuna_poke",
-    "dn_cauli_beef_bowl"
+    "dn_burger_bowl"
    ],
    "1": [
-    "bk_protein_oats",
-    "dn_burger_bowl",
-    "dn_tilapia_rice"
+    "hc_mass_gainer",
+    "bk_salmon_toast",
+    "dn_tuna_steak_salad"
    ],
    "2": [
-    "dn_bean_quesadilla",
+    "bk_protein_oats",
     "ln_tuna_poke",
-    "dn_cauli_beef_bowl"
+    "dn_burger_bowl"
    ],
    "3": [
     "hc_mass_gainer",
-    "bk_cottage_papaya",
-    "dn_tuna_steak_salad"
+    "bk_salmon_toast",
+    "sn_bedtime_cottage"
    ],
    "4": [
-    "dn_bean_quesadilla",
-    "ln_tuna_poke",
-    "dn_cauli_beef_bowl"
+    "bk_protein_oats",
+    "hc_big_beef_rice",
+    "dn_tuna_steak_salad"
    ]
   },
   "nutrition_mode": "stored"
@@ -132,18 +132,18 @@
   "plan": {
    "0": [
     "bk_protein_oats",
-    "dn_edamame_fried_rice",
-    "ln_chickpea_salad"
+    "dn_bean_quesadilla",
+    "ln_white_bean_soup"
    ],
    "1": [
-    "dn_bean_quesadilla",
-    "dn_veggie_pasta",
-    "ln_tofu_quinoa_salad"
+    "bk_tofu_scramble",
+    "dn_edamame_fried_rice",
+    "dn_chickpea_curry"
    ],
    "2": [
     "bk_protein_oats",
-    "bk_big_oat_bowl",
-    "bk_tofu_scramble"
+    "dn_bean_quesadilla",
+    "ln_black_bean_quinoa"
    ]
   },
   "nutrition_mode": "stored"
@@ -185,14 +185,14 @@
    "0": [
     "sn_banana_pb",
     "bk_big_oat_bowl",
-    "dn_edamame_fried_rice",
-    "dn_tilapia_rice"
+    "bk_salmon_toast",
+    "dn_chickpea_curry"
    ],
    "1": [
-    "bk_pb_banana_toast",
-    "bk_protein_oats",
-    "dn_bean_quesadilla",
-    "dn_chickpea_curry"
+    "sn_banana_pb",
+    "bk_big_oat_bowl",
+    "ln_tuna_pasta_salad",
+    "dn_bean_quesadilla"
    ]
   },
   "nutrition_mode": "stored"
@@ -254,14 +254,14 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "ln_chickpea_salad",
-    "dn_tofu_stir_fry",
-    "dn_tilapia_rice"
-   ],
-   "1": [
-    "dn_tuna_steak_salad",
+    "bk_tofu_scramble",
     "ln_black_bean_quinoa",
     "hc_big_beef_rice"
+   ],
+   "1": [
+    "bk_yogurt_berry_bowl",
+    "bk_cream_of_rice_whey",
+    "hc_double_burger_potatoes"
    ]
   },
   "nutrition_mode": "stored"
@@ -390,9 +390,9 @@
   "warnings": "null",
   "plan": {
    "0": [
+    "bk_chia_pudding",
     "sn_banana_pb",
-    "bk_pb_banana_toast",
-    "ln_roast_beef_wrap",
+    "ln_turkey_sandwich",
     "hc_mass_gainer",
     "ln_tuna_poke"
    ]
@@ -421,8 +421,8 @@
    "1": [
     "bk_protein_oats",
     "bk_avocado_toast_feta",
-    "bk_overnight_oats",
-    "ln_cottage_box"
+    "bk_yogurt_berry_bowl",
+    "dn_bean_quesadilla"
    ],
    "2": [
     "bk_pb_banana_toast",
@@ -432,9 +432,9 @@
    ],
    "3": [
     "bk_protein_oats",
-    "bk_avocado_toast_feta",
-    "bk_yogurt_berry_bowl",
-    "dn_bean_quesadilla"
+    "ln_white_bean_soup",
+    "sn_banana_pb",
+    "dn_veggie_pasta"
    ]
   },
   "nutrition_mode": "stored"
@@ -455,7 +455,7 @@
    "0": [
     "dn_bean_quesadilla",
     "dn_beef_rice_bowl",
-    "bk_salmon_toast"
+    "ln_tuna_poke"
    ]
   },
   "nutrition_mode": "stored"
@@ -510,9 +510,9 @@
     "dn_bolognese"
    ],
    "3": [
-    "sn_trail_mix",
+    "bk_overnight_oats",
     "hc_mass_gainer",
-    "ln_tuna_poke"
+    "dn_beef_chili"
    ],
    "4": [
     "bk_protein_oats",
@@ -535,7 +535,7 @@
  {
   "id": "MB-021",
   "active_batches": 0,
-  "secs": 0.07,
+  "secs": 0.08,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -546,19 +546,19 @@
   "warnings": "null",
   "plan": {
    "0": [
+    "bk_big_oat_bowl",
     "dn_bean_quesadilla",
-    "ln_chickpea_salad",
-    "hc_pasta_salmon_bake"
+    "dn_tuna_steak_salad"
    ],
    "1": [
-    "bk_big_oat_bowl",
     "bk_protein_oats",
-    "dn_beef_chili"
+    "ln_black_bean_quinoa",
+    "dn_tofu_stir_fry"
    ],
    "2": [
+    "bk_big_oat_bowl",
     "dn_bean_quesadilla",
-    "ln_chickpea_salad",
-    "hc_pasta_salmon_bake"
+    "dn_tuna_steak_salad"
    ]
   },
   "nutrition_mode": "stored"
@@ -566,7 +566,7 @@
  {
   "id": "MB-022",
   "active_batches": 0,
-  "secs": 0.55,
+  "secs": 0.48,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -578,21 +578,21 @@
   "plan": {
    "0": [
     "hc_mass_gainer",
-    "sn_bedtime_cottage",
-    "sn_almonds_chocolate",
-    "sn_krispie_banana"
+    "bk_salmon_toast",
+    "sn_carrots_almond_butter",
+    "sn_chia_seed_water"
    ],
    "1": [
     "bk_protein_oats",
     "bk_chia_pudding",
-    "bk_salmon_toast",
-    "bk_avocado_toast_feta"
+    "ln_roast_beef_wrap",
+    "ln_white_bean_soup"
    ],
    "2": [
     "hc_mass_gainer",
-    "sn_almonds_chocolate",
-    "sn_turkey_rollups",
-    "bk_cream_of_rice_whey"
+    "bk_salmon_toast",
+    "sn_carrots_almond_butter",
+    "sn_chia_seed_water"
    ]
   },
   "nutrition_mode": "stored"
@@ -612,13 +612,13 @@
   "plan": {
    "0": [
     "bk_overnight_oats",
-    "dn_tofu_stir_fry",
-    "hc_big_beef_rice"
+    "ln_salami_plate",
+    "hc_mass_gainer"
    ],
    "1": [
-    "sn_trail_mix",
-    "bk_protein_oats",
-    "hc_mass_gainer"
+    "bk_salmon_toast",
+    "bk_big_oat_bowl",
+    "dn_tofu_stir_fry"
    ]
   },
   "nutrition_mode": "stored"
@@ -656,9 +656,9 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "dn_bean_quesadilla",
-    "dn_bolognese",
-    "ln_tuna_poke"
+    "hc_mass_gainer",
+    "ln_roast_beef_wrap",
+    "dn_tilapia_rice"
    ]
   },
   "nutrition_mode": "stored"
@@ -708,7 +708,7 @@
     "dn_edamame_fried_rice"
    ],
    "1": [
-    "bk_yolk_spinach_toast"
+    "sn_chia_seed_water"
    ]
   },
   "nutrition_mode": "stored"
@@ -732,7 +732,7 @@
     "hc_big_beef_rice"
    ],
    "1": [
-    "dn_bean_quesadilla",
+    "bk_pb_banana_toast",
     "ln_tuna_poke",
     "dn_tofu_stir_fry"
    ],
@@ -758,22 +758,22 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "dn_bean_quesadilla",
-    "dn_beef_rice_bowl",
+    "bk_avocado_toast_feta",
+    "ln_tuna_poke",
     "sn_protein_shake",
-    "dn_thigh_sheet_pan"
+    "hc_big_beef_rice"
    ],
    "1": [
-    "sn_almonds_chocolate",
     "hc_mass_gainer",
+    "ln_black_bean_quinoa",
     "sn_protein_shake",
-    "ln_tuna_poke"
+    "dn_tuna_steak_salad"
    ],
    "2": [
-    "dn_bean_quesadilla",
-    "dn_beef_rice_bowl",
+    "bk_protein_oats",
+    "ln_tofu_quinoa_salad",
     "sn_protein_shake",
-    "dn_thigh_sheet_pan"
+    "hc_pasta_salmon_bake"
    ]
   },
   "nutrition_mode": "stored"
@@ -860,9 +860,9 @@
   "plan": {
    "0": [
     "bk_big_oat_bowl",
-    "dn_veggie_pasta",
+    "ln_salmon_salad",
     "hc_mass_gainer",
-    "dn_bolognese"
+    "hc_big_beef_rice"
    ]
   },
   "nutrition_mode": "stored"
@@ -924,8 +924,8 @@
   "plan": {
    "0": [
     "hc_mass_gainer",
-    "bk_pb_banana_toast",
-    "bk_salmon_toast"
+    "bk_salmon_toast",
+    "bk_pb_banana_toast"
    ]
   },
   "nutrition_mode": "stored"
@@ -944,9 +944,9 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "ln_tofu_quinoa_salad",
+    "bk_tofu_scramble",
     "dn_tofu_stir_fry",
-    "ln_black_bean_quinoa"
+    "dn_chickpea_curry"
    ]
   },
   "nutrition_mode": "stored"
@@ -965,24 +965,24 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "dn_bean_quesadilla",
-    "dn_veggie_pasta",
-    "ln_tuna_poke"
-   ],
-   "1": [
     "bk_salmon_toast",
     "ln_tofu_quinoa_salad",
-    "bk_big_oat_bowl"
+    "dn_chickpea_curry"
+   ],
+   "1": [
+    "dn_bean_quesadilla",
+    "ln_tuna_pasta_salad",
+    "dn_tofu_stir_fry"
    ],
    "2": [
-    "dn_bean_quesadilla",
+    "bk_avocado_toast_feta",
     "bk_protein_oats",
-    "dn_salmon_potatoes"
+    "hc_pasta_salmon_bake"
    ],
    "3": [
-    "sn_almonds_chocolate",
-    "hc_mass_gainer",
-    "dn_tilapia_rice"
+    "bk_salmon_toast",
+    "ln_tofu_quinoa_salad",
+    "dn_chickpea_curry"
    ]
   },
   "nutrition_mode": "stored"
@@ -1006,9 +1006,9 @@
     "dn_bean_quesadilla"
    ],
    "1": [
-    "sn_trail_mix",
-    "hc_mass_gainer",
-    "bk_cream_of_rice_whey"
+    "bk_overnight_oats",
+    "bk_big_oat_bowl",
+    "ln_tofu_quinoa_salad"
    ],
    "2": [
     "bk_protein_oats",
@@ -1016,9 +1016,9 @@
     "dn_bean_quesadilla"
    ],
    "3": [
-    "bk_overnight_oats",
+    "bk_tofu_scramble",
     "bk_big_oat_bowl",
-    "ln_tofu_quinoa_salad"
+    "dn_chickpea_curry"
    ],
    "4": [
     "bk_protein_oats",
@@ -1026,9 +1026,9 @@
     "dn_bean_quesadilla"
    ],
    "5": [
-    "sn_trail_mix",
-    "hc_mass_gainer",
-    "bk_cream_of_rice_whey"
+    "bk_overnight_oats",
+    "ln_tofu_quinoa_salad",
+    "bk_big_oat_bowl"
    ],
    "6": [
     "bk_protein_oats",
@@ -1041,7 +1041,7 @@
  {
   "id": "MB-040",
   "active_batches": 0,
-  "secs": 0.04,
+  "secs": 0.05,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1052,18 +1052,18 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "dn_bean_quesadilla",
     "bk_big_oat_bowl",
+    "dn_bean_quesadilla",
     "dn_beef_chili"
    ],
    "1": [
-    "ln_chickpea_salad",
     "hc_mass_gainer",
-    "bk_protein_oats"
+    "ln_black_bean_quinoa",
+    "dn_salmon_potatoes"
    ],
    "2": [
-    "dn_bean_quesadilla",
     "bk_big_oat_bowl",
+    "dn_bean_quesadilla",
     "dn_beef_chili"
    ]
   },
@@ -1072,7 +1072,7 @@
  {
   "id": "MB-041",
   "active_batches": 0,
-  "secs": 0.07,
+  "secs": 0.06,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1083,14 +1083,14 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "dn_bean_quesadilla",
-    "dn_beef_rice_bowl",
-    "dn_thigh_sheet_pan"
-   ],
-   "1": [
     "hc_mass_gainer",
     "ln_white_bean_soup",
     "ln_cottage_box"
+   ],
+   "1": [
+    "dn_bean_quesadilla",
+    "dn_beef_rice_bowl",
+    "dn_thigh_sheet_pan"
    ]
   },
   "nutrition_mode": "stored"
@@ -1110,8 +1110,8 @@
   "plan": {
    "0": [
     "hc_mass_gainer",
-    "bk_chia_pudding",
-    "ln_tuna_poke"
+    "ln_white_bean_soup",
+    "dn_salmon_potatoes"
    ],
    "1": [
     "bk_protein_oats",
@@ -1129,7 +1129,7 @@
  {
   "id": "MB-043",
   "active_batches": 0,
-  "secs": 0.03,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -1140,10 +1140,10 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "sn_protein_shake",
-    "bk_cream_of_rice_whey",
-    "ln_turkey_sandwich",
-    "ln_tuna_poke"
+    "bk_protein_oats",
+    "ln_tuna_poke",
+    "sn_papaya_yogurt",
+    "bk_cream_of_rice_whey"
    ]
   },
   "nutrition_mode": "stored"
@@ -1167,8 +1167,8 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "bk_protein_oats",
-    "dn_tilapia_rice"
+    "ln_tuna_poke",
+    "bk_protein_oats"
    ]
   },
   "nutrition_mode": "stored"
@@ -1188,10 +1188,10 @@
   "plan": {
    "0": [
     "sn_banana_pb",
+    "bk_chia_pudding",
     "ln_roast_beef_wrap",
-    "bk_protein_oats",
-    "sn_protein_shake",
-    "hc_mass_gainer"
+    "hc_mass_gainer",
+    "ln_tuna_poke"
    ]
   },
   "nutrition_mode": "stored"
@@ -1224,7 +1224,7 @@
  {
   "id": "MB-047",
   "active_batches": 0,
-  "secs": 0.01,
+  "secs": 0.0,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -1237,10 +1237,10 @@
    "0": [
     "ln_cottage_box",
     "sn_trail_mix",
-    "sn_edamame_cup",
-    "sn_protein_shake",
-    "ln_turkey_sandwich",
-    "bk_chia_pudding"
+    "ln_roast_beef_wrap",
+    "bk_yogurt_berry_bowl",
+    "sn_turkey_rollups",
+    "bk_overnight_oats"
    ]
   },
   "nutrition_mode": "stored"
@@ -1261,7 +1261,7 @@
    "0": [
     "dn_tuna_steak_salad",
     "ln_tuna_poke",
-    "ln_tuna_pasta_salad"
+    "dn_tilapia_rice"
    ]
   },
   "nutrition_mode": "stored"
@@ -1269,7 +1269,7 @@
  {
   "id": "MB-049",
   "active_batches": 0,
-  "secs": 0.02,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1281,8 +1281,8 @@
   "plan": {
    "0": [
     "bk_protein_oats",
-    "hc_mass_gainer",
-    "ln_roast_beef_wrap"
+    "ln_salmon_salad",
+    "hc_mass_gainer"
    ],
    "1": [
     "bk_big_oat_bowl",
@@ -1296,13 +1296,13 @@
    ],
    "3": [
     "bk_protein_oats",
-    "sn_protein_shake",
+    "ln_cottage_box",
     "dn_big_pasta_night"
    ],
    "4": [
-    "sn_trail_mix",
+    "bk_overnight_oats",
     "hc_mass_gainer",
-    "ln_tuna_poke"
+    "dn_beef_chili"
    ]
   },
   "nutrition_mode": "stored"
@@ -1397,7 +1397,7 @@
  {
   "id": "MB-054",
   "active_batches": 0,
-  "secs": 0.21,
+  "secs": 0.19,
   "success": false,
   "tc": "TC-2",
   "code": "FM-2",
@@ -1482,12 +1482,12 @@
   "report_codes": [
    "FM-MACRO-INFEASIBLE"
   ],
-  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {\"calories\": -826.0999999999999, \"protein_g\": -171.79, \"fat_g\": 0.0, \"carbs_g\": -33.0}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {\"calories\": -1139.5, \"protein_g\": -176.15, \"fat_g\": 0.0, \"carbs_g\": -101.75999999999999}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
   "warnings": "null",
   "plan": {
    "0": [
     "hc_mass_gainer",
-    "hc_big_beef_rice"
+    "dn_burger_bowl"
    ]
   },
   "nutrition_mode": "stored"
@@ -1514,7 +1514,7 @@
  {
   "id": "MB-059",
   "active_batches": 0,
-  "secs": 0.06,
+  "secs": 0.05,
   "success": false,
   "tc": "TC-2",
   "code": "FM-4",
@@ -1602,7 +1602,7 @@
  {
   "id": "MB-063",
   "active_batches": 0,
-  "secs": 0.08,
+  "secs": 0.07,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -1677,19 +1677,19 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "ln_tofu_quinoa_salad",
-    "dn_beef_rice_bowl",
-    "dn_edamame_fried_rice"
+    "bk_tofu_scramble",
+    "dn_tofu_stir_fry",
+    "dn_chickpea_curry"
    ],
    "1": [
-    "dn_tofu_stir_fry",
-    "ln_tuna_poke",
-    "ln_black_bean_quinoa"
-   ],
-   "2": [
     "ln_tofu_quinoa_salad",
     "dn_beef_rice_bowl",
     "dn_edamame_fried_rice"
+   ],
+   "2": [
+    "bk_tofu_scramble",
+    "dn_tofu_stir_fry",
+    "dn_chickpea_curry"
    ]
   },
   "nutrition_mode": "stored"
@@ -1716,7 +1716,7 @@
  {
   "id": "MB-068",
   "active_batches": 0,
-  "secs": 0.13,
+  "secs": 0.12,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1727,19 +1727,19 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "dn_bean_quesadilla",
-    "ln_chickpea_salad",
-    "ln_white_bean_soup"
+    "bk_pb_banana_toast",
+    "ln_white_bean_soup",
+    "ln_tofu_quinoa_salad"
    ],
    "1": [
-    "bk_tofu_scramble",
-    "ln_black_bean_quinoa",
-    "dn_chickpea_curry"
+    "dn_bean_quesadilla",
+    "dn_veggie_pasta",
+    "sn_edamame_cup"
    ],
    "2": [
-    "bk_chia_pudding",
-    "dn_tofu_stir_fry",
-    "ln_white_bean_soup"
+    "bk_tofu_scramble",
+    "ln_white_bean_soup",
+    "dn_chickpea_curry"
    ]
   },
   "nutrition_mode": "stored"
@@ -1747,7 +1747,7 @@
  {
   "id": "MB-069",
   "active_batches": 0,
-  "secs": 0.08,
+  "secs": 0.02,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -1759,7 +1759,7 @@
   "plan": {
    "0": [
     "bk_yogurt_berry_bowl",
-    "dn_tilapia_rice",
+    "ln_tuna_poke",
     "sn_whey_water",
     "dn_beef_chili"
    ]
@@ -1790,7 +1790,7 @@
  {
   "id": "MB-071",
   "active_batches": 0,
-  "secs": 0.11,
+  "secs": 0.09,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1801,14 +1801,14 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "dn_bean_quesadilla",
-    "ln_white_bean_soup",
-    "dn_beef_chili"
-   ],
-   "1": [
-    "bk_cream_of_rice_whey",
+    "bk_overnight_oats",
     "dn_burger_bowl",
     "dn_thigh_sheet_pan"
+   ],
+   "1": [
+    "ln_tuna_poke",
+    "ln_white_bean_soup",
+    "dn_salmon_potatoes"
    ]
   },
   "nutrition_mode": "stored"
@@ -1816,7 +1816,7 @@
  {
   "id": "MB-072",
   "active_batches": 0,
-  "secs": 0.49,
+  "secs": 0.47,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1828,27 +1828,27 @@
   "plan": {
    "0": [
     "hc_mass_gainer",
-    "sn_bedtime_cottage",
-    "sn_almonds_chocolate",
-    "sn_krispie_banana"
+    "bk_salmon_toast",
+    "sn_carrots_almond_butter",
+    "sn_chia_seed_water"
    ],
    "1": [
     "bk_protein_oats",
     "bk_chia_pudding",
-    "bk_salmon_toast",
-    "bk_avocado_toast_feta"
+    "ln_roast_beef_wrap",
+    "ln_white_bean_soup"
    ],
    "2": [
     "hc_mass_gainer",
-    "sn_bedtime_cottage",
-    "sn_almonds_chocolate",
-    "sn_krispie_banana"
+    "bk_salmon_toast",
+    "sn_carrots_almond_butter",
+    "sn_chia_seed_water"
    ],
    "3": [
     "bk_tofu_scramble",
     "bk_cream_of_rice_whey",
-    "bk_pb_banana_toast",
-    "ln_roast_beef_wrap"
+    "ln_salami_plate",
+    "bk_overnight_oats"
    ]
   },
   "nutrition_mode": "stored"
@@ -1856,7 +1856,7 @@
  {
   "id": "MB-073",
   "active_batches": 0,
-  "secs": 0.01,
+  "secs": 0.0,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -1867,10 +1867,10 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "ln_salami_plate",
-    "dn_tuna_steak_salad",
+    "bk_salmon_toast",
+    "bk_tofu_scramble",
     "sn_banana_pb",
-    "dn_beef_chili"
+    "dn_cauli_beef_bowl"
    ]
   },
   "nutrition_mode": "stored"
@@ -1933,13 +1933,13 @@
   "plan": {
    "0": [
     "hc_mass_gainer",
-    "dn_veggie_pasta",
-    "ln_white_bean_soup"
+    "dn_bean_quesadilla",
+    "dn_salmon_potatoes"
    ],
    "1": [
-    "dn_bean_quesadilla",
+    "bk_big_oat_bowl",
     "dn_tofu_stir_fry",
-    "bk_big_oat_bowl"
+    "dn_beef_rice_bowl"
    ]
   },
   "nutrition_mode": "stored"
@@ -2034,8 +2034,8 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "sn_yogurt_honey",
     "ln_turkey_sandwich",
+    "sn_yogurt_honey",
     "bk_overnight_oats",
     "dn_beef_rice_bowl"
    ]
@@ -2075,9 +2075,9 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "sn_protein_shake",
     "bk_chia_pudding",
     "ln_cottage_box",
+    "sn_protein_shake",
     "sn_banana_pb",
     "bk_yogurt_berry_bowl"
    ]
@@ -2201,8 +2201,8 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "dn_bean_quesadilla",
-    "dn_tofu_stir_fry",
+    "bk_protein_oats",
+    "hc_big_beef_rice",
     "dn_salmon_potatoes"
    ]
   },
@@ -2292,8 +2292,8 @@
    ],
    "2": [
     "bk_yogurt_berry_bowl",
-    "bk_big_oat_bowl",
-    "dn_burger_bowl"
+    "ln_salami_plate",
+    "hc_mass_gainer"
    ]
   },
   "nutrition_mode": "stored"
@@ -2496,28 +2496,28 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "dn_bean_quesadilla",
-    "dn_tofu_stir_fry",
+    "bk_cream_of_rice_whey",
+    "hc_big_beef_rice",
     "dn_bolognese"
    ],
    "1": [
-    "ln_chickpea_salad",
     "hc_mass_gainer",
-    "ln_tuna_poke"
+    "bk_protein_oats",
+    "dn_salmon_potatoes"
    ],
    "2": [
-    "dn_bean_quesadilla",
-    "dn_tofu_stir_fry",
+    "bk_cream_of_rice_whey",
+    "hc_big_beef_rice",
     "dn_bolognese"
    ],
    "3": [
-    "ln_chickpea_salad",
+    "bk_overnight_oats",
     "hc_mass_gainer",
-    "ln_tuna_poke"
+    "dn_burger_bowl"
    ],
    "4": [
-    "dn_bean_quesadilla",
-    "dn_tofu_stir_fry",
+    "bk_cream_of_rice_whey",
+    "hc_big_beef_rice",
     "dn_bolognese"
    ]
   },
@@ -2642,8 +2642,8 @@
   "plan": {
    "0": [
     "bk_protein_oats",
-    "dn_bolognese",
-    "dn_tofu_stir_fry"
+    "ln_tofu_quinoa_salad",
+    "hc_big_beef_rice"
    ]
   },
   "nutrition_mode": "stored"
@@ -2663,7 +2663,7 @@
   "plan": {
    "0": [
     "bk_protein_oats",
-    "bk_tofu_scramble",
+    "bk_salmon_toast",
     "bk_big_oat_bowl"
    ]
   },
@@ -2672,7 +2672,7 @@
  {
   "id": "MB-111",
   "active_batches": 0,
-  "secs": 0.03,
+  "secs": 0.02,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -2693,29 +2693,29 @@
     "dn_edamame_fried_rice"
    ],
    "2": [
-    "ln_chickpea_salad",
-    "hc_mass_gainer",
-    "ln_white_bean_soup"
-   ],
-   "3": [
     "bk_overnight_oats",
     "hc_big_beef_rice",
     "dn_tofu_stir_fry"
    ],
-   "4": [
+   "3": [
     "bk_protein_oats",
     "dn_bolognese",
     "dn_bean_quesadilla"
    ],
-   "5": [
+   "4": [
     "bk_overnight_oats",
     "hc_big_beef_rice",
     "dn_tofu_stir_fry"
    ],
+   "5": [
+    "bk_protein_oats",
+    "dn_bolognese",
+    "dn_edamame_fried_rice"
+   ],
    "6": [
-    "ln_chickpea_salad",
-    "hc_mass_gainer",
-    "ln_white_bean_soup"
+    "bk_overnight_oats",
+    "hc_big_beef_rice",
+    "dn_tofu_stir_fry"
    ]
   },
   "nutrition_mode": "stored"
@@ -2723,7 +2723,7 @@
  {
   "id": "MB-112",
   "active_batches": 0,
-  "secs": 0.23,
+  "secs": 0.13,
   "success": false,
   "tc": "TC-2",
   "code": "FM-1",
@@ -2739,8 +2739,8 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "bk_yolk_spinach_toast",
-    "ln_white_bean_soup"
+    "ln_tuna_poke",
+    "hc_double_burger_potatoes"
    ]
   },
   "nutrition_mode": "stored"
@@ -2798,8 +2798,8 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "sn_trail_mix",
     "hc_mass_gainer",
+    "ln_roast_beef_wrap",
     "dn_tilapia_rice"
    ]
   },
@@ -2819,16 +2819,16 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "dn_bean_quesadilla",
+    "bk_protein_oats",
     "dn_beef_rice_bowl",
     "sn_whey_water",
     "hc_mass_gainer"
    ],
    "1": [
-    "bk_protein_oats",
+    "bk_pb_banana_toast",
     "dn_beef_rice_bowl",
-    "sn_protein_shake",
-    "hc_pasta_salmon_bake"
+    "hc_mass_gainer",
+    "sn_bedtime_cottage"
    ]
   },
   "nutrition_mode": "stored"
@@ -2904,14 +2904,14 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "dn_bean_quesadilla",
+    "hc_mass_gainer",
     "dn_thigh_quinoa_prep",
-    "hc_big_beef_rice"
+    "ln_tuna_poke"
    ],
    "1": [
     "hc_mass_gainer",
     "dn_thigh_quinoa_prep",
-    "bk_salmon_toast"
+    "dn_tilapia_rice"
    ]
   },
   "nutrition_mode": "stored"
@@ -2982,14 +2982,14 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "ln_tuna_poke",
-    "dn_bolognese",
+    "hc_mass_gainer",
+    "ln_salmon_salad",
     "dn_chickpea_curry"
    ],
    "1": [
-    "sn_trail_mix",
-    "bk_protein_oats",
-    "hc_mass_gainer"
+    "bk_salmon_toast",
+    "bk_big_oat_bowl",
+    "dn_bolognese"
    ]
   },
   "nutrition_mode": "stored"
@@ -3013,8 +3013,8 @@
     "hc_pasta_salmon_bake"
    ],
    "1": [
-    "ln_cottage_box",
     "bk_salmon_toast",
+    "ln_cottage_box",
     "bk_cottage_papaya"
    ],
    "2": [
@@ -3039,28 +3039,28 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "ln_tuna_poke",
-    "dn_bolognese",
+    "hc_mass_gainer",
+    "ln_salmon_salad",
     "dn_chickpea_curry"
    ],
    "1": [
-    "sn_trail_mix",
-    "bk_protein_oats",
-    "hc_mass_gainer"
+    "bk_salmon_toast",
+    "bk_big_oat_bowl",
+    "dn_bolognese"
    ],
    "2": [
-    "ln_tuna_poke",
-    "dn_bolognese",
+    "hc_mass_gainer",
+    "ln_salmon_salad",
     "dn_chickpea_curry"
    ],
    "3": [
     "bk_salmon_toast",
-    "bk_big_oat_bowl",
-    "dn_tofu_stir_fry"
+    "ln_tofu_quinoa_salad",
+    "bk_big_oat_bowl"
    ],
    "4": [
-    "ln_salmon_salad",
     "hc_mass_gainer",
+    "ln_salmon_salad",
     "dn_chickpea_curry"
    ]
   },
@@ -3080,8 +3080,8 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "dn_bean_quesadilla",
-    "dn_edamame_fried_rice",
+    "bk_big_oat_bowl",
+    "ln_tuna_pasta_salad",
     "dn_beef_chili"
    ],
    "1": [
@@ -3090,8 +3090,8 @@
     "dn_chickpea_curry"
    ],
    "2": [
-    "dn_bean_quesadilla",
-    "dn_edamame_fried_rice",
+    "bk_big_oat_bowl",
+    "dn_beef_rice_bowl",
     "dn_beef_chili"
    ],
    "3": [
@@ -3166,39 +3166,39 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "sn_trail_mix",
+    "bk_pb_banana_toast",
     "hc_mass_gainer",
-    "ln_tuna_poke"
+    "dn_tuna_steak_salad"
    ],
    "1": [
-    "sn_protein_shake",
-    "dn_bean_quesadilla",
-    "hc_big_beef_rice"
+    "bk_overnight_oats",
+    "ln_tuna_poke",
+    "hc_double_burger_potatoes"
    ],
    "2": [
-    "sn_trail_mix",
+    "bk_pb_banana_toast",
     "hc_mass_gainer",
-    "ln_tuna_poke"
+    "dn_tuna_steak_salad"
    ],
    "3": [
-    "ln_cottage_box",
-    "bk_protein_oats",
-    "hc_big_beef_rice"
+    "bk_overnight_oats",
+    "ln_tuna_poke",
+    "hc_double_burger_potatoes"
    ],
    "4": [
-    "sn_trail_mix",
+    "bk_pb_banana_toast",
     "hc_mass_gainer",
-    "ln_tuna_poke"
+    "dn_tuna_steak_salad"
    ],
    "5": [
     "dn_bolognese",
-    "dn_tofu_stir_fry",
-    "bk_protein_oats"
+    "dn_thigh_quinoa_prep",
+    "dn_chickpea_curry"
    ],
    "6": [
     "dn_bean_quesadilla",
     "dn_beef_rice_bowl",
-    "ln_tuna_poke"
+    "dn_tofu_stir_fry"
    ]
   },
   "nutrition_mode": "stored"
@@ -3222,9 +3222,9 @@
     "ln_turkey_sandwich"
    ],
    "1": [
-    "ln_tuna_poke",
     "bk_yogurt_berry_bowl",
-    "dn_beef_rice_bowl"
+    "dn_beef_rice_bowl",
+    "ln_tuna_poke"
    ],
    "2": [
     "bk_protein_oats",
@@ -3232,9 +3232,9 @@
     "ln_turkey_sandwich"
    ],
    "3": [
-    "ln_tuna_poke",
     "bk_yogurt_berry_bowl",
-    "dn_beef_rice_bowl"
+    "dn_beef_rice_bowl",
+    "ln_tuna_poke"
    ],
    "4": [
     "bk_protein_oats",
@@ -3263,9 +3263,9 @@
   "warnings": "null",
   "plan": {
    "0": [
+    "ln_tuna_poke",
     "bk_protein_oats",
-    "dn_beef_rice_bowl",
-    "ln_tuna_poke"
+    "dn_beef_rice_bowl"
    ]
   },
   "nutrition_mode": "stored"
@@ -3273,7 +3273,7 @@
  {
   "id": "MB-134",
   "active_batches": 0,
-  "secs": 0.07,
+  "secs": 0.08,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3284,38 +3284,38 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "dn_bean_quesadilla",
     "bk_big_oat_bowl",
+    "dn_bean_quesadilla",
     "dn_beef_chili"
    ],
    "1": [
-    "ln_chickpea_salad",
     "hc_mass_gainer",
-    "bk_protein_oats"
+    "ln_black_bean_quinoa",
+    "dn_salmon_potatoes"
    ],
    "2": [
-    "dn_bean_quesadilla",
     "bk_big_oat_bowl",
+    "dn_bean_quesadilla",
     "dn_beef_chili"
    ],
    "3": [
-    "ln_chickpea_salad",
-    "hc_mass_gainer",
-    "bk_protein_oats"
+    "bk_chia_pudding",
+    "hc_big_beef_rice",
+    "hc_pasta_salmon_bake"
    ],
    "4": [
-    "dn_bean_quesadilla",
     "bk_big_oat_bowl",
+    "dn_bean_quesadilla",
     "dn_beef_chili"
    ],
    "5": [
-    "ln_chickpea_salad",
     "hc_mass_gainer",
-    "bk_protein_oats"
+    "ln_black_bean_quinoa",
+    "dn_salmon_potatoes"
    ],
    "6": [
-    "dn_bean_quesadilla",
     "bk_big_oat_bowl",
+    "dn_bean_quesadilla",
     "dn_beef_chili"
    ]
   },
@@ -3360,9 +3360,9 @@
     "dn_edamame_fried_rice"
    ],
    "1": [
-    "dn_bean_quesadilla",
-    "dn_bolognese",
-    "hc_pasta_salmon_bake"
+    "bk_cream_of_rice_whey",
+    "hc_big_beef_rice",
+    "dn_burger_bowl"
    ],
    "2": [
     "bk_protein_oats",
@@ -3371,9 +3371,9 @@
     "dn_tofu_stir_fry"
    ],
    "3": [
-    "ln_chickpea_salad",
     "hc_mass_gainer",
-    "ln_tuna_poke"
+    "ln_roast_beef_wrap",
+    "dn_bolognese"
    ],
    "4": [
     "bk_protein_oats",
@@ -3406,14 +3406,14 @@
  {
   "id": "MB-138",
   "active_batches": 0,
-  "secs": 0.52,
+  "secs": 0.5,
   "success": false,
   "tc": "TC-2",
   "code": "FM-2",
   "incomplete": null,
   "stats": {
-   "attempts": 3100,
-   "backtracks": 2401
+   "attempts": 3098,
+   "backtracks": 2399
   },
   "report_codes": [
    "FM-MACRO-INFEASIBLE"
@@ -3422,8 +3422,8 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "bk_tofu_scramble",
-    "sn_krispie_banana",
+    "ln_tuna_poke",
+    "sn_chia_seed_water",
     "hc_mass_gainer"
    ]
   },
@@ -3448,9 +3448,9 @@
    ],
    "1": [
     "bk_pb_banana_toast",
-    "bk_cream_of_rice_whey",
-    "sn_almonds_chocolate",
-    "dn_burger_bowl"
+    "ln_white_bean_soup",
+    "ln_roast_beef_wrap",
+    "ln_turkey_sandwich"
    ]
   },
   "nutrition_mode": "stored"
@@ -3469,19 +3469,19 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "sn_trail_mix",
+    "bk_overnight_oats",
     "hc_mass_gainer",
-    "ln_tuna_poke"
+    "dn_burger_bowl"
    ],
    "1": [
     "bk_protein_oats",
-    "sn_protein_shake",
+    "ln_cottage_box",
     "dn_big_pasta_night"
    ],
    "2": [
-    "ln_salmon_salad",
+    "bk_overnight_oats",
     "hc_mass_gainer",
-    "dn_bean_quesadilla"
+    "dn_burger_bowl"
    ],
    "3": [
     "bk_protein_oats",
@@ -3489,9 +3489,9 @@
     "dn_big_pasta_night"
    ],
    "4": [
-    "sn_trail_mix",
+    "bk_overnight_oats",
     "hc_mass_gainer",
-    "ln_tuna_poke"
+    "dn_burger_bowl"
    ]
   },
   "nutrition_mode": "stored"
@@ -3510,38 +3510,38 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "sn_trail_mix",
-    "hc_mass_gainer",
-    "ln_tuna_pasta_salad"
+    "bk_overnight_oats",
+    "hc_big_beef_rice",
+    "dn_thigh_sheet_pan"
    ],
    "1": [
-    "bk_overnight_oats",
-    "dn_tofu_stir_fry",
+    "bk_protein_oats",
+    "ln_chickpea_salad",
     "hc_pasta_salmon_bake"
    ],
    "2": [
-    "bk_protein_oats",
-    "dn_edamame_fried_rice",
+    "bk_overnight_oats",
+    "hc_big_beef_rice",
     "dn_bolognese"
    ],
    "3": [
+    "bk_protein_oats",
     "ln_chickpea_salad",
-    "dn_beef_rice_bowl",
     "hc_pasta_salmon_bake"
    ],
    "4": [
-    "sn_trail_mix",
-    "hc_mass_gainer",
-    "ln_tuna_pasta_salad"
+    "bk_overnight_oats",
+    "hc_big_beef_rice",
+    "dn_thigh_sheet_pan"
    ],
    "5": [
-    "bk_overnight_oats",
-    "dn_tofu_stir_fry",
+    "bk_protein_oats",
+    "ln_chickpea_salad",
     "hc_pasta_salmon_bake"
    ],
    "6": [
-    "bk_protein_oats",
-    "dn_edamame_fried_rice",
+    "bk_overnight_oats",
+    "hc_big_beef_rice",
     "dn_bolognese"
    ]
   },
@@ -3550,7 +3550,7 @@
  {
   "id": "MB-142",
   "active_batches": 0,
-  "secs": 0.15,
+  "secs": 0.14,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3567,8 +3567,8 @@
    ],
    "1": [
     "dn_bean_quesadilla",
-    "dn_veggie_pasta",
-    "dn_beef_chili"
+    "dn_beef_rice_bowl",
+    "dn_thigh_sheet_pan"
    ],
    "2": [
     "hc_mass_gainer",
@@ -3576,9 +3576,9 @@
     "bk_yolk_spinach_toast"
    ],
    "3": [
-    "dn_bean_quesadilla",
-    "dn_veggie_pasta",
-    "dn_beef_chili"
+    "bk_salmon_toast",
+    "ln_tofu_quinoa_salad",
+    "dn_chickpea_curry"
    ],
    "4": [
     "hc_mass_gainer",
@@ -3587,8 +3587,8 @@
    ],
    "5": [
     "dn_bean_quesadilla",
-    "dn_veggie_pasta",
-    "dn_beef_chili"
+    "dn_beef_rice_bowl",
+    "dn_thigh_sheet_pan"
    ],
    "6": [
     "hc_mass_gainer",
@@ -3634,9 +3634,9 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "dn_bean_quesadilla",
-    "dn_beef_rice_bowl",
-    "bk_protein_oats"
+    "hc_mass_gainer",
+    "ln_roast_beef_wrap",
+    "bk_chia_pudding"
    ]
   },
   "nutrition_mode": "stored"
@@ -3676,8 +3676,8 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "ln_chickpea_salad",
-    "ln_cottage_box",
+    "bk_tofu_scramble",
+    "ln_black_bean_quinoa",
     "hc_big_beef_rice"
    ]
   },
@@ -3703,7 +3703,7 @@
   "plan": {
    "0": [
     "dh_oat_yogurt_parfait",
-    "ln_white_bean_soup"
+    "dn_tilapia_rice"
    ]
   },
   "nutrition_mode": "stored"
@@ -3736,7 +3736,7 @@
  {
   "id": "MB-149",
   "active_batches": 0,
-  "secs": 0.06,
+  "secs": 0.07,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3747,19 +3747,19 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "dn_bean_quesadilla",
-    "ln_tuna_poke",
-    "dn_bolognese"
-   ],
-   "1": [
     "bk_protein_oats",
     "dn_tofu_stir_fry",
     "dn_beef_rice_bowl"
    ],
+   "1": [
+    "hc_mass_gainer",
+    "ln_roast_beef_wrap",
+    "ln_white_bean_soup"
+   ],
    "2": [
-    "dn_bean_quesadilla",
-    "ln_tuna_poke",
-    "dn_bolognese"
+    "bk_protein_oats",
+    "dn_tofu_stir_fry",
+    "dn_beef_rice_bowl"
    ]
   },
   "nutrition_mode": "stored"
@@ -3778,8 +3778,8 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "ln_tuna_poke",
     "bk_protein_oats",
+    "ln_tuna_poke",
     "dh_sweet_potato_hash"
    ]
   },

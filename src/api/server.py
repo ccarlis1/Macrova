@@ -146,6 +146,8 @@ class PlanRequest(BaseModel):
     ingredient_source: str = Field(default="local", pattern="^(local|api)$")
     micronutrient_goals: Optional[Dict[str, float]] = None
     micronutrient_weekly_min_fraction: float = Field(default=1.0, gt=0.0, le=1.0)
+    # HC-5 hard daily ceiling. May be below daily_calories; the planner reports FM-2.
+    max_daily_calories: Optional[int] = Field(default=None, gt=0)
 
     # Optional tag-based recipe pool filtering (deterministic).
     cuisine: Optional[List[str]] = None
@@ -699,6 +701,7 @@ def _build_user_profile(
         allergies=[str(allergen) for allergen in request.allergies],
         daily_micronutrient_targets=request.micronutrient_goals,
         micronutrient_weekly_min_fraction=request.micronutrient_weekly_min_fraction,
+        max_daily_calories=request.max_daily_calories,
         schedule_days=schedule_days,
         pins=list(persisted_pins or []),
     )

@@ -2,7 +2,6 @@
  {
   "id": "MB-001",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -23,7 +22,6 @@
  {
   "id": "MB-002",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -45,7 +43,6 @@
  {
   "id": "MB-003",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.01,
   "success": true,
   "tc": "TC-1",
@@ -79,7 +76,6 @@
  {
   "id": "MB-004",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.01,
   "success": true,
   "tc": "TC-1",
@@ -120,7 +116,6 @@
  {
   "id": "MB-005",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.01,
   "success": true,
   "tc": "TC-1",
@@ -151,7 +146,6 @@
  {
   "id": "MB-006",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -172,7 +166,6 @@
  {
   "id": "MB-007",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.01,
   "success": true,
   "tc": "TC-1",
@@ -200,7 +193,6 @@
  {
   "id": "MB-008",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -222,7 +214,6 @@
  {
   "id": "MB-009",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -243,7 +234,6 @@
  {
   "id": "MB-010",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-1",
@@ -269,7 +259,6 @@
  {
   "id": "MB-011",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.01,
   "success": true,
   "tc": "TC-4",
@@ -291,7 +280,6 @@
  {
   "id": "MB-012",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -312,7 +300,6 @@
  {
   "id": "MB-013",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -336,7 +323,6 @@
  {
   "id": "MB-014",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -357,7 +343,6 @@
  {
   "id": "MB-015",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -379,7 +364,6 @@
  {
   "id": "MB-016",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -402,7 +386,6 @@
  {
   "id": "MB-017",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.01,
   "success": true,
   "tc": "TC-1",
@@ -442,7 +425,6 @@
  {
   "id": "MB-018",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -463,7 +445,6 @@
  {
   "id": "MB-019",
   "active_batches": 0,
-  "needs_ceiling": true,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -484,7 +465,6 @@
  {
   "id": "MB-020",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.02,
   "success": true,
   "tc": "TC-1",
@@ -535,7 +515,6 @@
  {
   "id": "MB-021",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.01,
   "success": true,
   "tc": "TC-1",
@@ -566,7 +545,6 @@
  {
   "id": "MB-022",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.02,
   "success": true,
   "tc": "TC-1",
@@ -600,7 +578,6 @@
  {
   "id": "MB-023",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-1",
@@ -626,7 +603,6 @@
  {
   "id": "MB-024",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-3",
@@ -645,7 +621,6 @@
  {
   "id": "MB-025",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -666,7 +641,6 @@
  {
   "id": "MB-026",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -687,8 +661,7 @@
  {
   "id": "MB-027",
   "active_batches": 0,
-  "needs_ceiling": false,
-  "secs": 1.23,
+  "secs": 1.26,
   "success": false,
   "tc": "TC-2",
   "code": "FM-1",
@@ -716,7 +689,6 @@
  {
   "id": "MB-028",
   "active_batches": 1,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-1",
@@ -747,7 +719,6 @@
  {
   "id": "MB-029",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.01,
   "success": true,
   "tc": "TC-1",
@@ -781,7 +752,6 @@
  {
   "id": "MB-030",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -805,7 +775,6 @@
  {
   "id": "MB-031",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -826,7 +795,6 @@
  {
   "id": "MB-032",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -848,7 +816,6 @@
  {
   "id": "MB-033",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -870,7 +837,6 @@
  {
   "id": "MB-034",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -891,7 +857,6 @@
  {
   "id": "MB-035",
   "active_batches": 0,
-  "needs_ceiling": true,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -912,7 +877,6 @@
  {
   "id": "MB-036",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -933,7 +897,6 @@
  {
   "id": "MB-037",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -954,7 +917,6 @@
  {
   "id": "MB-038",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.01,
   "success": true,
   "tc": "TC-1",
@@ -990,7 +952,6 @@
  {
   "id": "MB-039",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.01,
   "success": true,
   "tc": "TC-1",
@@ -1041,7 +1002,6 @@
  {
   "id": "MB-040",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.01,
   "success": true,
   "tc": "TC-1",
@@ -1072,7 +1032,6 @@
  {
   "id": "MB-041",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.01,
   "success": true,
   "tc": "TC-1",
@@ -1098,7 +1057,6 @@
  {
   "id": "MB-042",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.01,
   "success": true,
   "tc": "TC-1",
@@ -1129,7 +1087,6 @@
  {
   "id": "MB-043",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.03,
   "success": true,
   "tc": "TC-4",
@@ -1151,7 +1108,6 @@
  {
   "id": "MB-044",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -1176,7 +1132,6 @@
  {
   "id": "MB-045",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -1199,7 +1154,6 @@
  {
   "id": "MB-046",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.01,
   "success": false,
   "tc": "TC-2",
@@ -1224,8 +1178,7 @@
  {
   "id": "MB-047",
   "active_batches": 0,
-  "needs_ceiling": false,
-  "secs": 0.01,
+  "secs": 0.0,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -1248,7 +1201,6 @@
  {
   "id": "MB-048",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -1269,7 +1221,6 @@
  {
   "id": "MB-049",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.01,
   "success": true,
   "tc": "TC-1",
@@ -1310,7 +1261,6 @@
  {
   "id": "MB-050",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -1334,7 +1284,6 @@
  {
   "id": "MB-051",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -1353,7 +1302,6 @@
  {
   "id": "MB-052",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -1378,7 +1326,6 @@
  {
   "id": "MB-053",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -1397,7 +1344,6 @@
  {
   "id": "MB-054",
   "active_batches": 0,
-  "needs_ceiling": true,
   "secs": 0.19,
   "success": false,
   "tc": "TC-2",
@@ -1422,7 +1368,6 @@
  {
   "id": "MB-055",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -1446,7 +1391,6 @@
  {
   "id": "MB-056",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -1470,7 +1414,6 @@
  {
   "id": "MB-057",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -1495,7 +1438,6 @@
  {
   "id": "MB-058",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -1514,7 +1456,6 @@
  {
   "id": "MB-059",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -1535,7 +1476,6 @@
  {
   "id": "MB-060",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -1559,7 +1499,6 @@
  {
   "id": "MB-061",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -1578,7 +1517,6 @@
  {
   "id": "MB-062",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -1604,7 +1542,6 @@
  {
   "id": "MB-063",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.07,
   "success": true,
   "tc": "TC-4",
@@ -1630,7 +1567,6 @@
  {
   "id": "MB-064",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -1649,8 +1585,7 @@
  {
   "id": "MB-065",
   "active_batches": 0,
-  "needs_ceiling": false,
-  "secs": 3.09,
+  "secs": 3.14,
   "success": false,
   "tc": "TC-2",
   "code": "FM-4",
@@ -1679,7 +1614,6 @@
  {
   "id": "MB-066",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-1",
@@ -1710,8 +1644,7 @@
  {
   "id": "MB-067",
   "active_batches": 0,
-  "needs_ceiling": false,
-  "secs": 10.89,
+  "secs": 11.05,
   "success": false,
   "tc": "TC-3",
   "code": "FM-5",
@@ -1741,8 +1674,7 @@
  {
   "id": "MB-068",
   "active_batches": 0,
-  "needs_ceiling": false,
-  "secs": 11.12,
+  "secs": 11.3,
   "success": false,
   "tc": "TC-3",
   "code": "FM-5",
@@ -1777,7 +1709,6 @@
  {
   "id": "MB-069",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.07,
   "success": true,
   "tc": "TC-4",
@@ -1799,7 +1730,6 @@
  {
   "id": "MB-070",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -1820,8 +1750,7 @@
  {
   "id": "MB-071",
   "active_batches": 0,
-  "needs_ceiling": false,
-  "secs": 7.21,
+  "secs": 7.53,
   "success": false,
   "tc": "TC-3",
   "code": "FM-5",
@@ -1851,7 +1780,6 @@
  {
   "id": "MB-072",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.01,
   "success": true,
   "tc": "TC-1",
@@ -1891,7 +1819,6 @@
  {
   "id": "MB-073",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.01,
   "success": true,
   "tc": "TC-4",
@@ -1913,7 +1840,6 @@
  {
   "id": "MB-074",
   "active_batches": 0,
-  "needs_ceiling": true,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -1934,7 +1860,6 @@
  {
   "id": "MB-075",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -1956,7 +1881,6 @@
  {
   "id": "MB-076",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.01,
   "success": true,
   "tc": "TC-1",
@@ -1982,7 +1906,6 @@
  {
   "id": "MB-077",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -2003,7 +1926,6 @@
  {
   "id": "MB-078",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -2028,7 +1950,6 @@
  {
   "id": "MB-079",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -2053,7 +1974,6 @@
  {
   "id": "MB-080",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -2080,7 +2000,6 @@
  {
   "id": "MB-081",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -2099,7 +2018,6 @@
  {
   "id": "MB-082",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -2122,7 +2040,6 @@
  {
   "id": "MB-083",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -2141,7 +2058,6 @@
  {
   "id": "MB-084",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -2160,7 +2076,6 @@
  {
   "id": "MB-085",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -2181,7 +2096,6 @@
  {
   "id": "MB-086",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -2200,7 +2114,6 @@
  {
   "id": "MB-087",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.02,
   "success": false,
   "tc": "TC-2",
@@ -2225,7 +2138,6 @@
  {
   "id": "MB-088",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -2246,7 +2158,6 @@
  {
   "id": "MB-089",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -2267,7 +2178,6 @@
  {
   "id": "MB-090",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-3",
@@ -2286,7 +2196,6 @@
  {
   "id": "MB-091",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-3",
@@ -2305,8 +2214,7 @@
  {
   "id": "MB-092",
   "active_batches": 0,
-  "needs_ceiling": false,
-  "secs": 0.0,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -2336,7 +2244,6 @@
  {
   "id": "MB-093",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-3",
@@ -2355,7 +2262,6 @@
  {
   "id": "MB-094",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-3",
@@ -2374,7 +2280,6 @@
  {
   "id": "MB-095",
   "active_batches": 0,
-  "needs_ceiling": true,
   "secs": 0.0,
   "success": false,
   "tc": "TC-3",
@@ -2393,7 +2298,6 @@
  {
   "id": "MB-096",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-3",
@@ -2412,7 +2316,6 @@
  {
   "id": "MB-097",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-3",
@@ -2431,7 +2334,6 @@
  {
   "id": "MB-098",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-3",
@@ -2457,7 +2359,6 @@
  {
   "id": "MB-099",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -2478,7 +2379,6 @@
  {
   "id": "MB-100",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -2499,7 +2399,6 @@
  {
   "id": "MB-101",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -2520,7 +2419,6 @@
  {
   "id": "MB-102",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.01,
   "success": true,
   "tc": "TC-1",
@@ -2561,7 +2459,6 @@
  {
   "id": "MB-103",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -2580,7 +2477,6 @@
  {
   "id": "MB-104",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -2601,7 +2497,6 @@
  {
   "id": "MB-105",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -2620,7 +2515,6 @@
  {
   "id": "MB-106",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -2639,7 +2533,6 @@
  {
   "id": "MB-107",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -2664,7 +2557,6 @@
  {
   "id": "MB-109",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -2685,7 +2577,6 @@
  {
   "id": "MB-110",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -2706,8 +2597,7 @@
  {
   "id": "MB-111",
   "active_batches": 0,
-  "needs_ceiling": false,
-  "secs": 0.03,
+  "secs": 0.04,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -2757,8 +2647,7 @@
  {
   "id": "MB-112",
   "active_batches": 0,
-  "needs_ceiling": false,
-  "secs": 0.12,
+  "secs": 0.13,
   "success": false,
   "tc": "TC-2",
   "code": "FM-1",
@@ -2782,7 +2671,6 @@
  {
   "id": "MB-113",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -2802,7 +2690,6 @@
  {
   "id": "MB-114",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -2821,7 +2708,6 @@
  {
   "id": "MB-115",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -2842,7 +2728,6 @@
  {
   "id": "MB-116",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.01,
   "success": true,
   "tc": "TC-1",
@@ -2870,7 +2755,6 @@
  {
   "id": "MB-117",
   "active_batches": 1,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-3",
@@ -2889,7 +2773,6 @@
  {
   "id": "MB-118",
   "active_batches": 1,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-3",
@@ -2908,7 +2791,6 @@
  {
   "id": "MB-119",
   "active_batches": 1,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-3",
@@ -2927,7 +2809,6 @@
  {
   "id": "MB-120",
   "active_batches": 1,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-1",
@@ -2953,7 +2834,6 @@
  {
   "id": "MB-121",
   "active_batches": 2,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-3",
@@ -2984,7 +2864,6 @@
  {
   "id": "MB-124",
   "active_batches": 1,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-3",
@@ -3003,8 +2882,7 @@
  {
   "id": "MB-125",
   "active_batches": 1,
-  "needs_ceiling": false,
-  "secs": 0.0,
+  "secs": 0.02,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3029,8 +2907,7 @@
  {
   "id": "MB-126",
   "active_batches": 1,
-  "needs_ceiling": false,
-  "secs": 0.0,
+  "secs": 0.03,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3060,7 +2937,6 @@
  {
   "id": "MB-127",
   "active_batches": 1,
-  "needs_ceiling": false,
   "secs": 0.01,
   "success": true,
   "tc": "TC-1",
@@ -3101,7 +2977,6 @@
  {
   "id": "MB-128",
   "active_batches": 2,
-  "needs_ceiling": false,
   "secs": 0.01,
   "success": true,
   "tc": "TC-1",
@@ -3137,7 +3012,6 @@
  {
   "id": "MB-129",
   "active_batches": 1,
-  "needs_ceiling": false,
   "secs": 0.01,
   "success": true,
   "tc": "TC-1",
@@ -3168,7 +3042,6 @@
  {
   "id": "MB-130",
   "active_batches": 1,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-3",
@@ -3187,8 +3060,7 @@
  {
   "id": "MB-131",
   "active_batches": 0,
-  "needs_ceiling": false,
-  "secs": 0.02,
+  "secs": 0.03,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3238,7 +3110,6 @@
  {
   "id": "MB-132",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-1",
@@ -3279,7 +3150,6 @@
  {
   "id": "MB-133",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -3305,8 +3175,7 @@
  {
   "id": "MB-134",
   "active_batches": 0,
-  "needs_ceiling": false,
-  "secs": 0.02,
+  "secs": 0.03,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3356,7 +3225,6 @@
  {
   "id": "MB-135",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -3375,7 +3243,6 @@
  {
   "id": "MB-136",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.02,
   "success": true,
   "tc": "TC-1",
@@ -3419,7 +3286,6 @@
  {
   "id": "MB-137",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-3",
@@ -3438,8 +3304,7 @@
  {
   "id": "MB-138",
   "active_batches": 0,
-  "needs_ceiling": false,
-  "secs": 0.5,
+  "secs": 0.88,
   "success": false,
   "tc": "TC-2",
   "code": "FM-2",
@@ -3464,7 +3329,6 @@
  {
   "id": "MB-139",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-1",
@@ -3490,7 +3354,6 @@
  {
   "id": "MB-140",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.01,
   "success": true,
   "tc": "TC-1",
@@ -3531,7 +3394,6 @@
  {
   "id": "MB-141",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.02,
   "success": true,
   "tc": "TC-1",
@@ -3582,7 +3444,6 @@
  {
   "id": "MB-142",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.02,
   "success": true,
   "tc": "TC-1",
@@ -3633,7 +3494,6 @@
  {
   "id": "MB-143",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.01,
   "success": true,
   "tc": "TC-4",
@@ -3655,7 +3515,6 @@
  {
   "id": "MB-144",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -3676,7 +3535,6 @@
  {
   "id": "MB-145",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -3697,7 +3555,6 @@
  {
   "id": "MB-146",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -3718,7 +3575,6 @@
  {
   "id": "MB-147",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -3743,7 +3599,6 @@
  {
   "id": "MB-148",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-2",
@@ -3768,7 +3623,6 @@
  {
   "id": "MB-149",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.01,
   "success": true,
   "tc": "TC-1",
@@ -3799,7 +3653,6 @@
  {
   "id": "MB-150",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": true,
   "tc": "TC-4",
@@ -3820,7 +3673,6 @@
  {
   "id": "MB-151",
   "active_batches": 0,
-  "needs_ceiling": false,
   "secs": 0.0,
   "success": false,
   "tc": "TC-3",

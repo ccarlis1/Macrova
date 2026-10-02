@@ -191,6 +191,20 @@ def test_openapi_plan_request_has_recipe_ids():
     assert "recipe_ids" in props
 
 
+def test_openapi_plan_request_has_max_daily_calories():
+    schema = app.openapi()
+    body = schema["paths"]["/api/v1/plan"]["post"]["requestBody"]["content"][
+        "application/json"
+    ]["schema"]
+    if "$ref" in body:
+        ref_name = body["$ref"].split("/")[-1]
+        plan_schema = schema["components"]["schemas"][ref_name]
+    else:
+        plan_schema = body
+    props = plan_schema.get("properties", {})
+    assert "max_daily_calories" in props
+
+
 def test_openapi_plan_response_includes_failure_codes():
     schema = app.openapi()
     components = schema["components"]["schemas"]

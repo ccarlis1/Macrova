@@ -257,7 +257,19 @@ class UserProfile {
 
   /// Midpoint of [fatGMin]–[fatGMax] (e.g. for single-value macro displays).
   double get fatG => (fatGMin + fatGMax) / 2;
-  final bool calorieDeficitMode;
+
+  /// Hard daily calorie ceiling (HC-5). When set, the planner never exceeds this.
+  final int? maxDailyCalories;
+
+  /// Set only by [fromJson] when an old SharedPreferences profile had
+  /// `calorie_deficit_mode: true` with no `max_daily_calories`. Keeps the
+  /// profile-screen switch on until the user enters a ceiling or turns it off.
+  final bool legacyDeficitModePending;
+
+  /// True when a ceiling is set, or when a legacy profile is still pending a number.
+  bool get calorieDeficitMode =>
+      maxDailyCalories != null || legacyDeficitModePending;
+
   final String demographicGroup;
   final List<String> allergies;
   final MicronutrientGoals micronutrientGoals;
@@ -277,7 +289,8 @@ class UserProfile {
     this.proteinPct = 30,
     this.carbsPct = 40,
     this.fatPct = 30,
-    this.calorieDeficitMode = false,
+    this.maxDailyCalories,
+    this.legacyDeficitModePending = false,
     this.demographicGroup = '',
     this.allergies = const [],
     this.micronutrientGoals = const MicronutrientGoals(),
@@ -296,7 +309,8 @@ class UserProfile {
     double? proteinPct,
     double? carbsPct,
     double? fatPct,
-    bool? calorieDeficitMode,
+    int? maxDailyCalories,
+    bool clearMaxDailyCalories = false,
     String? demographicGroup,
     List<String>? allergies,
     MicronutrientGoals? micronutrientGoals,
@@ -305,6 +319,18 @@ class UserProfile {
     String? llmApiKey,
     String? llmProvider,
   }) {
+    final int? nextMax;
+    final bool nextPending;
+    if (clearMaxDailyCalories) {
+      nextMax = null;
+      nextPending = false;
+    } else if (maxDailyCalories != null) {
+      nextMax = maxDailyCalories;
+      nextPending = false;
+    } else {
+      nextMax = this.maxDailyCalories;
+      nextPending = legacyDeficitModePending;
+    }
     return UserProfile(
       calories: calories ?? this.calories,
       proteinG: proteinG ?? this.proteinG,
@@ -314,7 +340,8 @@ class UserProfile {
       proteinPct: proteinPct ?? this.proteinPct,
       carbsPct: carbsPct ?? this.carbsPct,
       fatPct: fatPct ?? this.fatPct,
-      calorieDeficitMode: calorieDeficitMode ?? this.calorieDeficitMode,
+      maxDailyCalories: nextMax,
+      legacyDeficitModePending: nextPending,
       demographicGroup: demographicGroup ?? this.demographicGroup,
       allergies: allergies ?? this.allergies,
       micronutrientGoals: micronutrientGoals ?? this.micronutrientGoals,
@@ -349,6 +376,7 @@ class UserProfile {
         'protein_pct': proteinPct,
         'carbs_pct': carbsPct,
         'fat_pct': fatPct,
+        'max_daily_calories': maxDailyCalories,
         'calorie_deficit_mode': calorieDeficitMode,
         'demographic_group': demographicGroup,
         'allergies': allergies,
@@ -380,6 +408,8 @@ class UserProfile {
       fatGMin = fatGMax;
       fatGMax = t;
     }
+    final maxDaily = (json['max_daily_calories'] as num?)?.toInt();
+    final legacyBool = json['calorie_deficit_mode'] as bool? ?? false;
     return UserProfile(
       calories: (json['calories'] as num?)?.toDouble() ?? 2000,
       proteinG: (json['protein_g'] as num?)?.toDouble() ?? 150,
@@ -389,7 +419,8 @@ class UserProfile {
       proteinPct: (json['protein_pct'] as num?)?.toDouble() ?? 30,
       carbsPct: (json['carbs_pct'] as num?)?.toDouble() ?? 40,
       fatPct: (json['fat_pct'] as num?)?.toDouble() ?? 30,
-      calorieDeficitMode: json['calorie_deficit_mode'] as bool? ?? false,
+      maxDailyCalories: maxDaily,
+      legacyDeficitModePending: legacyBool && maxDaily == null,
       demographicGroup: json['demographic_group'] as String? ?? '',
       allergies: List<String>.from(json['allergies'] ?? const []),
       micronutrientGoals: json['micronutrient_goals'] != null
@@ -451,8 +482,7 @@ class UserProfile {
       carbsG = 0;
     }
 
-    final maxDaily = ng['max_daily_calories'];
-    final calorieDeficitMode = maxDaily != null;
+    final maxDailyCalories = (ng['max_daily_calories'] as num?)?.toInt();
 
     final tauRaw = ng['micronutrient_weekly_min_fraction'];
     final tau = tauRaw is num
@@ -497,7 +527,7 @@ class UserProfile {
       proteinPct: proteinPct,
       carbsPct: carbsPct,
       fatPct: fatPct,
-      calorieDeficitMode: calorieDeficitMode,
+      maxDailyCalories: maxDailyCalories,
       demographicGroup: demographic,
       allergies: allergies,
       micronutrientGoals: microGoals,

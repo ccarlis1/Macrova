@@ -85,7 +85,7 @@ def main():
                          got=got, status=status, viol=viol, tc=r.get("tc"), incomplete=r.get("incomplete"),
                          report_codes=r.get("report_codes"), report_first=r.get("report_first"), detail=r.get("detail"),
                          stage_exp=e["failure_stage"], oracle={k: v for k, v in (e.get("oracle") or {}).items() if k != "witness_plan"},
-                         spec_notes=sc.get("spec_notes"), needs_ceiling=r.get("needs_ceiling"), n_days=len(sc["schedule_days"]),
+                         spec_notes=sc.get("spec_notes"), n_days=len(sc["schedule_days"]),
                          micro=bool(sc["profile"].get("micronutrient_targets")), pins=len(sc.get("pins") or []),
                          batches=len(sc.get("meal_prep_batches") or []), safety=sc.get("safety_expectation")))
     json.dump(rows, open(SP / "compare.json", "w"), indent=1)

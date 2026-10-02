@@ -196,6 +196,8 @@ class PlanRequest {
   final String ingredientSource;
   final Map<String, double>? micronutrientGoals;
   final double micronutrientWeeklyMinFraction;
+  /// HC-5 hard daily calorie ceiling. Omitted from JSON when null.
+  final int? maxDailyCalories;
   final String? planningMode;
   final List<String>? recipeIds;
   // Canonical pool-level tag filtering fields (backed by recipe_tags.json).
@@ -219,6 +221,7 @@ class PlanRequest {
     this.ingredientSource = 'local',
     this.micronutrientGoals,
     this.micronutrientWeeklyMinFraction = 1.0,
+    this.maxDailyCalories,
     this.planningMode,
     this.recipeIds,
     this.cuisine,
@@ -257,6 +260,7 @@ class PlanRequest {
       micronutrientWeeklyMinFraction:
           (json['micronutrient_weekly_min_fraction'] as num?)?.toDouble() ??
               1.0,
+      maxDailyCalories: (json['max_daily_calories'] as num?)?.toInt(),
       planningMode: json['planning_mode'] as String?,
       recipeIds: (json['recipe_ids'] as List<dynamic>?)
           ?.map((e) => e as String)
@@ -297,6 +301,10 @@ class PlanRequest {
     final micros = micronutrientGoals;
     if (micros != null && micros.isNotEmpty) {
       map['micronutrient_goals'] = micros;
+    }
+    final maxCals = maxDailyCalories;
+    if (maxCals != null) {
+      map['max_daily_calories'] = maxCals;
     }
     if (planningMode != null && planningMode!.isNotEmpty) {
       map['planning_mode'] = planningMode;

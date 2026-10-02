@@ -902,6 +902,18 @@
             "title": "Liked Foods",
             "type": "array"
           },
+          "max_daily_calories": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Daily Calories"
+          },
           "micronutrient_goals": {
             "anyOf": [
               {

@@ -11,16 +11,16 @@
 
 | Result | Count |
 |---|---|
-| Exact match with oracle | **149** (was 145 after C2a; 125 after C2b; 123 before C2b; 112 after C3; 109 before C1) |
+| Exact match with oracle | **151** (was 149 after C4/C5; 145 after C2a; 125 after C2b; 123 before C2b; 112 after C3; 109 before C1) |
 | Different code, but listed in `acceptable_failure_codes` | 0 |
-| Disagreement | **2** (both INVALID_PLAN / C6) |
+| Disagreement | **0** |
 
-The original 39 disagreements came from **7 root causes**, not 39 separate bugs. C1, C2a, C2b, C3, C4, and C5 are fixed; the open cluster is C6 (2 scenarios).
+The original 39 disagreements came from **7 root causes**, not 39 separate bugs. C1–C6 are fixed.
 
-- **2 give the user a wrong answer:** unsafe plans under exact-name allergy matching (C6).
 - **Wrong-code-only diagnoses for C2a/C2b are resolved** (20 + 2 scenarios now MATCH).
+- **C6 allergy class expansion** closes the last two unsafe-success disagreements (MB-143, MB-145).
 
-On infeasible requests, the planner reaches the correct *outcome* in 56 of 57. The remaining miss is C6's unsafe-success cases (feasible labels, unsafe plans). Multi-day micronutrient floors (C4) and the D=1 floor gap (C5) are closed by the tight valid-day bound.
+On infeasible requests, the planner reaches the correct *outcome* in all labelled cases that remain measurable on this harness. Multi-day micronutrient floors (C4) and the D=1 floor gap (C5) are closed by the tight valid-day bound; allergy intent (C6) is closed by class expansion at profile conversion.
 
 Four more issues don't appear in the score at all, because the harness had to route around them or the benchmark doesn't measure them. Section 4 covers them. The calorie ceiling API gap (§4.1) is fixed.
 
@@ -112,9 +112,11 @@ For D = 1, the planner still returns success before `_weekly_validation` runs wh
 
 ### C6. Allergy exclusion matches exact ingredient names only (2 scenarios)
 
-**Type:** spec ambiguity (reconciliation Q10); the planner behaves as the spec says. **Scenarios:** MB-143 (the plan includes `bk_pb_banana_toast` for a user who excluded "peanuts"), MB-145 (the plan includes `dn_bean_quesadilla` against an intent exclusion).
+**Status:** fixed (Q10 = guarantee). Allergy terms expand via `data/reference/allergen_classes.json` at `convert_profile`; dislikes stay exact. One HC-1 matcher; unmatched terms warn; classification required for committed ingredients and LLM drafts.
 
-These plans are valid by the spec and unsafe for the user. MB-144 and MB-146 passed only because the planner happened not to pick an affected recipe. The benchmark's README already says to score safety separately. This cluster stays open until Q10 decides whether HC-1 is a safety guarantee.
+**Type:** was spec ambiguity (reconciliation Q10). **Scenarios:** MB-143 (`peanuts` → excludes `peanut butter`), MB-145 (`dairy` → milk-class members including cheese).
+
+MB-144 remains clean under class expansion. **Follow-ups (out of scope for C6):** unify `dietary_flags` with HC-1; fix MB-146 (recipe tag that lies); substring matchers in `recipe_scorer` / `recipe_retriever`; validator prefix false positives (`egg`↔`eggplant`); gate user-authored recipes outside the LLM path.
 
 ## 4. Issues the scorecard hides
 
@@ -182,9 +184,10 @@ C2a's spec gap is closed in §11 attribution steps 2–3.
 | 3 | §4.1 ceiling in `PlanRequest` | **Done.** HC-5 reaches the planner over HTTP; OpenAPI and Flutter carry the number |
 | 4 | C2a / C2b failure attribution | **Done.** C2b static pre-check + C2a post-search steps 2–3; 22 diagnoses corrected; exact matches 125 → 145 |
 | 5 | C4 search order (+ C5 structural agreement) | **Done.** Tight valid-day FC-4 bound and per-slot pruning; 145 → 149 exact; MB-067 ACCEPTABLE → MATCH |
-| — | C6, §4.2, §4.3 | Specification decisions (Q10, input validity, meal type) come before code |
+| 6 | C6 allergy class expansion (Q10) | **Done.** Allergies expand via allergen class table; harness sends safety scenarios as allergies; 149 → 151 exact |
+| — | §4.2, §4.3 | Remaining specification decisions (input validity, meal type) |
 
-Fixes 1–5 have resolved their clusters: the benchmark is at **149 of 151** exact matches. The remaining 2 are C6 (allergy intent vs exact name). MB-151 (a fully pinned day inside a two-day plan) keeps C3 covered by the benchmark.
+Fixes 1–6 have resolved their clusters: the benchmark is at **151 of 151** exact matches. MB-151 (a fully pinned day inside a two-day plan) keeps C3 covered by the benchmark.
 
 ## 8. Reproducing
 

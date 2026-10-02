@@ -16,6 +16,7 @@ from src.llm.repository import find_near_duplicate
 from src.llm.schemas import RecipeDraft, ValidationFailure
 from src.llm.types import ValidatedRecipeForPersistence
 from src.llm.usda_contract import assert_usda_capable_provider
+from src.planning.allergens import is_classified
 
 
 VALIDATION_VERSION = "2"  # bumped with the semantic gates (LLM overhaul Stage 4)
@@ -260,6 +261,23 @@ def validate_recipe_draft(
                     ),
                 )
             resolved_ids[ing.name] = prov.get("fdc_id")
+
+    # 4b) Allergen-table coverage: every resolved measurable ingredient must be classified.
+    for ing_idx, ing in enumerate(validated_ingredients):
+        if ing.is_to_taste:
+            continue
+        if not is_classified(ing.name):
+            return (
+                False,
+                _validation_failure(
+                    error_code="UNCLASSIFIED_INGREDIENT",
+                    message=(
+                        f"Ingredient {ing.name!r} is not classified in the allergen table; "
+                        "refuse the draft until it is added as a class member or no_major_allergen."
+                    ),
+                    field_errors=[f"ingredient_index={ing_idx}", f"ingredient={ing.name}"],
+                ),
+            )
 
     # 5) Nutrition recomputation (authoritative: provider data only) + plausibility.
     calculator = NutritionCalculator(provider)

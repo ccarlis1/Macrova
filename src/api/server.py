@@ -476,6 +476,38 @@ def _merge_filter_warnings(
     out["warnings"] = existing
 
 
+def _merge_exclusion_warnings(
+    out: Dict[str, Any],
+    user_profile: UserProfile,
+    recipe_pool: List[Any],
+) -> None:
+    """Surface unmatched exclusion terms and unclassified pool ingredients."""
+    from src.planning.allergens import exclusion_warning_messages
+
+    pool_names: List[str] = []
+    for recipe in recipe_pool:
+        for ing in getattr(recipe, "ingredients", []) or []:
+            name = getattr(ing, "name", None)
+            if name:
+                pool_names.append(str(name))
+    messages = exclusion_warning_messages(
+        user_profile.allergies,
+        user_profile.disliked_foods,
+        pool_names,
+    )
+    if not messages:
+        return
+    existing = out.get("warnings")
+    if not isinstance(existing, dict):
+        existing = {}
+    prior = list(existing.get("exclusions", []))
+    for msg in messages:
+        if msg not in prior:
+            prior.append(msg)
+    existing["exclusions"] = prior
+    out["warnings"] = existing
+
+
 def _attach_canonical_recipe_tags(
     recipe_pool: List[Any],
     canonical_tag_slugs_by_id: Dict[str, set[str]],
@@ -1117,6 +1149,7 @@ async def plan_meals_endpoint(
             deprecated_legacy=plan_request.schedule_days is None and plan_request.schedule is not None,
         )
         _merge_filter_warnings(out, filter_log)
+        _merge_exclusion_warnings(out, user_profile, list(recipe_by_id.values()))
         return out
     except HTTPException:
         raise
@@ -1321,6 +1354,7 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
             meal_metadata_by_slot,
         )
         _merge_filter_warnings(out, filter_log)
+        _merge_exclusion_warnings(out, user_profile, list(recipe_by_id.values()))
         warnings_out = out.get("warnings") if isinstance(out.get("warnings"), dict) else {}
         warnings_out["nl_interpretation"] = nl_interpretation
         out["warnings"] = warnings_out

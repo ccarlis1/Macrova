@@ -147,14 +147,14 @@ Checks run on the outputs:
   - FC-4 undercounts capacity when a later day has more slots (E3). MB-139 targets this.
   - Batch `servings` are not used in nutrition accounting (MB-129).
 - **The unit of nutrition is one serving.** Every recipe is a single serving, so stored nutrition equals one meal and the per-serving vs per-batch question (Q3) cannot confound results.
-- **Excluded ingredients are exact names.** HC-1 matches on exact names, as the spec says. The allergen scenarios (MB-143 to MB-146) are feasible under the spec, but they carry `safety_expectation` and `intent_outcome`. A plan that includes peanut butter for a user who wrote "peanuts" is spec-valid and unsafe, so score the two separately.
+- **Allergy exclusions expand by class; dislikes stay exact.** HC-1 matches on normalized exact names after allergy class expansion (`data/reference/allergen_classes.json`). The allergen scenarios (MB-143 to MB-146) carry `safety_expectation` and `intent_outcome`; the harness sends those scenarios' exclusions as `allergies` so class expansion applies. A plan that includes peanut butter for a user who wrote "peanuts" is no longer accepted when that term is an allergy.
 - **Cache data is partly wrong.** `recipes.json` lists 14 quarantined cache entries under `quarantined_cache_entries`, for example `oats` resolving to oat oil, `eggs` to egg bread, `bell_pepper` to Taco Bell nachos, and `chicken_breast` to a deli roll. There are also several 0-kcal entries. Core recipes avoid these entries, with one exception: `ln_roast_beef_wrap` and `dn_bean_quesadilla` use `tortillas_corn`, which is really a flour tortilla. Neither recipe is tagged gluten-free. Cached vitamin D values are implausible (for example 9,926 IU in the tilapia bowl), so no scenario tracks vitamin D except MB-149, which tests exactly that. The data-quality scenarios deliberately run on the bad entries.
 - **Recipe identity is by ID.** MB-084 and MB-085 use three content-identical recipes with different IDs. A spec-valid plan can serve the same meal three times, so a variety metric should count distinct meal contents, not distinct IDs.
 
 ## Running it against Macrova
 
 1. Build `PlanRequest` from each scenario's `profile`, `schedule_days`, `horizon_days` and `recipe_pool.recipe_ids`. Map `profile.max_daily_calories` to `PlanRequest.max_daily_calories` (HC-5 ceiling).
-2. Put `excluded_ingredients` into `disliked_foods`, and `micronutrient_targets` into `micronutrient_goals`.
+2. Put `excluded_ingredients` into `allergies` when the scenario has `safety_expectation`, otherwise into `disliked_foods`. Map `micronutrient_targets` into `micronutrient_goals`.
 3. Load the recipes from `recipes.json`. Point `NUTRITION_TAG_REPO_PATH` and `recipe_tags_path` at `recipe_tags.json`.
 4. Supply pins and batches through the profile pin and meal-prep repositories. `PlanRequest` has no pin or batch fields.
 5. Score each run on:

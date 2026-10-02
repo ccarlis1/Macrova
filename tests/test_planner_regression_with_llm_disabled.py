@@ -114,6 +114,9 @@ def test_planner_regression_llm_disabled_golden_json(monkeypatch):
                     "schedule_days with MealSlot and WorkoutSlot."
                 ),
             },
+            "exclusions": [
+                "Exclusion term 'mushroom' matched no allergen class and no ingredient in the recipe pool."
+            ],
         },
         "report": {"failures": []},
         "goals": {

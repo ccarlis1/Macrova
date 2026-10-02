@@ -17,7 +17,7 @@ from src.data_layer.models import MicronutrientProfile
 from src.llm.recovery_types import GapSpec, UnrecoverableReason
 from src.planning.micronutrient_policy import tau_from_profile, weekly_minimum_total
 from src.planning.phase0_models import MealSlot, PlanningRecipe, PlanningUserProfile
-from src.planning.phase1_state import _recipe_contains_excluded_ingredient
+from src.planning.phase2_constraints import _recipe_contains_excluded_ingredient
 from src.planning.phase3_feasibility import precompute_max_daily_achievable
 from src.planning.phase10_reporting import MealPlanResult
 from src.planning.slot_attributes import cooking_time_max

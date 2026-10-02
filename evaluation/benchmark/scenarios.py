@@ -1125,7 +1125,7 @@ S("Peanut allergy typed as 'peanuts'",
   cats=["preferences", "safety", "data-quality"], intended="feasible",
   profile=P(2200, 130, 55, 85, excluded=["peanuts"], intent_excluded=["peanuts", "peanut butter"]),
   days=[day(std4())], pool_ids=CORE, pool_note=FULL,
-  spec_notes=["HC-1 is exact normalized-name matching; 'peanuts' does not match 'peanut butter' (reconciliation Q10)."],
+  spec_notes=["Q10 answered (C6): allergy terms expand by allergen class, so 'peanuts' excludes 'peanut butter'. Dislikes stay exact-name only."],
   safety={"must_not_contain_cache_keys": ["peanut_butter"], "severity": "allergen"})
 
 S("Egg allergy typed as 'egg'",

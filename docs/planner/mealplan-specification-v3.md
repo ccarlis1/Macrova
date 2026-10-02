@@ -72,7 +72,7 @@ The algorithm is **deterministic**: identical inputs shall produce identical out
 
 | `schedule` | see 2.1.1 | Ordered meal slot definitions per day |
 
-| `excluded_ingredients` | List[str] | Ingredients that shall never appear in any assigned recipe. This single list encompasses both allergens and strongly disliked foods — the algorithm treats them identically as hard exclusions (see Section 4, HC-1). |
+| `excluded_ingredients` | List[str] | Ingredients that shall never appear in any assigned recipe (see Section 4, HC-1). At the planner boundary this list is built from **allergies** (expanded by allergen class) plus **disliked_foods** (exact names). After expansion, HC-1 matching is exact normalized name match against recipe ingredient names. |
 
 | `liked_foods` | List[str] | Ingredients the user prefers. Used as a tie-breaking signal (see Section 7.1), not as a scoring component. |
 
@@ -98,7 +98,7 @@ The algorithm is **deterministic**: identical inputs shall produce identical out
 
   
 
-**Design note — `excluded_ingredients`:** This field replaces the previously separate `allergies` and `disliked_foods` lists. The rationale is that both categories produce identical algorithmic behavior (hard exclusion from candidate generation). The user-facing label should communicate that this list is for ingredients the user cannot or will not eat, for any reason.
+**Design note — `excluded_ingredients`:** The API and user profile keep separate `allergies` and `disliked_foods` lists. At profile conversion, allergies are expanded via `data/reference/allergen_classes.json` (class terms → member ingredient names); disliked foods are appended unchanged. Both become hard exclusions in `excluded_ingredients`, but only allergies receive class expansion (reconciliation Q10 / C6). Unmatched terms and unclassified pool ingredients surface as warnings; they do not reject the request.
 
   
 
@@ -466,13 +466,17 @@ A hard constraint violation renders the assignment (or plan) **invalid**. The al
 
 ### HC-1: Ingredient Exclusion
 
-  
 
-No recipe assigned to any slot shall contain an ingredient matching any entry in `U.excluded_ingredients`. Matching is performed on normalized ingredient names.
 
-  
+No recipe assigned to any slot shall contain an ingredient matching any entry in `U.excluded_ingredients`. Matching is performed on normalized ingredient names (case-insensitive, trimmed) **after** allergy class expansion at the profile boundary.
 
-This constraint encompasses both allergens and strongly disliked foods. The algorithm makes no distinction between reasons for exclusion — all entries in `excluded_ingredients` are treated as absolute prohibitions.
+
+
+**Safety guarantee (allergies):** HC-1 is a safety guarantee for allergies. Allergy terms are expanded once into the allergen class's member ingredient names (plus the term itself) using `data/reference/allergen_classes.json`. Disliked foods stay exact-name exclusions and are not class-expanded. An ingredient missing from the class table is a coverage hole: committed data and the LLM recipe validator require classification; plan responses warn when allergies are present and the pool contains unclassified ingredients.
+
+
+
+This constraint encompasses both allergens and strongly disliked foods as absolute prohibitions in the expanded `excluded_ingredients` list. Substring matching is not used (e.g. `egg` must not exclude `eggplant`; dislike `butter` must not exclude `peanut butter`).
 
   
 
@@ -1794,6 +1798,8 @@ All open items have been resolved. See Appendix C for the full resolution histor
 | 4 | 3.6 | Exact multiplicative factors for activity-context macro adjustments. | **Preserve the existing implementation's factors as normative.** |
 
 | 5 | 4 (HC-8) | Whether disliked foods are a hard exclusion or soft penalty. | **Merged with allergens into a single `excluded_ingredients` list with hard exclusion semantics. Former HC-8 removed; replaced by new HC-8 (consecutive-day repetition).** |
+
+| 5b | 4 (HC-1) / Q10 | Is HC-1 a safety guarantee or best effort? | **Guarantee for allergies.** Allergy terms expand via `data/reference/allergen_classes.json`; dislikes stay exact. Unmatched terms warn; ingredients must be classified (coverage test + validator gate). |
 
 | 6 | 4 (HC-2) | Whether cross-day recipe repetition should have a frequency limit. | **Yes. HC-8 added: recipes in non-workout slots cannot repeat on consecutive days. Workout-slot recipes are exempt.** |
 

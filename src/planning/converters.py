@@ -14,6 +14,7 @@ from src.data_layer.models import (
     Ingredient,
 )
 from src.models.schedule import DaySchedule as CanonicalDaySchedule
+from src.planning.allergens import expand_allergy_terms
 from src.planning.phase0_models import PlanningRecipe, PlanningUserProfile, MealSlot
 from src.nutrition.calculator import NutritionCalculator
 
@@ -226,15 +227,19 @@ def convert_profile(
 ) -> PlanningUserProfile:
     """Convert UserProfile and planning horizon to PlanningUserProfile.
 
-    Excluded ingredients = allergies + disliked_foods. Schedule is replicated
-    for `days` days. Micronutrient targets from daily_micronutrient_targets
+    Excluded ingredients = allergy terms expanded by allergen class, plus
+    disliked_foods kept exact. Allergies are a safety guarantee (HC-1 / Q10);
+    dislikes are exact-name hard exclusions only. Schedule is replicated for
+    `days` days. Micronutrient targets from daily_micronutrient_targets
     (daily RDI values, pass-through). Deterministic.
 
     When ``user_profile.schedule_days`` is set, per-day meal counts, busyness,
     and workout gaps are taken from the canonical model; otherwise the legacy
     ``schedule`` dict path is used without explicit workout topology.
     """
-    excluded_ingredients = list(user_profile.allergies) + list(user_profile.disliked_foods)
+    excluded_ingredients = expand_allergy_terms(
+        user_profile.allergies
+    ) + list(user_profile.disliked_foods)
 
     workout_after_meal_indices_by_day: Optional[List[List[int]]] = None
     schedule: List[List[MealSlot]]

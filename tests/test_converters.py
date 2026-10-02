@@ -188,9 +188,12 @@ class TestConvertProfile:
     def test_excluded_ingredients_combined(self):
         profile = _user_profile_no_weekly()
         planning = convert_profile(profile, days=1)
-        assert "peanut" in planning.excluded_ingredients
-        assert "mushroom" in planning.excluded_ingredients
-        assert set(planning.excluded_ingredients) == {"peanut", "mushroom"}
+        # Allergy "peanut" expands by class; dislike "mushroom" stays exact.
+        assert set(planning.excluded_ingredients) == {
+            "peanut",
+            "peanut butter",
+            "mushroom",
+        }
 
     def test_without_weekly_targets_empty_micro(self):
         profile = _user_profile_no_weekly()

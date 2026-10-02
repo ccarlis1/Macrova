@@ -357,7 +357,7 @@ def test_plan_from_text_assisted_never_turns_nl_cuisine_into_a_hard_filter(monke
     assert resp.status_code == 200, resp.text
     assert captured["cuisine"] is None and captured["cost_level"] is None
     assert captured["dietary_flags"] == [DietaryFlag.vegan]
-    assert captured_profile["excluded"] == ["peanuts"]
+    assert captured_profile["excluded"] == ["peanut butter", "peanuts"]
     interp = resp.json()["warnings"]["nl_interpretation"]
     assert interp["stated_fields"] == ["days", "calories", "protein", "allergies", "dietary_flags"]
     assert "meals_per_day" in interp["defaulted_fields"] and "fat_range_from_budget" in interp["derived_fields"]

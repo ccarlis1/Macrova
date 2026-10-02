@@ -60,11 +60,18 @@ def data_recipe(r):
 def run(sc):
     p = sc["profile"]
     out = {"id": sc["id"]}
+    excluded = p.get("excluded_ingredients", [])
+    # Safety scenarios (allergies) must expand by class; other exclusions stay dislikes.
+    if sc.get("safety_expectation") is not None:
+        allergy_fields = {"allergies": excluded, "disliked_foods": []}
+    else:
+        allergy_fields = {"allergies": [], "disliked_foods": excluded}
     req = {
         "daily_calories": p["daily_calories"], "daily_protein_g": p["daily_protein_g"],
         "daily_fat_g_min": p["daily_fat_g"]["min"], "daily_fat_g_max": p["daily_fat_g"]["max"],
         "schedule_days": sc["schedule_days"], "days": sc["horizon_days"],
-        "liked_foods": p.get("liked_foods", []), "disliked_foods": p.get("excluded_ingredients", []),
+        "liked_foods": p.get("liked_foods", []),
+        **allergy_fields,
         "micronutrient_goals": p.get("micronutrient_targets") or None,
         "micronutrient_weekly_min_fraction": p.get("micronutrient_weekly_min_fraction", 1.0),
         "max_daily_calories": p.get("max_daily_calories"),

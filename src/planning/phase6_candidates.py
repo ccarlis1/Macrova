@@ -115,6 +115,10 @@ class StaticSlotCheck:
 
     code is None when the slot has at least one recipe that passes HC-1, HC-3,
     and (when present) required tags. Spec §11 attribution step 1.
+
+    eligible_recipe_ids: sorted recipe IDs that pass HC-1, HC-3, and required
+    tags (empty when code is set). Used by post-search day diagnosis (C2a)
+    so it reuses this filter instead of duplicating it.
     """
 
     code: Optional[str]  # None | "FM-1" | "FM-TAG-EMPTY"
@@ -122,6 +126,7 @@ class StaticSlotCheck:
     blocking_constraints: List[str]
     required_tag_slugs: List[str]
     missing_tag_slugs: List[str]
+    eligible_recipe_ids: Tuple[str, ...] = ()
 
 
 def _recipe_decision_tags(recipe: PlanningRecipe) -> Set[str]:
@@ -179,6 +184,7 @@ def check_slot_statically(
             blocking_constraints=blocking,
             required_tag_slugs=required_tag_slugs,
             missing_tag_slugs=[],
+            eligible_recipe_ids=(),
         )
 
     if not required_tag_slugs:
@@ -188,6 +194,7 @@ def check_slot_statically(
             blocking_constraints=[],
             required_tag_slugs=[],
             missing_tag_slugs=[],
+            eligible_recipe_ids=tuple(sorted(r.id for r in base)),
         )
 
     tagged = [r for r in base if _matches_slot_required_tags(r, slot)]
@@ -198,6 +205,7 @@ def check_slot_statically(
             blocking_constraints=[],
             required_tag_slugs=required_tag_slugs,
             missing_tag_slugs=[],
+            eligible_recipe_ids=tuple(sorted(r.id for r in tagged)),
         )
 
     # Tags held by no recipe in base; if every slug appears somewhere but no
@@ -213,6 +221,7 @@ def check_slot_statically(
         blocking_constraints=[],
         required_tag_slugs=required_tag_slugs,
         missing_tag_slugs=missing,
+        eligible_recipe_ids=(),
     )
 
 

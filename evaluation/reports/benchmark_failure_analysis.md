@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-18
 **Snapshot:** branch `140-dollar-sprint`, commit `58e1ed8`, `.venv` Python 3.12. Nothing in `src/`, `data/`, or `config/` was modified.
-**Inputs:** `evaluation/benchmark/` (150 scenarios with oracle labels), `docs/planner/mealplan-specification-v3.md`, `evaluation/reports/reconciliation.md`.
+**Inputs:** `evaluation/benchmark/` (151 scenarios with oracle labels), `docs/planner/mealplan-specification-v3.md`, `evaluation/reports/reconciliation.md`.
 **Method:** ran every scenario through the real planner with `evaluation/harness/run_benchmark.py`, compared the outcome and failure code against the oracle labels, and re-checked every returned plan against the hard constraints with a checker that does not import `src/planning` (`evaluation/harness/compare.py`). Then clustered the disagreements by root cause, confirmed each cause in source, and tested the causes with counterfactual runs and targeted probes.
 
 ---
@@ -11,16 +11,16 @@
 
 | Result | Count |
 |---|---|
-| Exact match with oracle | 123 (was 109 before the C1 fix; 112 after C3) |
+| Exact match with oracle | **145** (was 125 after C2b; 123 before C2b; 112 after C3; 109 before C1) |
 | Different code, but listed in `acceptable_failure_codes` | 1 (MB-067) |
-| Disagreement | **27** (24 MISMATCH, 1 MISMATCH+INVALID, 2 INVALID_PLAN) |
+| Disagreement | **5** (2 MISMATCH, 1 MISMATCH+INVALID, 2 INVALID_PLAN) |
 
-The original 39 disagreements came from **7 root causes**, not 39 separate bugs. C1 is now fixed; the open clusters account for the remaining 27.
+The original 39 disagreements came from **7 root causes**, not 39 separate bugs. C1, C2a, C2b, and C3 are fixed; the open clusters account for the remaining 5.
 
-- **17 give the user a wrong answer:** a success that should be a failure, a failure that should be a success, a plan that breaks a constraint, or an unsafe plan.
-- **22 reach the right outcome with the wrong failure code**, so the fix hint points the user at the wrong problem.
+- **5 give the user a wrong answer:** a success that should be a failure, a failure that should be a success, a plan that breaks a constraint, or an unsafe plan (C4, C5, C6).
+- **Wrong-code-only diagnoses for C2a/C2b are resolved** (20 + 2 scenarios now MATCH).
 
-On infeasible requests, the planner reaches the correct *outcome* in 51 of 57. The six misses come from two causes, C1 and C5. The planner's main weakness is explaining failures, not detecting them.
+On infeasible requests, the planner reaches the correct *outcome* in 51 of 57. The six misses come from C5 (and historically C1). The planner's remaining weakness is search order on multi-day micronutrient floors (C4) and the open spec questions (C5, C6).
 
 Four more issues don't appear in the score at all, because the harness had to route around them or the benchmark doesn't measure them. Section 4 covers them. The most serious is that the calorie ceiling can't reach the planner through the API.
 
@@ -51,17 +51,19 @@ The harness follows the same steps as `/api/v1/plan`: `PlanRequest` validation, 
 
 ### C2a. When the search runs out of options, the failure code comes from the last event, not the cause (20 scenarios)
 
+**Status:** fixed. Post-search attribution (steps 2–3 in `src/planning/failure_attribution.py`) rewrites exhausted FM-1/FM-2 exits: day check → FM-2 or FM-3; across-days → FM-4 or FM-1. All 20 C2a scenarios MATCH.
+
 **Type:** planner defect in how failures are reported, plus a spec gap. **Scenarios:** all 17 scenarios expected to fail with FM-2 (MB-013, 030, 046, 050–057, 060, 064, 083, 084, 087, 138), plus MB-065 (expected FM-4) and MB-147/148 (expected FM-3).
 
-**Cause:** the planner can reach "nothing left to try" in two places, and they report different codes:
-- when a slot's list of candidates has been used up: reported as FM-2 (`phase7_search.py:~858`);
-- when building a slot's candidate list comes back empty because the macro feasibility checks FC-1/FC-2 or the look-ahead FC-5 removed everything: reported as **FM-1 "Empty candidate set or FC-5"** (`phase7_search.py:776-790`).
+**Cause (historical, fixed):** the planner could reach "nothing left to try" in two places, and they reported different codes:
+- when a slot's list of candidates has been used up: reported as FM-2;
+- when building a slot's candidate list comes back empty because the macro feasibility checks FC-1/FC-2 or the look-ahead FC-5 removed everything: reported as **FM-1 "Empty candidate set or FC-5"**.
 
-On a day where no combination of recipes fits the macro targets, the search almost always ends on the second path. So a macro conflict is reported as a recipe-pool shortage. **The planner never returned FM-2 for a genuinely macro-infeasible day in this benchmark (0 of 17).** The report can even contradict itself: MB-107 is reported as FM-1 with `eligible_recipe_count: 34`.
+On a day where no combination of recipes fits the macro targets, the search almost always ended on the second path. So a macro conflict was reported as a recipe-pool shortage. **The planner never returned FM-2 for a genuinely macro-infeasible day in this benchmark (0 of 17) before the fix.**
 
-**Spec gap:** the spec defines each failure mode's *condition*. FM-1 means there aren't enough recipes that pass the hard constraints (§ FM-1). FM-2 means there are enough recipes but no combination hits the targets (§ FM-2). But its *detection* rules only describe where each mode can fire, not which code to report when an exhaustive search ends. The implementation fills that gap with whatever happened last.
+**Spec gap (closed):** §11 now states the attribution rule for choosing a code when exhaustive search ends (day check → FM-2/FM-3; across-days → FM-4 or FM-1; inconclusive fallback keeps the last-event code).
 
-**Effect:** the outcome is correct in all 20. The diagnosis is wrong in all 20. Users are told to "widen the recipe pool or relax slot constraints" when the real problem is conflicting macro targets, a pinned meal, or a micronutrient floor.
+**Effect (historical):** the outcome was correct in all 20. The diagnosis was wrong in all 20. Users were told to "widen the recipe pool or relax slot constraints" when the real problem was conflicting macro targets, a pinned meal, or a micronutrient floor.
 
 ### C2b. A required-tag failure is hidden by the look-ahead check (2 scenarios)
 
@@ -144,41 +146,40 @@ The oracle doesn't check meal type either, so the benchmark reports these plans 
 
 ### 4.4 The data track is untested
 
-Every result above uses the stored nutrition. Through the real `/api/v1/plan` path, nutrition would be recomputed from `data/ingredients` with the problems listed in `recipes.json → quarantined_cache_entries` (oats resolved to oat oil, and so on). No disagreement in §3 is caused mainly by bad data. MB-083, 084, 138, 147 and 148 are correctly infeasible and only get the wrong code (C2a). The data-quality scenarios measure the planner's reporting, not the ingredient layer.
+Every result above uses the stored nutrition. Through the real `/api/v1/plan` path, nutrition would be recomputed from `data/ingredients` with the problems listed in `recipes.json → quarantined_cache_entries` (oats resolved to oat oil, and so on). No disagreement in §3 is caused mainly by bad data. MB-083, 084, 138, 147 and 148 are correctly infeasible and (before C2a) only got the wrong code. The data-quality scenarios measure the planner's reporting, not the ingredient layer.
 
 ## 5. Classification
 
-| Category | Clusters | Disagreements |
+| Category | Clusters | Open disagreements |
 |---|---|---|
-| Planner algorithm defect | C2a (partly), C2b, C3, C4 | 25 |
-| API/contract issue | C1, §4.1 | 11 (plus 3 hidden) |
-| Specification ambiguity | C5, C6, C2a (the spec gap), §4.3 | 3 (plus the meal-type finding) |
+| Planner algorithm defect | C4 (C2a/C2b/C3 fixed) | 2 |
+| API/contract issue | §4.1 (C1 fixed) | 0 scorecard / 3 hidden |
+| Specification ambiguity | C5, C6, §4.3 | 3 (plus the meal-type finding) |
 | Validation issue | §4.2 | 0 (hidden) |
 | Recipe/data limitation | none as a primary cause (see §4.4) | 0 |
-| Expected infeasibility | 51 of 57 infeasible scenarios fail correctly; the 6 misses are C1 and C5 | — |
+| Expected infeasibility | 56 of 57 infeasible scenarios fail correctly; the remaining miss is C5 | — |
 | Test-design problem | README run instructions (§4.1); no meal-type scoring (§4.3); no fully pinned day inside a multi-day plan (C3) | 0 |
 
-C2a appears in two rows: the code is wrong whatever the spec says, and the spec should also state the rule for choosing a code.
+C2a's spec gap is closed in §11 attribution steps 2–3.
 
 ## 6. Recurring patterns
 
-1. **The failure code comes from the last thing that happened, not the cause (C2a, C2b; 22 scenarios).** The planner is good at deciding that a request is infeasible and bad at saying why. Every failure path through candidate generation collapses into FM-1.
-2. **Silent drops at the edges (C1, C3, C5, §4.1).** A batch, a fully pinned day, a one-day micronutrient floor or a calorie ceiling disappears somewhere between input and search, and the run still reports success with no warning. This is the reconciliation's "strict gate, silent exit" pattern (§2.2), and it goes well beyond Q8.
-3. **Pinned and locked slots take a separate path in the search loop that skips checks (C3).** This compounds with C1: once batches reach the planner again, more slots take that path. The 15 batch scenarios don't include a fully locked day, so fixing C1 alone won't expose C3 in this benchmark. It will in real use.
-4. **Search order against multi-day micronutrient floors (C4).** This is the only cluster that needs a design change rather than a local fix.
+1. **Wrong last-event failure codes (C2a, C2b; fixed).** Post-search attribution and the static slot pre-check now choose the structural cause.
+2. **Silent drops at the edges (C5, §4.1; C1/C3 fixed).** A one-day micronutrient floor or a calorie ceiling can still disappear between input and search.
+3. **Search order against multi-day micronutrient floors (C4).** This is the only open cluster that needs a design change rather than a local fix.
 
 ## 7. Suggested order
 
 | Order | Item | Why this position |
 |---|---|---|
 | 1 | C1 batch status | **Done.** One condition; 11 scenarios, all now match |
-| 2 | C3 fully pinned day validation | A hard constraint goes unchecked and the plan is returned as success |
+| 2 | C3 fully pinned day validation | **Done.** Hard constraint checked; fully pinned days validated |
 | 3 | §4.1 ceiling in `PlanRequest` | HC-5 doesn't work over HTTP; also update the OpenAPI snapshot and the frontend model |
-| 4 | C2a / C2b failure attribution | Corrects 22 diagnoses; needs a one-paragraph spec rule first |
+| 4 | C2a / C2b failure attribution | **Done.** C2b static pre-check + C2a post-search steps 2–3; 22 diagnoses corrected; exact matches 125 → 145 |
 | 5 | C4 search order | A design change; the benchmark gives a clear pass/fail target |
 | — | C5, C6, §4.2, §4.3 | Specification decisions (Q8, Q10, input validity, meal type) come before code |
 
-If fixes 1–4 resolve their clusters, the benchmark should reach 145 of 150 (111 + 11 + 1 + 20 + 2). The remaining 5 are C4 (2 scenarios), C5 (1) and C6 (2), which wait on a design change or spec decisions. Adding a probe P2-style scenario (a fully pinned day inside a multi-day plan) to `scenarios.py` would keep C3 covered by the benchmark.
+Fixes 1–4 have resolved their clusters: the benchmark is at **145 of 151** exact matches (plus 1 ACCEPTABLE). The remaining 5 are C4 (2 scenarios), C5 (1) and C6 (2), which wait on a design change or spec decisions. MB-151 (a fully pinned day inside a two-day plan) keeps C3 covered by the benchmark.
 
 ## 8. Reproducing
 

@@ -51,6 +51,13 @@ _FIX_HINTS: Dict[str, str] = {
 }
 
 
+# FM-1 from attribution step 3: slots have candidates, but HC-8 blocks every day sequence.
+HC8_SEQUENCE_FIX_HINT = (
+    "Too few distinct recipes to avoid repeating a meal on consecutive days. "
+    "Add more recipes, shorten the plan, or relax slot constraints."
+)
+
+
 def fix_hint_for_code(code: str) -> str:
     return _FIX_HINTS.get(code, "Resolve conflicting planner constraints and retry.")
 
@@ -166,7 +173,7 @@ def _fm1_failures_from_report(report: Dict[str, Any]) -> List[Dict[str, Any]]:
         day_index = _as_int_or_none(slot.get("day"))
         slot_index = _as_int_or_none(slot.get("slot_index"))
         details = {
-            "eligible_recipe_count": int(slot.get("eligible_recipe_count", 0)),
+            "eligible_recipe_count": int(slot.get("eligible_recipe_count") or 0),
             "blocking_constraints": list(slot.get("blocking_constraints", []) or []),
         }
         out.append(
@@ -350,21 +357,23 @@ def build_plan_snapshot(
 
 def build_report_fm1(
     day_index: int,
-    slot_index: int,
+    slot_index: Optional[int],
     constraint_detail: str,
-    eligible_recipe_count: int = 0,
+    eligible_recipe_count: Optional[int] = 0,
 ) -> Dict[str, Any]:
-    """FM-1: Unfillable slots. Spec Section 11."""
-    return {
-        "unfillable_slots": [
-            {
-                "day": day_index,
-                "slot_index": slot_index,
-                "eligible_recipe_count": eligible_recipe_count,
-                "blocking_constraints": [constraint_detail] if constraint_detail else [],
-            }
-        ]
+    """FM-1: Unfillable slots. Spec Section 11.
+
+    slot_index / eligible_recipe_count are None for a day-level FM-1 (HC-8
+    blocks the day sequence; no single slot is empty).
+    """
+    entry: Dict[str, Any] = {
+        "day": day_index,
+        "slot_index": slot_index,
+        "blocking_constraints": [constraint_detail] if constraint_detail else [],
     }
+    if eligible_recipe_count is not None:
+        entry["eligible_recipe_count"] = eligible_recipe_count
+    return {"unfillable_slots": [entry]}
 
 
 def build_report_fm_tag_empty(

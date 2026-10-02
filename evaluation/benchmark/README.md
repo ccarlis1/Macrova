@@ -153,7 +153,7 @@ Checks run on the outputs:
 
 ## Running it against Macrova
 
-1. Build `PlanRequest` from each scenario's `profile`, `schedule_days`, `horizon_days` and `recipe_pool.recipe_ids`.
+1. Build `PlanRequest` from each scenario's `profile`, `schedule_days`, `horizon_days` and `recipe_pool.recipe_ids`. Map `profile.max_daily_calories` to `PlanRequest.max_daily_calories` (HC-5 ceiling).
 2. Put `excluded_ingredients` into `disliked_foods`, and `micronutrient_targets` into `micronutrient_goals`.
 3. Load the recipes from `recipes.json`. Point `NUTRITION_TAG_REPO_PATH` and `recipe_tags_path` at `recipe_tags.json`.
 4. Supply pins and batches through the profile pin and meal-prep repositories. `PlanRequest` has no pin or batch fields.

@@ -43,6 +43,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _allergyCtrl = TextEditingController();
 
   bool _calorieDeficitMode = false;
+  final _maxDailyCaloriesCtrl = TextEditingController();
   String _demographicGroup = '';
   List<String> _allergies = [];
   String _llmProvider = 'openai_compatible';
@@ -121,6 +122,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ? prov
         : 'openai_compatible';
     _calorieDeficitMode = profile.calorieDeficitMode;
+    _maxDailyCaloriesCtrl.text = profile.maxDailyCalories?.toString() ?? '';
     _demographicGroup = profile.demographicGroup;
     _allergies = List.from(profile.allergies);
   }
@@ -154,6 +156,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _ingredientApiKeyCtrl.dispose();
     _llmApiKeyCtrl.dispose();
     _allergyCtrl.dispose();
+    _maxDailyCaloriesCtrl.dispose();
     super.dispose();
   }
 
@@ -212,7 +215,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       proteinPct: double.tryParse(_proteinPctCtrl.text.trim()) ?? 30,
       carbsPct: double.tryParse(_carbsPctCtrl.text.trim()) ?? 40,
       fatPct: double.tryParse(_fatPctCtrl.text.trim()) ?? 30,
-      calorieDeficitMode: _calorieDeficitMode,
+      maxDailyCalories: _calorieDeficitMode
+          ? int.tryParse(_maxDailyCaloriesCtrl.text.trim())
+          : null,
       demographicGroup: _demographicGroup,
       allergies: List.from(_allergies),
       micronutrientGoals: MicronutrientGoals.fromStringMap(_microRawFromControllers()),
@@ -286,6 +291,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _requiredNumber(String? value) {
     if (value == null || value.trim().isEmpty) return 'Required';
     if (double.tryParse(value.trim()) == null) return 'Enter a valid number';
+    return null;
+  }
+
+  String? _maxDailyCaloriesValidator(String? value) {
+    if (!_calorieDeficitMode) return null;
+    if (value == null || value.trim().isEmpty) return 'Required';
+    final v = int.tryParse(value.trim());
+    if (v == null) return 'Enter a whole number';
+    if (v <= 0) return 'Must be greater than 0';
     return null;
   }
 
@@ -435,12 +449,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Calorie Deficit Mode'),
                       subtitle: const Text(
-                        'Enable to automatically reduce calorie target',
+                        'Never plan a day above this many calories',
                       ),
                       value: _calorieDeficitMode,
                       onChanged: (v) =>
                           setState(() => _calorieDeficitMode = v),
                     ),
+                    if (_calorieDeficitMode) ...[
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _maxDailyCaloriesCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Max daily calories',
+                          suffixText: 'kcal',
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: _maxDailyCaloriesValidator,
+                      ),
+                    ],
                     const SizedBox(height: 12),
 
                     // Manual macro inputs

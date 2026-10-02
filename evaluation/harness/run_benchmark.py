@@ -8,7 +8,6 @@ Counterfactual switches (environment variables):
     ALL_BATCHES=1   pass every non-orphaned batch to the planner, bypassing
                     list_active() (guard: list_active drops only explicitly
                     consumed or orphaned batches)
-    API_FIDELITY=1  drop max_daily_calories, as /api/v1/plan does today
     LIMIT=<n>       planner attempt_limit (default 50000)
 
 Path mirrors /api/v1/plan (PlanRequest validation -> _build_user_profile ->
@@ -68,6 +67,7 @@ def run(sc):
         "liked_foods": p.get("liked_foods", []), "disliked_foods": p.get("excluded_ingredients", []),
         "micronutrient_goals": p.get("micronutrient_targets") or None,
         "micronutrient_weekly_min_fraction": p.get("micronutrient_weekly_min_fraction", 1.0),
+        "max_daily_calories": p.get("max_daily_calories"),
         "recipe_ids": sc["recipe_pool"]["recipe_ids"], "recipe_tags_path": TAGS,
     }
     try:
@@ -89,9 +89,6 @@ def run(sc):
     pins = [ProfilePin(day_index=x["day_index"], slot_index=x["slot_index"], recipe_id=x["recipe_id"]) for x in sc.get("pins") or []]
     up, _ = S._build_user_profile(preq, persisted_pins=pins)
     up.pins = pins
-    # API path never sets max_daily_calories; record whether scenario needs it, then set it (planner-direct fidelity)
-    out["needs_ceiling"] = p.get("max_daily_calories") is not None
-    up.max_daily_calories = None if os.environ.get("API_FIDELITY") else p.get("max_daily_calories")
     recipes = S._filter_recipes_by_ids([data_recipe(r) for r in LIB], preq.recipe_ids)
     pool = convert_recipes(recipes, StubCalc())
     S._attach_canonical_recipe_tags(pool, load_canonical_recipe_tag_slugs(TAGS), load_hard_eligible_recipe_tag_slugs(TAGS))

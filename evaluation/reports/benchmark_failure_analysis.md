@@ -26,11 +26,10 @@ Four more issues don't appear in the score at all, because the harness had to ro
 
 ## 2. How the harness runs scenarios
 
-The harness follows the same steps as `/api/v1/plan`: `PlanRequest` validation, `_build_user_profile`, `convert_profile`, `_attach_canonical_recipe_tags`, then `plan_meals`. There are three deliberate deviations:
+The harness follows the same steps as `/api/v1/plan`: `PlanRequest` validation, `_build_user_profile`, `convert_profile`, `_attach_canonical_recipe_tags`, then `plan_meals`. There are two deliberate deviations:
 
 1. **Nutrition is injected, not computed.** A stub calculator returns each recipe's stored per-serving nutrition from `recipes.json`, which is exactly what the oracle used. This follows the reconciliation's advice (§5) to keep the data track and the search track separate. Nothing here measures the ingredient-resolution layer.
 2. **Pins and batches go through the real repositories.** Pins become `ProfilePin`. Batches go through `MealPrepBatchRepository.create` (including `_validate_create`), then `list_active()`, then `planning_batch_locks_from_batches`, which matches what `hydrate_parity_plan_context` does.
-3. **`max_daily_calories` is set on the profile directly**, because `PlanRequest` has no field for it (see §4.1). Setting `API_FIDELITY=1` reproduces what the API actually does.
 
 ## 3. Root-cause clusters
 
@@ -117,9 +116,11 @@ These plans are valid by the spec and unsafe for the user. MB-144 and MB-146 pas
 
 ### 4.1 The calorie ceiling can't reach the planner through the API (API/contract issue)
 
-`PlanRequest` (`src/api/server.py:130`) has no `max_daily_calories` field, and `_build_user_profile` never sets one. The CLI's YAML loader (`src/data_layer/user_profile.py:283`) and the Flutter model (`frontend/lib/models/user_profile.dart:454`) both carry it, so HC-5 works everywhere except the HTTP API.
+**Status:** fixed. `PlanRequest` carries `max_daily_calories`, `_build_user_profile` passes it through, the OpenAPI snapshot and Flutter `PlanRequest`/`UserProfile` send it, and the harness no longer overrides the profile after `_build_user_profile`.
 
-With `API_FIDELITY=1`, which reproduces the API's behaviour, on the 5 ceiling scenarios:
+Previously `PlanRequest` (`src/api/server.py`) had no `max_daily_calories` field, and `_build_user_profile` never set one. The CLI's YAML loader (`src/data_layer/user_profile.py`) carried the number, but the Flutter model only treated `max_daily_calories` as an on/off flag (`calorieDeficitMode`) and dropped the value. HC-5 therefore worked in the CLI and in the harness override path, but not over HTTP.
+
+With `API_FIDELITY=1` (now removed), which reproduced the API's old behaviour, on the 5 ceiling scenarios:
 
 | Scenario | Ceiling | Result through the API |
 |---|---|---|
@@ -128,7 +129,7 @@ With `API_FIDELITY=1`, which reproduces the API's behaviour, on the 5 ceiling sc
 | MB-095 | 1,100 | FM-1, should be FM-3 |
 | MB-019, MB-074 | — | unaffected |
 
-The benchmark README's run instructions ("build `PlanRequest` from each scenario's profile") therefore lead to a harness that silently tests without HC-5.
+The benchmark README's run instructions ("build `PlanRequest` from each scenario's profile") therefore led to a harness that silently tested without HC-5. That gap is closed.
 
 ### 4.2 Negative derived carbs are accepted (validation issue)
 
@@ -153,19 +154,19 @@ Every result above uses the stored nutrition. Through the real `/api/v1/plan` pa
 | Category | Clusters | Open disagreements |
 |---|---|---|
 | Planner algorithm defect | C4 (C2a/C2b/C3 fixed) | 2 |
-| API/contract issue | §4.1 (C1 fixed) | 0 scorecard / 3 hidden |
+| API/contract issue | §4.1 fixed, C1 fixed | 0 |
 | Specification ambiguity | C5, C6, §4.3 | 3 (plus the meal-type finding) |
 | Validation issue | §4.2 | 0 (hidden) |
 | Recipe/data limitation | none as a primary cause (see §4.4) | 0 |
 | Expected infeasibility | 56 of 57 infeasible scenarios fail correctly; the remaining miss is C5 | — |
-| Test-design problem | README run instructions (§4.1); no meal-type scoring (§4.3); no fully pinned day inside a multi-day plan (C3) | 0 |
+| Test-design problem | no meal-type scoring (§4.3); no fully pinned day inside a multi-day plan (C3, fixed) | 0 |
 
 C2a's spec gap is closed in §11 attribution steps 2–3.
 
 ## 6. Recurring patterns
 
 1. **Wrong last-event failure codes (C2a, C2b; fixed).** Post-search attribution and the static slot pre-check now choose the structural cause.
-2. **Silent drops at the edges (C5, §4.1; C1/C3 fixed).** A one-day micronutrient floor or a calorie ceiling can still disappear between input and search.
+2. **Silent drops at the edges (C5; C1/C3/§4.1 fixed).** A one-day micronutrient floor can still disappear between input and search. The calorie ceiling now reaches the planner over HTTP.
 3. **Search order against multi-day micronutrient floors (C4).** This is the only open cluster that needs a design change rather than a local fix.
 
 ## 7. Suggested order
@@ -174,7 +175,7 @@ C2a's spec gap is closed in §11 attribution steps 2–3.
 |---|---|---|
 | 1 | C1 batch status | **Done.** One condition; 11 scenarios, all now match |
 | 2 | C3 fully pinned day validation | **Done.** Hard constraint checked; fully pinned days validated |
-| 3 | §4.1 ceiling in `PlanRequest` | HC-5 doesn't work over HTTP; also update the OpenAPI snapshot and the frontend model |
+| 3 | §4.1 ceiling in `PlanRequest` | **Done.** HC-5 reaches the planner over HTTP; OpenAPI and Flutter carry the number |
 | 4 | C2a / C2b failure attribution | **Done.** C2b static pre-check + C2a post-search steps 2–3; 22 diagnoses corrected; exact matches 125 → 145 |
 | 5 | C4 search order | A design change; the benchmark gives a clear pass/fail target |
 | — | C5, C6, §4.2, §4.3 | Specification decisions (Q8, Q10, input validity, meal type) come before code |
@@ -197,7 +198,6 @@ Fixes 1–4 have resolved their clusters: the benchmark is at **145 of 151** exa
 
 Counterfactual runs set environment variables on `run_benchmark.py`:
 - `ALL_BATCHES=1`: pass every non-orphaned batch, including cancelled ones, to the planner (C1 counterfactual; now differs from the default only by cancelled batches);
-- `API_FIDELITY=1`: drop the calorie ceiling, as the API does (§4.1);
 - `LIMIT=200000`: raise the attempt limit (tests C4);
 - `OUT=<path>`: write results to a different file.
 

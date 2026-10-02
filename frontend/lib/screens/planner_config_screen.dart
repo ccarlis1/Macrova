@@ -383,6 +383,7 @@ class PlannerConfigScreen extends StatelessWidget {
       ingredientSource: planProvider.ingredientSource,
       micronutrientGoals: profile.micronutrientGoals.toPlanMicronutrientGoals(),
       micronutrientWeeklyMinFraction: profile.micronutrientWeeklyMinFraction,
+      maxDailyCalories: profile.maxDailyCalories,
       planningMode: planProvider.planningMode,
       recipeIds: recipeIds,
     );

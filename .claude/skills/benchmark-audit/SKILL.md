@@ -62,11 +62,10 @@ Use after large planner changes, a new batch of scenarios, or when unmapped disa
 2. Run the counterfactuals, each with its own output file:
    ```bash
    ALL_BATCHES=1 OUT=evaluation/harness/results/results_all_batches.json .venv/bin/python evaluation/harness/run_benchmark.py
-   API_FIDELITY=1 OUT=evaluation/harness/results/results_api_fidelity.json .venv/bin/python evaluation/harness/run_benchmark.py
    LIMIT=200000 OUT=/tmp/results_limit.json .venv/bin/python evaluation/harness/run_benchmark.py
    ```
-   `ALL_BATCHES` isolates batch-status problems. `API_FIDELITY` reproduces what the HTTP API
-   actually passes. `LIMIT` separates "attempt limit too low" from "search order wrong".
+   `ALL_BATCHES` isolates batch-status problems. `LIMIT` separates "attempt limit too low"
+   from "search order wrong".
 3. For each unmapped disagreement, find the root cause in `src/` and cite `file:line`.
    Group by cause, not by symptom: 39 disagreements were 7 causes last time.
 4. Update the failure analysis. Keep each cluster's `### C<n>. <title>` heading and a
@@ -116,7 +115,5 @@ Use after large planner changes, a new batch of scenarios, or when unmapped disa
 ## What a passing run doesn't cover
 
 - **The ingredient and data layer.** The harness supplies stored per-serving nutrition (§4.4).
-- **The real HTTP API.** Fields `PlanRequest` can't carry (e.g. the calorie ceiling, §4.1) work
-  in the harness but not over HTTP. Run `API_FIDELITY=1` to see that gap.
 - **Situations no scenario covers.** C3 stayed hidden until a scenario had a fully pinned day inside a
   longer plan. A clean score covers the scenarios in the benchmark, not every case.

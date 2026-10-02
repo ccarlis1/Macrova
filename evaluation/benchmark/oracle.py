@@ -31,8 +31,13 @@ MULTIDAY_NODE_CAP = 3_000_000
 
 
 def carbs_target(p: dict) -> float:
+    """Derived carbs from the fat median; falls back to the fat minimum if negative (D9)."""
+    remaining = p["daily_calories"] - p["daily_protein_g"] * 4
     fat_med = (p["daily_fat_g"]["min"] + p["daily_fat_g"]["max"]) / 2.0
-    return (p["daily_calories"] - p["daily_protein_g"] * 4 - fat_med * 9) / 4.0
+    carbs = (remaining - fat_med * 9) / 4.0
+    if carbs < 0:
+        carbs = (remaining - p["daily_fat_g"]["min"] * 9) / 4.0
+    return carbs
 
 
 @dataclass
@@ -212,8 +217,8 @@ class Oracle:
             fat_med = (fat_min + fat_max) / 2.0
             out.update(stage="input_validation", failure_code="INVALID_REQUEST",
                        details={"reason": "NEGATIVE_CARBS_DERIVED", "daily_carbs_g": derived_carbs,
-                                "protein_kcal": protein * 4.0, "fat_kcal_median": fat_med * 9.0,
-                                "daily_calories": cal})
+                                "protein_kcal": protein * 4.0, "fat_kcal_min": fat_min * 9.0,
+                                "fat_kcal_median": fat_med * 9.0, "daily_calories": cal})
             return out
 
         # ---- 0b. request validation: unknown tag slugs are rejected by MealSlot ----

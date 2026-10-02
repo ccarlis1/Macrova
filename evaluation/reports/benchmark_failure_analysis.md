@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-18
 **Snapshot:** branch `140-dollar-sprint`, commit `58e1ed8`, `.venv` Python 3.12. Nothing in `src/`, `data/`, or `config/` was modified.
-**Inputs:** `evaluation/benchmark/` (151 scenarios with oracle labels), `docs/planner/mealplan-specification-v3.md`, `evaluation/reports/reconciliation.md`.
+**Inputs:** `evaluation/benchmark/` (152 scenarios with oracle labels), `docs/planner/mealplan-specification-v3.md`, `evaluation/reports/reconciliation.md`.
 **Method:** ran every scenario through the real planner with `evaluation/harness/run_benchmark.py`, compared the outcome and failure code against the oracle labels, and re-checked every returned plan against the hard constraints with a checker that does not import `src/planning` (`evaluation/harness/compare.py`). Then clustered the disagreements by root cause, confirmed each cause in source, and tested the causes with counterfactual runs and targeted probes.
 
 ---
@@ -11,7 +11,7 @@
 
 | Result | Count |
 |---|---|
-| Exact match with oracle | **151** (was 149 after C4/C5; 145 after C2a; 125 after C2b; 123 before C2b; 112 after C3; 109 before C1) |
+| Exact match with oracle | **152** (151 of 151 before MB-152 was added; was 149 after C4/C5; 145 after C2a; 125 after C2b; 123 before C2b; 112 after C3; 109 before C1) |
 | Different code, but listed in `acceptable_failure_codes` | 0 |
 | Disagreement | **0** |
 
@@ -139,7 +139,7 @@ The benchmark README's run instructions ("build `PlanRequest` from each scenario
 
 ### 4.2 Negative derived carbs are accepted (validation issue) — **resolved**
 
-**Status:** fixed. Shared `validate_macro_targets` rejects profiles with negative derived carbs (and related invalid macros) before planning. `/api/v1/plan`, the YAML loader, and plan-from-text all use it. MB-053 now expects `INVALID_REQUEST` at `input_validation` (`NEGATIVE_CARBS_DERIVED`). The Flutter profile screen shows derived carbs read-only and blocks plan requests when targets are inconsistent.
+**Status:** fixed. Per D9, derived carbs fall back from the fat median to the fat minimum when the median leaves them negative; shared `validate_macro_targets` rejects profiles still negative at the fat minimum (and related invalid macros) before planning. `/api/v1/plan`, the YAML loader, and plan-from-text all use it. MB-053 (−10 g at the median, 12.5 g at the fat minimum) is therefore valid and still expects FM-2 from search. MB-152 (fat 160–180 g, still −10 g at the fat minimum) covers the rejection: `INVALID_REQUEST` at `input_validation` (`NEGATIVE_CARBS_DERIVED`). The Flutter profile screen shows derived carbs read-only and blocks plan requests when targets are inconsistent.
 
 ### 4.3 A slot's meal type is only a label (spec ambiguity and a gap in the benchmark)
 
@@ -224,10 +224,10 @@ C2a's spec gap is closed in §11 attribution steps 2–3.
 | 5 | C4 search order (+ C5 structural agreement) | **Done.** Tight valid-day FC-4 bound and per-slot pruning; 145 → 149 exact; MB-067 ACCEPTABLE → MATCH |
 | 6 | C6 allergy class expansion (Q10) | **Done.** Allergies expand via allergen class table; harness sends safety scenarios as allergies; 149 → 151 exact |
 | 7 | §4.4 data track (Q1) | **Measured.** E0/E1/E1b in `evaluation/data_track/`; coverage then resolution dominate. Fix blocked on Q2 gate. |
-| 8 | §4.2 negative derived carbs | **Done.** Input validity rejects before planning; MB-053 is `INVALID_REQUEST` / `input_validation`. |
+| 8 | §4.2 negative derived carbs | **Done.** D9 fat-minimum fallback, then reject before planning if still negative; MB-053 falls back to 12.5 g and stays FM-2; MB-152 covers the rejection; 151 → 152 exact |
 | — | §4.3 | Remaining specification decision (meal type) |
 
-Fixes 1–6 have resolved their clusters: the benchmark is at **151 of 151** exact matches. MB-151 (a fully pinned day inside a two-day plan) keeps C3 covered by the benchmark.
+Fixes 1–6 have resolved their clusters: the benchmark is at **152 of 152** exact matches. MB-151 (a fully pinned day inside a two-day plan) keeps C3 covered by the benchmark.
 
 ## 8. Reproducing
 

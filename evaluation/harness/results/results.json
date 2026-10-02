@@ -535,7 +535,7 @@
  {
   "id": "MB-021",
   "active_batches": 0,
-  "secs": 0.09,
+  "secs": 0.07,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -566,7 +566,7 @@
  {
   "id": "MB-022",
   "active_batches": 0,
-  "secs": 0.63,
+  "secs": 0.55,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -687,7 +687,7 @@
  {
   "id": "MB-027",
   "active_batches": 0,
-  "secs": 1.49,
+  "secs": 1.27,
   "success": false,
   "tc": "TC-2",
   "code": "FM-1",
@@ -716,7 +716,7 @@
  {
   "id": "MB-028",
   "active_batches": 1,
-  "secs": 0.01,
+  "secs": 0.0,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1041,7 +1041,7 @@
  {
   "id": "MB-040",
   "active_batches": 0,
-  "secs": 0.05,
+  "secs": 0.04,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1098,7 +1098,7 @@
  {
   "id": "MB-042",
   "active_batches": 0,
-  "secs": 0.06,
+  "secs": 0.05,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1129,7 +1129,7 @@
  {
   "id": "MB-043",
   "active_batches": 0,
-  "secs": 0.04,
+  "secs": 0.03,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -1176,7 +1176,7 @@
  {
   "id": "MB-045",
   "active_batches": 0,
-  "secs": 0.01,
+  "secs": 0.0,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -1199,7 +1199,7 @@
  {
   "id": "MB-046",
   "active_batches": 0,
-  "secs": 0.02,
+  "secs": 0.01,
   "success": false,
   "tc": "TC-2",
   "code": "FM-2",
@@ -1269,7 +1269,7 @@
  {
   "id": "MB-049",
   "active_batches": 0,
-  "secs": 0.01,
+  "secs": 0.02,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1378,15 +1378,26 @@
  {
   "id": "MB-053",
   "active_batches": 0,
-  "code": "INVALID_REQUEST",
-  "stage": "input_validation",
-  "detail": "NEGATIVE_CARBS_DERIVED: Derived carbs are negative: protein and fat use more calories than the daily calorie target.",
+  "secs": 0.0,
+  "success": false,
+  "tc": "TC-2",
+  "code": "FM-2",
+  "incomplete": null,
+  "stats": {
+   "attempts": 0,
+   "backtracks": 0
+  },
+  "report_codes": [
+   "FM-MACRO-INFEASIBLE"
+  ],
+  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
+  "warnings": "null",
   "nutrition_mode": "stored"
  },
  {
   "id": "MB-054",
   "active_batches": 0,
-  "secs": 0.22,
+  "secs": 0.21,
   "success": false,
   "tc": "TC-2",
   "code": "FM-2",
@@ -1484,7 +1495,7 @@
  {
   "id": "MB-058",
   "active_batches": 0,
-  "secs": 0.06,
+  "secs": 0.05,
   "success": false,
   "tc": "TC-2",
   "code": "FM-4",
@@ -1779,7 +1790,7 @@
  {
   "id": "MB-071",
   "active_batches": 0,
-  "secs": 0.1,
+  "secs": 0.11,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1805,7 +1816,7 @@
  {
   "id": "MB-072",
   "active_batches": 0,
-  "secs": 0.55,
+  "secs": 0.49,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1888,7 +1899,7 @@
  {
   "id": "MB-075",
   "active_batches": 0,
-  "secs": 0.01,
+  "secs": 0.0,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -2007,7 +2018,7 @@
  {
   "id": "MB-080",
   "active_batches": 0,
-  "secs": 0.01,
+  "secs": 0.0,
   "success": false,
   "tc": "TC-2",
   "code": "FM-1",
@@ -2259,7 +2270,7 @@
  {
   "id": "MB-092",
   "active_batches": 0,
-  "secs": 0.01,
+  "secs": 0.0,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -2661,7 +2672,7 @@
  {
   "id": "MB-111",
   "active_batches": 0,
-  "secs": 0.05,
+  "secs": 0.03,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -2712,7 +2723,7 @@
  {
   "id": "MB-112",
   "active_batches": 0,
-  "secs": 0.18,
+  "secs": 0.23,
   "success": false,
   "tc": "TC-2",
   "code": "FM-1",
@@ -3144,7 +3155,7 @@
  {
   "id": "MB-131",
   "active_batches": 0,
-  "secs": 0.04,
+  "secs": 0.02,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3262,7 +3273,7 @@
  {
   "id": "MB-134",
   "active_batches": 0,
-  "secs": 0.09,
+  "secs": 0.07,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3395,7 +3406,7 @@
  {
   "id": "MB-138",
   "active_batches": 0,
-  "secs": 0.75,
+  "secs": 0.52,
   "success": false,
   "tc": "TC-2",
   "code": "FM-2",
@@ -3421,7 +3432,7 @@
  {
   "id": "MB-139",
   "active_batches": 0,
-  "secs": 0.54,
+  "secs": 0.51,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3725,7 +3736,7 @@
  {
   "id": "MB-149",
   "active_batches": 0,
-  "secs": 0.07,
+  "secs": 0.06,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3798,6 +3809,14 @@
     "sn_almonds_chocolate"
    ]
   },
+  "nutrition_mode": "stored"
+ },
+ {
+  "id": "MB-152",
+  "active_batches": 0,
+  "code": "INVALID_REQUEST",
+  "stage": "input_validation",
+  "detail": "NEGATIVE_CARBS_DERIVED: Derived carbs are negative: protein and fat use more calories than the daily calorie target, even at the fat minimum.",
   "nutrition_mode": "stored"
  }
 ]

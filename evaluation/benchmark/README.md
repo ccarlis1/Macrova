@@ -1,10 +1,10 @@
 # Macrova planning benchmark (v1)
 
-151 realistic meal-planning requests with oracle-verified expected outcomes, built only from the locally cached ingredients in `.cache/ingredients/`.
+152 realistic meal-planning requests with oracle-verified expected outcomes, built only from the locally cached ingredients in `.cache/ingredients/`.
 
 | File | What it is |
 |---|---|
-| `scenarios.json` | The benchmark: 151 scenarios, each with request inputs and an `expected` block |
+| `scenarios.json` | The benchmark: 152 scenarios, each with request inputs and an `expected` block |
 | `scenarios_index.md` | One row per scenario: categories, horizon, pool size, class, expected code |
 | `recipes.json` | 64 single-serving recipes (57 core, 2 duplicate-content, 5 data-hazard) with nutrition computed from the cache |
 | `recipe_tags.json` | Tag registry plus `tags_by_id` fixture in the canonical `recipe_tags.json` shape, including LLM-`proposed` tags |

@@ -144,7 +144,7 @@ def test_api_plan_tag_filtering_applied_pre_conversion(
         seen["extract_ids"] = [r.id for r in recipes_in]
         return ["ingredient-x"]
 
-    def fake_convert_recipes(recipes_in, _calculator):
+    def fake_convert_recipes(recipes_in, _calculator, **_kwargs):
         seen["convert_ids"] = [r.id for r in recipes_in]
         return [SimpleNamespace(id=r.id) for r in recipes_in]
 
@@ -215,7 +215,7 @@ def test_api_plan_tag_filtering_preserves_recipe_id_pre_filter_order_with_single
         seen["extract_ids"] = [r.id for r in recipes_in]
         return ["ingredient-x"]
 
-    def fake_convert_recipes(recipes_in, _calculator):
+    def fake_convert_recipes(recipes_in, _calculator, **_kwargs):
         seen["convert_ids"] = [r.id for r in recipes_in]
         return [SimpleNamespace(id=r.id) for r in recipes_in]
 
@@ -453,7 +453,7 @@ def test_cli_tag_filtering_reduces_recipe_pool(monkeypatch, tmp_path, capsys):
         seen["extract_ids"] = [r.id for r in recipes_in]
         return ["ingredient-x"]
 
-    def fake_convert_recipes(recipes_in, _calculator):
+    def fake_convert_recipes(recipes_in, _calculator, **_kwargs):
         seen["convert_ids"] = [r.id for r in recipes_in]
         return [SimpleNamespace(id=r.id) for r in recipes_in]
 
@@ -549,7 +549,7 @@ def test_cli_tag_filtering_no_preferences_keeps_full_pool(
         seen["extract_ids"] = [r.id for r in recipes_in]
         return ["ingredient-x"]
 
-    def fake_convert_recipes(recipes_in, _calculator):
+    def fake_convert_recipes(recipes_in, _calculator, **_kwargs):
         seen["convert_ids"] = [r.id for r in recipes_in]
         return [SimpleNamespace(id=r.id) for r in recipes_in]
 
@@ -639,7 +639,7 @@ def test_cli_tag_filtering_missing_tags_fallback_full_pool(
         seen["extract_ids"] = [r.id for r in recipes_in]
         return ["ingredient-x"]
 
-    def fake_convert_recipes(recipes_in, _calculator):
+    def fake_convert_recipes(recipes_in, _calculator, **_kwargs):
         seen["convert_ids"] = [r.id for r in recipes_in]
         return [SimpleNamespace(id=r.id) for r in recipes_in]
 
@@ -736,7 +736,7 @@ def test_cli_tag_filtering_empty_filter_result_fallback_full_pool(
         seen["extract_ids"] = [r.id for r in recipes_in]
         return ["ingredient-x"]
 
-    def fake_convert_recipes(recipes_in, _calculator):
+    def fake_convert_recipes(recipes_in, _calculator, **_kwargs):
         seen["convert_ids"] = [r.id for r in recipes_in]
         return [SimpleNamespace(id=r.id) for r in recipes_in]
 
@@ -831,7 +831,7 @@ def test_cli_tag_filtering_preserves_recipe_db_order(
         seen["extract_ids"] = [r.id for r in recipes_in]
         return ["ingredient-x"]
 
-    def fake_convert_recipes(recipes_in, _calculator):
+    def fake_convert_recipes(recipes_in, _calculator, **_kwargs):
         seen["convert_ids"] = [r.id for r in recipes_in]
         return [SimpleNamespace(id=r.id) for r in recipes_in]
 
@@ -926,7 +926,7 @@ def test_cli_tag_filtering_multiple_cuisines_union_preserves_order(
         seen["extract_ids"] = [r.id for r in recipes_in]
         return ["ingredient-x"]
 
-    def fake_convert_recipes(recipes_in, _calculator):
+    def fake_convert_recipes(recipes_in, _calculator, **_kwargs):
         seen["convert_ids"] = [r.id for r in recipes_in]
         return [SimpleNamespace(id=r.id) for r in recipes_in]
 
@@ -1025,7 +1025,7 @@ def test_api_and_cli_use_shared_apply_tag_filtering(monkeypatch, tmp_path):
     monkeypatch.setattr("src.api.server.apply_tag_filtering", _api_spy_apply_tag_filtering)
 
     monkeypatch.setattr("src.api.server.extract_ingredient_names", lambda recipes_in: [])
-    monkeypatch.setattr("src.api.server.convert_recipes", lambda recipes_in, _calc: [])
+    monkeypatch.setattr("src.api.server.convert_recipes", lambda recipes_in, _calc, **_k: [])
     monkeypatch.setattr("src.api.server.NutritionCalculator", lambda _provider: object())
 
     monkeypatch.setattr(
@@ -1078,7 +1078,7 @@ def test_api_and_cli_use_shared_apply_tag_filtering(monkeypatch, tmp_path):
 
     monkeypatch.setattr("src.cli.apply_tag_filtering", _cli_spy_apply_tag_filtering)
     monkeypatch.setattr("src.cli.extract_ingredient_names", lambda recipes_in: [])
-    monkeypatch.setattr("src.cli.convert_recipes", lambda recipes_in, _calc: [])
+    monkeypatch.setattr("src.cli.convert_recipes", lambda recipes_in, _calc, **_k: [])
 
     monkeypatch.setattr(
         "src.cli.plan_meals",

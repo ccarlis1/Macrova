@@ -7,8 +7,10 @@ GitHub Actions runs from the repo root with ``pip install -r requirements.txt`` 
 
 ``config/user_profile.yaml`` is gitignored; CLI/API tests reference it by path.
 
-``data/ingredients/custom_ingredients.json`` and ``data/recipes/recipes.json`` are
-gitignored; CI clones do not contain them. Copy from ``*.example`` when absent.
+``data/ingredients/custom_ingredients.json`` is gitignored; copy from ``*.example``
+when absent. Default local nutrition is ``data/reference/ingredient_nutrition.json``
+(committed). ``data/recipes/recipes.json`` is committed (§4.4); still copy from
+``.example`` if a checkout is missing it.
 """
 
 import shutil

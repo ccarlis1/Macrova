@@ -282,7 +282,10 @@ class TestNutritionCalculator:
         assert nutrition.carbs_g == 0.0
 
     def test_calculate_recipe_missing_ingredient(self, calculator):
-        """Test recipe with missing ingredient - should skip and continue."""
+        """Partial sum still skips gaps; unresolved_ingredient_names reports them.
+
+        Pool builders must drop via convert_recipes(drop_unresolved=True) (§4.4).
+        """
         ingredients = [
             Ingredient(
                 name="cream of rice",
@@ -305,6 +308,7 @@ class TestNutritionCalculator:
             instructions=[],
         )
 
+        assert calculator.unresolved_ingredient_names(recipe) == ["unknown_ingredient"]
         nutrition = calculator.calculate_recipe_nutrition(recipe)
         # Should only have cream of rice nutrition (740 cal)
         assert abs(nutrition.calories - 740.0) < 0.01

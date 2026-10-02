@@ -163,7 +163,7 @@ def test_plan_from_text_planning_mode_deterministic_routes_to_plan_meals(
     monkeypatch.setattr("src.api.server.RecipeDB", DummyRecipeDB)
 
     monkeypatch.setattr("src.api.server.extract_ingredient_names", lambda recipes: [])
-    monkeypatch.setattr("src.api.server.convert_recipes", lambda _recipes, _calc: [])
+    monkeypatch.setattr("src.api.server.convert_recipes", lambda _recipes, _calc, **_k: [])
     monkeypatch.setattr("src.api.server.NutritionCalculator", lambda _provider: object())
 
     monkeypatch.setattr(
@@ -246,7 +246,7 @@ def test_plan_from_text_planning_mode_assisted_cached_routes_to_orchestrator(
     monkeypatch.setattr("src.api.server.RecipeDB", DummyRecipeDB)
 
     monkeypatch.setattr("src.api.server.extract_ingredient_names", lambda recipes: [])
-    monkeypatch.setattr("src.api.server.convert_recipes", lambda _recipes, _calc: [])
+    monkeypatch.setattr("src.api.server.convert_recipes", lambda _recipes, _calc, **_k: [])
     monkeypatch.setattr("src.api.server.NutritionCalculator", lambda _provider: object())
 
     monkeypatch.setattr(
@@ -330,7 +330,7 @@ def test_plan_from_text_assisted_never_turns_nl_cuisine_into_a_hard_filter(monke
     monkeypatch.setattr("src.api.server.parse_nl_config", lambda client, text: cfg)
     monkeypatch.setattr("src.api.server.RecipeDB", DummyRecipeDB)
     monkeypatch.setattr("src.api.server.extract_ingredient_names", lambda recipes: [])
-    monkeypatch.setattr("src.api.server.convert_recipes", lambda _recipes, _calc: [])
+    monkeypatch.setattr("src.api.server.convert_recipes", lambda _recipes, _calc, **_k: [])
     monkeypatch.setattr("src.api.server.NutritionCalculator", lambda _provider: object())
     monkeypatch.setattr("src.api.server.NutritionDB", lambda _: object())
     monkeypatch.setattr("src.api.server.LocalIngredientProvider", lambda _: DummyProvider())

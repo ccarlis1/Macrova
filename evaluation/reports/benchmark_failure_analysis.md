@@ -151,9 +151,47 @@ In MB-053, the targets imply −10 g of carbs per day. The backend accepts that 
 
 The oracle doesn't check meal type either, so the benchmark reports these plans as correct. Whether "breakfast" on a slot is a constraint, a scoring preference or just a label is a product decision the spec hasn't made.
 
-### 4.4 The data track is untested
+### 4.4 The data track is untested → measured (E0 / E1 / E1b)
 
-Every result above uses the stored nutrition. Through the real `/api/v1/plan` path, nutrition would be recomputed from `data/ingredients` with the problems listed in `recipes.json → quarantined_cache_entries` (oats resolved to oat oil, and so on). No disagreement in §3 is caused mainly by bad data. MB-083, 084, 138, 147 and 148 are correctly infeasible and (before C2a) only got the wrong code. The data-quality scenarios measure the planner's reporting, not the ingredient layer.
+**Status:** measured (draft panel; decision gate open — see reconciliation Q1/Q2). Harness: `evaluation/data_track/` (`reproduce.py`, `decompose.py`, `cache_audit.py`). Results: `evaluation/data_track/results/e{0,1,1b}.json` (generated, gitignored; summary in `results/decision_gate.md`).
+
+Every benchmark result still uses **stored** nutrition (`StubCalc` in `evaluation/harness/run_benchmark.py`). `/api/v1/plan` recomputes via `NutritionCalculator` from `ingredient_source` local or api. No §3 disagreement is caused mainly by bad data; this section measures the ingredient layer the scorecard skips.
+
+#### E0 — reproduce the real path
+
+| Config | Benchmark (64 recipes) | Notes |
+|---|---|---|
+| `local-machine` / `local-clean` | **64/64** recipes have ≥1 skipped ingredient; median \|Δkcal\| vs stored ≈ **489** | Local JSON has **7** entries; `NutritionDB` has **no fallback**. `calculate_recipe_nutrition` silently `continue`s on `IngredientNotFoundError`. |
+| `api-cache` | **0** skips; median \|Δkcal\| ≈ **0** | Stored benchmark nutrition **is** the cache recomputation. |
+| `api-clean` | `resolve_all` **hard-fails** on first miss | API path does **not** silent-zero; it raises `IngredientResolutionError`. |
+
+Also confirmed: `data/recipes/recipes.json` is gitignored (only `.example` is committed), same class of problem as untracked `custom_ingredients.json`. A fresh clone cannot reproduce this machine's nutrition.
+
+#### E1 — error decomposition (draft panel, 78 ingredients)
+
+Against hand-chosen correct FDC IDs (`panel.json`, `review_status: draft`):
+
+| Channel | Share of abs kcal error (all four) | Share excluding coverage |
+|---|---|---|
+| **coverage** (absent from local source) | **84.0%** | — |
+| **resolution** (wrong USDA food) | **15.5%** | **96.3%** |
+| **mapping** (cache ≠ remap of same raw) | **0.0%** of kcal | **0.0%** of kcal |
+| **units** (volume/count as grams) | **0.6%** | **3.7%** |
+
+- **13** wrong resolutions (quarantine list minus acai, where no fruit FDC exists). Worst kcal/100 g gaps: oats→oil (+505), bell pepper→nachos (+330), banana→powder (+257), eggs→egg bread (+144).
+- **20** recipes with api-cache kcal **>20%** off truth; all resolution-dominated.
+- Units bite on `tbsp`/`tsp`/`cup` (calculator treats quantity as grams): e.g. 2 tbsp yogurt → 2 g instead of ~30 g; 1 cup tomato → 1 g instead of ~180 g.
+- Mapping contributes negligible **kcal** but large **micronutrient** error on salmon (see E1b).
+
+#### E1b — cache provenance
+
+83 cache entries vs current `NutrientMapper`: **82 consistent**, **1 superseded** (`salmon_canned`: cached vitamin D 761 IU vs remapped **30,459** IU; omega-3 5.0 vs 0.695 g). Egg yolk is consistent. Four keys have **0 kcal with carbs** (`kiwi_fruit_green`, `mushrooms`, `sweet_potato`, `tomato`); `spaghetti_squash` is 0/0. **Recommendation: patch** (not full rebuild) — drop/replace quarantined wrong-food keys and fix salmon; fraction superseded ≈ 1.2%.
+
+#### Decision gate → fix (Q2 = d+a)
+
+Decisions: curated table + plausibility; drop unresolved recipes with warnings; commit `data/recipes/recipes.json` and keep example/benchmark coverage; fix order as measured.
+
+Shipped: `data/reference/ingredient_nutrition.json` (default local source), `convert_recipes(drop_unresolved=True)` + `warnings.nutrition`, cache plausibility gate, coverage test `tests/test_ingredient_nutrition_reference.py`, harness `--nutrition computed`.
 
 ## 5. Classification
 
@@ -161,11 +199,11 @@ Every result above uses the stored nutrition. Through the real `/api/v1/plan` pa
 |---|---|---|
 | Planner algorithm defect | C4 fixed (C2a/C2b/C3 fixed) | 0 |
 | API/contract issue | §4.1 fixed, C1 fixed | 0 |
-| Specification ambiguity | C5 fixed (structural agreement); C6, §4.3 open | 2 (plus the meal-type finding) |
+| Specification ambiguity | C5 fixed (structural agreement); C6 done; §4.3 open; **§4.4 Q2 open** | 2 (meal-type + data acceptability) |
 | Validation issue | §4.2 | 0 (hidden) |
-| Recipe/data limitation | none as a primary cause (see §4.4) | 0 |
+| Recipe/data limitation | **§4.4 measured** — coverage dominates local; resolution dominates api-cache | 0 planner mismatches (data track separate) |
 | Expected infeasibility | 57 of 57 infeasible scenarios fail correctly after C5 | — |
-| Test-design problem | no meal-type scoring (§4.3); no fully pinned day inside a multi-day plan (C3, fixed) | 0 |
+| Test-design problem | no meal-type scoring (§4.3); no fully pinned day inside a multi-day plan (C3, fixed); **benchmark uses stored nutrition only** | 0 |
 
 C2a's spec gap is closed in §11 attribution steps 2–3.
 
@@ -185,6 +223,7 @@ C2a's spec gap is closed in §11 attribution steps 2–3.
 | 4 | C2a / C2b failure attribution | **Done.** C2b static pre-check + C2a post-search steps 2–3; 22 diagnoses corrected; exact matches 125 → 145 |
 | 5 | C4 search order (+ C5 structural agreement) | **Done.** Tight valid-day FC-4 bound and per-slot pruning; 145 → 149 exact; MB-067 ACCEPTABLE → MATCH |
 | 6 | C6 allergy class expansion (Q10) | **Done.** Allergies expand via allergen class table; harness sends safety scenarios as allergies; 149 → 151 exact |
+| 7 | §4.4 data track (Q1) | **Measured.** E0/E1/E1b in `evaluation/data_track/`; coverage then resolution dominate. Fix blocked on Q2 gate. |
 | — | §4.2, §4.3 | Remaining specification decisions (input validity, meal type) |
 
 Fixes 1–6 have resolved their clusters: the benchmark is at **151 of 151** exact matches. MB-151 (a fully pinned day inside a two-day plan) keeps C3 covered by the benchmark.

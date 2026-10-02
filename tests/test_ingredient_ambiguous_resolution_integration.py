@@ -123,7 +123,7 @@ def test_deterministic_mode_is_repeatable_across_runs(tmp_path):
             fdc_id=canonical_fdc_id, calories=140.0, protein_g=12.6, fat_g=9.5, carbs_g=0.7
         ),
         other_fdc_id: _details_payload(
-            fdc_id=other_fdc_id, calories=10.0, protein_g=1.0, fat_g=1.0, carbs_g=1.0
+            fdc_id=other_fdc_id, calories=17.0, protein_g=1.0, fat_g=1.0, carbs_g=1.0
         ),
     }
     mock_client.get_food_details.side_effect = (
@@ -158,8 +158,9 @@ def test_assisted_mode_calls_llm_only_when_confidence_low(tmp_path):
     ]
 
     payloads = {
-        fdc_a: _details_payload(fdc_id=fdc_a, calories=10.0, protein_g=1.0, fat_g=1.0, carbs_g=1.0),
-        fdc_b: _details_payload(fdc_id=fdc_b, calories=20.0, protein_g=2.0, fat_g=2.0, carbs_g=2.0),
+        # Atwater-consistent macros (plausibility gate §4.4 / Q2a).
+        fdc_a: _details_payload(fdc_id=fdc_a, calories=17.0, protein_g=1.0, fat_g=1.0, carbs_g=1.0),
+        fdc_b: _details_payload(fdc_id=fdc_b, calories=34.0, protein_g=2.0, fat_g=2.0, carbs_g=2.0),
     }
     mock_client.get_food_details.side_effect = (
         lambda fdc_id: Mock(success=True, raw_payload=payloads[fdc_id])
@@ -179,7 +180,7 @@ def test_assisted_mode_calls_llm_only_when_confidence_low(tmp_path):
 
     provider.resolve_all(["egg"])
     info = provider.get_ingredient_info("egg")
-    assert info["per_100g"]["calories"] == 20.0
+    assert info["per_100g"]["calories"] == 34.0
 
     assert llm.choose_fdc_id.call_count == 1
     mock_client.get_food_details.assert_called_once_with(fdc_b)
@@ -197,8 +198,8 @@ def test_assisted_mode_does_not_call_llm_when_confidence_high(tmp_path):
     ]
 
     payloads = {
-        fdc_a: _details_payload(fdc_id=fdc_a, calories=10.0, protein_g=1.0, fat_g=1.0, carbs_g=1.0),
-        fdc_b: _details_payload(fdc_id=fdc_b, calories=20.0, protein_g=2.0, fat_g=2.0, carbs_g=2.0),
+        fdc_a: _details_payload(fdc_id=fdc_a, calories=17.0, protein_g=1.0, fat_g=1.0, carbs_g=1.0),
+        fdc_b: _details_payload(fdc_id=fdc_b, calories=34.0, protein_g=2.0, fat_g=2.0, carbs_g=2.0),
     }
     mock_client.get_food_details.side_effect = (
         lambda fdc_id: Mock(success=True, raw_payload=payloads[fdc_id])
@@ -218,7 +219,7 @@ def test_assisted_mode_does_not_call_llm_when_confidence_high(tmp_path):
 
     provider.resolve_all(["egg"])
     info = provider.get_ingredient_info("egg")
-    assert info["per_100g"]["calories"] == 10.0  # SR Legacy wins deterministically.
+    assert info["per_100g"]["calories"] == 17.0  # SR Legacy wins deterministically.
 
     assert llm.choose_fdc_id.call_count == 0
     mock_client.get_food_details.assert_called_once_with(fdc_a)
@@ -235,8 +236,8 @@ def test_assisted_mode_rejects_invalid_llm_output_and_falls_back(tmp_path):
     ]
 
     payloads = {
-        fdc_a: _details_payload(fdc_id=fdc_a, calories=10.0, protein_g=1.0, fat_g=1.0, carbs_g=1.0),
-        fdc_b: _details_payload(fdc_id=fdc_b, calories=20.0, protein_g=2.0, fat_g=2.0, carbs_g=2.0),
+        fdc_a: _details_payload(fdc_id=fdc_a, calories=17.0, protein_g=1.0, fat_g=1.0, carbs_g=1.0),
+        fdc_b: _details_payload(fdc_id=fdc_b, calories=34.0, protein_g=2.0, fat_g=2.0, carbs_g=2.0),
     }
     mock_client.get_food_details.side_effect = (
         lambda fdc_id: Mock(success=True, raw_payload=payloads[fdc_id])
@@ -258,7 +259,7 @@ def test_assisted_mode_rejects_invalid_llm_output_and_falls_back(tmp_path):
     provider.resolve_all(["egg"])
     info = provider.get_ingredient_info("egg")
     # Should fall back to ranker selection (first candidate index).
-    assert info["per_100g"]["calories"] == 10.0
+    assert info["per_100g"]["calories"] == 17.0
 
     assert llm.choose_fdc_id.call_count == 1
     mock_client.get_food_details.assert_called_once_with(fdc_a)
@@ -275,8 +276,8 @@ def test_deterministic_mode_never_calls_llm(tmp_path):
     ]
 
     payloads = {
-        fdc_a: _details_payload(fdc_id=fdc_a, calories=10.0, protein_g=1.0, fat_g=1.0, carbs_g=1.0),
-        fdc_b: _details_payload(fdc_id=fdc_b, calories=20.0, protein_g=2.0, fat_g=2.0, carbs_g=2.0),
+        fdc_a: _details_payload(fdc_id=fdc_a, calories=17.0, protein_g=1.0, fat_g=1.0, carbs_g=1.0),
+        fdc_b: _details_payload(fdc_id=fdc_b, calories=34.0, protein_g=2.0, fat_g=2.0, carbs_g=2.0),
     }
     mock_client.get_food_details.side_effect = (
         lambda fdc_id: Mock(success=True, raw_payload=payloads[fdc_id])
@@ -296,7 +297,7 @@ def test_deterministic_mode_never_calls_llm(tmp_path):
 
     provider.resolve_all(["egg"])
     info = provider.get_ingredient_info("egg")
-    assert info["per_100g"]["calories"] == 10.0
+    assert info["per_100g"]["calories"] == 17.0
 
     assert llm.choose_fdc_id.call_count == 0
     mock_client.get_food_details.assert_called_once_with(fdc_a)

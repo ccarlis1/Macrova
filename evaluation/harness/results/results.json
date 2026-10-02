@@ -17,7 +17,8 @@
     "dn_bolognese",
     "ln_tuna_poke"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-002",
@@ -38,7 +39,8 @@
     "ln_turkey_sandwich",
     "dn_beef_rice_bowl"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-003",
@@ -71,7 +73,8 @@
     "sn_yogurt_honey",
     "hc_mass_gainer"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-004",
@@ -111,7 +114,8 @@
     "ln_tuna_poke",
     "dn_cauli_beef_bowl"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-005",
@@ -141,7 +145,8 @@
     "bk_big_oat_bowl",
     "bk_tofu_scramble"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-006",
@@ -161,7 +166,8 @@
     "ln_black_bean_quinoa",
     "bk_cottage_papaya"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-007",
@@ -188,7 +194,8 @@
     "dn_bean_quesadilla",
     "dn_chickpea_curry"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-008",
@@ -209,7 +216,8 @@
     "sn_protein_shake",
     "ln_turkey_sandwich"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-009",
@@ -229,7 +237,8 @@
     "dn_beef_rice_bowl",
     "ln_black_bean_quinoa"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-010",
@@ -254,7 +263,8 @@
     "ln_black_bean_quinoa",
     "hc_big_beef_rice"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-011",
@@ -275,7 +285,8 @@
     "bk_salmon_toast",
     "dn_bolognese"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-012",
@@ -295,7 +306,8 @@
     "sn_trail_mix",
     "hc_mass_gainer"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-013",
@@ -318,7 +330,8 @@
    "0": [
     "dn_bolognese"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-014",
@@ -338,7 +351,8 @@
     "dn_tofu_stir_fry",
     "dn_bolognese"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-015",
@@ -359,7 +373,8 @@
     "sn_banana_pb",
     "ln_white_bean_soup"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-016",
@@ -381,7 +396,8 @@
     "hc_mass_gainer",
     "ln_tuna_poke"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-017",
@@ -420,7 +436,8 @@
     "bk_yogurt_berry_bowl",
     "dn_bean_quesadilla"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-018",
@@ -440,7 +457,8 @@
     "dn_beef_rice_bowl",
     "bk_salmon_toast"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-019",
@@ -460,7 +478,8 @@
     "bk_salmon_toast",
     "dn_burger_bowl"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-020",
@@ -510,7 +529,8 @@
     "dn_tofu_stir_fry",
     "dn_bolognese"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-021",
@@ -540,12 +560,13 @@
     "ln_chickpea_salad",
     "hc_pasta_salmon_bake"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-022",
   "active_batches": 0,
-  "secs": 0.51,
+  "secs": 0.52,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -573,7 +594,8 @@
     "sn_turkey_rollups",
     "bk_cream_of_rice_whey"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-023",
@@ -598,7 +620,8 @@
     "bk_protein_oats",
     "hc_mass_gainer"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-024",
@@ -616,7 +639,8 @@
    "FM-3"
   ],
   "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"recipe_id\": \"dn_salmon_potatoes\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-025",
@@ -636,7 +660,8 @@
     "dn_bolognese",
     "ln_tuna_poke"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-026",
@@ -656,12 +681,13 @@
     "dn_tofu_stir_fry",
     "dn_beef_rice_bowl"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-027",
   "active_batches": 0,
-  "secs": 1.25,
+  "secs": 1.37,
   "success": false,
   "tc": "TC-2",
   "code": "FM-1",
@@ -684,7 +710,8 @@
    "1": [
     "bk_yolk_spinach_toast"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-028",
@@ -714,7 +741,8 @@
     "ln_chickpea_salad",
     "bk_salmon_toast"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-029",
@@ -747,7 +775,8 @@
     "sn_protein_shake",
     "dn_thigh_sheet_pan"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-030",
@@ -770,7 +799,8 @@
    "0": [
     "hc_mass_gainer"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-031",
@@ -790,7 +820,8 @@
     "ln_roast_beef_wrap",
     "ln_cottage_box"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-032",
@@ -811,7 +842,8 @@
     "sn_edamame_cup",
     "dn_tofu_stir_fry"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-033",
@@ -832,7 +864,8 @@
     "hc_mass_gainer",
     "dn_bolognese"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-034",
@@ -852,7 +885,8 @@
     "ln_tuna_poke",
     "hc_big_beef_rice"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-035",
@@ -872,7 +906,8 @@
     "ln_tuna_poke",
     "ln_roast_beef_wrap"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-036",
@@ -892,7 +927,8 @@
     "bk_pb_banana_toast",
     "bk_salmon_toast"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-037",
@@ -912,7 +948,8 @@
     "dn_tofu_stir_fry",
     "ln_black_bean_quinoa"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-038",
@@ -947,7 +984,8 @@
     "hc_mass_gainer",
     "dn_tilapia_rice"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-039",
@@ -997,7 +1035,8 @@
     "dn_edamame_fried_rice",
     "dn_bean_quesadilla"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-040",
@@ -1027,7 +1066,8 @@
     "bk_big_oat_bowl",
     "dn_beef_chili"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-041",
@@ -1052,7 +1092,8 @@
     "ln_white_bean_soup",
     "ln_cottage_box"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-042",
@@ -1082,7 +1123,8 @@
     "ln_white_bean_soup",
     "dn_salmon_potatoes"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-043",
@@ -1103,7 +1145,8 @@
     "ln_turkey_sandwich",
     "ln_tuna_poke"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-044",
@@ -1127,7 +1170,8 @@
     "bk_protein_oats",
     "dn_tilapia_rice"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-045",
@@ -1149,7 +1193,8 @@
     "sn_protein_shake",
     "hc_mass_gainer"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-046",
@@ -1173,7 +1218,8 @@
     "bk_cream_of_rice_whey",
     "hc_big_beef_rice"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-047",
@@ -1196,7 +1242,8 @@
     "ln_turkey_sandwich",
     "bk_chia_pudding"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-048",
@@ -1216,7 +1263,8 @@
     "ln_tuna_poke",
     "ln_tuna_pasta_salad"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-049",
@@ -1256,7 +1304,8 @@
     "hc_mass_gainer",
     "ln_tuna_poke"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-050",
@@ -1279,7 +1328,8 @@
    "0": [
     "dn_tuna_steak_salad"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-051",
@@ -1297,7 +1347,8 @@
    "FM-MACRO-INFEASIBLE"
   ],
   "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-052",
@@ -1321,7 +1372,8 @@
     "dn_cauli_beef_bowl",
     "ln_salmon_salad"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-053",
@@ -1339,12 +1391,13 @@
    "FM-MACRO-INFEASIBLE"
   ],
   "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-054",
   "active_batches": 0,
-  "secs": 0.19,
+  "secs": 0.2,
   "success": false,
   "tc": "TC-2",
   "code": "FM-2",
@@ -1363,7 +1416,8 @@
     "hc_big_beef_rice",
     "sn_whey_water"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-055",
@@ -1386,7 +1440,8 @@
    "0": [
     "bk_tofu_scramble"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-056",
@@ -1409,7 +1464,8 @@
    "0": [
     "hc_mass_gainer"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-057",
@@ -1433,12 +1489,13 @@
     "hc_mass_gainer",
     "hc_big_beef_rice"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-058",
   "active_batches": 0,
-  "secs": 0.07,
+  "secs": 0.06,
   "success": false,
   "tc": "TC-2",
   "code": "FM-4",
@@ -1451,7 +1508,8 @@
    "FM-4"
   ],
   "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"fiber_g\", \"achieved\": 0.0, \"required\": 420.0, \"full_req\": 420.0, \"deficit\": 420.0, \"classification\": \"structural\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-059",
@@ -1469,7 +1527,8 @@
    "FM-4"
   ],
   "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"vitamin_c_mg\", \"achieved\": 0.0, \"required\": 400.0, \"full_req\": 400.0, \"deficit\": 400.0, \"classification\": \"structural\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-060",
@@ -1492,7 +1551,8 @@
    "0": [
     "ln_white_bean_soup"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-061",
@@ -1510,7 +1570,8 @@
    "FM-1"
   ],
   "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"HC-1\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-062",
@@ -1535,12 +1596,13 @@
     "bk_protein_oats",
     "dn_beef_rice_bowl"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-063",
   "active_batches": 0,
-  "secs": 0.07,
+  "secs": 0.09,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -1560,7 +1622,8 @@
     "sn_whey_water",
     "sn_banana_pb"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-064",
@@ -1578,7 +1641,8 @@
    "FM-MACRO-INFEASIBLE"
   ],
   "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-065",
@@ -1596,12 +1660,13 @@
    "FM-4"
   ],
   "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"fiber_g\", \"achieved\": 0.0, \"required\": 70.0, \"full_req\": 70.0, \"deficit\": 70.0, \"classification\": \"structural\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-066",
   "active_batches": 0,
-  "secs": 0.01,
+  "secs": 0.07,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1626,12 +1691,13 @@
     "dn_beef_rice_bowl",
     "dn_edamame_fried_rice"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-067",
   "active_batches": 0,
-  "secs": 0.02,
+  "secs": 0.04,
   "success": false,
   "tc": "TC-2",
   "code": "FM-4",
@@ -1644,12 +1710,13 @@
    "FM-4"
   ],
   "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"iron_mg\", \"achieved\": 0.0, \"required\": 81.0, \"full_req\": 81.0, \"deficit\": 81.0, \"classification\": \"structural\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-068",
   "active_batches": 0,
-  "secs": 0.13,
+  "secs": 0.16,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1674,12 +1741,13 @@
     "dn_tofu_stir_fry",
     "ln_white_bean_soup"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-069",
   "active_batches": 0,
-  "secs": 0.07,
+  "secs": 0.08,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -1695,7 +1763,8 @@
     "sn_whey_water",
     "dn_beef_chili"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-070",
@@ -1715,12 +1784,13 @@
     "dn_cauli_beef_bowl",
     "bk_tofu_scramble"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-071",
   "active_batches": 0,
-  "secs": 0.09,
+  "secs": 0.11,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1740,12 +1810,13 @@
     "dn_burger_bowl",
     "dn_thigh_sheet_pan"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-072",
   "active_batches": 0,
-  "secs": 0.5,
+  "secs": 0.53,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1779,7 +1850,8 @@
     "bk_pb_banana_toast",
     "ln_roast_beef_wrap"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-073",
@@ -1800,7 +1872,8 @@
     "sn_banana_pb",
     "dn_beef_chili"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-074",
@@ -1820,12 +1893,13 @@
     "dn_tofu_stir_fry",
     "dn_bolognese"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-075",
   "active_batches": 0,
-  "secs": 0.0,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -1841,7 +1915,8 @@
     "hc_mass_gainer",
     "bk_cream_of_rice_whey"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-076",
@@ -1866,7 +1941,8 @@
     "dn_tofu_stir_fry",
     "bk_big_oat_bowl"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-077",
@@ -1886,7 +1962,8 @@
     "dn_beef_rice_bowl",
     "dn_tilapia_rice"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-078",
@@ -1910,7 +1987,8 @@
     "ln_tuna_poke",
     "dn_tilapia_rice"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-079",
@@ -1934,7 +2012,8 @@
     "ln_tuna_poke",
     "dn_tilapia_rice"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-080",
@@ -1960,7 +2039,8 @@
     "bk_overnight_oats",
     "dn_beef_rice_bowl"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-081",
@@ -1978,7 +2058,8 @@
    "FM-1"
   ],
   "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"HC-3: cook time <= 5 min\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-082",
@@ -2000,7 +2081,8 @@
     "sn_banana_pb",
     "bk_yogurt_berry_bowl"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-083",
@@ -2018,7 +2100,8 @@
    "FM-MACRO-INFEASIBLE"
   ],
   "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-084",
@@ -2036,7 +2119,8 @@
    "FM-MACRO-INFEASIBLE"
   ],
   "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-085",
@@ -2056,7 +2140,8 @@
     "dup_beef_rice_bowl_v2",
     "dup_beef_rice_bowl_v3"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-086",
@@ -2074,7 +2159,8 @@
    "FM-TAG-EMPTY"
   ],
   "report_first": "[{\"code\": \"FM-TAG-EMPTY\", \"message\": \"No recipes satisfy required tag `breakfast` for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"\", \"details\": {\"missing_tag\": \"breakfast\", \"recipe_count\": 0}, \"fix_hint\": \"No recipes match tag `breakfast`. Add one or relax constraints.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-087",
@@ -2098,7 +2184,8 @@
     "sn_chia_seed_water",
     "ln_tuna_pasta_salad"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-088",
@@ -2118,7 +2205,8 @@
     "dn_tofu_stir_fry",
     "dn_salmon_potatoes"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-089",
@@ -2138,7 +2226,8 @@
     "bk_salmon_toast",
     "sn_turkey_rollups"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-090",
@@ -2156,7 +2245,8 @@
    "FM-3"
   ],
   "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"recipe_id\": \"bk_protein_oats\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-091",
@@ -2174,12 +2264,13 @@
    "FM-3"
   ],
   "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 1, \"slot_index\": 0, \"slot_id\": \"day-2-slot-0\", \"date\": \"day-2\", \"details\": {\"recipe_id\": \"bk_yogurt_berry_bowl\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-092",
   "active_batches": 0,
-  "secs": 0.0,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -2204,7 +2295,8 @@
     "bk_big_oat_bowl",
     "dn_burger_bowl"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-093",
@@ -2222,7 +2314,8 @@
    "FM-3"
   ],
   "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"recipe_id\": \"bk_pb_banana_toast\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-094",
@@ -2240,7 +2333,8 @@
    "FM-3"
   ],
   "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"recipe_id\": \"dn_thigh_sheet_pan\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-095",
@@ -2258,7 +2352,8 @@
    "FM-3"
   ],
   "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"recipe_id\": \"dn_big_pasta_night\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-096",
@@ -2276,7 +2371,8 @@
    "FM-3"
   ],
   "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_index\": 3, \"slot_id\": \"day-1-slot-3\", \"date\": \"day-1\", \"details\": {\"recipe_id\": \"sn_trail_mix\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-097",
@@ -2294,7 +2390,8 @@
    "FM-3"
   ],
   "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"recipe_id\": \"hc_pasta_salmon_bake\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-098",
@@ -2319,7 +2416,8 @@
     "ln_turkey_sandwich",
     "dn_beef_rice_bowl"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-099",
@@ -2339,7 +2437,8 @@
     "ln_turkey_sandwich",
     "dn_beef_rice_bowl"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-100",
@@ -2359,7 +2458,8 @@
     "dn_tilapia_rice",
     "dn_cauli_beef_bowl"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-101",
@@ -2379,7 +2479,8 @@
     "dn_beef_chili",
     "dn_burger_bowl"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-102",
@@ -2419,7 +2520,8 @@
     "dn_tofu_stir_fry",
     "dn_bolognese"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-103",
@@ -2437,7 +2539,8 @@
    "FM-TAG-EMPTY"
   ],
   "report_first": "[{\"code\": \"FM-TAG-EMPTY\", \"message\": \"No recipes satisfy required tag `high-protein` for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"\", \"details\": {\"missing_tag\": \"high-protein\", \"recipe_count\": 0}, \"fix_hint\": \"No recipes match tag `high-protein`. Add one or relax constraints.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-104",
@@ -2457,7 +2560,8 @@
     "hc_mass_gainer",
     "dn_tuna_steak_salad"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-105",
@@ -2475,7 +2579,8 @@
    "FM-TAG-EMPTY"
   ],
   "report_first": "[{\"code\": \"FM-TAG-EMPTY\", \"message\": \"No recipes satisfy required tag `breakfast, vegan, meal-prep` for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"\", \"details\": {\"missing_tag\": \"breakfast, vegan, meal-prep\", \"recipe_count\": 0}, \"fix_hint\": \"No recipes match tag `breakfast, vegan, meal-prep`. Add one or relax constraints.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-106",
@@ -2493,7 +2598,8 @@
    "FM-TAG-EMPTY"
   ],
   "report_first": "[{\"code\": \"FM-TAG-EMPTY\", \"message\": \"No recipes satisfy required tag `breakfast, vegan, portable` for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"\", \"details\": {\"missing_tag\": \"breakfast, vegan, portable\", \"recipe_count\": 0}, \"fix_hint\": \"No recipes match tag `breakfast, vegan, portable`. Add one or relax constraints.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-107",
@@ -2511,13 +2617,15 @@
    "FM-TAG-EMPTY"
   ],
   "report_first": "[{\"code\": \"FM-TAG-EMPTY\", \"message\": \"No recipes satisfy required tag `kid-friendly, gluten-free` for this slot.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"\", \"details\": {\"missing_tag\": \"kid-friendly, gluten-free\", \"recipe_count\": 0}, \"fix_hint\": \"No recipes match tag `kid-friendly, gluten-free`. Add one or relax constraints.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-108",
   "code": "INVALID_REQUEST",
   "stage": "input_validation",
-  "detail": "1 validation error for PlanRequest\nschedule_days.0.meals.2.required_tag_slugs\n  Value error, required_tag_slugs contains unknown tag slug 'keto' [type=value_error, input_value=['keto'], input_type=list]\n    For further information visit https://errors.pydantic.dev/2.13/v/value_error"
+  "detail": "1 validation error for PlanRequest\nschedule_days.0.meals.2.required_tag_slugs\n  Value error, required_tag_slugs contains unknown tag slug 'keto' [type=value_error, input_value=['keto'], input_type=list]\n    For further information visit https://errors.pydantic.dev/2.13/v/value_error",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-109",
@@ -2537,7 +2645,8 @@
     "dn_bolognese",
     "dn_tofu_stir_fry"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-110",
@@ -2557,7 +2666,8 @@
     "bk_tofu_scramble",
     "bk_big_oat_bowl"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-111",
@@ -2607,12 +2717,13 @@
     "hc_mass_gainer",
     "ln_white_bean_soup"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-112",
   "active_batches": 0,
-  "secs": 0.13,
+  "secs": 0.15,
   "success": false,
   "tc": "TC-2",
   "code": "FM-1",
@@ -2631,7 +2742,8 @@
     "bk_yolk_spinach_toast",
     "ln_white_bean_soup"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-113",
@@ -2650,7 +2762,8 @@
     "hc_mass_gainer",
     "dn_tuna_steak_salad"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-114",
@@ -2668,7 +2781,8 @@
    "FM-TAG-EMPTY"
   ],
   "report_first": "[{\"code\": \"FM-TAG-EMPTY\", \"message\": \"No recipes satisfy required tag `dairy-free` for this slot.\", \"day_index\": 0, \"slot_index\": 1, \"slot_id\": \"day-1-slot-1\", \"date\": \"\", \"details\": {\"missing_tag\": \"dairy-free\", \"recipe_count\": 0}, \"fix_hint\": \"No recipes match tag `dairy-free`. Add one or relax constraints.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-115",
@@ -2688,7 +2802,8 @@
     "hc_mass_gainer",
     "dn_tilapia_rice"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-116",
@@ -2715,7 +2830,8 @@
     "sn_protein_shake",
     "hc_pasta_salmon_bake"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-117",
@@ -2733,7 +2849,8 @@
    "FM-3"
   ],
   "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_index\": 1, \"slot_id\": \"day-1-slot-1\", \"date\": \"day-1\", \"details\": {\"recipe_id\": \"dn_beef_chili\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-118",
@@ -2751,7 +2868,8 @@
    "FM-3"
   ],
   "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 1, \"slot_index\": 0, \"slot_id\": \"day-2-slot-0\", \"date\": \"day-2\", \"details\": {\"recipe_id\": \"dn_beef_chili\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-119",
@@ -2769,7 +2887,8 @@
    "FM-3"
   ],
   "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 1, \"slot_index\": 0, \"slot_id\": \"day-2-slot-0\", \"date\": \"day-2\", \"details\": {\"recipe_id\": \"ln_chickpea_salad\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-120",
@@ -2794,7 +2913,8 @@
     "dn_thigh_quinoa_prep",
     "bk_salmon_toast"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-121",
@@ -2812,19 +2932,22 @@
    "FM-BATCH-CONFLICT"
   ],
   "report_first": "[{\"code\": \"FM-BATCH-CONFLICT\", \"message\": \"Batch locks conflict for this slot.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"\", \"details\": {\"batch_ids\": [\"batch_chili\", \"batch_curry\"], \"date\": \"\", \"slot_id\": \"day-1-slot-2\"}, \"fix_hint\": \"Batch locks conflict for this slot. Remove one lock so only one batch assignment remains.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-122",
   "code": "BATCH_REJECTED",
   "stage": "batch_create",
-  "detail": "assignments count cannot exceed total_servings"
+  "detail": "assignments count cannot exceed total_servings",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-123",
   "code": "BATCH_REJECTED",
   "stage": "batch_create",
-  "detail": "total_servings must be >= 2"
+  "detail": "total_servings must be >= 2",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-124",
@@ -2842,12 +2965,13 @@
    "FM-3"
   ],
   "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"recipe_id\": \"dn_beef_chili\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-125",
   "active_batches": 1,
-  "secs": 0.0,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -2867,7 +2991,8 @@
     "bk_protein_oats",
     "hc_mass_gainer"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-126",
@@ -2897,12 +3022,13 @@
     "sn_whey_water",
     "hc_pasta_salmon_bake"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-127",
   "active_batches": 1,
-  "secs": 0.01,
+  "secs": 0.02,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -2937,7 +3063,8 @@
     "hc_mass_gainer",
     "dn_chickpea_curry"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-128",
@@ -2972,12 +3099,13 @@
     "dn_tuna_steak_salad",
     "dn_chickpea_curry"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-129",
   "active_batches": 1,
-  "secs": 0.01,
+  "secs": 0.02,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3002,7 +3130,8 @@
     "dn_beef_rice_bowl",
     "dn_thigh_quinoa_prep"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-130",
@@ -3020,12 +3149,13 @@
    "FM-3"
   ],
   "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"recipe_id\": \"\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-131",
   "active_batches": 0,
-  "secs": 0.02,
+  "secs": 0.03,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3070,7 +3200,8 @@
     "dn_beef_rice_bowl",
     "ln_tuna_poke"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-132",
@@ -3110,7 +3241,8 @@
     "dn_tilapia_rice",
     "ln_turkey_sandwich"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-133",
@@ -3135,12 +3267,13 @@
     "dn_beef_rice_bowl",
     "ln_tuna_poke"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-134",
   "active_batches": 0,
-  "secs": 0.08,
+  "secs": 0.11,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3185,7 +3318,8 @@
     "bk_big_oat_bowl",
     "dn_beef_chili"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-135",
@@ -3203,7 +3337,8 @@
    "FM-4"
   ],
   "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"calcium_mg\", \"achieved\": 0.0, \"required\": 6500.0, \"full_req\": 6500.0, \"deficit\": 6500.0, \"classification\": \"structural\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-136",
@@ -3246,7 +3381,8 @@
     "sn_almonds_chocolate",
     "dn_edamame_fried_rice"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-137",
@@ -3264,12 +3400,13 @@
    "FM-3"
   ],
   "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 1, \"slot_index\": 0, \"slot_id\": \"day-2-slot-0\", \"date\": \"day-2\", \"details\": {\"recipe_id\": \"dn_bolognese\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
-  "warnings": "null"
+  "warnings": "null",
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-138",
   "active_batches": 0,
-  "secs": 0.51,
+  "secs": 0.98,
   "success": false,
   "tc": "TC-2",
   "code": "FM-2",
@@ -3289,12 +3426,13 @@
     "sn_krispie_banana",
     "hc_mass_gainer"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-139",
   "active_batches": 0,
-  "secs": 0.53,
+  "secs": 0.97,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3314,7 +3452,8 @@
     "sn_almonds_chocolate",
     "dn_burger_bowl"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-140",
@@ -3354,7 +3493,8 @@
     "hc_mass_gainer",
     "ln_tuna_poke"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-141",
@@ -3404,12 +3544,13 @@
     "dn_edamame_fried_rice",
     "dn_bolognese"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-142",
   "active_batches": 0,
-  "secs": 0.15,
+  "secs": 0.29,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3454,7 +3595,8 @@
     "ln_white_bean_soup",
     "bk_yolk_spinach_toast"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-143",
@@ -3475,12 +3617,13 @@
     "ln_cottage_box",
     "dn_bean_quesadilla"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-144",
   "active_batches": 0,
-  "secs": 0.0,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -3495,12 +3638,13 @@
     "dn_beef_rice_bowl",
     "bk_protein_oats"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-145",
   "active_batches": 0,
-  "secs": 0.0,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -3515,7 +3659,8 @@
     "dn_beef_rice_bowl",
     "dn_tofu_stir_fry"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-146",
@@ -3535,7 +3680,8 @@
     "ln_cottage_box",
     "hc_big_beef_rice"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-147",
@@ -3559,7 +3705,8 @@
     "dh_oat_yogurt_parfait",
     "ln_white_bean_soup"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-148",
@@ -3583,12 +3730,13 @@
     "ln_tuna_poke",
     "dh_chicken_breast_rice"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-149",
   "active_batches": 0,
-  "secs": 0.07,
+  "secs": 0.13,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3613,7 +3761,8 @@
     "ln_tuna_poke",
     "dn_bolognese"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-150",
@@ -3633,7 +3782,8 @@
     "bk_protein_oats",
     "dh_sweet_potato_hash"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  },
  {
   "id": "MB-151",
@@ -3658,6 +3808,7 @@
     "ln_turkey_sandwich",
     "sn_almonds_chocolate"
    ]
-  }
+  },
+  "nutrition_mode": "stored"
  }
 ]

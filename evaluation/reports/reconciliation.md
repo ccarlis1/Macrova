@@ -91,10 +91,10 @@ The tribunal's D1/D2 treat LLM validation as hollow — most severely, `validate
 Ordered by how much the answer changes the design. Each is genuinely open — findings both reports settled are excluded.
 
 **Q1. How much of the nutrition error comes from each of the four channels: coverage (ingredient absent), resolution (wrong USDA food), mapping (wrong nutrient ID or unit), and units (volume treated as grams)?**
-Both reports establish that all four channels are broken. Neither quantifies their relative contribution, so there is no basis for ordering the work. A fix to resolution is worthless if mapping dominates the error, and vice versa.
+**Answered (E0/E1, draft panel):** coverage **84%** of absolute kcal error, resolution **15.5%**, units **0.6%**, mapping **~0% of kcal**. Excluding coverage (api-cache view): resolution **96%**, units **4%**, mapping **0% kcal**. Mapping still matters for micros (`salmon_canned` vitamin D 761 vs remapped 30,459 IU — E1b). Local default silently zeros 72/78 ingredients; API path hard-fails on cache miss. Harness: `evaluation/data_track/`; numbers in `results/e1.json`. Panel remains `review_status: draft` pending human FDC confirmation.
 
 **Q2. What makes a resolved ingredient acceptable — i.e. what does "USDA-validated" assert, and what gate enforces it?**
-Currently it asserts only that the name resolved to some record and that nutrition computation did not raise. `oats` → "Oil, oat" satisfies that. The open question is whether the bar is (a) a plausibility envelope on macros per 100 g, (b) a description-similarity threshold, (c) human adjudication, or (d) restriction to a curated ingredient vocabulary. Each implies a different system.
+**Answered (gate after E0–E1b): (d) + (a).** Committed table `data/reference/ingredient_nutrition.json` is the default local source; new USDA cache writes must pass macro plausibility (`check_nutrition_plausibility` in `ingredient_cache.py`). Unresolved ingredients drop the recipe from the pool with `warnings.nutrition`.
 
 **Q3. What is the decision variable — an atomic recipe at stored quantity, or a recipe with a portion multiplier; and is stored nutrition per serving or per batch?**
 The OR review calls the missing portion variable the single largest formulation choice in the system (2.1), and the per-serving/per-batch ambiguity (2.2) is the same modeling decision seen from the data side. With a portion multiplier most macro windows become trivially satisfiable linear constraints and the subset-sum brittleness largely dissolves; without one, pool arithmetic governs feasibility. Nothing downstream can be settled before this.
@@ -135,7 +135,7 @@ Locking one batch across days fails HC-8 pre-validation; locking a 40-minute rec
 
 | #   | Question                                 | What settles it                                                         |
 | --- | ---------------------------------------- | ----------------------------------------------------------------------- |
-| Q1  | Error decomposition                      | Ground-truth ingredient panel; recompute each channel in isolation (E1) |
+| Q1  | Error decomposition                      | **Done (draft).** `evaluation/data_track/` E0+E1; coverage ≫ resolution ≫ units ≫ mapping(kcal) |
 | Q5  | False infeasibility                      | Brute-force oracle vs. planner on known-nutrition pools (E2, E3)        |
 | Q6  | Feasibility frontier                     | Parameter sweep over pool size × horizon × tolerance × τ (E2)           |
 | —   | Does "no objective" cost anything?       | Regret vs. enumerated optimum on small instances (E5)                   |
@@ -195,10 +195,8 @@ Verified as sound; both reports either affirm these or do not dispute them. No w
 
 ### Track A — data integrity (answers Q1; informs Q2)
 
-- **E1. Error decomposition.** For each ingredient in the panel, compute four deltas against ground truth: coverage (absent from source), resolution (resolved description is a different food — adjudicated by hand from the panel), mapping (cached value vs. value recomputed from the raw record, per nutrient), and units (recipe recomputed via `NutritionScaler` vs. `NutritionCalculator`). Roll up to per-recipe kcal / protein / per-micronutrient error, attributing each recipe's error to its dominant channel.
-*Primary metric:* share of total absolute kcal and per-micronutrient error attributable to each channel. *Secondary:* count of recipes whose kcal error exceeds 20%, by channel.
-*Decision this drives:* the ordering of any data work, and whether the mapping table alone accounts for the micronutrient failures.
-- **E1b. Cache provenance audit.** Partition the on-disk cache by whether each entry is consistent with the current mapping (the tribunal found salmon and egg yolk disagree). *Metric:* fraction of entries attributable to a superseded mapping. *Decision:* whether the cache can be trusted at all or must be rebuilt.
+- **E1. Error decomposition.** **Done (draft panel).** Results in `evaluation/data_track/results/e1.json`. Primary: coverage 84% / resolution 15.5% / units 0.6% / mapping ~0% of abs kcal. Secondary: **20** recipes >20% kcal off under api-cache, all resolution-dominated. *Decision this drives:* order data work **coverage → resolution → units → mapping (micros)**; mapping alone does **not** dominate kcal but does explain salmon vitamin D.
+- **E1b. Cache provenance audit.** **Done.** `results/e1b.json`: 82/83 consistent, 1 superseded (`salmon_canned`); egg yolk consistent; 4 zero-kcal-with-carbs keys. Fraction superseded ≈ 1.2%. *Decision:* **patch** the cache (and replace quarantined wrong-food keys); do not require a full rebuild.
 - **E8. Allergen recall.** Exclusion panel (peanuts → peanut butter / peanut oil; shellfish → shrimp / crab / prawn; egg → eggs / egg white; milk → whole milk / skim) run against the real corpus under HC-1.
 *Metric:* recall of exact-match matching per allergen class. *Decision:* whether Q10 can be answered "best-effort, documented" or must be "guarantee, requires taxonomy".
 

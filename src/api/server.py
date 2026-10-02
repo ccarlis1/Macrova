@@ -100,7 +100,9 @@ from src.api.meal_prep_routes import router as meal_prep_router
 
 
 recipes_path = "data/recipes/recipes.json"
-ingredients_path = "data/ingredients/custom_ingredients.json"
+# Q2(d): curated committed table is the default local nutrition source (§4.4).
+ingredients_path = "data/reference/ingredient_nutrition.json"
+DEFAULT_INGREDIENTS_PATH = ingredients_path
 DEFAULT_TAG_PATH = "data/recipes/recipe_tags.json"
 
 app = FastAPI(title="Nutrition Agent API")
@@ -505,6 +507,30 @@ def _merge_exclusion_warnings(
         if msg not in prior:
             prior.append(msg)
     existing["exclusions"] = prior
+    out["warnings"] = existing
+
+
+def _merge_nutrition_warnings(
+    out: Dict[str, Any],
+    unresolved_log: List[Dict[str, Any]],
+) -> None:
+    """Surface recipes dropped because ingredients could not be resolved (§4.4)."""
+    if not unresolved_log:
+        return
+    existing = out.get("warnings")
+    if not isinstance(existing, dict):
+        existing = {}
+    prior = list(existing.get("nutrition", []))
+    for row in unresolved_log:
+        recipe_id = row.get("recipe_id")
+        names = row.get("unresolved_ingredients") or []
+        msg = (
+            f"Recipe {recipe_id!r} removed from the pool: unresolved ingredients "
+            f"{list(names)}."
+        )
+        if msg not in prior:
+            prior.append(msg)
+    existing["nutrition"] = prior
     out["warnings"] = existing
 
 
@@ -1040,7 +1066,12 @@ async def plan_meals_endpoint(
         calculator = NutritionCalculator(provider)
         canonical_tag_slugs_by_id = load_canonical_recipe_tag_slugs(tag_path)
         hard_eligible_tag_slugs_by_id = load_hard_eligible_recipe_tag_slugs(tag_path)
-        recipe_pool = convert_recipes(all_recipes, calculator)
+        nutrition_unresolved_log: List[Dict[str, Any]] = []
+        recipe_pool = convert_recipes(
+            all_recipes,
+            calculator,
+            unresolved_log=nutrition_unresolved_log,
+        )
         _attach_canonical_recipe_tags(
             recipe_pool,
             canonical_tag_slugs_by_id,
@@ -1150,6 +1181,7 @@ async def plan_meals_endpoint(
         )
         _merge_filter_warnings(out, filter_log)
         _merge_exclusion_warnings(out, user_profile, list(recipe_by_id.values()))
+        _merge_nutrition_warnings(out, nutrition_unresolved_log)
         return out
     except HTTPException:
         raise
@@ -1274,7 +1306,12 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
         calculator = NutritionCalculator(provider)
         canonical_tag_slugs_by_id = load_canonical_recipe_tag_slugs(tag_path)
         hard_eligible_tag_slugs_by_id = load_hard_eligible_recipe_tag_slugs(tag_path)
-        recipe_pool = convert_recipes(all_recipes, calculator)
+        nutrition_unresolved_log: List[Dict[str, Any]] = []
+        recipe_pool = convert_recipes(
+            all_recipes,
+            calculator,
+            unresolved_log=nutrition_unresolved_log,
+        )
         _attach_canonical_recipe_tags(
             recipe_pool,
             canonical_tag_slugs_by_id,
@@ -1355,6 +1392,7 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
         )
         _merge_filter_warnings(out, filter_log)
         _merge_exclusion_warnings(out, user_profile, list(recipe_by_id.values()))
+        _merge_nutrition_warnings(out, nutrition_unresolved_log)
         warnings_out = out.get("warnings") if isinstance(out.get("warnings"), dict) else {}
         warnings_out["nl_interpretation"] = nl_interpretation
         out["warnings"] = warnings_out

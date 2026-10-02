@@ -2,20 +2,27 @@
 
 Usage (from repo root):
     .venv/bin/python evaluation/harness/run_benchmark.py [MB-001 ...]
+    .venv/bin/python evaluation/harness/run_benchmark.py --nutrition computed
 
 Writes evaluation/harness/results/results.json unless OUT is set.
+With ``--nutrition computed``, writes results_computed.json by default (own baseline).
+
 Counterfactual switches (environment variables):
     ALL_BATCHES=1   pass every non-orphaned batch to the planner, bypassing
                     list_active() (guard: list_active drops only explicitly
                     consumed or orphaned batches)
     LIMIT=<n>       planner attempt_limit (default 50000)
+    NUTRITION=stored|computed   same as --nutrition (CLI flag wins)
 
 Path mirrors /api/v1/plan (PlanRequest validation -> _build_user_profile ->
-convert_profile -> tag attach -> plan_meals) but injects the benchmark's stored
-per-serving nutrition via a stub calculator so the search track is not
-confounded by the ingredient layer. Pins/batches go through ProfilePin and
+convert_profile -> tag attach -> plan_meals). Default injects the benchmark's
+stored per-serving nutrition via a stub calculator so the search track is not
+confounded by the ingredient layer. ``--nutrition computed`` uses
+``NutritionCalculator`` + ``data/reference/ingredient_nutrition.json`` (§4.4).
+Pins/batches go through ProfilePin and
 MealPrepBatchRepository._validate_create + planning_batch_locks_from_batches.
 """
+import argparse
 import dataclasses, json, os, sys, tempfile, time, traceback
 from pathlib import Path
 
@@ -28,23 +35,33 @@ os.environ["NUTRITION_TAG_REPO_PATH"] = str(BENCH / "recipe_tags.json")
 from src.api import server as S
 from src.data_layer.models import (Recipe, Ingredient, NutritionProfile, MicronutrientProfile, ProfilePin)
 from src.data_layer.meal_prep import MealPrepBatchRepository, MealPrepBatch, BatchAssignment
+from src.data_layer.nutrition_db import NutritionDB
+from src.nutrition.calculator import NutritionCalculator
 from src.planning.converters import convert_profile, convert_recipes
 from src.planning.orchestrator import planning_batch_locks_from_batches
 from src.planning.planner import plan_meals
+from src.providers.local_provider import LocalIngredientProvider
 from src.llm.tag_repository import load_canonical_recipe_tag_slugs, load_hard_eligible_recipe_tag_slugs
 
 TAGS = str(BENCH / "recipe_tags.json")
+REF_INGREDIENTS = REPO / "data" / "reference" / "ingredient_nutrition.json"
 LIB = json.load(open(BENCH / "recipes.json"))["recipes"]
 LIB_BY = {r["id"]: r for r in LIB}
 SCEN = json.load(open(BENCH / "scenarios.json"))["scenarios"]
 MICRO_FIELDS = {f.name for f in dataclasses.fields(MicronutrientProfile)}
-
 
 class StubCalc:
     def calculate_recipe_nutrition(self, recipe):
         n = LIB_BY[recipe.id]["nutrition"]
         m = {k: v for k, v in n["micronutrients"].items() if k in MICRO_FIELDS}
         return NutritionProfile(n["calories"], n["protein_g"], n["fat_g"], n["carbs_g"], MicronutrientProfile(**m))
+
+
+def _build_calculator(nutrition_mode: str):
+    if nutrition_mode == "computed":
+        provider = LocalIngredientProvider(NutritionDB(str(REF_INGREDIENTS)))
+        return NutritionCalculator(provider)
+    return StubCalc()
 
 
 def data_recipe(r):
@@ -57,7 +74,7 @@ def data_recipe(r):
         kw.pop("instructions"); return Recipe(**kw)
 
 
-def run(sc):
+def run(sc, nutrition_mode: str = "stored"):
     p = sc["profile"]
     out = {"id": sc["id"]}
     excluded = p.get("excluded_ingredients", [])
@@ -97,7 +114,10 @@ def run(sc):
     up, _ = S._build_user_profile(preq, persisted_pins=pins)
     up.pins = pins
     recipes = S._filter_recipes_by_ids([data_recipe(r) for r in LIB], preq.recipe_ids)
-    pool = convert_recipes(recipes, StubCalc())
+    calc = _build_calculator(nutrition_mode)
+    # Stored mode: StubCalc has no unresolved_ingredient_names → never drops.
+    # Computed mode: drop recipes with gaps (should be none against the reference table).
+    pool = convert_recipes(recipes, calc, drop_unresolved=(nutrition_mode == "computed"))
     S._attach_canonical_recipe_tags(pool, load_canonical_recipe_tag_slugs(TAGS), load_hard_eligible_recipe_tag_slugs(TAGS))
     prof = convert_profile(up, preq.days)
     prof.batch_locks = planning_batch_locks_from_batches(active)
@@ -125,14 +145,31 @@ def run(sc):
 
 
 if __name__ == "__main__":
-    only = set(sys.argv[1:])
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--nutrition",
+        choices=("stored", "computed"),
+        default=os.environ.get("NUTRITION", "stored"),
+        help="stored (default, search-track baseline) or computed from reference table",
+    )
+    parser.add_argument("scenario_ids", nargs="*", help="Optional MB-xxx filters")
+    args = parser.parse_args()
+    nutrition_mode = args.nutrition
+    only = set(args.scenario_ids)
     results = []
     for sc in SCEN:
         if only and sc["id"] not in only:
             continue
-        r = run(sc)
+        r = run(sc, nutrition_mode=nutrition_mode)
+        r["nutrition_mode"] = nutrition_mode
         results.append(r)
         print(r["id"], r.get("code"), r.get("secs"), r.get("stats"), file=sys.stderr)
-    out_path = Path(os.environ.get("OUT", REPO / "evaluation/harness/results/results.json"))
+    default_out = (
+        REPO / "evaluation/harness/results/results_computed.json"
+        if nutrition_mode == "computed"
+        else REPO / "evaluation/harness/results/results.json"
+    )
+    out_path = Path(os.environ.get("OUT", default_out))
     out_path.parent.mkdir(parents=True, exist_ok=True)
     json.dump(results, open(out_path, "w"), indent=1, default=str)
+    print(f"nutrition_mode={nutrition_mode} wrote {out_path}", file=sys.stderr)

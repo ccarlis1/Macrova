@@ -2347,7 +2347,7 @@
    "min_tolerance_for_feasibility": null
   },
   "spec_notes": [
-   "Derived carbs = (2000 - 600 - 160*9)/4 = -10 g; the input contract does not reject this (spec 2.1 has no validity rule)."
+   "Derived carbs at the fat median = (2000 - 600 - 160*9)/4 = -10 g; D9 falls back to the fat minimum: (2000 - 600 - 150*9)/4 = 12.5 g, so the request is valid and goes to search."
   ],
   "n_days": 1,
   "micro": false,
@@ -6929,6 +6929,44 @@
   "n_days": 2,
   "micro": false,
   "pins": 3,
+  "batches": 0,
+  "safety": null
+ },
+ {
+  "id": "MB-152",
+  "title": "Negative carbs even at the fat minimum",
+  "cats": [
+   "nutrition-conflict",
+   "input-validation"
+  ],
+  "cls": "infeasible",
+  "expected": "INVALID_REQUEST",
+  "acceptable": [
+   "INVALID_REQUEST"
+  ],
+  "got": "INVALID_REQUEST",
+  "status": "MATCH",
+  "viol": [],
+  "tc": null,
+  "incomplete": null,
+  "report_codes": null,
+  "report_first": null,
+  "detail": "NEGATIVE_CARBS_DERIVED: Derived carbs are negative: protein and fat use more calories than the daily calorie target, even at the fat minimum.",
+  "stage_exp": "input_validation",
+  "oracle": {
+   "reason": "NEGATIVE_CARBS_DERIVED",
+   "daily_carbs_g": -10.0,
+   "protein_kcal": 600.0,
+   "fat_kcal_min": 1440.0,
+   "fat_kcal_median": 1530.0,
+   "daily_calories": 2000.0
+  },
+  "spec_notes": [
+   "Derived carbs at the fat median = (2000 - 600 - 170*9)/4 = -32.5 g; D9 fat-minimum fallback = (2000 - 600 - 160*9)/4 = -10 g, still negative, so \u00a72.1 validity rejects with INVALID_REQUEST at input_validation (NEGATIVE_CARBS_DERIVED). Counterpart to MB-053."
+  ],
+  "n_days": 1,
+  "micro": false,
+  "pins": 0,
   "batches": 0,
   "safety": null
  }

@@ -54,7 +54,8 @@ def test_user_profile_from_planner_config_derives_schedule_and_macros():
     assert profile.daily_carbs_g >= 0.0
 
 
-def test_user_profile_from_planner_config_rejects_negative_derived_carbs():
+def test_user_profile_from_planner_config_rejects_negative_remaining_after_protein():
+    """Protein alone exceeds calories → NEGATIVE_REMAINING_AFTER_PROTEIN (pre-fat check)."""
     cfg = _cfg(
         days=1,
         meals_per_day=1,
@@ -67,10 +68,26 @@ def test_user_profile_from_planner_config_rejects_negative_derived_carbs():
     with pytest.raises(PlannerConfigMappingError) as exc:
         user_profile_from_planner_config(cfg)
 
-    assert exc.value.error_code in (
-        "NEGATIVE_REMAINING_AFTER_PROTEIN",
-        "NEGATIVE_CARBS_DERIVED",
+    assert exc.value.error_code == "NEGATIVE_REMAINING_AFTER_PROTEIN"
+
+
+def test_user_profile_from_planner_config_rejects_stated_fat_range_negative_carbs():
+    """Stated fat range that leaves negative derived carbs → NEGATIVE_CARBS_DERIVED."""
+    from src.llm.schemas import PlannerConstraints
+
+    cfg = PlannerConfigJson(
+        days=1,
+        meals_per_day=3,
+        targets=PlannerTargets(calories=2000, protein=150.0),
+        preferences=PlannerPreferences(cuisine=[], budget=BudgetLevel.standard),
+        constraints=PlannerConstraints(fat_g_min=160.0, fat_g_max=180.0),
     )
+
+    with pytest.raises(PlannerConfigMappingError) as exc:
+        user_profile_from_planner_config(cfg)
+
+    assert exc.value.error_code == "NEGATIVE_CARBS_DERIVED"
+    assert exc.value.details["daily_carbs_g"] == pytest.approx(-10.0)
 
 
 def test_user_profile_from_planner_config_with_schedule_days_sets_canonical_schedule():

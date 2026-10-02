@@ -66,7 +66,7 @@ The algorithm is **deterministic**: identical inputs shall produce identical out
 
 | `daily_fat_g` | (float, float) | Daily fat range (min, max) in grams |
 
-| `daily_carbs_g` | float | Daily carbohydrate target (grams); derived as `(daily_calories - protein*4 - fat_median*9) / 4` |
+| `daily_carbs_g` | float | Daily carbohydrate target (grams); derived as `(daily_calories - protein*4 - fat_median*9) / 4`; if that is negative, `fat_min` replaces `fat_median` (D9). Never an input. |
 
 | `max_daily_calories` | Optional[int] | Hard daily calorie ceiling (Calorie Deficit Mode). When set, any day exceeding this value is invalid. |
 
@@ -95,6 +95,18 @@ The algorithm is **deterministic**: identical inputs shall produce identical out
 | `max_scaling_steps` | int | Optional. Default 4. Maximum number of scaled variants generated per eligible recipe per decision point. Only relevant when `enable_primary_carb_downscaling = true`. Must satisfy `max_scaling_steps × scaling_step_fraction < 1.0`. |
 
 | `scaling_step_fraction` | float | Optional. Default 0.10. Each scaling step reduces the primary carb source quantity by this fraction of the original. Only relevant when `enable_primary_carb_downscaling = true`. Must satisfy `max_scaling_steps × scaling_step_fraction < 1.0`. |
+
+  
+
+**Validity rules (macro targets):** A profile is **invalid** and shall be rejected before planning with `INVALID_REQUEST` (HTTP 400 on `/api/v1/plan`, with `details.reason`) if any of the following holds:
+
+1. `daily_calories ≤ 0`, `daily_protein_g < 0`, or `daily_fat_g.min < 0`
+2. `daily_fat_g.min > daily_fat_g.max` (the backend shall reject, not silently swap)
+3. Derived `daily_carbs_g < 0` after the fat-minimum fallback, i.e. `daily_calories - protein*4 - fat_min*9 < 0`
+
+A profile whose carbs are negative at the fat median but non-negative at the fat minimum is **valid** and plans against the fat-minimum carb target (e.g. 2,000 kcal / 150 g protein / fat 150–170 g → 12.5 g). Very low but non-negative derived carbs (e.g. keto-style targets around 20–30 g) remain **valid**; if the recipe pool cannot meet them the planner reports FM-2. Exactly **0 g** derived carbs is valid; note that the ±10% carb tolerance then becomes a 0 g window (only carb-free days pass). An absolute tolerance floor for small carb targets is a separate follow-up.
+
+Reason codes include `NON_POSITIVE_CALORIES`, `NEGATIVE_PROTEIN`, `NEGATIVE_FAT_MIN`, `FAT_RANGE_INVERTED`, and `NEGATIVE_CARBS_DERIVED`. Implementations centralize this check (`validate_macro_targets`) so the API, YAML loader, and plan-from-text mapper cannot diverge.
 
   
 

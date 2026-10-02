@@ -86,6 +86,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       for (final e in kMicronutrientsInDisplayOrder)
         e.key: TextEditingController(),
     };
+    _caloriesCtrl.addListener(_recomputeDerivedCarbs);
+    _proteinGCtrl.addListener(_recomputeDerivedCarbs);
+    _fatGMinCtrl.addListener(_recomputeDerivedCarbs);
+    _fatGMaxCtrl.addListener(_recomputeDerivedCarbs);
   }
 
   @override
@@ -94,6 +98,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (!_initialized) {
       _loadFromProvider();
       _initialized = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final err = UserProfile.macroTargetsErrorFor(
+          double.tryParse(_caloriesCtrl.text.trim()) ?? 0,
+          double.tryParse(_proteinGCtrl.text.trim()) ?? 0,
+          double.tryParse(_fatGMinCtrl.text.trim()) ?? 0,
+          double.tryParse(_fatGMaxCtrl.text.trim()) ?? 0,
+        );
+        if (err != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Invalid macro targets: $err')),
+          );
+        }
+      });
     }
   }
 
@@ -105,9 +123,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _totalCaloriesCtrl.text = profile.calories.toStringAsFixed(0);
     _caloriesCtrl.text = profile.calories.toStringAsFixed(0);
     _proteinGCtrl.text = profile.proteinG.toStringAsFixed(0);
-    _carbsGCtrl.text = profile.carbsG.toStringAsFixed(0);
     _fatGMinCtrl.text = profile.fatGMin.toStringAsFixed(0);
     _fatGMaxCtrl.text = profile.fatGMax.toStringAsFixed(0);
+    _recomputeDerivedCarbs();
     final microJson = profile.micronutrientGoals.toJson();
     for (final e in kMicronutrientsInDisplayOrder) {
       final v = (microJson[e.key] as num?)?.toDouble() ?? 0;
@@ -125,6 +143,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _maxDailyCaloriesCtrl.text = profile.maxDailyCalories?.toString() ?? '';
     _demographicGroup = profile.demographicGroup;
     _allergies = List.from(profile.allergies);
+  }
+
+  void _recomputeDerivedCarbs() {
+    final calories = double.tryParse(_caloriesCtrl.text.trim());
+    final protein = double.tryParse(_proteinGCtrl.text.trim());
+    final fatMin = double.tryParse(_fatGMinCtrl.text.trim());
+    final fatMax = double.tryParse(_fatGMaxCtrl.text.trim());
+    if (calories == null || protein == null || fatMin == null || fatMax == null) {
+      return;
+    }
+    final carbs = UserProfile.deriveCarbsG(calories, protein, fatMin, fatMax);
+    final text = carbs.isNaN ? '—' : carbs.toStringAsFixed(1);
+    if (_carbsGCtrl.text != text) {
+      _carbsGCtrl.text = text;
+    }
   }
 
   String _nonZeroNum(double v) {
@@ -163,17 +196,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _calculateFromRatios() {
     final calories = double.tryParse(_totalCaloriesCtrl.text.trim()) ?? 0;
     final pPct = double.tryParse(_proteinPctCtrl.text.trim()) ?? 0;
-    final cPct = double.tryParse(_carbsPctCtrl.text.trim()) ?? 0;
     final fPct = double.tryParse(_fatPctCtrl.text.trim()) ?? 0;
 
     setState(() {
       _caloriesCtrl.text = calories.toStringAsFixed(0);
       _proteinGCtrl.text = (calories * pPct / 100 / 4).toStringAsFixed(0);
-      _carbsGCtrl.text = (calories * cPct / 100 / 4).toStringAsFixed(0);
       final fatMid = (calories * fPct / 100 / 9);
       final fatMidStr = fatMid.toStringAsFixed(0);
       _fatGMinCtrl.text = fatMidStr;
       _fatGMaxCtrl.text = fatMidStr;
+      // Carbs are derived from calories/protein/fat (listener updates the field).
     });
   }
 
@@ -199,17 +231,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   UserProfile _buildProfile() {
     final tau =
         double.tryParse(_micronutrientTauCtrl.text.trim()) ?? 1.0;
-    var fatMin = double.tryParse(_fatGMinCtrl.text.trim()) ?? 60;
-    var fatMax = double.tryParse(_fatGMaxCtrl.text.trim()) ?? 74;
-    if (fatMax < fatMin) {
-      final t = fatMin;
-      fatMin = fatMax;
-      fatMax = t;
-    }
+    final fatMin = double.tryParse(_fatGMinCtrl.text.trim()) ?? 60;
+    final fatMax = double.tryParse(_fatGMaxCtrl.text.trim()) ?? 74;
+    final calories = double.tryParse(_caloriesCtrl.text.trim()) ?? 2000;
+    final proteinG = double.tryParse(_proteinGCtrl.text.trim()) ?? 150;
+    final carbsG = UserProfile.deriveCarbsG(calories, proteinG, fatMin, fatMax);
     return UserProfile(
-      calories: double.tryParse(_caloriesCtrl.text.trim()) ?? 2000,
-      proteinG: double.tryParse(_proteinGCtrl.text.trim()) ?? 150,
-      carbsG: double.tryParse(_carbsGCtrl.text.trim()) ?? 200,
+      calories: calories,
+      proteinG: proteinG,
+      carbsG: carbsG.isNaN ? 0 : carbsG,
       fatGMin: fatMin,
       fatGMax: fatMax,
       proteinPct: double.tryParse(_proteinPctCtrl.text.trim()) ?? 30,
@@ -292,6 +322,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (value == null || value.trim().isEmpty) return 'Required';
     if (double.tryParse(value.trim()) == null) return 'Enter a valid number';
     return null;
+  }
+
+  String? _macroTargetsValidator(String? _) {
+    final required = _requiredNumber(_caloriesCtrl.text) ??
+        _requiredNumber(_proteinGCtrl.text) ??
+        _requiredNumber(_fatGMinCtrl.text) ??
+        _requiredNumber(_fatGMaxCtrl.text);
+    if (required != null) return null; // field-level required handles empties
+    return UserProfile.macroTargetsErrorFor(
+      double.parse(_caloriesCtrl.text.trim()),
+      double.parse(_proteinGCtrl.text.trim()),
+      double.parse(_fatGMinCtrl.text.trim()),
+      double.parse(_fatGMaxCtrl.text.trim()),
+    );
   }
 
   String? _maxDailyCaloriesValidator(String? value) {
@@ -477,7 +521,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         suffixText: 'kcal',
                       ),
                       keyboardType: TextInputType.number,
-                      validator: _requiredNumber,
+                      validator: (v) =>
+                          _requiredNumber(v) ?? _macroTargetsValidator(v),
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
@@ -487,17 +532,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         suffixText: 'g',
                       ),
                       keyboardType: TextInputType.number,
-                      validator: _requiredNumber,
+                      validator: (v) =>
+                          _requiredNumber(v) ?? _macroTargetsValidator(v),
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _carbsGCtrl,
+                      readOnly: true,
                       decoration: const InputDecoration(
-                        labelText: 'Carbs',
+                        labelText: 'Carbs (derived)',
                         suffixText: 'g',
+                        helperText:
+                            'Computed from calories, protein, and fat median (fat min if needed)',
                       ),
                       keyboardType: TextInputType.number,
-                      validator: _requiredNumber,
                     ),
                     const SizedBox(height: 12),
                     Text(
@@ -520,7 +568,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               suffixText: 'g',
                             ),
                             keyboardType: TextInputType.number,
-                            validator: _requiredNumber,
+                            validator: (v) =>
+                                _requiredNumber(v) ?? _macroTargetsValidator(v),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -532,7 +581,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               suffixText: 'g',
                             ),
                             keyboardType: TextInputType.number,
-                            validator: _requiredNumber,
+                            validator: (v) =>
+                                _requiredNumber(v) ?? _macroTargetsValidator(v),
                           ),
                         ),
                       ],

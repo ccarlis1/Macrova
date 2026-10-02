@@ -1,7 +1,7 @@
 {
   "benchmark": "macrova-planning-v1",
   "spec": "docs/planner/mealplan-specification-v3.md",
-  "scenario_count": 151,
+  "scenario_count": 152,
   "scenarios": [
     {
       "id": "MB-001",
@@ -10319,7 +10319,7 @@
       },
       "preferences_note": "",
       "spec_notes": [
-        "Derived carbs = (2000 - 600 - 160*9)/4 = -10 g; the input contract does not reject this (spec 2.1 has no validity rule)."
+        "Derived carbs at the fat median = (2000 - 600 - 160*9)/4 = -10 g; D9 falls back to the fat minimum: (2000 - 600 - 150*9)/4 = 12.5 g, so the request is valid and goes to search."
       ],
       "safety_expectation": null,
       "expected": {
@@ -10331,7 +10331,7 @@
           "FM-5"
         ],
         "failure_stage": "search",
-        "derived_daily_carbs_g": -10.0,
+        "derived_daily_carbs_g": 12.5,
         "oracle": {
           "pins_overridden_by_locks": [],
           "valid_assignments_per_day": [
@@ -30362,6 +30362,151 @@
             0
           ],
           "min_tolerance_for_feasibility": null
+        }
+      }
+    },
+    {
+      "id": "MB-152",
+      "title": "Negative carbs even at the fat minimum",
+      "user_request": "2,000 kcal, 150 g protein, fat 160-180 g. Three meals.",
+      "categories": [
+        "nutrition-conflict",
+        "input-validation"
+      ],
+      "intended_class": "infeasible",
+      "profile": {
+        "daily_calories": 2000,
+        "daily_protein_g": 150,
+        "daily_fat_g": {
+          "min": 160,
+          "max": 180
+        },
+        "max_daily_calories": null,
+        "excluded_ingredients": [],
+        "liked_foods": [],
+        "demographic": "adult_male",
+        "micronutrient_targets": {},
+        "micronutrient_weekly_min_fraction": 1.0
+      },
+      "horizon_days": 1,
+      "schedule_days": [
+        {
+          "day_index": 1,
+          "meals": [
+            {
+              "index": 1,
+              "busyness_level": 3,
+              "tags": [
+                "breakfast"
+              ],
+              "preferred_time": "07:30"
+            },
+            {
+              "index": 2,
+              "busyness_level": 3,
+              "tags": [
+                "lunch"
+              ],
+              "preferred_time": "12:30"
+            },
+            {
+              "index": 3,
+              "busyness_level": 4,
+              "tags": [
+                "dinner"
+              ],
+              "preferred_time": "18:30"
+            }
+          ],
+          "workouts": []
+        }
+      ],
+      "pins": [],
+      "meal_prep_batches": [],
+      "recipe_pool": {
+        "recipe_ids": [
+          "bk_yogurt_berry_bowl",
+          "bk_overnight_oats",
+          "bk_protein_oats",
+          "bk_cottage_papaya",
+          "bk_avocado_toast_feta",
+          "bk_cream_of_rice_whey",
+          "bk_tofu_scramble",
+          "bk_pb_banana_toast",
+          "bk_chia_pudding",
+          "bk_salmon_toast",
+          "bk_yolk_spinach_toast",
+          "bk_big_oat_bowl",
+          "ln_turkey_sandwich",
+          "ln_roast_beef_wrap",
+          "ln_tuna_poke",
+          "ln_chickpea_salad",
+          "ln_black_bean_quinoa",
+          "ln_salmon_salad",
+          "ln_white_bean_soup",
+          "ln_salami_plate",
+          "ln_cottage_box",
+          "ln_tuna_pasta_salad",
+          "ln_tofu_quinoa_salad",
+          "dn_beef_rice_bowl",
+          "dn_beef_chili",
+          "dn_thigh_sheet_pan",
+          "dn_tilapia_rice",
+          "dn_bolognese",
+          "dn_tofu_stir_fry",
+          "dn_salmon_potatoes",
+          "dn_burger_bowl",
+          "dn_veggie_pasta",
+          "dn_thigh_quinoa_prep",
+          "dn_edamame_fried_rice",
+          "dn_cauli_beef_bowl",
+          "dn_big_pasta_night",
+          "dn_bean_quesadilla",
+          "dn_tuna_steak_salad",
+          "dn_chickpea_curry",
+          "sn_protein_shake",
+          "sn_whey_water",
+          "sn_banana_pb",
+          "sn_almonds_chocolate",
+          "sn_yogurt_honey",
+          "sn_krispie_banana",
+          "sn_cottage_blueberry",
+          "sn_carrots_almond_butter",
+          "sn_turkey_rollups",
+          "sn_papaya_yogurt",
+          "sn_bedtime_cottage",
+          "sn_trail_mix",
+          "sn_edamame_cup",
+          "sn_chia_seed_water",
+          "hc_mass_gainer",
+          "hc_double_burger_potatoes",
+          "hc_big_beef_rice",
+          "hc_pasta_salmon_bake"
+        ],
+        "size": 57,
+        "description": "full local library (core recipes, no duplicates)"
+      },
+      "preferences_note": "",
+      "spec_notes": [
+        "Derived carbs at the fat median = (2000 - 600 - 170*9)/4 = -32.5 g; D9 fat-minimum fallback = (2000 - 600 - 160*9)/4 = -10 g, still negative, so \u00a72.1 validity rejects with INVALID_REQUEST at input_validation (NEGATIVE_CARBS_DERIVED). Counterpart to MB-053."
+      ],
+      "safety_expectation": null,
+      "expected": {
+        "class": "infeasible",
+        "outcome": "failure",
+        "primary_failure_code": "INVALID_REQUEST",
+        "acceptable_failure_codes": [
+          "INVALID_REQUEST"
+        ],
+        "failure_stage": "input_validation",
+        "derived_daily_carbs_g": -10.0,
+        "oracle": {
+          "reason": "NEGATIVE_CARBS_DERIVED",
+          "daily_carbs_g": -10.0,
+          "protein_kcal": 600.0,
+          "fat_kcal_min": 1440.0,
+          "fat_kcal_median": 1530.0,
+          "daily_calories": 2000.0
         }
       }
     }

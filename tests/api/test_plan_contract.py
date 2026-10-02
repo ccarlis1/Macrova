@@ -10,6 +10,7 @@ import json
 import shutil
 from pathlib import Path
 
+import pytest
 import yaml
 from fastapi.testclient import TestClient
 
@@ -730,3 +731,41 @@ def test_plan_response_meal_metadata_slot_index_matches_batch_assignment(tmp_pat
     assert meal["batch_id"] == "contract-batch-slot2"
     assert meal["slot_index"] == 2
     assert meal["servings"] == 4.0
+
+
+def test_plan_rejects_negative_derived_carbs_before_planner(monkeypatch):
+    """Carbs still negative at the fat min → 400 INVALID_REQUEST / NEGATIVE_CARBS_DERIVED; planner never runs."""
+    called = {"plan_meals": False}
+
+    def _should_not_run(*_a, **_k):
+        called["plan_meals"] = True
+        raise AssertionError("plan_meals must not run for invalid macro targets")
+
+    monkeypatch.setattr("src.api.server.plan_meals", _should_not_run)
+    monkeypatch.setattr(
+        "src.planning.orchestrator.plan_with_llm_feedback",
+        _should_not_run,
+    )
+
+    client = TestClient(app)
+    resp = client.post(
+        "/api/v1/plan",
+        json={
+            "daily_calories": 2000,
+            "daily_protein_g": 150.0,
+            "daily_fat_g_min": 160.0,
+            "daily_fat_g_max": 180.0,
+            "liked_foods": [],
+            "disliked_foods": [],
+            "allergies": [],
+            "days": 1,
+            "ingredient_source": "local",
+            "schedule": {"07:00": 2, "12:00": 3, "18:00": 3},
+        },
+    )
+    assert resp.status_code == 400
+    body = resp.json()
+    assert body["error"]["code"] == "INVALID_REQUEST"
+    assert body["error"]["details"]["reason"] == "NEGATIVE_CARBS_DERIVED"
+    assert body["error"]["details"]["daily_carbs_g"] == pytest.approx(-10.0)
+    assert called["plan_meals"] is False

@@ -493,7 +493,7 @@ S("Negative derived carbs",
   cats=["infeasible", "nutrition-conflict"], intended="infeasible",
   profile=P(2000, 150, 150, 170),
   days=[day(std3(b=(3, 3, 4)))], pool_ids=CORE, pool_note=FULL,
-  spec_notes=["Derived carbs = (2000 - 600 - 160*9)/4 = -10 g; the input contract does not reject this (spec 2.1 has no validity rule)."])
+  spec_notes=["Derived carbs at the fat median = (2000 - 600 - 160*9)/4 = -10 g; D9 falls back to the fat minimum: (2000 - 600 - 150*9)/4 = 12.5 g, so the request is valid and goes to search."])
 
 S("Ceiling below the tolerance window",
   "Target 2,000 kcal but hard cap at 1,700. 130 g protein, 50-70 g fat, three meals.",
@@ -1191,6 +1191,14 @@ S("Fully pinned day inside a two-day plan",
   pins=[(0, 0, "bk_protein_oats"), (0, 1, "ln_turkey_sandwich"), (0, 2, "sn_almonds_chocolate")],
   spec_notes=["C3 probe P2: day 0 is fully pinned well under the kcal/protein/carbs windows; day 1 is free. Must fail as FM-3, not success."])
 
+S("Negative carbs even at the fat minimum",
+  "2,000 kcal, 150 g protein, fat 160-180 g. Three meals.",
+  cats=["infeasible", "nutrition-conflict", "input-validation"], intended="infeasible",
+  profile=P(2000, 150, 160, 180),
+  days=[day(std3(b=(3, 3, 4)))], pool_ids=CORE, pool_note=FULL,
+  spec_notes=["Derived carbs at the fat median = (2000 - 600 - 170*9)/4 = -32.5 g; D9 fat-minimum fallback = (2000 - 600 - 160*9)/4 = -10 g, "
+              "still negative, so §2.1 validity rejects with INVALID_REQUEST at input_validation (NEGATIVE_CARBS_DERIVED). Counterpart to MB-053."])
+
 # ======================================================================
 # Saved-profile preferences (liked foods, preferred tags). These come from the
 # user's stored profile rather than the request text, and never change
@@ -1237,5 +1245,5 @@ for _sc in SCENARIOS:
         if not _sc["preferences_note"]:
             _sc["preferences_note"] = ("liked_foods / preferred_tag_slugs come from the saved profile; "
                                        "soft signals only, must not change feasibility")
-assert len(SCENARIOS) == 151, len(SCENARIOS)
+assert len(SCENARIOS) == 152, len(SCENARIOS)
 assert not [t for t in _ENRICH if t not in {s["title"] for s in SCENARIOS}]

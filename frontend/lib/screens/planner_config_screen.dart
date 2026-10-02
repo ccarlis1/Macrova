@@ -368,6 +368,14 @@ class PlannerConfigScreen extends StatelessWidget {
     final planProvider = context.read<MealPlanProvider>();
     final recipeProvider = context.read<RecipeProvider>();
 
+    final macroErr = profile.macroTargetsError;
+    if (macroErr != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Fix your Profile macros first: $macroErr')),
+      );
+      return;
+    }
+
     final recipeIds = planProvider.selectedRecipeIds.isEmpty
         ? null
         : planProvider.selectedRecipeIds.toList();

@@ -1,6 +1,49 @@
 {
   "components": {
     "schemas": {
+      "ApiErrorBody": {
+        "description": "Structured API error payload (``{\"error\": {...}}``).",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ApiErrorBody",
+        "type": "object"
+      },
+      "ApiErrorResponse": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ApiErrorBody"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "ApiErrorResponse",
+        "type": "object"
+      },
       "AssignmentInput": {
         "additionalProperties": false,
         "description": "Canonical planner coordinates ``(day_index, slot_index)`` or legacy ``(date, slot_id)``.\n\nLegacy input is normalized at the route boundary; persistence uses only canonical fields.",
@@ -1886,6 +1929,16 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -2610,6 +2663,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
           },
           "422": {
             "content": {

@@ -15,6 +15,7 @@ from src.llm.recipe_generator import RecipeGenerationError
 from src.llm.recipe_validator import RecipeValidationError
 from src.llm.usda_contract import USDAProviderRequiredError
 from src.llm.constraint_parser import PlannerConfigParsingError
+from src.data_layer.macro_targets import MacroTargetsError
 from src.data_layer.user_profile import PlannerConfigMappingError
 from src.llm.feedback_cache import DeterministicCacheMissError
 from src.planning.orchestrator import LLMFeedbackOrchestratorError, LLMPlanningModeError
@@ -75,6 +76,16 @@ def map_exception_to_api_error(exc: Exception) -> Tuple[int, Dict[str, Any]]:
     if isinstance(exc, (LLMInternalError, LLMClientError)):
         # Covers remaining client-side transport/server errors.
         return 502, _payload("LLM_API_ERROR", str(exc))
+
+    # Macro target validity (§2.1 / §4.2): reject before planning.
+    if isinstance(exc, MacroTargetsError):
+        return 400, {
+            API_ERROR: {
+                "code": "INVALID_REQUEST",
+                "message": exc.message,
+                "details": {"reason": exc.reason, **exc.details},
+            }
+        }
 
     # NL planner: include structured details so clients can show field-level errors.
     if isinstance(exc, PlannerConfigParsingError):

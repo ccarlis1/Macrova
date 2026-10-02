@@ -31,8 +31,13 @@ MULTIDAY_NODE_CAP = 3_000_000
 
 
 def carbs_target(p: dict) -> float:
+    """Derived carbs from the fat median; falls back to the fat minimum if negative (D9)."""
+    remaining = p["daily_calories"] - p["daily_protein_g"] * 4
     fat_med = (p["daily_fat_g"]["min"] + p["daily_fat_g"]["max"]) / 2.0
-    return (p["daily_calories"] - p["daily_protein_g"] * 4 - fat_med * 9) / 4.0
+    carbs = (remaining - fat_med * 9) / 4.0
+    if carbs < 0:
+        carbs = (remaining - p["daily_fat_g"]["min"] * 9) / 4.0
+    return carbs
 
 
 @dataclass
@@ -186,7 +191,37 @@ class Oracle:
         excluded = list(prof.get(excluded_key) or [])
         out: dict = {"stage": None, "failure_code": None, "details": {}}
 
-        # ---- 0. request validation: unknown tag slugs are rejected by MealSlot ----
+        # ---- 0a. macro-target validity (§2.1 / §4.2) ----
+        cal = float(prof["daily_calories"])
+        protein = float(prof["daily_protein_g"])
+        fat_min = float(prof["daily_fat_g"]["min"])
+        fat_max = float(prof["daily_fat_g"]["max"])
+        if cal <= 0:
+            out.update(stage="input_validation", failure_code="INVALID_REQUEST",
+                       details={"reason": "NON_POSITIVE_CALORIES", "daily_calories": cal})
+            return out
+        if protein < 0:
+            out.update(stage="input_validation", failure_code="INVALID_REQUEST",
+                       details={"reason": "NEGATIVE_PROTEIN", "daily_protein_g": protein})
+            return out
+        if fat_min < 0:
+            out.update(stage="input_validation", failure_code="INVALID_REQUEST",
+                       details={"reason": "NEGATIVE_FAT_MIN", "fat_g_min": fat_min})
+            return out
+        if fat_min > fat_max:
+            out.update(stage="input_validation", failure_code="INVALID_REQUEST",
+                       details={"reason": "FAT_RANGE_INVERTED", "fat_g_min": fat_min, "fat_g_max": fat_max})
+            return out
+        derived_carbs = carbs_target(prof)
+        if derived_carbs < 0:
+            fat_med = (fat_min + fat_max) / 2.0
+            out.update(stage="input_validation", failure_code="INVALID_REQUEST",
+                       details={"reason": "NEGATIVE_CARBS_DERIVED", "daily_carbs_g": derived_carbs,
+                                "protein_kcal": protein * 4.0, "fat_kcal_min": fat_min * 9.0,
+                                "fat_kcal_median": fat_med * 9.0, "daily_calories": cal})
+            return out
+
+        # ---- 0b. request validation: unknown tag slugs are rejected by MealSlot ----
         for d, day in enumerate(days):
             for s_idx, slot in enumerate(day["meals"]):
                 for field_name in ("required_tag_slugs", "preferred_tag_slugs"):

@@ -30,6 +30,7 @@ from src.ingestion.nutrient_mapper import MappedNutrition, NutrientMapper
 from src.ingestion.ingredient_cache import CachedIngredientLookup
 from src.ingestion.usda_client import DataType, USDAClient, USDALookupError
 
+from src.data_layer.macro_targets import MacroTargetsError, validate_macro_targets
 from src.data_layer.models import (
     UserProfile,
     Recipe as DataRecipe,
@@ -128,6 +129,18 @@ async def _request_validation_exception_handler(
         status_code=400,
         content={"error": {"code": "INVALID_REQUEST", "message": "Invalid request schema."}},
     )
+
+
+class ApiErrorBody(BaseModel):
+    """Structured API error payload (``{"error": {...}}``)."""
+
+    code: str
+    message: str
+    details: Optional[Dict[str, Any]] = None
+
+
+class ApiErrorResponse(BaseModel):
+    error: ApiErrorBody
 
 
 class PlanRequest(BaseModel):
@@ -723,10 +736,13 @@ def _build_user_profile(
     persisted_pins: Optional[List[Any]] = None,
 ) -> tuple[UserProfile, List[str]]:
     daily_fat_g = (request.daily_fat_g_min, request.daily_fat_g_max)
-    median_fat_g = (daily_fat_g[0] + daily_fat_g[1]) / 2
-    daily_carbs_g = (
-        request.daily_calories - request.daily_protein_g * 4 - median_fat_g * 9
-    ) / 4
+    # Derived carbs + validity (§2.1 / §4.2); raises MacroTargetsError.
+    daily_carbs_g = validate_macro_targets(
+        request.daily_calories,
+        request.daily_protein_g,
+        daily_fat_g[0],
+        daily_fat_g[1],
+    )
 
     warnings: List[str] = []
     schedule_days: Optional[List[DaySchedule]] = None
@@ -1010,8 +1026,18 @@ def llm_status_endpoint() -> Dict[str, Any]:
     return {"enabled": bool(settings.enabled)}
 
 
-@app.post("/api/v1/plan", response_model=PlanResponse, response_model_exclude_none=True)
-@app.post("/api/plan", response_model=PlanResponse, response_model_exclude_none=True)
+@app.post(
+    "/api/v1/plan",
+    response_model=PlanResponse,
+    response_model_exclude_none=True,
+    responses={400: {"model": ApiErrorResponse}},
+)
+@app.post(
+    "/api/plan",
+    response_model=PlanResponse,
+    response_model_exclude_none=True,
+    responses={400: {"model": ApiErrorResponse}},
+)
 async def plan_meals_endpoint(
     request: Request,
     plan_request: PlanRequest,
@@ -1024,10 +1050,22 @@ async def plan_meals_endpoint(
             )
 
         parity_ctx = hydrate_parity_plan_context(seed=None)
-        user_profile, sched_warnings = _build_user_profile(
-            plan_request,
-            persisted_pins=parity_ctx.persisted_pins,
-        )
+        try:
+            user_profile, sched_warnings = _build_user_profile(
+                plan_request,
+                persisted_pins=parity_ctx.persisted_pins,
+            )
+        except MacroTargetsError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "error": {
+                        "code": "INVALID_REQUEST",
+                        "message": exc.message,
+                        "details": {"reason": exc.reason, **exc.details},
+                    }
+                },
+            )
         apply_persisted_pins_to_profile(user_profile, parity_ctx.persisted_pins)
 
         recipe_db = RecipeDB(recipes_path)

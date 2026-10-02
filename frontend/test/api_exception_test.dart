@@ -15,6 +15,18 @@ void main() {
       expect(e.message, 'Bad');
     });
 
+    test('appends details.reason and daily_carbs_g when present', () {
+      final res = http.Response(
+        '{"error":{"code":"INVALID_REQUEST","message":"Derived carbs are negative",'
+        '"details":{"reason":"NEGATIVE_CARBS_DERIVED","daily_carbs_g":-10.0}}}',
+        400,
+      );
+      final e = ApiException.fromResponse(res);
+      expect(e.code, 'INVALID_REQUEST');
+      expect(e.message, contains('NEGATIVE_CARBS_DERIVED'));
+      expect(e.message, contains('daily_carbs_g=-10.0'));
+    });
+
     test('parses FastAPI validation detail', () {
       final res = http.Response(
         '{"detail":[{"loc":["body","x"],"msg":"field required","type":"value_error.missing"}]}',

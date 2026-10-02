@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from src.llm.schemas import BudgetLevel, PlannerConfigJson
 
+from src.data_layer.macro_targets import MacroTargetsError, validate_macro_targets
 from src.data_layer.models import MicronutrientProfile, ProfilePin, UserProfile
 from src.models.legacy_schedule_migration import (
     canonical_day_to_meal_only_legacy_dict,
@@ -246,11 +247,10 @@ class UserProfileLoader:
         fat_range = nutrition_goals["daily_fat_g"]
         daily_fat_g = (float(fat_range["min"]), float(fat_range["max"]))
 
-        # Calculate carbs from remaining calories
-        # Use median fat (average of min and max) for calculation
-        median_fat_g = (daily_fat_g[0] + daily_fat_g[1]) / 2
-        # Carbs = (calories - protein*4 - fat*9) / 4
-        daily_carbs_g = (daily_calories - daily_protein_g * 4 - median_fat_g * 9) / 4
+        # Derived carbs + validity (§2.1 / §4.2); raises MacroTargetsError.
+        daily_carbs_g = validate_macro_targets(
+            daily_calories, daily_protein_g, daily_fat_g[0], daily_fat_g[1]
+        )
 
         schedule_days: list[DaySchedule] | None = None
         schedule_dict: dict[str, int]
@@ -406,23 +406,16 @@ def user_profile_from_planner_config(cfg: PlannerConfigJson) -> UserProfile:
     fat_g_min = fat_cal_min / 9.0
     fat_g_max = fat_cal_max / 9.0
 
-    median_fat_g = (fat_g_min + fat_g_max) / 2.0
-    daily_carbs_g = (
-        daily_calories - daily_protein_g * 4.0 - median_fat_g * 9.0
-    ) / 4.0
-    if daily_carbs_g < 0:
-        raise PlannerConfigMappingError(
-            error_code="NEGATIVE_CARBS_DERIVED",
-            message="Derived carbs was negative; mapping is impossible with these targets.",
-            details={
-                "daily_calories": float(daily_calories),
-                "daily_protein_g": daily_protein_g,
-                "fat_g_min": fat_g_min,
-                "fat_g_max": fat_g_max,
-                "median_fat_g": median_fat_g,
-                "daily_carbs_g": daily_carbs_g,
-            },
+    try:
+        daily_carbs_g = validate_macro_targets(
+            daily_calories, daily_protein_g, fat_g_min, fat_g_max
         )
+    except MacroTargetsError as exc:
+        raise PlannerConfigMappingError(
+            error_code=exc.reason,
+            message=exc.message,
+            details=dict(exc.details),
+        ) from exc
 
     cuisine = [str(c).strip() for c in cfg.preferences.cuisine or [] if str(c).strip()]
     constraints = cfg.constraints
@@ -433,15 +426,16 @@ def user_profile_from_planner_config(cfg: PlannerConfigJson) -> UserProfile:
         lo = float(constraints.fat_g_min if constraints.fat_g_min is not None else 0.0)
         hi = float(constraints.fat_g_max if constraints.fat_g_max is not None else max(lo, fat_g_max))
         fat_g_min, fat_g_max = lo, hi
-        median_fat_g = (fat_g_min + fat_g_max) / 2.0
-        daily_carbs_g = (daily_calories - daily_protein_g * 4.0 - median_fat_g * 9.0) / 4.0
-        if daily_carbs_g < 0:
-            raise PlannerConfigMappingError(
-                error_code="NEGATIVE_CARBS_DERIVED",
-                message="Derived carbs was negative with the stated fat range; targets are inconsistent.",
-                details={"daily_calories": float(daily_calories), "daily_protein_g": daily_protein_g,
-                         "fat_g_min": fat_g_min, "fat_g_max": fat_g_max, "daily_carbs_g": daily_carbs_g},
+        try:
+            daily_carbs_g = validate_macro_targets(
+                daily_calories, daily_protein_g, fat_g_min, fat_g_max
             )
+        except MacroTargetsError as exc:
+            raise PlannerConfigMappingError(
+                error_code=exc.reason,
+                message=exc.message,
+                details=dict(exc.details),
+            ) from exc
 
     # An invented schedule is a hard constraint the user never stated: drop it when the model
     # told us what was stated and schedule_days was not among it.

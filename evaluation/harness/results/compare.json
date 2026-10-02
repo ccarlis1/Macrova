@@ -2311,43 +2311,32 @@
   "id": "MB-053",
   "title": "Negative derived carbs",
   "cats": [
-   "nutrition-conflict"
+   "nutrition-conflict",
+   "input-validation"
   ],
   "cls": "infeasible",
-  "expected": "FM-2",
+  "expected": "INVALID_REQUEST",
   "acceptable": [
-   "FM-2",
-   "FM-5"
+   "INVALID_REQUEST"
   ],
-  "got": "FM-2",
+  "got": "INVALID_REQUEST",
   "status": "MATCH",
   "viol": [],
-  "tc": "TC-2",
+  "tc": null,
   "incomplete": null,
-  "report_codes": [
-   "FM-MACRO-INFEASIBLE"
-  ],
-  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
-  "detail": null,
-  "stage_exp": "search",
+  "report_codes": null,
+  "report_first": null,
+  "detail": "NEGATIVE_CARBS_DERIVED: Derived carbs are negative: protein and fat use more calories than the daily calorie target.",
+  "stage_exp": "input_validation",
   "oracle": {
-   "pins_overridden_by_locks": [],
-   "valid_assignments_per_day": [
-    0
-   ],
-   "distinct_meal_sets_per_day": [
-    0
-   ],
-   "day_enumeration_capped": [
-    false
-   ],
-   "infeasible_days": [
-    0
-   ],
-   "min_tolerance_for_feasibility": null
+   "reason": "NEGATIVE_CARBS_DERIVED",
+   "daily_carbs_g": -10.0,
+   "protein_kcal": 600.0,
+   "fat_kcal_median": 1440.0,
+   "daily_calories": 2000.0
   },
   "spec_notes": [
-   "Derived carbs = (2000 - 600 - 160*9)/4 = -10 g; the input contract does not reject this (spec 2.1 has no validity rule)."
+   "Derived carbs = (2000 - 600 - 160*9)/4 = -10 g; \u00a72.1 validity rejects with INVALID_REQUEST at input_validation (NEGATIVE_CARBS_DERIVED)."
   ],
   "n_days": 1,
   "micro": false,

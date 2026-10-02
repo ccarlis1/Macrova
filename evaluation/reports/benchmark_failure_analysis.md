@@ -137,9 +137,9 @@ With `API_FIDELITY=1` (now removed), which reproduced the API's old behaviour, o
 
 The benchmark README's run instructions ("build `PlanRequest` from each scenario's profile") therefore led to a harness that silently tested without HC-5. That gap is closed.
 
-### 4.2 Negative derived carbs are accepted (validation issue)
+### 4.2 Negative derived carbs are accepted (validation issue) — **resolved**
 
-In MB-053, the targets imply −10 g of carbs per day. The backend accepts that and plans against it. The frontend clamps derived carbs to 0 (`frontend/lib/models/user_profile.dart:449-451`), so the two sides disagree about the same profile. Neither rejects it.
+**Status:** fixed. Shared `validate_macro_targets` rejects profiles with negative derived carbs (and related invalid macros) before planning. `/api/v1/plan`, the YAML loader, and plan-from-text all use it. MB-053 now expects `INVALID_REQUEST` at `input_validation` (`NEGATIVE_CARBS_DERIVED`). The Flutter profile screen shows derived carbs read-only and blocks plan requests when targets are inconsistent.
 
 ### 4.3 A slot's meal type is only a label (spec ambiguity and a gap in the benchmark)
 
@@ -200,7 +200,7 @@ Shipped: `data/reference/ingredient_nutrition.json` (default local source; `revi
 | Planner algorithm defect | C4 fixed (C2a/C2b/C3 fixed) | 0 |
 | API/contract issue | §4.1 fixed, C1 fixed | 0 |
 | Specification ambiguity | C5 fixed (structural agreement); C6 done; §4.3 open; **§4.4 Q2 open** | 2 (meal-type + data acceptability) |
-| Validation issue | §4.2 | 0 (hidden) |
+| Validation issue | §4.2 fixed | 0 |
 | Recipe/data limitation | **§4.4 measured** — coverage dominates local; resolution dominates api-cache | 0 planner mismatches (data track separate) |
 | Expected infeasibility | 57 of 57 infeasible scenarios fail correctly after C5 | — |
 | Test-design problem | no meal-type scoring (§4.3); no fully pinned day inside a multi-day plan (C3, fixed); **benchmark uses stored nutrition only** | 0 |
@@ -224,7 +224,8 @@ C2a's spec gap is closed in §11 attribution steps 2–3.
 | 5 | C4 search order (+ C5 structural agreement) | **Done.** Tight valid-day FC-4 bound and per-slot pruning; 145 → 149 exact; MB-067 ACCEPTABLE → MATCH |
 | 6 | C6 allergy class expansion (Q10) | **Done.** Allergies expand via allergen class table; harness sends safety scenarios as allergies; 149 → 151 exact |
 | 7 | §4.4 data track (Q1) | **Measured.** E0/E1/E1b in `evaluation/data_track/`; coverage then resolution dominate. Fix blocked on Q2 gate. |
-| — | §4.2, §4.3 | Remaining specification decisions (input validity, meal type) |
+| 8 | §4.2 negative derived carbs | **Done.** Input validity rejects before planning; MB-053 is `INVALID_REQUEST` / `input_validation`. |
+| — | §4.3 | Remaining specification decision (meal type) |
 
 Fixes 1–6 have resolved their clusters: the benchmark is at **151 of 151** exact matches. MB-151 (a fully pinned day inside a two-day plan) keeps C3 covered by the benchmark.
 

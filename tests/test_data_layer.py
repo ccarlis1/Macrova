@@ -15,6 +15,7 @@ from src.data_layer.models import (
 from src.data_layer.recipe_db import RecipeDB
 from src.data_layer.ingredient_db import IngredientDB
 from src.data_layer.nutrition_db import NutritionDB
+from src.data_layer.macro_targets import MacroTargetsError
 from src.data_layer.user_profile import UserProfileLoader, persist_profile_schedule_days
 from src.models.schedule import DaySchedule
 
@@ -534,6 +535,28 @@ class TestUserProfileLoader:
         try:
             with pytest.raises(ValueError):
                 UserProfileLoader(temp_path).load()
+        finally:
+            Path(temp_path).unlink()
+
+    def test_load_rejects_negative_derived_carbs(self):
+        """MB-053 profile numbers → MacroTargetsError(NEGATIVE_CARBS_DERIVED)."""
+        profile_data = {
+            "nutrition_goals": {
+                "daily_calories": 2000,
+                "daily_protein_g": 150,
+                "daily_fat_g": {"min": 150, "max": 170},
+            },
+            "schedule": {"07:00": 2, "12:00": 3, "18:00": 3},
+            "preferences": {"liked_foods": [], "disliked_foods": [], "allergies": []},
+        }
+        with NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+            yaml.dump(profile_data, f)
+            temp_path = f.name
+        try:
+            with pytest.raises(MacroTargetsError) as exc:
+                UserProfileLoader(temp_path).load()
+            assert exc.value.reason == "NEGATIVE_CARBS_DERIVED"
+            assert exc.value.details["daily_carbs_g"] == pytest.approx(-10.0)
         finally:
             Path(temp_path).unlink()
 

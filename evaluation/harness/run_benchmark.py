@@ -33,6 +33,7 @@ os.chdir(REPO)
 os.environ["NUTRITION_TAG_REPO_PATH"] = str(BENCH / "recipe_tags.json")
 
 from src.api import server as S
+from src.data_layer.macro_targets import MacroTargetsError
 from src.data_layer.models import (Recipe, Ingredient, NutritionProfile, MicronutrientProfile, ProfilePin)
 from src.data_layer.meal_prep import MealPrepBatchRepository, MealPrepBatch, BatchAssignment
 from src.data_layer.nutrition_db import NutritionDB
@@ -111,7 +112,15 @@ def run(sc, nutrition_mode: str = "stored"):
     active = repo.list_active() if not os.environ.get("ALL_BATCHES") else [b for b in repo._batches if b.status != "orphaned"]
     out["active_batches"] = len(active)
     pins = [ProfilePin(day_index=x["day_index"], slot_index=x["slot_index"], recipe_id=x["recipe_id"]) for x in sc.get("pins") or []]
-    up, _ = S._build_user_profile(preq, persisted_pins=pins)
+    try:
+        up, _ = S._build_user_profile(preq, persisted_pins=pins)
+    except MacroTargetsError as e:
+        out.update(
+            code="INVALID_REQUEST",
+            stage="input_validation",
+            detail=f"{e.reason}: {e.message}",
+        )
+        return out
     up.pins = pins
     recipes = S._filter_recipes_by_ids([data_recipe(r) for r in LIB], preq.recipe_ids)
     calc = _build_calculator(nutrition_mode)

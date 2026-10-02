@@ -258,6 +258,57 @@ class UserProfile {
   /// Midpoint of [fatGMin]–[fatGMax] (e.g. for single-value macro displays).
   double get fatG => (fatGMin + fatGMax) / 2;
 
+  /// Derive carbs from calories / protein / fat median (§2.1).
+  ///
+  /// Returns the raw value (may be negative or NaN); callers that need a
+  /// validity check should use [macroTargetsErrorFor] or [macroTargetsError].
+  static double deriveCarbsG(
+    double calories,
+    double proteinG,
+    double fatGMin,
+    double fatGMax,
+  ) {
+    final medianFatG = (fatGMin + fatGMax) / 2;
+    return (calories - proteinG * 4 - medianFatG * 9) / 4;
+  }
+
+  /// User-facing error when macro targets are invalid (§2.1 / §4.2), or null.
+  static String? macroTargetsErrorFor(
+    double calories,
+    double proteinG,
+    double fatGMin,
+    double fatGMax,
+  ) {
+    if (calories <= 0) {
+      return 'Calories must be greater than zero.';
+    }
+    if (proteinG < 0) {
+      return 'Protein must not be negative.';
+    }
+    if (fatGMin < 0) {
+      return 'Fat min must not be negative.';
+    }
+    if (fatGMin > fatGMax) {
+      return 'Fat min is above fat max.';
+    }
+    final carbs = deriveCarbsG(calories, proteinG, fatGMin, fatGMax);
+    if (carbs.isNaN) {
+      return 'Could not derive carbs from these targets.';
+    }
+    if (carbs < 0) {
+      final proteinKcal = proteinG * 4;
+      final fatKcal = ((fatGMin + fatGMax) / 2) * 9;
+      final used = (proteinKcal + fatKcal).round();
+      final cal = calories.round();
+      return 'Protein and fat already use $used of your $cal kcal.';
+    }
+    return null;
+  }
+
+  /// Same as [macroTargetsErrorFor] for this profile's stored macros.
+  String? get macroTargetsError =>
+      macroTargetsErrorFor(calories, proteinG, fatGMin, fatGMax);
+
   /// Hard daily calorie ceiling (HC-5). When set, the planner never exceeds this.
   final int? maxDailyCalories;
 
@@ -469,16 +520,12 @@ class UserProfile {
       fatGMin = 60;
       fatGMax = 74;
     }
-    if (fatGMax < fatGMin) {
-      final t = fatGMin;
-      fatGMin = fatGMax;
-      fatGMax = t;
-    }
+    // Do not swap inverted fat ranges; keep the real values so validators can
+    // surface FAT_RANGE_INVERTED (§4.2). Backend rejects them.
 
     final medianFatG = (fatGMin + fatGMax) / 2;
-    var carbsG =
-        (calories - proteinG * 4 - medianFatG * 9) / 4;
-    if (carbsG.isNaN || carbsG < 0) {
+    var carbsG = deriveCarbsG(calories, proteinG, fatGMin, fatGMax);
+    if (carbsG.isNaN) {
       carbsG = 0;
     }
 
@@ -515,8 +562,9 @@ class UserProfile {
         calories > 0 ? (proteinG * 4 / calories * 100).clamp(0.0, 100.0) : 30.0;
     final fatPct =
         calories > 0 ? (medianFatG * 9 / calories * 100).clamp(0.0, 100.0) : 30.0;
-    final carbsPct =
-        calories > 0 ? (carbsG * 4 / calories * 100).clamp(0.0, 100.0) : 40.0;
+    final carbsPct = calories > 0 && !carbsG.isNaN
+        ? (carbsG * 4 / calories * 100).clamp(-100.0, 100.0)
+        : 40.0;
 
     return UserProfile(
       calories: calories,

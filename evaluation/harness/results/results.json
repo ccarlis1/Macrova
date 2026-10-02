@@ -535,7 +535,7 @@
  {
   "id": "MB-021",
   "active_batches": 0,
-  "secs": 0.08,
+  "secs": 0.09,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -566,7 +566,7 @@
  {
   "id": "MB-022",
   "active_batches": 0,
-  "secs": 0.52,
+  "secs": 0.63,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -687,7 +687,7 @@
  {
   "id": "MB-027",
   "active_batches": 0,
-  "secs": 1.37,
+  "secs": 1.49,
   "success": false,
   "tc": "TC-2",
   "code": "FM-1",
@@ -716,7 +716,7 @@
  {
   "id": "MB-028",
   "active_batches": 1,
-  "secs": 0.0,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1041,7 +1041,7 @@
  {
   "id": "MB-040",
   "active_batches": 0,
-  "secs": 0.04,
+  "secs": 0.05,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1129,7 +1129,7 @@
  {
   "id": "MB-043",
   "active_batches": 0,
-  "secs": 0.03,
+  "secs": 0.04,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -1176,7 +1176,7 @@
  {
   "id": "MB-045",
   "active_batches": 0,
-  "secs": 0.0,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -1199,7 +1199,7 @@
  {
   "id": "MB-046",
   "active_batches": 0,
-  "secs": 0.01,
+  "secs": 0.02,
   "success": false,
   "tc": "TC-2",
   "code": "FM-2",
@@ -1378,26 +1378,15 @@
  {
   "id": "MB-053",
   "active_batches": 0,
-  "secs": 0.0,
-  "success": false,
-  "tc": "TC-2",
-  "code": "FM-2",
-  "incomplete": null,
-  "stats": {
-   "attempts": 0,
-   "backtracks": 0
-  },
-  "report_codes": [
-   "FM-MACRO-INFEASIBLE"
-  ],
-  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
-  "warnings": "null",
+  "code": "INVALID_REQUEST",
+  "stage": "input_validation",
+  "detail": "NEGATIVE_CARBS_DERIVED: Derived carbs are negative: protein and fat use more calories than the daily calorie target.",
   "nutrition_mode": "stored"
  },
  {
   "id": "MB-054",
   "active_batches": 0,
-  "secs": 0.2,
+  "secs": 0.22,
   "success": false,
   "tc": "TC-2",
   "code": "FM-2",
@@ -1602,7 +1591,7 @@
  {
   "id": "MB-063",
   "active_batches": 0,
-  "secs": 0.09,
+  "secs": 0.08,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -1666,7 +1655,7 @@
  {
   "id": "MB-066",
   "active_batches": 0,
-  "secs": 0.07,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1697,7 +1686,7 @@
  {
   "id": "MB-067",
   "active_batches": 0,
-  "secs": 0.04,
+  "secs": 0.02,
   "success": false,
   "tc": "TC-2",
   "code": "FM-4",
@@ -1716,7 +1705,7 @@
  {
   "id": "MB-068",
   "active_batches": 0,
-  "secs": 0.16,
+  "secs": 0.13,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1790,7 +1779,7 @@
  {
   "id": "MB-071",
   "active_batches": 0,
-  "secs": 0.11,
+  "secs": 0.1,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1816,7 +1805,7 @@
  {
   "id": "MB-072",
   "active_batches": 0,
-  "secs": 0.53,
+  "secs": 0.55,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -2018,7 +2007,7 @@
  {
   "id": "MB-080",
   "active_batches": 0,
-  "secs": 0.0,
+  "secs": 0.01,
   "success": false,
   "tc": "TC-2",
   "code": "FM-1",
@@ -2672,7 +2661,7 @@
  {
   "id": "MB-111",
   "active_batches": 0,
-  "secs": 0.04,
+  "secs": 0.05,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -2723,7 +2712,7 @@
  {
   "id": "MB-112",
   "active_batches": 0,
-  "secs": 0.15,
+  "secs": 0.18,
   "success": false,
   "tc": "TC-2",
   "code": "FM-1",
@@ -2971,7 +2960,7 @@
  {
   "id": "MB-125",
   "active_batches": 1,
-  "secs": 0.01,
+  "secs": 0.0,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3028,7 +3017,7 @@
  {
   "id": "MB-127",
   "active_batches": 1,
-  "secs": 0.02,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3105,7 +3094,7 @@
  {
   "id": "MB-129",
   "active_batches": 1,
-  "secs": 0.02,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3155,7 +3144,7 @@
  {
   "id": "MB-131",
   "active_batches": 0,
-  "secs": 0.03,
+  "secs": 0.04,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3273,7 +3262,7 @@
  {
   "id": "MB-134",
   "active_batches": 0,
-  "secs": 0.11,
+  "secs": 0.09,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3406,7 +3395,7 @@
  {
   "id": "MB-138",
   "active_batches": 0,
-  "secs": 0.98,
+  "secs": 0.75,
   "success": false,
   "tc": "TC-2",
   "code": "FM-2",
@@ -3432,7 +3421,7 @@
  {
   "id": "MB-139",
   "active_batches": 0,
-  "secs": 0.97,
+  "secs": 0.54,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3550,7 +3539,7 @@
  {
   "id": "MB-142",
   "active_batches": 0,
-  "secs": 0.29,
+  "secs": 0.15,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3623,7 +3612,7 @@
  {
   "id": "MB-144",
   "active_batches": 0,
-  "secs": 0.01,
+  "secs": 0.0,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -3644,7 +3633,7 @@
  {
   "id": "MB-145",
   "active_batches": 0,
-  "secs": 0.01,
+  "secs": 0.0,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -3736,7 +3725,7 @@
  {
   "id": "MB-149",
   "active_batches": 0,
-  "secs": 0.13,
+  "secs": 0.07,
   "success": true,
   "tc": "TC-1",
   "code": "OK",

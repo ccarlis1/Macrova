@@ -37,6 +37,15 @@ class ApiException implements Exception {
             if (fe is List && fe.isNotEmpty) {
               message = '$message: ${fe.map((e) => e.toString()).join('; ')}';
             }
+            final reason = details['reason'];
+            if (reason is String && reason.isNotEmpty) {
+              final carbs = details['daily_carbs_g'];
+              if (carbs is num) {
+                message = '$message ($reason, daily_carbs_g=${carbs.toString()})';
+              } else {
+                message = '$message ($reason)';
+              }
+            }
           }
           return ApiException(
             statusCode: status,

@@ -490,10 +490,10 @@ S("Keto macros",
 
 S("Negative derived carbs",
   "2,000 kcal, 150 g protein, fat 150-170 g. Three meals.",
-  cats=["infeasible", "nutrition-conflict"], intended="infeasible",
+  cats=["infeasible", "nutrition-conflict", "input-validation"], intended="infeasible",
   profile=P(2000, 150, 150, 170),
   days=[day(std3(b=(3, 3, 4)))], pool_ids=CORE, pool_note=FULL,
-  spec_notes=["Derived carbs = (2000 - 600 - 160*9)/4 = -10 g; the input contract does not reject this (spec 2.1 has no validity rule)."])
+  spec_notes=["Derived carbs = (2000 - 600 - 160*9)/4 = -10 g; §2.1 validity rejects with INVALID_REQUEST at input_validation (NEGATIVE_CARBS_DERIVED)."])
 
 S("Ceiling below the tolerance window",
   "Target 2,000 kcal but hard cap at 1,700. 130 g protein, 50-70 g fat, three meals.",

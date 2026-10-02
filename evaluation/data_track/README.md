@@ -52,7 +52,8 @@ is only needed for `cache_audit.py`). Headline numbers are recorded in
 ## Panel review
 
 `panel.json` was promoted to [`data/reference/ingredient_nutrition.json`](../../data/reference/ingredient_nutrition.json)
-after the decision gate (Q2 = d+a). Acai fruit has no suitable FDC fruit record
+after the decision gate (Q2 = d+a). It is still a draft (`review_status: draft`):
+the FDC choices have not been human-reviewed yet. Acai fruit has no suitable FDC fruit record
 (`ground_truth_unavailable`); the beverage entry is best-effort.
 
 Gate decisions: [`results/decision_gate.md`](results/decision_gate.md).

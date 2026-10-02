@@ -100,7 +100,7 @@ from src.api.meal_prep_routes import router as meal_prep_router
 
 
 recipes_path = "data/recipes/recipes.json"
-# Q2(d): curated committed table is the default local nutrition source (§4.4).
+# Q2(d): committed ingredient table (draft, pending review) is the default local nutrition source (§4.4).
 ingredients_path = "data/reference/ingredient_nutrition.json"
 DEFAULT_INGREDIENTS_PATH = ingredients_path
 DEFAULT_TAG_PATH = "data/recipes/recipe_tags.json"

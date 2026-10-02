@@ -191,7 +191,7 @@ Against hand-chosen correct FDC IDs (`panel.json`, `review_status: draft`):
 
 Decisions: curated table + plausibility; drop unresolved recipes with warnings; commit `data/recipes/recipes.json` and keep example/benchmark coverage; fix order as measured.
 
-Shipped: `data/reference/ingredient_nutrition.json` (default local source), `convert_recipes(drop_unresolved=True)` + `warnings.nutrition`, cache plausibility gate, coverage test `tests/test_ingredient_nutrition_reference.py`, harness `--nutrition computed`.
+Shipped: `data/reference/ingredient_nutrition.json` (default local source; `review_status: draft`, human review pending), `convert_recipes(drop_unresolved=True)` + `warnings.nutrition`, cache plausibility gate, coverage test `tests/test_ingredient_nutrition_reference.py`, harness `--nutrition computed`.
 
 ## 5. Classification
 

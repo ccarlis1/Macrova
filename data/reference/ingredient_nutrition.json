@@ -1,4 +1,5 @@
 {
+  "review_status": "draft",
   "generated_at": "2026-10-02T21:43:13Z",
   "ingredients": [
     {
@@ -3530,7 +3531,7 @@
       "source": "evaluation/data_track/panel.json"
     }
   ],
-  "notes": "Reviewed per-100g table for committed + benchmark ingredients (Q2=d+a). Default local NutritionDB source. USDA lookups for new names must pass macro plausibility before caching.",
+  "notes": "Draft per-100g table for committed + benchmark ingredients (Q2=d+a), promoted from the draft panel; pending human FDC review. Default local NutritionDB source. USDA lookups for new names must pass macro plausibility before caching.",
   "schema_version": 1,
   "source_panel": "evaluation/data_track/panel.json"
 }

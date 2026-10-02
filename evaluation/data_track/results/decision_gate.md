@@ -20,7 +20,7 @@ Status: **decided** (2026-10-02).
 2. **Missing ingredient:** **Fail recipe out of pool + warning** (same style as C6 unclassified warnings).
 3. **Committed recipes:** **Both** — track `data/recipes/recipes.json` (the 32) and keep coverage over `.example` + benchmark library.
 4. **Fix order:** confirmed —
-   1. committed reviewed table
+   1. committed reviewed table (committed as draft; human review pending)
    2. no silent zeros
    3. plausibility gate on cache write
    4. coverage test

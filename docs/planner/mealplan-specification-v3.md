@@ -1514,11 +1514,17 @@ When the algorithm terminates without a valid plan, or rejects input-derived loc
 
 ### Attribution when search ends without a plan
 
-When the search ends without a plan and without hitting the attempt budget (TC-3 / FM-5), report the first of the following that holds. Step 1 does not depend on search order and **shall run as a static pre-check before search**, so a tagged or otherwise unfillable slot later in a day is diagnosed before FC-5 look-ahead can end the search first:
+When the search ends without a plan and without hitting the attempt budget (TC-3 / FM-5), report the first of the following that holds. Step 1 does not depend on search order and **shall run as a static pre-check before search**, so a tagged or otherwise unfillable slot later in a day is diagnosed before FC-5 look-ahead can end the search first. Steps 2–3 run **only after search exhausts**, and replace the last-event failure code on those paths:
 
 1. **Slot check.** Walk non-pinned slots in decision order (day-major, then slot). A slot with no recipes passing HC-1/HC-3 → **FM-1** for that slot. A slot where recipes pass HC-1/HC-3 but none satisfy the slot's required tags → **FM-TAG-EMPTY** for that slot. (Pinned slots are skipped; pin failures remain FM-3 via pinned pre-validation.)
 
-Steps 2–4 (day check → FM-2/FM-3; across-days → FM-4 or FM-1; budget → FM-5) and the inconclusive-diagnosis fallback are specified for post-search attribution and are implemented separately.
+2. **Day check.** For each day in order, ask whether any combination of eligible recipes (pinned slots fixed; free slots drawn from the step-1 HC-1/HC-3/required-tag lists) passes daily validation. The first day with no valid combination is attributed as follows: if the day has pins and the same day *without* those pins is feasible → **FM-3** (downstream pin conflict); otherwise → **FM-2**. FM-2 reports shall keep the closest-plan snapshot from search.
+
+3. **Across-days check.** When every day has at least one valid combination, search for a sequence of day assignments that satisfies HC-8. If no HC-8-valid sequence exists → **FM-1**, reported at day level (`slot_index` null, no `eligible_recipe_count`), since every slot has candidates. If an HC-8-valid sequence exists but tracked micronutrient floors (`τ × daily_RDI × D`, for `D > 1`) cannot be met → **FM-4**; the reported `achieved` totals come from an actual HC-8-valid sequence (the closest one found), not from per-day maxima, so at least one nutrient is listed as deficient. Otherwise a feasible plan exists that search missed; see the inconclusive fallback below.
+
+4. **Attempt budget.** Reaching the attempt/backtrack limit without a plan or a proof of infeasibility remains **FM-5** (TC-3). This step is detected during search and is not re-attributed by steps 2–3.
+
+**Inconclusive diagnosis.** Steps 2–3 run under a deterministic node-count budget (never wall-clock). If the budget is exhausted, a day has too many valid combinations to enumerate, primary-carb downscaling is enabled on an infeasible day check (variants are state-dependent and not modeled statically), or the diagnosis finds a feasible plan that search missed, the diagnosis is **inconclusive**: keep the search's last-event failure code and report, and attach `report.diagnosis` with `status: "inconclusive"` and a reason (`node_budget`, `day_capped`, `carb_downscaling`, or `plan_exists`). Attribution is a pure function of planner inputs with fixed iteration order, so the attributed code does not depend on which exhaustion exit search took.
 
   
 
@@ -1530,7 +1536,7 @@ Steps 2–4 (day check → FM-2/FM-3; across-days → FM-4 or FM-1; budget → F
 
   
 
-**Detection:** Static pre-check (attribution step 1) reports FM-1 for the first non-pinned slot with no recipes passing HC-1/HC-3. During search, FC-5 (Recipe Pool Sufficiency) may also detect this at the first decision point of the affected day, or earlier if filtering eliminates too many candidates.
+**Detection:** Static pre-check (attribution step 1) reports FM-1 for the first non-pinned slot with no recipes passing HC-1/HC-3. After search exhausts, attribution step 3 reports FM-1 when every day has a valid combination but HC-8 leaves no valid day sequence. During search, FC-5 (Recipe Pool Sufficiency) may also end on an empty candidate set; that last-event path is re-attributed by steps 2–3 when conclusive.
 
   
 
@@ -1576,6 +1582,8 @@ Steps 2–4 (day check → FM-2/FM-3; across-days → FM-4 or FM-1; budget → F
 
   
 
+**Detection:** After search exhausts, attribution step 2 reports FM-2 for the first day that has no valid combination of eligible recipes and that remains infeasible even with its pins removed (or that has no pins). The report keeps the closest-plan snapshot from search.
+
 **Report shall include:**
 
 - The day(s) that failed validation.
@@ -1610,7 +1618,7 @@ Steps 2–4 (day check → FM-2/FM-3; across-days → FM-4 or FM-1; budget → F
 
 
 
-**Detection:** Pinned recipes that directly violate HC-1, HC-2, HC-3, HC-5, or HC-8 are caught during pre-validation (Section 3.5) before the search begins. A fully pinned day that fails daily validation is also rejected during pre-validation with FM-3. Downstream nutritional infeasibility caused by pinned assignments that leave some free slots is detected during the search via feasibility checks or backtracking exhaustion.
+**Detection:** Pinned recipes that directly violate HC-1, HC-2, HC-3, HC-5, or HC-8 are caught during pre-validation (Section 3.5) before the search begins. A fully pinned day that fails daily validation is also rejected during pre-validation with FM-3. Downstream nutritional infeasibility caused by pinned assignments that leave some free slots is detected after search exhausts via attribution step 2 (day check with vs without pins).
 
   
 
@@ -1648,7 +1656,7 @@ Steps 2–4 (day check → FM-2/FM-3; across-days → FM-4 or FM-1; budget → F
 
   
 
-**Detection:** BT-3 (weekly validation failure) or FC-4 (weekly feasibility check at day boundary).
+**Detection:** BT-3 (weekly validation failure) or FC-4 (weekly feasibility check at day boundary). After search exhausts, attribution step 3 reports FM-4 when every day is individually feasible and HC-8 admits a sequence, but tracked micronutrient floors cannot be met (`D > 1`).
 
   
 

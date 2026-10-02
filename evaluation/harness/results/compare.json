@@ -535,15 +535,15 @@
    "FM-2",
    "FM-5"
   ],
-  "got": "FM-1",
-  "status": "MISMATCH",
+  "got": "FM-2",
+  "status": "MATCH",
   "viol": [],
   "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
-   "FM-1"
+   "FM-MACRO-INFEASIBLE"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 1, \"slot_id\": \"day-1-slot-1\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {\"calories\": -1221.35, \"protein_g\": -90.86, \"fat_g\": -34.120000000000005, \"carbs_g\": -106.2}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -1183,7 +1183,7 @@
   "report_codes": [
    "FM-1"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 1, \"slot_index\": 1, \"slot_id\": \"day-2-slot-1\", \"date\": \"day-2\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No sequence of valid days avoids repeating a recipe on consecutive days.\", \"day_index\": 1, \"slot_id\": \"\", \"date\": \"day-2\", \"details\": {\"blocking_constraints\": [\"HC-8: consecutive-day non-workout recipe reuse leaves no valid day sequence\"]}, \"fix_hint\": \"Too few distinct recipes to avoid repeating a meal on consecutive days. Add more recipes, shorten the plan, or relax slot constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -1325,15 +1325,15 @@
    "FM-2",
    "FM-5"
   ],
-  "got": "FM-1",
-  "status": "MISMATCH",
+  "got": "FM-2",
+  "status": "MATCH",
   "viol": [],
   "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
-   "FM-1"
+   "FM-MACRO-INFEASIBLE"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 1, \"slot_id\": \"day-1-slot-1\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {\"calories\": -1257.8, \"protein_g\": -91.31, \"fat_g\": -28.869999999999997, \"carbs_g\": -115.43}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -1961,7 +1961,7 @@
   "report_codes": [
    "FM-1"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No sequence of valid days avoids repeating a recipe on consecutive days.\", \"day_index\": 1, \"slot_id\": \"\", \"date\": \"day-2\", \"details\": {\"blocking_constraints\": [\"HC-8: consecutive-day non-workout recipe reuse leaves no valid day sequence\"]}, \"fix_hint\": \"Too few distinct recipes to avoid repeating a meal on consecutive days. Add more recipes, shorten the plan, or relax slot constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -2047,15 +2047,15 @@
    "FM-2",
    "FM-5"
   ],
-  "got": "FM-1",
-  "status": "MISMATCH",
+  "got": "FM-2",
+  "status": "MATCH",
   "viol": [],
   "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
-   "FM-1"
+   "FM-MACRO-INFEASIBLE"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {\"calories\": -1701.3999999999996, \"protein_g\": -37.91999999999999, \"fat_g\": -15.090000000000003, \"carbs_g\": -336.26}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -2230,15 +2230,15 @@
    "FM-2",
    "FM-5"
   ],
-  "got": "FM-1",
-  "status": "MISMATCH",
+  "got": "FM-2",
+  "status": "MATCH",
   "viol": [],
   "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
-   "FM-1"
+   "FM-MACRO-INFEASIBLE"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 1, \"slot_id\": \"day-1-slot-1\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {\"calories\": -829.88, \"protein_g\": -153.24, \"fat_g\": -13.420000000000002, \"carbs_g\": -12.31}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -2277,15 +2277,15 @@
    "FM-2",
    "FM-5"
   ],
-  "got": "FM-1",
-  "status": "MISMATCH",
+  "got": "FM-2",
+  "status": "MATCH",
   "viol": [],
   "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
-   "FM-1"
+   "FM-MACRO-INFEASIBLE"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -2324,15 +2324,15 @@
    "FM-2",
    "FM-5"
   ],
-  "got": "FM-1",
-  "status": "MISMATCH",
+  "got": "FM-2",
+  "status": "MATCH",
   "viol": [],
   "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
-   "FM-1"
+   "FM-MACRO-INFEASIBLE"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {\"calories\": -831.3, \"protein_g\": -50.019999999999996, \"fat_g\": -57.510000000000005, \"carbs_g\": -2.3500000000000014}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -2371,15 +2371,15 @@
    "FM-2",
    "FM-5"
   ],
-  "got": "FM-1",
-  "status": "MISMATCH",
+  "got": "FM-2",
+  "status": "MATCH",
   "viol": [],
   "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
-   "FM-1"
+   "FM-MACRO-INFEASIBLE"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -2421,15 +2421,15 @@
    "FM-2",
    "FM-5"
   ],
-  "got": "FM-1",
-  "status": "MISMATCH",
+  "got": "FM-2",
+  "status": "MATCH",
   "viol": [],
   "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
-   "FM-1"
+   "FM-MACRO-INFEASIBLE"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {\"calories\": -842.6500000000001, \"protein_g\": -50.130000000000024, \"fat_g\": -15.720000000000013, \"carbs_g\": -109.89999999999992}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -2470,15 +2470,15 @@
    "FM-2",
    "FM-5"
   ],
-  "got": "FM-1",
-  "status": "MISMATCH",
+  "got": "FM-2",
+  "status": "MATCH",
   "viol": [],
   "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
-   "FM-1"
+   "FM-MACRO-INFEASIBLE"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 1, \"slot_id\": \"day-1-slot-1\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {\"calories\": -1574.5, \"protein_g\": -142.19, \"fat_g\": -17.0, \"carbs_g\": -180.37}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -2517,15 +2517,15 @@
    "FM-2",
    "FM-5"
   ],
-  "got": "FM-1",
-  "status": "MISMATCH",
+  "got": "FM-2",
+  "status": "MATCH",
   "viol": [],
   "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
-   "FM-1"
+   "FM-MACRO-INFEASIBLE"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 1, \"slot_id\": \"day-1-slot-1\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {\"calories\": -2357.8, \"protein_g\": -111.31, \"fat_g\": -53.87, \"carbs_g\": -314.18}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -2564,15 +2564,15 @@
    "FM-2",
    "FM-5"
   ],
-  "got": "FM-1",
-  "status": "MISMATCH",
+  "got": "FM-2",
+  "status": "MATCH",
   "viol": [],
   "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
-   "FM-1"
+   "FM-MACRO-INFEASIBLE"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {\"calories\": -826.0999999999999, \"protein_g\": -171.79, \"fat_g\": 0.0, \"carbs_g\": -33.0}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -2733,15 +2733,15 @@
    "FM-2",
    "FM-5"
   ],
-  "got": "FM-1",
-  "status": "MISMATCH",
+  "got": "FM-2",
+  "status": "MATCH",
   "viol": [],
   "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
-   "FM-1"
+   "FM-MACRO-INFEASIBLE"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 1, \"slot_id\": \"day-1-slot-1\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {\"calories\": -2307.66, \"protein_g\": -123.07, \"fat_g\": -44.99, \"carbs_g\": -315.22}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -2825,7 +2825,7 @@
   "report_codes": [
    "FM-1"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 1, \"slot_index\": 0, \"slot_id\": \"day-2-slot-0\", \"date\": \"day-2\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No sequence of valid days avoids repeating a recipe on consecutive days.\", \"day_index\": 1, \"slot_id\": \"\", \"date\": \"day-2\", \"details\": {\"blocking_constraints\": [\"HC-8: consecutive-day non-workout recipe reuse leaves no valid day sequence\"]}, \"fix_hint\": \"Too few distinct recipes to avoid repeating a meal on consecutive days. Add more recipes, shorten the plan, or relax slot constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -2927,15 +2927,15 @@
    "FM-2",
    "FM-5"
   ],
-  "got": "FM-1",
-  "status": "MISMATCH",
+  "got": "FM-2",
+  "status": "MATCH",
   "viol": [],
   "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
-   "FM-1"
+   "FM-MACRO-INFEASIBLE"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -2976,15 +2976,15 @@
    "FM-4",
    "FM-5"
   ],
-  "got": "FM-1",
-  "status": "MISMATCH",
+  "got": "FM-4",
+  "status": "MATCH",
   "viol": [],
   "tc": "TC-2",
-  "incomplete": null,
+  "incomplete": "Did not meet weekly targets.",
   "report_codes": [
-   "FM-1"
+   "FM-4"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 1, \"slot_index\": 2, \"slot_id\": \"day-2-slot-2\", \"date\": \"day-2\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"fiber_g\", \"achieved\": 57.532, \"required\": 70.0, \"full_req\": 70.0, \"deficit\": 12.468000000000004, \"classification\": \"marginal\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -3597,7 +3597,7 @@
   "report_codes": [
    "FM-1"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No sequence of valid days avoids repeating a recipe on consecutive days.\", \"day_index\": 1, \"slot_id\": \"\", \"date\": \"day-2\", \"details\": {\"blocking_constraints\": [\"HC-8: consecutive-day non-workout recipe reuse leaves no valid day sequence\"]}, \"fix_hint\": \"Too few distinct recipes to avoid repeating a meal on consecutive days. Add more recipes, shorten the plan, or relax slot constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -3648,7 +3648,7 @@
   "report_codes": [
    "FM-1"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No sequence of valid days avoids repeating a recipe on consecutive days.\", \"day_index\": 1, \"slot_id\": \"\", \"date\": \"day-2\", \"details\": {\"blocking_constraints\": [\"HC-8: consecutive-day non-workout recipe reuse leaves no valid day sequence\"]}, \"fix_hint\": \"Too few distinct recipes to avoid repeating a meal on consecutive days. Add more recipes, shorten the plan, or relax slot constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -3714,7 +3714,7 @@
   "report_codes": [
    "FM-1"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 1, \"slot_index\": 0, \"slot_id\": \"day-2-slot-0\", \"date\": \"day-2\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No sequence of valid days avoids repeating a recipe on consecutive days.\", \"day_index\": 1, \"slot_id\": \"\", \"date\": \"day-2\", \"details\": {\"blocking_constraints\": [\"HC-8: consecutive-day non-workout recipe reuse leaves no valid day sequence\"]}, \"fix_hint\": \"Too few distinct recipes to avoid repeating a meal on consecutive days. Add more recipes, shorten the plan, or relax slot constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -3832,15 +3832,15 @@
    "FM-2",
    "FM-5"
   ],
-  "got": "FM-1",
-  "status": "MISMATCH",
+  "got": "FM-2",
+  "status": "MATCH",
   "viol": [],
   "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
-   "FM-1"
+   "FM-MACRO-INFEASIBLE"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -3906,15 +3906,15 @@
    "FM-2",
    "FM-5"
   ],
-  "got": "FM-1",
-  "status": "MISMATCH",
+  "got": "FM-2",
+  "status": "MATCH",
   "viol": [],
   "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
-   "FM-1"
+   "FM-MACRO-INFEASIBLE"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -4039,15 +4039,15 @@
    "FM-2",
    "FM-5"
   ],
-  "got": "FM-1",
-  "status": "MISMATCH",
+  "got": "FM-2",
+  "status": "MATCH",
   "viol": [],
   "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
-   "FM-1"
+   "FM-MACRO-INFEASIBLE"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {\"calories\": -1302.2, \"protein_g\": -74.78999999999999, \"fat_g\": -31.64, \"carbs_g\": -151.425}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -5115,7 +5115,7 @@
   "report_codes": [
    "FM-1"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No sequence of valid days avoids repeating a recipe on consecutive days.\", \"day_index\": 1, \"slot_id\": \"\", \"date\": \"day-2\", \"details\": {\"blocking_constraints\": [\"HC-8: consecutive-day non-workout recipe reuse leaves no valid day sequence\"]}, \"fix_hint\": \"Too few distinct recipes to avoid repeating a meal on consecutive days. Add more recipes, shorten the plan, or relax slot constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -6089,7 +6089,7 @@
   "report_codes": [
    "FM-1"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 1, \"slot_index\": 0, \"slot_id\": \"day-2-slot-0\", \"date\": \"day-2\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No sequence of valid days avoids repeating a recipe on consecutive days.\", \"day_index\": 1, \"slot_id\": \"\", \"date\": \"day-2\", \"details\": {\"blocking_constraints\": [\"HC-8: consecutive-day non-workout recipe reuse leaves no valid day sequence\"]}, \"fix_hint\": \"Too few distinct recipes to avoid repeating a meal on consecutive days. Add more recipes, shorten the plan, or relax slot constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -6364,15 +6364,15 @@
    "FM-2",
    "FM-5"
   ],
-  "got": "FM-1",
-  "status": "MISMATCH",
+  "got": "FM-2",
+  "status": "MATCH",
   "viol": [],
   "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
-   "FM-1"
+   "FM-MACRO-INFEASIBLE"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 1, \"slot_index\": 0, \"slot_id\": \"day-2-slot-0\", \"date\": \"day-2\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-2\", \"details\": {\"date\": \"day-2\", \"deltas\": {}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -6855,15 +6855,15 @@
    "FM-3",
    "FM-5"
   ],
-  "got": "FM-1",
-  "status": "MISMATCH",
+  "got": "FM-3",
+  "status": "MATCH",
   "viol": [],
   "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
-   "FM-1"
+   "FM-3"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"recipe_id\": null, \"violation_type\": \"downstream\", \"remaining_budget\": {\"calories\": 1252.4, \"protein_g\": 109.0, \"carbs_g\": 180.47, \"fat_g\": {\"min\": 40.0, \"max\": 60.0, \"consumed\": 41.04}}, \"constraint\": \"no_valid_combination\", \"pinned_slots\": [{\"slot_index\": 0, \"recipe_id\": \"dh_oat_yogurt_parfait\"}]}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -6907,15 +6907,15 @@
    "FM-3",
    "FM-5"
   ],
-  "got": "FM-1",
-  "status": "MISMATCH",
+  "got": "FM-3",
+  "status": "MATCH",
   "viol": [],
   "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
-   "FM-1"
+   "FM-3"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"recipe_id\": null, \"violation_type\": \"downstream\", \"remaining_budget\": {\"calories\": 1334.6, \"protein_g\": 136.82, \"carbs_g\": 127.94, \"fat_g\": {\"min\": 40.0, \"max\": 60.0, \"consumed\": 19.27}}, \"constraint\": \"no_valid_combination\", \"pinned_slots\": [{\"slot_index\": 1, \"recipe_id\": \"dh_chicken_breast_rice\"}]}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {

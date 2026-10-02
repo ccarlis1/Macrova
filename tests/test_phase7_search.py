@@ -341,32 +341,40 @@ class TestFailureModes:
         assert failure["slot_id"] == "day-1-slot-0"
 
     def test_fm1_insufficient_pool_empty_candidates(self):
+        """One recipe for two slots: day check finds no valid combo → FM-2 (C2a).
+
+        Slot-level HC-1/HC-3 still pass (step 1), so this is not static FM-1.
+        """
         schedule = _make_schedule(ndays=1, slots_per_day=2)
         profile = _make_profile(schedule)
         pool = [_make_recipe("r1", 1000.0, 50.0, 32.0, 125.0)]
         result = run_meal_plan_search(profile, pool, 1, None)
         assert result.success is False
         assert isinstance(result, MealPlanResult)
+        assert result.failure_mode == "FM-2"
+        assert result.report.get("failed_days")
+        assert result.report["failed_days"][0]["day"] == 0
+        failures = result.report.get("failures", [])
+        assert failures and failures[0]["code"] == "FM-MACRO-INFEASIBLE"
+        assert result.stats is not None and result.stats.get("attempts", 0) >= 0
+
+    def test_fm1_static_hc3_empty_slot(self):
+        """True FM-1: no recipe passes HC-3 for a slot (attribution step 1)."""
+        schedule = [[_make_slot(busyness=1), _make_slot(busyness=2)]]
+        profile = _make_profile(schedule)
+        pool = [
+            _make_recipe("r1", 1000.0, 50.0, 32.0, 125.0, cooking_min=30),
+            _make_recipe("r2", 1000.0, 50.0, 32.0, 125.0, cooking_min=30),
+        ]
+        result = run_meal_plan_search(profile, pool, 1, None)
+        assert result.success is False
         assert result.failure_mode == "FM-1"
         unfillable = result.report.get("unfillable_slots", [])
         assert len(unfillable) >= 1
+        assert unfillable[0]["day"] == 0
+        assert unfillable[0]["slot_index"] == 0
         failures = result.report.get("failures", [])
-        assert isinstance(failures, list) and len(failures) >= 1
-        slot0 = unfillable[0]
-        assert failures[0] == {
-            "code": "FM-1",
-            "message": "No feasible recipe candidates for this slot.",
-            "day_index": int(slot0["day"]),
-            "slot_index": int(slot0["slot_index"]),
-            "slot_id": f"day-{int(slot0['day']) + 1}-slot-{int(slot0['slot_index'])}",
-            "date": f"day-{int(slot0['day']) + 1}",
-            "details": {
-                "eligible_recipe_count": int(slot0.get("eligible_recipe_count", 0)),
-                "blocking_constraints": list(slot0.get("blocking_constraints", []) or []),
-            },
-            "fix_hint": fix_hint_for_code("FM-1"),
-        }
-        assert result.stats is not None and result.stats.get("attempts", 0) >= 0
+        assert failures[0]["code"] == "FM-1"
         assert "closest_plan" in result.report or "best_plan" in result.report or result.report.get("unfillable_slots")
 
     def test_fm_tag_empty_emits_stable_failure_shape(self):
@@ -566,11 +574,7 @@ class TestFailureModes:
         assert all(f["details"].get("constraint") == "protein" for f in failures)
 
     def test_fm2_daily_infeasible_exhaustion(self):
-        """Free-slot macro infeasibility fails structurally.
-
-        Candidate look-ahead (FC-5) typically reports FM-1 before day-completion
-        exhaustion can emit FM-2 (cluster C2a). Accept either structured failure.
-        """
+        """Free-slot macro infeasibility is attributed as FM-2 (C2a day check)."""
         schedule = _make_schedule(ndays=1, slots_per_day=2)
         profile = _make_profile(
             schedule,
@@ -588,14 +592,14 @@ class TestFailureModes:
         result = run_meal_plan_search(profile, pool, 1, None)
         assert result.success is False
         assert isinstance(result, MealPlanResult)
-        assert result.failure_mode in ("FM-1", "FM-2")
+        assert result.failure_mode == "FM-2"
         assert result.report
         assert result.stats is not None and "attempts" in result.stats
         failures = result.report.get("failures", [])
         assert len(failures) >= 1
-        assert failures[0]["code"] in ("FM-1", "FM-MACRO-INFEASIBLE")
-        if failures[0]["code"] == "FM-MACRO-INFEASIBLE":
-            assert failures[0]["fix_hint"] == fix_hint_for_code("FM-MACRO-INFEASIBLE")
+        assert failures[0]["code"] == "FM-MACRO-INFEASIBLE"
+        assert failures[0]["fix_hint"] == fix_hint_for_code("FM-MACRO-INFEASIBLE")
+        assert result.report.get("diagnosis", {}).get("code") == "FM-2"
 
     def test_fm5_attempt_limit(self):
         schedule = _make_schedule(ndays=1, slots_per_day=2)
@@ -634,7 +638,7 @@ class TestFailureModes:
         result = run_meal_plan_search(profile, pool, 2, None)
         assert result.success is False
         assert isinstance(result, MealPlanResult)
-        assert result.failure_mode in ("FM-1", "FM-2", "FM-4")
+        assert result.failure_mode == "FM-4"
         assert result.stats is not None and "attempts" in result.stats
 
 
@@ -789,10 +793,10 @@ class TestFailureReportStructure:
         ]
         result = run_meal_plan_search(profile, pool, 1, None)
         assert result.success is False
-        assert result.failure_mode in ("FM-1", "FM-2")
+        assert result.failure_mode == "FM-2"
         assert isinstance(result.failure_mode, str)
-        assert "failed_days" in result.report or "unfillable_slots" in result.report
-        assert "closest_plan" in result.report or "unfillable_slots" in result.report
+        assert "failed_days" in result.report
+        assert "closest_plan" in result.report
         assert result.stats is not None and isinstance(result.stats.get("attempts", 0), int)
         assert result.stats.get("attempts", 0) >= 0
 

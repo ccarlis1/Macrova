@@ -65,6 +65,8 @@ On a day where no combination of recipes fits the macro targets, the search almo
 
 ### C2b. A required-tag failure is hidden by the look-ahead check (2 scenarios)
 
+**Status:** fixed. Static slot check before search reports FM-TAG-EMPTY/FM-1 for the first unfillable slot, ahead of FC-5.
+
 **Type:** planner defect. **Scenarios:** MB-107, MB-114.
 
 **Cause:** FM-TAG-EMPTY is only checked when the search reaches the slot with the required tag. The FC-5 look-ahead at an earlier slot on the same day spots that slot's empty candidate set first and ends the search through the FM-1 path. The four FM-TAG-EMPTY scenarios that match all put the tagged slot at slot 0. The two that fail put it at slot 2 and slot 1.

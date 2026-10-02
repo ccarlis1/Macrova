@@ -1512,17 +1512,25 @@ Possible formulations for the limit:
 
 When the algorithm terminates without a valid plan, or rejects input-derived locks before search, it shall report a structured failure result. The failure modes are categorized as follows:
 
+### Attribution when search ends without a plan
+
+When the search ends without a plan and without hitting the attempt budget (TC-3 / FM-5), report the first of the following that holds. Step 1 does not depend on search order and **shall run as a static pre-check before search**, so a tagged or otherwise unfillable slot later in a day is diagnosed before FC-5 look-ahead can end the search first:
+
+1. **Slot check.** Walk non-pinned slots in decision order (day-major, then slot). A slot with no recipes passing HC-1/HC-3 → **FM-1** for that slot. A slot where recipes pass HC-1/HC-3 but none satisfy the slot's required tags → **FM-TAG-EMPTY** for that slot. (Pinned slots are skipped; pin failures remain FM-3 via pinned pre-validation.)
+
+Steps 2–4 (day check → FM-2/FM-3; across-days → FM-4 or FM-1; budget → FM-5) and the inconclusive-diagnosis fallback are specified for post-search attribution and are implemented separately.
+
   
 
 ### FM-1: Insufficient Recipe Pool
 
   
-
+  
 **Condition:** The recipe pool does not contain enough distinct recipes that pass hard constraint filtering (HC-1, HC-2, HC-3, HC-8, HC-9) to fill all meal slots for one or more days.
 
   
 
-**Detection:** FC-5 (Recipe Pool Sufficiency) detects this at the first decision point of the affected day, or earlier if filtering eliminates too many candidates.
+**Detection:** Static pre-check (attribution step 1) reports FM-1 for the first non-pinned slot with no recipes passing HC-1/HC-3. During search, FC-5 (Recipe Pool Sufficiency) may also detect this at the first decision point of the affected day, or earlier if filtering eliminates too many candidates.
 
   
 
@@ -1538,7 +1546,7 @@ When the algorithm terminates without a valid plan, or rejects input-derived loc
 
 **Condition:** A non-pinned slot has `required_tag_slugs`, the recipe pool before applying the slot required-tag check is non-empty, and no candidate recipe satisfies all required slugs using planner hard-eligible tags.
 
-**Detection:** Candidate generation at canonical `SlotAddress = (day_index, slot_index)` after applying HC-9. This mode is specific to slot-level required tags and shall not be emitted for preferred-tag mismatch.
+**Detection:** Static pre-check (attribution step 1) reports FM-TAG-EMPTY for the first non-pinned slot whose HC-1/HC-3-eligible recipes are emptied by required tags — including when that slot is not the first free slot of its day. During search, candidate generation at canonical `SlotAddress = (day_index, slot_index)` after applying HC-9 may also emit this mode (e.g. when HC-2 removes the only tagged recipe). This mode is specific to slot-level required tags and shall not be emitted for preferred-tag mismatch.
 
 **Report shall include:**
 

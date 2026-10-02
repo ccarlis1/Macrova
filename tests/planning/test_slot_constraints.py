@@ -107,6 +107,74 @@ def test_no_candidate_emits_fm_tag_empty():
     assert slot_report["candidate_count_after"] == 0
 
 
+def test_tagged_slot_not_first_emits_fm_tag_empty():
+    """C2b: required tags on a later slot must be diagnosed before FC-5."""
+    profile = _profile(
+        schedule=[[_slot(), _slot(), _slot(required=["portable"])]],
+    )
+    result = plan_meals(
+        profile,
+        [
+            _recipe("r1", tags={"quick"}, hard_eligible_tags={"quick"}),
+            _recipe("r2", tags={"high-protein"}, hard_eligible_tags={"high-protein"}),
+            _recipe("r3", tags={"comfort"}, hard_eligible_tags={"comfort"}),
+        ],
+        days=1,
+    )
+
+    assert result.success is False
+    assert result.failure_mode == "FM-TAG-EMPTY"
+    slot_report = (result.report or {}).get("tag_empty_slots", [])[0]
+    assert slot_report["day_index"] == 0
+    assert slot_report["slot_index"] == 2
+    assert slot_report["required_tag_slugs"] == ["portable"]
+    assert slot_report["candidate_count_before"] == 3
+    assert slot_report["candidate_count_after"] == 0
+    failures = (result.report or {}).get("failures", [])
+    assert failures and failures[0]["details"]["missing_tag"] == "portable"
+    assert "portable" in failures[0]["fix_hint"]
+    assert result.stats is not None and result.stats.get("attempts") == 0
+
+
+def test_multi_tag_combination_missing_names_all_tags():
+    """Each required tag is held by some recipe, but no recipe holds both."""
+    profile = _profile(schedule=[[_slot(required=["kid-friendly", "gluten-free"])]])
+    result = plan_meals(
+        profile,
+        [
+            _recipe("r1", tags={"kid-friendly"}, hard_eligible_tags={"kid-friendly"}),
+            _recipe("r2", tags={"gluten-free"}, hard_eligible_tags={"gluten-free"}),
+        ],
+        days=1,
+    )
+
+    assert result.success is False
+    assert result.failure_mode == "FM-TAG-EMPTY"
+    slot_report = (result.report or {}).get("tag_empty_slots", [])[0]
+    assert slot_report["required_tag_slugs"] == ["kid-friendly", "gluten-free"]
+    missing = (result.report or {}).get("failures", [])[0]["details"]["missing_tag"]
+    assert "kid-friendly" in missing
+    assert "gluten-free" in missing
+
+
+def test_multi_tag_one_absent_names_only_absent():
+    """One required tag is held by no recipe — name that tag only."""
+    profile = _profile(schedule=[[_slot(required=["kid-friendly", "gluten-free"])]])
+    result = plan_meals(
+        profile,
+        [
+            _recipe("r1", tags={"kid-friendly"}, hard_eligible_tags={"kid-friendly"}),
+            _recipe("r2", tags={"kid-friendly"}, hard_eligible_tags={"kid-friendly"}),
+        ],
+        days=1,
+    )
+
+    assert result.success is False
+    assert result.failure_mode == "FM-TAG-EMPTY"
+    missing = (result.report or {}).get("failures", [])[0]["details"]["missing_tag"]
+    assert missing == "gluten-free"
+
+
 def test_preferred_tags_do_not_hard_reject():
     profile = _profile(schedule=[[_slot(required=["quick"], preferred=["high-protein"])]])
     result = plan_meals(

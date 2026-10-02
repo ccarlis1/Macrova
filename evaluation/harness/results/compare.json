@@ -2788,7 +2788,7 @@
   "report_codes": [
    "FM-1"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"HC-1\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
   "detail": null,
   "stage_exp": "candidate_generation",
   "oracle": {
@@ -3762,7 +3762,7 @@
   "report_codes": [
    "FM-1"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 0, \"blocking_constraints\": [\"HC-3: cook time <= 5 min\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
   "detail": null,
   "stage_exp": "candidate_generation",
   "oracle": {
@@ -4823,7 +4823,7 @@
   "report_codes": [
    "FM-TAG-EMPTY"
   ],
-  "report_first": "[{\"code\": \"FM-TAG-EMPTY\", \"message\": \"No recipes satisfy required tag `breakfast` for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"\", \"details\": {\"missing_tag\": \"breakfast\", \"recipe_count\": 0}, \"fix_hint\": \"No recipes match tag `breakfast`. Add one or relax constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-TAG-EMPTY\", \"message\": \"No recipes satisfy required tag `breakfast, vegan, meal-prep` for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"\", \"details\": {\"missing_tag\": \"breakfast, vegan, meal-prep\", \"recipe_count\": 0}, \"fix_hint\": \"No recipes match tag `breakfast, vegan, meal-prep`. Add one or relax constraints.\"}]",
   "detail": null,
   "stage_exp": "candidate_generation",
   "oracle": {
@@ -4858,7 +4858,7 @@
   "report_codes": [
    "FM-TAG-EMPTY"
   ],
-  "report_first": "[{\"code\": \"FM-TAG-EMPTY\", \"message\": \"No recipes satisfy required tag `breakfast` for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"\", \"details\": {\"missing_tag\": \"breakfast\", \"recipe_count\": 0}, \"fix_hint\": \"No recipes match tag `breakfast`. Add one or relax constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-TAG-EMPTY\", \"message\": \"No recipes satisfy required tag `breakfast, vegan, portable` for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"\", \"details\": {\"missing_tag\": \"breakfast, vegan, portable\", \"recipe_count\": 0}, \"fix_hint\": \"No recipes match tag `breakfast, vegan, portable`. Add one or relax constraints.\"}]",
   "detail": null,
   "stage_exp": "candidate_generation",
   "oracle": {
@@ -4888,15 +4888,15 @@
   "acceptable": [
    "FM-TAG-EMPTY"
   ],
-  "got": "FM-1",
-  "status": "MISMATCH",
+  "got": "FM-TAG-EMPTY",
+  "status": "MATCH",
   "viol": [],
   "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
-   "FM-1"
+   "FM-TAG-EMPTY"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 34, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-TAG-EMPTY\", \"message\": \"No recipes satisfy required tag `kid-friendly, gluten-free` for this slot.\", \"day_index\": 0, \"slot_index\": 2, \"slot_id\": \"day-1-slot-2\", \"date\": \"\", \"details\": {\"missing_tag\": \"kid-friendly, gluten-free\", \"recipe_count\": 0}, \"fix_hint\": \"No recipes match tag `kid-friendly, gluten-free`. Add one or relax constraints.\"}]",
   "detail": null,
   "stage_exp": "candidate_generation",
   "oracle": {
@@ -5211,15 +5211,15 @@
   "acceptable": [
    "FM-TAG-EMPTY"
   ],
-  "got": "FM-1",
-  "status": "MISMATCH",
+  "got": "FM-TAG-EMPTY",
+  "status": "MATCH",
   "viol": [],
   "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
-   "FM-1"
+   "FM-TAG-EMPTY"
   ],
-  "report_first": "[{\"code\": \"FM-1\", \"message\": \"No feasible recipe candidates for this slot.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"eligible_recipe_count\": 5, \"blocking_constraints\": [\"Empty candidate set or FC-5\"]}, \"fix_hint\": \"No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-TAG-EMPTY\", \"message\": \"No recipes satisfy required tag `dairy-free` for this slot.\", \"day_index\": 0, \"slot_index\": 1, \"slot_id\": \"day-1-slot-1\", \"date\": \"\", \"details\": {\"missing_tag\": \"dairy-free\", \"recipe_count\": 0}, \"fix_hint\": \"No recipes match tag `dairy-free`. Add one or relax constraints.\"}]",
   "detail": null,
   "stage_exp": "candidate_generation",
   "oracle": {

@@ -515,7 +515,7 @@
  {
   "id": "MB-021",
   "active_batches": 0,
-  "secs": 0.01,
+  "secs": 0.08,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -545,7 +545,7 @@
  {
   "id": "MB-022",
   "active_batches": 0,
-  "secs": 0.02,
+  "secs": 0.54,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -661,7 +661,7 @@
  {
   "id": "MB-027",
   "active_batches": 0,
-  "secs": 1.26,
+  "secs": 1.29,
   "success": false,
   "tc": "TC-2",
   "code": "FM-1",
@@ -1002,7 +1002,7 @@
  {
   "id": "MB-040",
   "active_batches": 0,
-  "secs": 0.01,
+  "secs": 0.04,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1032,7 +1032,7 @@
  {
   "id": "MB-041",
   "active_batches": 0,
-  "secs": 0.01,
+  "secs": 0.07,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1057,7 +1057,7 @@
  {
   "id": "MB-042",
   "active_batches": 0,
-  "secs": 0.01,
+  "secs": 0.06,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1178,7 +1178,7 @@
  {
   "id": "MB-047",
   "active_batches": 0,
-  "secs": 0.0,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -1438,7 +1438,7 @@
  {
   "id": "MB-058",
   "active_batches": 0,
-  "secs": 0.0,
+  "secs": 0.05,
   "success": false,
   "tc": "TC-2",
   "code": "FM-4",
@@ -1456,22 +1456,20 @@
  {
   "id": "MB-059",
   "active_batches": 0,
-  "secs": 0.0,
-  "success": true,
-  "tc": "TC-4",
-  "code": "OK",
+  "secs": 0.06,
+  "success": false,
+  "tc": "TC-2",
+  "code": "FM-4",
   "incomplete": null,
-  "stats": {},
-  "report_codes": [],
-  "report_first": "[]",
-  "warnings": "null",
-  "plan": {
-   "0": [
-    "sn_bedtime_cottage",
-    "bk_protein_oats",
-    "dn_bolognese"
-   ]
-  }
+  "stats": {
+   "attempts": 0,
+   "backtracks": 0
+  },
+  "report_codes": [
+   "FM-4"
+  ],
+  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"vitamin_c_mg\", \"achieved\": 0.0, \"required\": 400.0, \"full_req\": 400.0, \"deficit\": 400.0, \"classification\": \"structural\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
+  "warnings": "null"
  },
  {
   "id": "MB-060",
@@ -1585,36 +1583,25 @@
  {
   "id": "MB-065",
   "active_batches": 0,
-  "secs": 3.14,
+  "secs": 0.01,
   "success": false,
   "tc": "TC-2",
   "code": "FM-4",
-  "incomplete": "Did not meet weekly targets.",
+  "incomplete": null,
   "stats": {
-   "attempts": 18472,
-   "backtracks": 15557
+   "attempts": 0,
+   "backtracks": 0
   },
   "report_codes": [
    "FM-4"
   ],
-  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"fiber_g\", \"achieved\": 57.532, \"required\": 70.0, \"full_req\": 70.0, \"deficit\": 12.468000000000004, \"classification\": \"marginal\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
-  "warnings": "null",
-  "plan": {
-   "0": [
-    "sn_turkey_rollups",
-    "dn_burger_bowl",
-    "hc_double_burger_potatoes"
-   ],
-   "1": [
-    "sn_yogurt_honey",
-    "dn_cauli_beef_bowl"
-   ]
-  }
+  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"fiber_g\", \"achieved\": 0.0, \"required\": 70.0, \"full_req\": 70.0, \"deficit\": 70.0, \"classification\": \"structural\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
+  "warnings": "null"
  },
  {
   "id": "MB-066",
   "active_batches": 0,
-  "secs": 0.0,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1644,65 +1631,48 @@
  {
   "id": "MB-067",
   "active_batches": 0,
-  "secs": 11.05,
+  "secs": 0.02,
   "success": false,
-  "tc": "TC-3",
-  "code": "FM-5",
+  "tc": "TC-2",
+  "code": "FM-4",
   "incomplete": null,
   "stats": {
-   "attempts": 50000,
-   "backtracks": 38150
+   "attempts": 0,
+   "backtracks": 0
   },
   "report_codes": [
-   "FM-5"
+   "FM-4"
   ],
-  "report_first": "[{\"code\": \"FM-5\", \"message\": \"Planner stopped after reaching attempt limits.\", \"details\": {\"attempts\": 50000, \"backtracks\": 38150, \"search_exhaustive\": false, \"best_plan_violations\": {}}, \"fix_hint\": \"Planning hit the attempt limit. Simplify the schedule, widen macro targets, or reduce constraints.\"}]",
-  "warnings": "null",
-  "plan": {
-   "0": [
-    "bk_protein_oats",
-    "ln_white_bean_soup",
-    "ln_chickpea_salad"
-   ],
-   "1": [
-    "bk_big_oat_bowl",
-    "ln_cottage_box",
-    "sn_edamame_cup"
-   ]
-  }
+  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"iron_mg\", \"achieved\": 0.0, \"required\": 81.0, \"full_req\": 81.0, \"deficit\": 81.0, \"classification\": \"structural\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
+  "warnings": "null"
  },
  {
   "id": "MB-068",
   "active_batches": 0,
-  "secs": 11.3,
-  "success": false,
-  "tc": "TC-3",
-  "code": "FM-5",
+  "secs": 0.13,
+  "success": true,
+  "tc": "TC-1",
+  "code": "OK",
   "incomplete": null,
-  "stats": {
-   "attempts": 50000,
-   "backtracks": 38288
-  },
-  "report_codes": [
-   "FM-5"
-  ],
-  "report_first": "[{\"code\": \"FM-5\", \"message\": \"Planner stopped after reaching attempt limits.\", \"details\": {\"attempts\": 50000, \"backtracks\": 38288, \"search_exhaustive\": false, \"best_plan_violations\": {}}, \"fix_hint\": \"Planning hit the attempt limit. Simplify the schedule, widen macro targets, or reduce constraints.\"}]",
+  "stats": {},
+  "report_codes": [],
+  "report_first": "[]",
   "warnings": "null",
   "plan": {
    "0": [
-    "bk_protein_oats",
-    "ln_white_bean_soup",
-    "ln_chickpea_salad"
+    "dn_bean_quesadilla",
+    "ln_chickpea_salad",
+    "ln_white_bean_soup"
    ],
    "1": [
-    "bk_big_oat_bowl",
-    "ln_cottage_box",
-    "sn_edamame_cup"
+    "bk_tofu_scramble",
+    "ln_black_bean_quinoa",
+    "dn_chickpea_curry"
    ],
    "2": [
-    "bk_protein_oats",
-    "dn_veggie_pasta",
-    "bk_chia_pudding"
+    "bk_chia_pudding",
+    "dn_tofu_stir_fry",
+    "ln_white_bean_soup"
    ]
   }
  },
@@ -1750,37 +1720,32 @@
  {
   "id": "MB-071",
   "active_batches": 0,
-  "secs": 7.53,
-  "success": false,
-  "tc": "TC-3",
-  "code": "FM-5",
+  "secs": 0.1,
+  "success": true,
+  "tc": "TC-1",
+  "code": "OK",
   "incomplete": null,
-  "stats": {
-   "attempts": 50000,
-   "backtracks": 38639
-  },
-  "report_codes": [
-   "FM-5"
-  ],
-  "report_first": "[{\"code\": \"FM-5\", \"message\": \"Planner stopped after reaching attempt limits.\", \"details\": {\"attempts\": 50000, \"backtracks\": 38639, \"search_exhaustive\": false, \"best_plan_violations\": {}}, \"fix_hint\": \"Planning hit the attempt limit. Simplify the schedule, widen macro targets, or reduce constraints.\"}]",
+  "stats": {},
+  "report_codes": [],
+  "report_first": "[]",
   "warnings": "null",
   "plan": {
    "0": [
-    "bk_protein_oats",
-    "bk_avocado_toast_feta",
+    "dn_bean_quesadilla",
+    "ln_white_bean_soup",
     "dn_beef_chili"
    ],
    "1": [
-    "hc_mass_gainer",
-    "ln_cottage_box",
-    "sn_edamame_cup"
+    "bk_cream_of_rice_whey",
+    "dn_burger_bowl",
+    "dn_thigh_sheet_pan"
    ]
   }
  },
  {
   "id": "MB-072",
   "active_batches": 0,
-  "secs": 0.01,
+  "secs": 0.49,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1881,7 +1846,7 @@
  {
   "id": "MB-076",
   "active_batches": 0,
-  "secs": 0.01,
+  "secs": 0.03,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -2214,7 +2179,7 @@
  {
   "id": "MB-092",
   "active_batches": 0,
-  "secs": 0.01,
+  "secs": 0.0,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -2597,7 +2562,7 @@
  {
   "id": "MB-111",
   "active_batches": 0,
-  "secs": 0.04,
+  "secs": 0.03,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -2882,7 +2847,7 @@
  {
   "id": "MB-125",
   "active_batches": 1,
-  "secs": 0.02,
+  "secs": 0.0,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -2907,7 +2872,7 @@
  {
   "id": "MB-126",
   "active_batches": 1,
-  "secs": 0.03,
+  "secs": 0.0,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3060,7 +3025,7 @@
  {
   "id": "MB-131",
   "active_batches": 0,
-  "secs": 0.03,
+  "secs": 0.02,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3175,7 +3140,7 @@
  {
   "id": "MB-134",
   "active_batches": 0,
-  "secs": 0.03,
+  "secs": 0.08,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3304,7 +3269,7 @@
  {
   "id": "MB-138",
   "active_batches": 0,
-  "secs": 0.88,
+  "secs": 0.52,
   "success": false,
   "tc": "TC-2",
   "code": "FM-2",
@@ -3329,7 +3294,7 @@
  {
   "id": "MB-139",
   "active_batches": 0,
-  "secs": 0.0,
+  "secs": 0.54,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3444,7 +3409,7 @@
  {
   "id": "MB-142",
   "active_batches": 0,
-  "secs": 0.02,
+  "secs": 0.15,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3623,7 +3588,7 @@
  {
   "id": "MB-149",
   "active_batches": 0,
-  "secs": 0.01,
+  "secs": 0.07,
   "success": true,
   "tc": "TC-1",
   "code": "OK",

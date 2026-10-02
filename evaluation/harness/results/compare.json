@@ -2622,15 +2622,15 @@
    "FM-4",
    "FM-5"
   ],
-  "got": "OK",
-  "status": "MISMATCH+INVALID",
-  "viol": [
-   "micro vitamin_c_mg 23.2 < floor 400.0"
-  ],
-  "tc": "TC-4",
+  "got": "FM-4",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-2",
   "incomplete": null,
-  "report_codes": [],
-  "report_first": "[]",
+  "report_codes": [
+   "FM-4"
+  ],
+  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"vitamin_c_mg\", \"achieved\": 0.0, \"required\": 400.0, \"full_req\": 400.0, \"deficit\": 400.0, \"classification\": \"structural\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -2916,11 +2916,11 @@
   "status": "MATCH",
   "viol": [],
   "tc": "TC-2",
-  "incomplete": "Did not meet weekly targets.",
+  "incomplete": null,
   "report_codes": [
    "FM-4"
   ],
-  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"fiber_g\", \"achieved\": 57.532, \"required\": 70.0, \"full_req\": 70.0, \"deficit\": 12.468000000000004, \"classification\": \"marginal\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
+  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"fiber_g\", \"achieved\": 0.0, \"required\": 70.0, \"full_req\": 70.0, \"deficit\": 70.0, \"classification\": \"structural\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -3016,15 +3016,15 @@
    "FM-4",
    "FM-5"
   ],
-  "got": "FM-5",
-  "status": "ACCEPTABLE",
+  "got": "FM-4",
+  "status": "MATCH",
   "viol": [],
-  "tc": "TC-3",
+  "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
-   "FM-5"
+   "FM-4"
   ],
-  "report_first": "[{\"code\": \"FM-5\", \"message\": \"Planner stopped after reaching attempt limits.\", \"details\": {\"attempts\": 50000, \"backtracks\": 38150, \"search_exhaustive\": false, \"best_plan_violations\": {}}, \"fix_hint\": \"Planning hit the attempt limit. Simplify the schedule, widen macro targets, or reduce constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"iron_mg\", \"achieved\": 0.0, \"required\": 81.0, \"full_req\": 81.0, \"deficit\": 81.0, \"classification\": \"structural\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -3072,15 +3072,13 @@
   "acceptable": [
    "OK"
   ],
-  "got": "FM-5",
-  "status": "MISMATCH",
+  "got": "OK",
+  "status": "MATCH",
   "viol": [],
-  "tc": "TC-3",
+  "tc": "TC-1",
   "incomplete": null,
-  "report_codes": [
-   "FM-5"
-  ],
-  "report_first": "[{\"code\": \"FM-5\", \"message\": \"Planner stopped after reaching attempt limits.\", \"details\": {\"attempts\": 50000, \"backtracks\": 38288, \"search_exhaustive\": false, \"best_plan_violations\": {}}, \"fix_hint\": \"Planning hit the attempt limit. Simplify the schedule, widen macro targets, or reduce constraints.\"}]",
+  "report_codes": [],
+  "report_first": "[]",
   "detail": null,
   "stage_exp": "complete",
   "oracle": {
@@ -3204,15 +3202,13 @@
   "acceptable": [
    "OK"
   ],
-  "got": "FM-5",
-  "status": "MISMATCH",
+  "got": "OK",
+  "status": "MATCH",
   "viol": [],
-  "tc": "TC-3",
+  "tc": "TC-1",
   "incomplete": null,
-  "report_codes": [
-   "FM-5"
-  ],
-  "report_first": "[{\"code\": \"FM-5\", \"message\": \"Planner stopped after reaching attempt limits.\", \"details\": {\"attempts\": 50000, \"backtracks\": 38639, \"search_exhaustive\": false, \"best_plan_violations\": {}}, \"fix_hint\": \"Planning hit the attempt limit. Simplify the schedule, widen macro targets, or reduce constraints.\"}]",
+  "report_codes": [],
+  "report_first": "[]",
   "detail": null,
   "stage_exp": "complete",
   "oracle": {

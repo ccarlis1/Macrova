@@ -20,7 +20,7 @@ from src.planning.phase0_models import (
     WeeklyTracker,
     micronutrient_profile_to_dict,
 )
-from src.planning.micronutrient_policy import tau_from_profile, weekly_deficit_to_minimum, weekly_minimum_total
+from src.planning.micronutrient_policy import tau_from_profile, weekly_minimum_total
 
 # Section 6.5: ±10% daily tolerance for calories, protein, carbs
 DAILY_TOLERANCE_FRACTION = 0.10
@@ -112,9 +112,10 @@ def precompute_max_daily_achievable(
     nutrient_names: List[str],
     slot_counts: Set[int],
 ) -> Dict[str, Dict[int, float]]:
-    """Precompute max_daily_achievable(nutrient, slot_count). Spec Section 5 FC-4.
+    """Precompute loose top-M max_daily_achievable(nutrient, slot_count). Spec Section 5 FC-4 fallback.
 
     For each nutrient n and slot_count M: sum of the M largest values of n across distinct recipes.
+    Ignores calorie/macro/eligibility constraints. Prefer MicroFloorBounds when enumeration succeeds.
     """
     result: Dict[str, Dict[int, float]] = {n: {} for n in nutrient_names}
     micro_fields = list(MicronutrientProfile.__dataclass_fields__.keys())
@@ -135,6 +136,165 @@ def precompute_max_daily_achievable(
             else:
                 result[n][m] = sum(vals[:m])
     return result
+
+
+# Node budget for day enumeration used to build tight floor bounds (same order as C2a).
+FLOOR_ENUM_NODE_LIMIT = 500_000
+
+
+@dataclass(frozen=True)
+class MicroFloorBounds:
+    """Per-day micronutrient ceilings for FC-4 / structural / per-slot floor pruning.
+
+    When ``tight`` is True, ``day_max`` / ``prefix_max`` come from enumerating each day's
+    valid meal combinations. When False, ``day_max`` is the loose top-M sum and
+    ``prefix_max`` is empty (per-slot pruning disabled).
+    """
+
+    tight: bool
+    day_max: List[Dict[str, float]]  # per day_index -> nutrient -> max
+    suffix_max: List[Dict[str, float]]  # length D+1; suffix_max[d] = sum day_max[d..]
+    prefix_max: List[Dict[Tuple[str, ...], Dict[str, float]]]  # per day; empty when not tight
+
+
+def micro_floor_bounds_from_slot_mda(
+    mda: Dict[str, Dict[int, float]],
+    schedule: List[List[MealSlot]],
+    D: int,
+    nutrient_names: Optional[List[str]] = None,
+) -> MicroFloorBounds:
+    """Build loose (tight=False) MicroFloorBounds from a slot-count MDA table."""
+    names = list(nutrient_names) if nutrient_names is not None else list(mda.keys())
+    day_max: List[Dict[str, float]] = []
+    for d in range(D):
+        m = len(schedule[d]) if d < len(schedule) else 0
+        day_max.append({n: float(mda.get(n, {}).get(m, 0.0)) for n in names})
+    suffix_max = _build_suffix_max(day_max, names, D)
+    return MicroFloorBounds(
+        tight=False,
+        day_max=day_max,
+        suffix_max=suffix_max,
+        prefix_max=[{} for _ in range(D)],
+    )
+
+
+def floor_bounds_to_slot_mda(
+    bounds: MicroFloorBounds,
+    schedule: List[List[MealSlot]],
+) -> Dict[str, Dict[int, float]]:
+    """Project day_max onto a (nutrient -> slot_count -> max) table for FM-4 reports."""
+    result: Dict[str, Dict[int, float]] = {}
+    for d, day in enumerate(bounds.day_max):
+        m = len(schedule[d]) if d < len(schedule) else 0
+        for n, val in day.items():
+            by_slots = result.setdefault(n, {})
+            prev = by_slots.get(m)
+            if prev is None or val > prev:
+                by_slots[m] = val
+    return result
+
+
+def _build_suffix_max(
+    day_max: List[Dict[str, float]],
+    nutrient_names: List[str],
+    D: int,
+) -> List[Dict[str, float]]:
+    suffix: List[Dict[str, float]] = [{} for _ in range(D + 1)]
+    for d in range(D - 1, -1, -1):
+        cur = day_max[d] if d < len(day_max) else {}
+        nxt = suffix[d + 1]
+        suffix[d] = {n: float(cur.get(n, 0.0)) + float(nxt.get(n, 0.0)) for n in nutrient_names}
+    return suffix
+
+
+def precompute_micro_floor_bounds(
+    profile: PlanningUserProfile,
+    recipe_pool: List[PlanningRecipe],
+    schedule: List[List[MealSlot]],
+    D: int,
+    resolved_ul: Optional[UpperLimits],
+    *,
+    node_limit: int = FLOOR_ENUM_NODE_LIMIT,
+) -> MicroFloorBounds:
+    """Precompute per-day / prefix micronutrient ceilings for FC-4 and per-slot pruning.
+
+    Prefers enumeration of valid day combinations (tight). Falls back to the loose
+    top-M sum when primary-carb downscaling is on, when no nutrients are tracked,
+    or when enumeration hits its node/solution cap.
+    """
+    tracked = dict(profile.micronutrient_targets or {})
+    nutrient_names = list(tracked.keys())
+    slot_counts: Set[int] = {len(schedule[d]) for d in range(D)} if D > 0 else set()
+
+    def _loose() -> MicroFloorBounds:
+        names = nutrient_names or list(MicronutrientProfile.__dataclass_fields__.keys())
+        mda = precompute_max_daily_achievable(recipe_pool, names, slot_counts or {1})
+        return micro_floor_bounds_from_slot_mda(mda, schedule, D, names)
+
+    if not tracked or D <= 0:
+        return _loose()
+    if getattr(profile, "enable_primary_carb_downscaling", False):
+        return _loose()
+
+    # Local import avoids a module-level cycle with failure_attribution helpers.
+    from src.planning.failure_attribution import (
+        _day_signature,
+        _enumerate_day,
+        _micro_of_combo,
+    )
+
+    recipe_by_id = {r.id: r for r in recipe_pool}
+    day_cache: Dict[str, Any] = {}
+    nodes = 0
+    day_solutions: List[List[Tuple[str, ...]]] = []
+
+    for d in range(D):
+        sig = _day_signature(schedule, d, profile, ignore_pins=False) + "|sols"
+        if sig not in day_cache:
+            day_cache[sig] = _enumerate_day(
+                recipe_pool,
+                recipe_by_id,
+                profile,
+                schedule,
+                d,
+                resolved_ul,
+                ignore_pins=False,
+                want_solutions=True,
+                node_limit=node_limit,
+                nodes_so_far=nodes,
+            )
+            nodes += day_cache[sig].nodes
+        r = day_cache[sig]
+        if r.budget_hit or r.capped or nodes > node_limit:
+            return _loose()
+        day_solutions.append(list(r.solutions))
+
+    day_max: List[Dict[str, float]] = [{n: 0.0 for n in nutrient_names} for _ in range(D)]
+    prefix_max: List[Dict[Tuple[str, ...], Dict[str, float]]] = [{} for _ in range(D)]
+
+    for d, sols in enumerate(day_solutions):
+        for combo in sols:
+            micros = _micro_of_combo(recipe_by_id, combo, nutrient_names)
+            for i, n in enumerate(nutrient_names):
+                if micros[i] > day_max[d][n]:
+                    day_max[d][n] = micros[i]
+            for k in range(1, len(combo) + 1):
+                pref = combo[:k]
+                cur = prefix_max[d].get(pref)
+                if cur is None:
+                    prefix_max[d][pref] = {n: micros[i] for i, n in enumerate(nutrient_names)}
+                else:
+                    for i, n in enumerate(nutrient_names):
+                        if micros[i] > cur[n]:
+                            cur[n] = micros[i]
+
+    suffix_max = _build_suffix_max(day_max, nutrient_names, D)
+    return MicroFloorBounds(
+        tight=True,
+        day_max=day_max,
+        suffix_max=suffix_max,
+        prefix_max=prefix_max,
+    )
 
 
 # --- Feasibility state view (read-only) ---
@@ -317,26 +477,27 @@ def check_structural_feasibility(
     profile: PlanningUserProfile,
     schedule: List[List[MealSlot]],
     D: int,
-    max_daily_achievable: Dict[str, Dict[int, float]],
+    floor_bounds: MicroFloorBounds | Dict[str, Dict[int, float]],
 ) -> bool:
     """Return False if horizon is structurally impossible for any tracked micronutrient.
 
-    For each tracked nutrient n: if sum_over_days(max_daily_achievable(n, slot_count(day)))
-    is below τ × daily_rdi × D, the plan cannot meet the weekly micronutrient floor (FM-4 pre-fail).
+    For each tracked nutrient n: if suffix_max[0][n] (sum of per-day maxima) is below
+    τ × daily_rdi × D, the plan cannot meet the weekly micronutrient floor (FM-4 pre-fail).
+
+    ``floor_bounds`` may be a MicroFloorBounds or a legacy slot-count MDA dict.
     """
     tracked = profile.micronutrient_targets
     if not tracked:
         return True
+    if isinstance(floor_bounds, dict):
+        floor_bounds = micro_floor_bounds_from_slot_mda(floor_bounds, schedule, D, list(tracked.keys()))
     tau = tau_from_profile(profile)
+    horizon = floor_bounds.suffix_max[0] if floor_bounds.suffix_max else {}
     for n, daily_rdi in tracked.items():
         if daily_rdi <= 0:
             continue
         total_needed = weekly_minimum_total(daily_rdi, D, tau)
-        max_over_horizon = 0.0
-        for day_index in range(D):
-            slot_count = len(schedule[day_index])
-            max_over_horizon += max_daily_achievable.get(n, {}).get(slot_count, 0.0)
-        if max_over_horizon < total_needed:
+        if float(horizon.get(n, 0.0)) < total_needed:
             return False
     return True
 
@@ -353,34 +514,79 @@ def check_fc4_cross_day_rdi(
     state: FeasibilityStateView,
     user_profile: PlanningUserProfile,
     D: int,
-    max_daily_achievable: Dict[str, Dict[int, float]],
+    floor_bounds: MicroFloorBounds | Dict[str, Dict[int, float]],
 ) -> bool:
-    """FC-4: At start of day d (d>1), if deficit(n) > days_left * max_daily_achievable(n, M), reject. Spec Section 5."""
+    """FC-4: At start of day d (d>0), if consumed + suffix_max[d] cannot reach the floor, reject.
+
+    Spec Section 5. ``floor_bounds`` may be MicroFloorBounds or a legacy slot-count MDA dict.
+    """
     if day_index <= 0:
         return True
     w = state.weekly_tracker
-    days_left = w.days_remaining
-    if days_left <= 0:
+    if w.days_remaining <= 0:
         return True
-    cumulative = _weekly_totals_micro_dict(w.weekly_totals)
     tracked = user_profile.micronutrient_targets
     if not tracked:
         return True
     if day_index >= len(state.schedule):
         return True
-    slot_count = len(state.schedule[day_index])
-    mda = max_daily_achievable
+    if isinstance(floor_bounds, dict):
+        floor_bounds = micro_floor_bounds_from_slot_mda(
+            floor_bounds, state.schedule, D, list(tracked.keys())
+        )
+    cumulative = _weekly_totals_micro_dict(w.weekly_totals)
     tau = tau_from_profile(user_profile)
+    rest = floor_bounds.suffix_max[day_index] if day_index < len(floor_bounds.suffix_max) else {}
 
     for n, daily_rdi in tracked.items():
         if daily_rdi <= 0:
             continue
+        floor = weekly_minimum_total(daily_rdi, D, tau)
         consumed = cumulative.get(n, 0.0)
-        deficit = weekly_deficit_to_minimum(consumed, daily_rdi, D, tau)
-        if deficit <= 0:
+        if consumed + float(rest.get(n, 0.0)) < floor - 1e-9:
+            return False
+    return True
+
+
+def candidate_passes_micro_floor(
+    recipe_id: str,
+    day_index: int,
+    today_prefix: Tuple[str, ...],
+    weekly_consumed: Dict[str, float],
+    profile: PlanningUserProfile,
+    D: int,
+    floor_bounds: MicroFloorBounds,
+) -> bool:
+    """Per-slot soundness check: prefix completion + remaining days can still hit floors.
+
+    Only meaningful when ``floor_bounds.tight`` and D > 1 with tracked micronutrients.
+    A missing prefix key means no valid day completes that prefix — reject.
+    """
+    tracked = profile.micronutrient_targets
+    if not tracked or not floor_bounds.tight or D <= 1:
+        return True
+    if day_index < 0 or day_index >= len(floor_bounds.prefix_max):
+        return True
+    key = today_prefix + (recipe_id,)
+    pmax = floor_bounds.prefix_max[day_index].get(key)
+    if pmax is None:
+        return False
+    tau = tau_from_profile(profile)
+    rem = (
+        floor_bounds.suffix_max[day_index + 1]
+        if day_index + 1 < len(floor_bounds.suffix_max)
+        else {}
+    )
+    for n, daily_rdi in tracked.items():
+        if daily_rdi <= 0:
             continue
-        max_achievable = mda.get(n, {}).get(slot_count, 0.0)
-        if deficit > days_left * max_achievable:
+        floor = weekly_minimum_total(daily_rdi, D, tau)
+        if (
+            float(weekly_consumed.get(n, 0.0))
+            + float(pmax.get(n, 0.0))
+            + float(rem.get(n, 0.0))
+            < floor - 1e-9
+        ):
             return False
     return True
 

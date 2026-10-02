@@ -35,10 +35,12 @@ from src.planning.phase1_state import (
 from src.planning.phase3_feasibility import (
     FeasibilityStateView,
     MacroBoundsPrecomputation,
+    candidate_passes_micro_floor,
     check_fc4_cross_day_rdi,
     check_structural_feasibility,
+    floor_bounds_to_slot_mda,
     precompute_macro_bounds,
-    precompute_max_daily_achievable,
+    precompute_micro_floor_bounds,
 )
 from src.planning.phase4_scoring import ScoringStateView, composite_score
 from src.planning.phase5_ordering import OrderingStateView, ordering_key
@@ -189,6 +191,7 @@ class SearchStats:
     attempts_per_slot: Dict[Tuple[int, int], int] = field(default_factory=dict)
     attempts_per_day: Dict[int, int] = field(default_factory=dict)
     branching_factors: Dict[Tuple[int, int], int] = field(default_factory=dict)
+    floor_bound_candidates_dropped: int = 0
     _backtrack_depths: List[int] = field(default_factory=list, repr=False)
     _start_time: Optional[float] = field(default=None, repr=False)
     _end_time: Optional[float] = field(default=None, repr=False)
@@ -1002,13 +1005,12 @@ def run_meal_plan_search(
         )
 
     macro_bounds = precompute_macro_bounds(recipe_pool, max_slots=8)
-    slot_counts: Set[int] = set()
-    for d in range(D):
-        slot_counts.add(len(schedule[d]))
-    nutrient_names = list(profile.micronutrient_targets.keys()) or list(MicronutrientProfile.__dataclass_fields__.keys())
-    max_daily_achievable = precompute_max_daily_achievable(recipe_pool, nutrient_names, slot_counts)
+    floor_bounds = precompute_micro_floor_bounds(
+        profile, recipe_pool, schedule, D, resolved_ul
+    )
+    max_daily_achievable = floor_bounds_to_slot_mda(floor_bounds, schedule)
 
-    if not check_structural_feasibility(profile, schedule, D, max_daily_achievable):
+    if not check_structural_feasibility(profile, schedule, D, floor_bounds):
         if stats is not None and stats.enabled:
             stats._end_time = time.perf_counter()
             stats.total_attempts = 0
@@ -1064,7 +1066,7 @@ def run_meal_plan_search(
                 weekly_tracker=weekly_tracker,
                 schedule=schedule,
             )
-            if not check_fc4_cross_day_rdi(day_index, feas_state, profile, D, max_daily_achievable):
+            if not check_fc4_cross_day_rdi(day_index, feas_state, profile, D, floor_bounds):
                 # BT-4: backtrack
                 target = _find_backtrack_target(order, i, cache, profile)
                 if target is None:
@@ -1229,6 +1231,29 @@ def run_meal_plan_search(
                     ),
                 )
                 ordered_ids = [(rid, vi) for rid, vi, _rv, _sc in ordered_triples]
+                if floor_bounds.tight and D > 1 and profile.micronutrient_targets:
+                    today_prefix = _today_recipe_prefix(assignments, day_index, slot_index)
+                    weekly_consumed = micronutrient_profile_to_dict(
+                        getattr(weekly_tracker.weekly_totals, "micronutrients", None)
+                    )
+                    kept: List[Tuple[str, int]] = []
+                    dropped = 0
+                    for rid, vi in ordered_ids:
+                        if candidate_passes_micro_floor(
+                            rid,
+                            day_index,
+                            today_prefix,
+                            weekly_consumed,
+                            profile,
+                            D,
+                            floor_bounds,
+                        ):
+                            kept.append((rid, vi))
+                        else:
+                            dropped += 1
+                    ordered_ids = kept
+                    if stats is not None and stats.enabled and dropped:
+                        stats.floor_bound_candidates_dropped += dropped
                 cache[key] = _CandidateCacheEntry(
                     ordered=ordered_ids,
                     variant_nutritions=cg.variant_nutritions,
@@ -1570,6 +1595,20 @@ def _update_best(
             best_daily_trackers[k] = _copy_tracker(v)
         return True
     return False
+
+
+def _today_recipe_prefix(
+    assignments: List[Assignment],
+    day_index: int,
+    slot_index: int,
+) -> Tuple[str, ...]:
+    """Recipe IDs already assigned on this day for slots 0..slot_index-1, in slot order."""
+    by_slot = {
+        a.slot_index: a.recipe_id
+        for a in assignments
+        if a.day_index == day_index and a.slot_index < slot_index
+    }
+    return tuple(by_slot[s] for s in range(slot_index))
 
 
 def _find_backtrack_target(

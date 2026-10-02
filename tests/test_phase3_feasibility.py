@@ -22,6 +22,7 @@ from src.planning.phase0_models import (
 from src.planning.phase3_feasibility import (
     FeasibilityStateView,
     MacroBoundsPrecomputation,
+    MicroFloorBounds,
     check_fc1_daily_calories,
     check_fc2_daily_macros,
     check_fc3_incremental_ul,
@@ -29,8 +30,11 @@ from src.planning.phase3_feasibility import (
     check_fc5_candidate_set,
     check_fc1_fc2_fc3,
     check_structural_feasibility,
+    floor_bounds_to_slot_mda,
+    micro_floor_bounds_from_slot_mda,
     precompute_macro_bounds,
     precompute_max_daily_achievable,
+    precompute_micro_floor_bounds,
 )
 
 
@@ -309,15 +313,31 @@ class TestFC4Precomputation:
     def test_no_trigger_when_recoverable(self):
         profile = _make_profile()
         profile.micronutrient_targets = {"vitamin_c_mg": 100.0}
+        # At start of day 1, day 0 already contributed 60; remaining day can add 150.
         wt = WeeklyTracker(
-            weekly_totals=NutritionProfile(0.0, 0.0, 0.0, 0.0, micronutrients=MicronutrientProfile(vitamin_c_mg=0.0)),
-            days_remaining=2,
+            weekly_totals=NutritionProfile(
+                0.0, 0.0, 0.0, 0.0,
+                micronutrients=MicronutrientProfile(vitamin_c_mg=60.0),
+            ),
+            days_remaining=1,
         )
         state = _make_state(weekly_tracker=wt, schedule=[[_make_slot()], [_make_slot()]])
         mda = {"vitamin_c_mg": {1: 150.0}}
         D = 2
         assert check_fc4_cross_day_rdi(1, state, profile, D, mda) is True
 
+    def test_trigger_when_suffix_cannot_cover_floor(self):
+        """Day-indexed suffix (not W.days_remaining) decides recoverability."""
+        profile = _make_profile()
+        profile.micronutrient_targets = {"vitamin_c_mg": 100.0}
+        wt = WeeklyTracker(
+            weekly_totals=NutritionProfile(0.0, 0.0, 0.0, 0.0, micronutrients=MicronutrientProfile(vitamin_c_mg=0.0)),
+            days_remaining=2,  # stale days_remaining must not loosen the bound
+        )
+        state = _make_state(weekly_tracker=wt, schedule=[[_make_slot()], [_make_slot()]])
+        mda = {"vitamin_c_mg": {1: 150.0}}
+        # Floor 200; only day 1 remains in the suffix → max 150 < 200.
+        assert check_fc4_cross_day_rdi(1, state, profile, 2, mda) is False
     def test_fc4_tau_floor_aligns_with_final_gate(self):
         """τ=0.9: still recoverable with 85 consumed and 100 max/day; τ=1.0: irrecoverable (same state)."""
         D = 2
@@ -399,3 +419,131 @@ class TestCheckFC1FC2FC3:
         assert check_fc1_fc2_fc3(
             recipe, _make_slot(), 0, 0, state, profile, None, macro
         ) is True
+
+
+# --- Tight micro floor bounds (C4) ---
+
+
+class TestMicroFloorBounds:
+    """Enumerated per-day maxima vs loose top-M; fallback rules."""
+
+    def _balanced_pool(self) -> list[PlanningRecipe]:
+        # Three recipes that can form a valid 3-slot day under 1500 kcal / 90g protein /
+        # 50-70 fat / ~150 carbs, plus one iron-dense calorie bomb that inflates top-M.
+        return [
+            _make_recipe(
+                "a", calories=500.0, protein=30.0, fat=20.0, carbs=50.0,
+                micronutrients=MicronutrientProfile(iron_mg=5.0),
+            ),
+            _make_recipe(
+                "b", calories=500.0, protein=30.0, fat=20.0, carbs=50.0,
+                micronutrients=MicronutrientProfile(iron_mg=6.0),
+            ),
+            _make_recipe(
+                "c", calories=500.0, protein=30.0, fat=20.0, carbs=50.0,
+                micronutrients=MicronutrientProfile(iron_mg=7.0),
+            ),
+            _make_recipe(
+                "bomb", calories=2000.0, protein=30.0, fat=20.0, carbs=50.0,
+                micronutrients=MicronutrientProfile(iron_mg=50.0),
+            ),
+        ]
+
+    def test_tight_bound_below_top_m_and_covers_valid_days(self):
+        pool = self._balanced_pool()
+        schedule = [[_make_slot(), _make_slot(), _make_slot()] for _ in range(2)]
+        profile = _make_profile(
+            daily_calories=1500,
+            daily_protein_g=90.0,
+            daily_fat_g=(50.0, 70.0),
+            daily_carbs_g=150.0,
+            max_daily_calories=None,
+            schedule=schedule,
+            micronutrient_targets={"iron_mg": 10.0},
+        )
+        bounds = precompute_micro_floor_bounds(profile, pool, schedule, 2, None)
+        assert bounds.tight is True
+        # Valid day a+b+c = 18 mg iron; bomb cannot appear in a valid day.
+        assert bounds.day_max[0]["iron_mg"] == pytest.approx(18.0)
+        assert bounds.day_max[1]["iron_mg"] == pytest.approx(18.0)
+        loose = precompute_max_daily_achievable(pool, ["iron_mg"], {3})
+        assert bounds.day_max[0]["iron_mg"] < loose["iron_mg"][3]
+        # Full-day prefix is present and matches day_max.
+        assert bounds.prefix_max[0][("a", "b", "c")]["iron_mg"] == pytest.approx(18.0)
+
+    def test_fallback_when_downscaling_enabled(self):
+        pool = self._balanced_pool()
+        schedule = [[_make_slot(), _make_slot(), _make_slot()]]
+        profile = _make_profile(
+            daily_calories=1500,
+            daily_protein_g=90.0,
+            daily_fat_g=(50.0, 70.0),
+            daily_carbs_g=150.0,
+            max_daily_calories=None,
+            schedule=schedule,
+            micronutrient_targets={"iron_mg": 10.0},
+        )
+        profile.enable_primary_carb_downscaling = True
+        bounds = precompute_micro_floor_bounds(profile, pool, schedule, 1, None)
+        assert bounds.tight is False
+        assert bounds.prefix_max[0] == {}
+        loose = precompute_max_daily_achievable(pool, ["iron_mg"], {3})
+        assert bounds.day_max[0]["iron_mg"] == pytest.approx(loose["iron_mg"][3])
+
+    def test_fallback_when_nothing_tracked(self):
+        pool = self._balanced_pool()
+        schedule = [[_make_slot()]]
+        profile = _make_profile(schedule=schedule, micronutrient_targets={})
+        bounds = precompute_micro_floor_bounds(profile, pool, schedule, 1, None)
+        assert bounds.tight is False
+
+    def test_fallback_when_enum_budget_hit(self):
+        pool = self._balanced_pool()
+        schedule = [[_make_slot(), _make_slot(), _make_slot()] for _ in range(2)]
+        profile = _make_profile(
+            daily_calories=1500,
+            daily_protein_g=90.0,
+            daily_fat_g=(50.0, 70.0),
+            daily_carbs_g=150.0,
+            max_daily_calories=None,
+            schedule=schedule,
+            micronutrient_targets={"iron_mg": 10.0},
+        )
+        bounds = precompute_micro_floor_bounds(
+            profile, pool, schedule, 2, None, node_limit=0
+        )
+        assert bounds.tight is False
+
+    def test_structural_and_fc4_accept_micro_floor_bounds(self):
+        schedule = [[_make_slot()], [_make_slot()]]
+        profile = _make_profile(
+            schedule=schedule,
+            micronutrient_targets={"iron_mg": 100.0},
+        )
+        # Horizon max 90 < 200 required → structural fail.
+        bounds = MicroFloorBounds(
+            tight=True,
+            day_max=[{"iron_mg": 45.0}, {"iron_mg": 45.0}],
+            suffix_max=[{"iron_mg": 90.0}, {"iron_mg": 45.0}, {}],
+            prefix_max=[{}, {}],
+        )
+        assert check_structural_feasibility(profile, schedule, 2, bounds) is False
+        # After consuming 50 on day 0, day 1 can add at most 45 → still short of 200.
+        wt = WeeklyTracker(
+            weekly_totals=NutritionProfile(
+                0.0, 0.0, 0.0, 0.0,
+                micronutrients=MicronutrientProfile(iron_mg=50.0),
+            ),
+            days_remaining=1,
+        )
+        state = _make_state(weekly_tracker=wt, schedule=schedule)
+        assert check_fc4_cross_day_rdi(1, state, profile, 2, bounds) is False
+
+    def test_legacy_mda_dict_still_accepted(self):
+        schedule = [[_make_slot()], [_make_slot()]]
+        profile = _make_profile(schedule=schedule, micronutrient_targets={"iron_mg": 100.0})
+        mda = {"iron_mg": {1: 95.0}}
+        assert check_structural_feasibility(profile, schedule, 2, mda) is False
+        converted = micro_floor_bounds_from_slot_mda(mda, schedule, 2)
+        assert converted.tight is False
+        assert floor_bounds_to_slot_mda(converted, schedule)["iron_mg"][1] == pytest.approx(95.0)

@@ -11,18 +11,18 @@
 
 | Result | Count |
 |---|---|
-| Exact match with oracle | **145** (was 125 after C2b; 123 before C2b; 112 after C3; 109 before C1) |
-| Different code, but listed in `acceptable_failure_codes` | 1 (MB-067) |
-| Disagreement | **5** (2 MISMATCH, 1 MISMATCH+INVALID, 2 INVALID_PLAN) |
+| Exact match with oracle | **149** (was 145 after C2a; 125 after C2b; 123 before C2b; 112 after C3; 109 before C1) |
+| Different code, but listed in `acceptable_failure_codes` | 0 |
+| Disagreement | **2** (both INVALID_PLAN / C6) |
 
-The original 39 disagreements came from **7 root causes**, not 39 separate bugs. C1, C2a, C2b, and C3 are fixed; the open clusters account for the remaining 5.
+The original 39 disagreements came from **7 root causes**, not 39 separate bugs. C1, C2a, C2b, C3, C4, and C5 are fixed; the open cluster is C6 (2 scenarios).
 
-- **5 give the user a wrong answer:** a success that should be a failure, a failure that should be a success, a plan that breaks a constraint, or an unsafe plan (C4, C5, C6).
+- **2 give the user a wrong answer:** unsafe plans under exact-name allergy matching (C6).
 - **Wrong-code-only diagnoses for C2a/C2b are resolved** (20 + 2 scenarios now MATCH).
 
-On infeasible requests, the planner reaches the correct *outcome* in 51 of 57. The six misses come from C5 (and historically C1). The planner's remaining weakness is search order on multi-day micronutrient floors (C4) and the open spec questions (C5, C6).
+On infeasible requests, the planner reaches the correct *outcome* in 56 of 57. The remaining miss is C6's unsafe-success cases (feasible labels, unsafe plans). Multi-day micronutrient floors (C4) and the D=1 floor gap (C5) are closed by the tight valid-day bound.
 
-Four more issues don't appear in the score at all, because the harness had to route around them or the benchmark doesn't measure them. Section 4 covers them. The most serious is that the calorie ceiling can't reach the planner through the API.
+Four more issues don't appear in the score at all, because the harness had to route around them or the benchmark doesn't measure them. Section 4 covers them. The calorie ceiling API gap (§4.1) is fixed.
 
 ## 2. How the harness runs scenarios
 
@@ -94,17 +94,21 @@ P2 is the most serious finding in this report: **the planner returns a plan that
 
 ### C4. Day-by-day backtracking gets stuck on multi-day micronutrient floors (2 scenarios)
 
+**Status:** fixed. Tight `max_daily_achievable` from enumerated valid days plus per-slot prefix/suffix pruning; MB-068/MB-071 succeed within 50k, MB-067 is pre-search FM-4.
+
 **Type:** planner algorithm defect. **Scenarios:** MB-068, MB-071 (feasible, returned FM-5), and MB-067 (infeasible, returned FM-5; accepted).
 
-**Evidence:** MB-068 still returns FM-5 at 200,000 attempts (42 s, 151,906 backtracks). The oracle finds a valid plan in **25** multi-day search nodes. So this is the search order, not the attempt budget.
+**Evidence (before fix):** MB-068 still returned FM-5 at 200,000 attempts (42 s, 151,906 backtracks). The oracle finds a valid plan in **25** multi-day search nodes. So this was the search order, not the attempt budget.
 
-This settles **reconciliation Q5** for these instances. The planner fails on feasible instances even with correct nutrition data, and raising the cap doesn't help. The scope is narrow: 11 of the 13 feasible or borderline multi-day micronutrient scenarios succeed.
+This settles **reconciliation Q5** for these instances. The scope was narrow: 11 of the 13 feasible or borderline multi-day micronutrient scenarios already succeeded. The fix reuses day enumeration from C2a attribution (`_enumerate_day`) to replace the loose top-M FC-4 bound, checks the bound at every slot, and keeps top-M as a fallback when primary-carb downscaling is on or enumeration is capped.
 
 ### C5. One-day plans skip the end-of-plan micronutrient check (1 scenario)
 
-**Type:** spec ambiguity (reconciliation Q8). **Scenario:** MB-059.
+**Status:** fixed (as a side effect of C4). The tight structural check rejects MB-059 pre-search with FM-4 when no valid day can reach the floor, so the up-front bound and the intended final floor agree for D=1 without waiting on reconciliation Q8's success-path weekly check.
 
-For D = 1, the planner returns success before `_weekly_validation` runs (`phase7_search.py:980`). MB-059 comes back as success with 23 mg vitamin C against a 400 mg floor, and no warning. The up-front structural check didn't fire because its per-slot upper bound is looser than what's actually reachable. The code needs no fix until Q8 is decided, but whatever is decided, the up-front check and the final check must agree.
+**Type:** was spec ambiguity (reconciliation Q8). **Scenario:** MB-059.
+
+For D = 1, the planner still returns success before `_weekly_validation` runs when the pool *can* meet the floor. When it cannot, structural FM-4 now fires (previously the loose top-M bound let search succeed with 23 mg vitamin C against a 400 mg floor). Q8 remains open only for the success-path question of whether D=1 should run the same weekly soft-deficit reporting as D>1.
 
 ### C6. Allergy exclusion matches exact ingredient names only (2 scenarios)
 
@@ -153,12 +157,12 @@ Every result above uses the stored nutrition. Through the real `/api/v1/plan` pa
 
 | Category | Clusters | Open disagreements |
 |---|---|---|
-| Planner algorithm defect | C4 (C2a/C2b/C3 fixed) | 2 |
+| Planner algorithm defect | C4 fixed (C2a/C2b/C3 fixed) | 0 |
 | API/contract issue | §4.1 fixed, C1 fixed | 0 |
-| Specification ambiguity | C5, C6, §4.3 | 3 (plus the meal-type finding) |
+| Specification ambiguity | C5 fixed (structural agreement); C6, §4.3 open | 2 (plus the meal-type finding) |
 | Validation issue | §4.2 | 0 (hidden) |
 | Recipe/data limitation | none as a primary cause (see §4.4) | 0 |
-| Expected infeasibility | 56 of 57 infeasible scenarios fail correctly; the remaining miss is C5 | — |
+| Expected infeasibility | 57 of 57 infeasible scenarios fail correctly after C5 | — |
 | Test-design problem | no meal-type scoring (§4.3); no fully pinned day inside a multi-day plan (C3, fixed) | 0 |
 
 C2a's spec gap is closed in §11 attribution steps 2–3.
@@ -166,8 +170,8 @@ C2a's spec gap is closed in §11 attribution steps 2–3.
 ## 6. Recurring patterns
 
 1. **Wrong last-event failure codes (C2a, C2b; fixed).** Post-search attribution and the static slot pre-check now choose the structural cause.
-2. **Silent drops at the edges (C5; C1/C3/§4.1 fixed).** A one-day micronutrient floor can still disappear between input and search. The calorie ceiling now reaches the planner over HTTP.
-3. **Search order against multi-day micronutrient floors (C4).** This is the only open cluster that needs a design change rather than a local fix.
+2. **Silent drops at the edges (C5 fixed via C4 bound; C1/C3/§4.1 fixed).** The calorie ceiling reaches the planner over HTTP; impossible micronutrient floors fail pre-search for D=1 and multi-day alike.
+3. **Search order against multi-day micronutrient floors (C4; fixed).** Valid-day enumeration and per-slot pruning replace the loose top-M bound.
 
 ## 7. Suggested order
 
@@ -177,10 +181,10 @@ C2a's spec gap is closed in §11 attribution steps 2–3.
 | 2 | C3 fully pinned day validation | **Done.** Hard constraint checked; fully pinned days validated |
 | 3 | §4.1 ceiling in `PlanRequest` | **Done.** HC-5 reaches the planner over HTTP; OpenAPI and Flutter carry the number |
 | 4 | C2a / C2b failure attribution | **Done.** C2b static pre-check + C2a post-search steps 2–3; 22 diagnoses corrected; exact matches 125 → 145 |
-| 5 | C4 search order | A design change; the benchmark gives a clear pass/fail target |
-| — | C5, C6, §4.2, §4.3 | Specification decisions (Q8, Q10, input validity, meal type) come before code |
+| 5 | C4 search order (+ C5 structural agreement) | **Done.** Tight valid-day FC-4 bound and per-slot pruning; 145 → 149 exact; MB-067 ACCEPTABLE → MATCH |
+| — | C6, §4.2, §4.3 | Specification decisions (Q10, input validity, meal type) come before code |
 
-Fixes 1–4 have resolved their clusters: the benchmark is at **145 of 151** exact matches (plus 1 ACCEPTABLE). The remaining 5 are C4 (2 scenarios), C5 (1) and C6 (2), which wait on a design change or spec decisions. MB-151 (a fully pinned day inside a two-day plan) keeps C3 covered by the benchmark.
+Fixes 1–5 have resolved their clusters: the benchmark is at **149 of 151** exact matches. The remaining 2 are C6 (allergy intent vs exact name). MB-151 (a fully pinned day inside a two-day plan) keeps C3 covered by the benchmark.
 
 ## 8. Reproducing
 
@@ -201,4 +205,4 @@ Counterfactual runs set environment variables on `run_benchmark.py`:
 - `LIMIT=200000`: raise the attempt limit (tests C4);
 - `OUT=<path>`: write results to a different file.
 
-Raw outputs are in `evaluation/harness/results/`. The full run takes about 36 seconds. The harness imports `src/`; `compare.py`'s plan checker only uses the tag loader and the oracle's constants.
+Raw outputs are in `evaluation/harness/results/`. The full run takes about 5–7 seconds after C4 (was ~36 s when C4 scenarios exhausted the attempt budget). The harness imports `src/`; `compare.py`'s plan checker only uses the tag loader and the oracle's constants.

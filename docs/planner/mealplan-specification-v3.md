@@ -706,29 +706,47 @@ If any UL is strictly exceeded by the tentative running total, **reject** r. (Th
 
 ### FC-4: Weekly Micronutrient Feasibility
 
-  
+
 
 Evaluated at the start of each day d (d > 1), before assigning any slot for that day:
 
-  
+
 
 For each tracked micronutrient n (i.e., `n ∈ U.micronutrient_targets`):
 
 - Let `weekly_minimum_required(n) = τ × daily_RDI(n) × D` where τ = `U.micronutrient_weekly_min_fraction`
 
-- Let `deficit(n) = weekly_minimum_required(n) − W.weekly_totals[n]`
+- Let `consumed(n) = W.weekly_totals[n]` (totals from completed days only)
 
-- Let `days_left = W.days_remaining` (including the current day)
+- Let `max_remaining(n) = Σ_{d' = d}^{D} max_daily_achievable(n, d')` (including the current day)
 
-- Let `max_daily_achievable(n)` = the maximum amount of nutrient n achievable in a single day, estimated from the recipe pool and the day's slot count.
 
-  
 
-If `deficit(n) > days_left × max_daily_achievable(n)` for any tracked nutrient n: the deficit is **irrecoverable**. Trigger backtracking to the previous day (Section 9).
+If `consumed(n) + max_remaining(n) < weekly_minimum_required(n)` for any tracked nutrient n: the deficit is **irrecoverable**. Trigger backtracking to the previous day (Section 9).
 
-  
 
-**Precomputation of `max_daily_achievable(n)`:** Because the recipe pool R is static for the duration of the search, `max_daily_achievable(n)` shall be precomputed once before the search begins for each distinct slot count M that appears in the schedule. For a day with M slots, `max_daily_achievable(n)` is the sum of the M highest values of nutrient n across all recipes in R that are mutually eligible (distinct recipe IDs, per HC-2). This precomputed table is indexed by `(nutrient, slot_count)` and reused at every day boundary without redundant recipe pool traversal.
+
+**Precomputation of `max_daily_achievable(n, d)`:** Because the recipe pool R and schedule are static for the duration of the search, per-day maxima shall be precomputed once before the search begins. For day d, `max_daily_achievable(n, d)` is the maximum amount of nutrient n provided by any **valid day assignment** for day d: a combination of distinct eligible recipes (HC-2), one per slot, that passes daily calorie/macro/ceiling/UL validation (Section 6.5) under the day's pins and slot filters. The implementation builds this table by enumerating each day's valid combinations (reusing the same enumeration used for post-search failure attribution).
+
+
+
+**Fallback (loose top-M bound):** When primary-carb downscaling is enabled, when day enumeration hits its node or solution cap, or when no micronutrients are tracked, the planner shall fall back to the legacy estimate: for a day with M slots, the sum of the M highest values of nutrient n across distinct recipes in R (ignoring calorie/macro/eligibility). Under the fallback, per-slot prefix pruning (below) is disabled.
+
+
+
+**Per-slot bound check (tight mode only):** When the tight per-day table is available and D > 1 with tracked micronutrients, each candidate recipe r at decision `(d, s)` is rejected if, for any tracked n,
+
+
+
+`consumed(n) + max_prefix(n, d, prefix∥r) + Σ_{d' = d+1}^{D} max_daily_achievable(n, d') < weekly_minimum_required(n)`,
+
+
+
+where `prefix` is the recipe sequence already assigned on day d for slots before s, and `max_prefix(n, d, ·)` is the maximum nutrient n over valid day-d completions that start with that prefix (missing prefix ⇒ no valid completion ⇒ reject). Candidates that pass keep the planner's usual score order; the bound never overestimates, so it cannot rule out a feasible plan.
+
+
+
+A horizon-level structural check before search uses the same per-day maxima: if `Σ_d max_daily_achievable(n, d) < weekly_minimum_required(n)` for any tracked n, fail with FM-4 without searching.
 
   
 
@@ -1781,7 +1799,7 @@ All open items have been resolved. See Appendix C for the full resolution histor
 
 | 7 | 5 (FC-1) | Precision of daily calorie feasibility bounds. | **Adopt ±10% tolerance from Section 6.5.** |
 
-| 8 | 5 (FC-4) | Method for computing `max_daily_achievable(n)`. | **Precomputed once before search, indexed by (nutrient, slot_count).** |
+| 8 | 5 (FC-4) | Method for computing `max_daily_achievable(n)`. | **Resolved (C4):** maximum of nutrient n over any *valid day* for each schedule day (enumerated combinations). Loose top-M sum retained as fallback when downscaling is on or enumeration is capped. Per-slot prefix+suffix bound check added in tight mode. |
 
 | 9 | 6.6 | Whether Omega-3:Omega-6 ratio is a hard constraint or advisory. | **Removed as special case. Omega-3 is a normal tracked micronutrient with an RDI target.** |
 

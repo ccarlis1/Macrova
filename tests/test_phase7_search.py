@@ -1027,7 +1027,8 @@ class TestFullyPinnedDayValidation:
         schedule = _make_schedule(ndays=2, slots_per_day=2)
         fiber_pin = MicronutrientProfile(fiber_g=5.0)
         fiber_free = MicronutrientProfile(fiber_g=5.0)
-        # High-fiber recipe makes structural MDA pass, but its macros prevent selection.
+        # Macro-infeasible high-fiber recipe: loose top-M used to let structural pass;
+        # tight enumeration excludes it, so FM-4 fires pre-search (C4).
         fiber_rich = MicronutrientProfile(fiber_g=50.0)
         profile = _make_profile(
             schedule,
@@ -1041,14 +1042,17 @@ class TestFullyPinnedDayValidation:
             _make_recipe("r4", 1000.0, 50.0, 32.0, 125.0, micronutrients=fiber_free),
             _make_recipe("r_rich", 3000.0, 50.0, 32.0, 125.0, micronutrients=fiber_rich),
         ]
-        result = run_meal_plan_search(profile, pool, 2, None)
+        stats = SearchStats(enabled=True)
+        result = run_meal_plan_search(profile, pool, 2, None, stats=stats)
         assert result.success is False
         assert result.failure_mode == "FM-4"
+        assert stats.total_attempts == 0
         deficient = result.report.get("deficient_nutrients", [])
         fiber_entry = next(e for e in deficient if e["nutrient"] == "fiber_g")
-        # day0 pinned 10g + day1 free 10g = 20g (not day1 alone)
-        assert abs(fiber_entry["achieved"] - 20.0) < 1e-6
-
+        # Pre-search: nothing assigned yet; classification is structural vs tight day max.
+        assert fiber_entry["achieved"] == 0.0
+        assert fiber_entry["required"] == pytest.approx(30.0)
+        assert fiber_entry["classification"] == "structural"
     def test_last_day_fully_pinned_succeeds(self):
         schedule = _make_schedule(ndays=2, slots_per_day=2)
         profile = _make_profile(
@@ -1113,6 +1117,11 @@ class TestFullyPinnedDayValidation:
 
         The pinned day is uncompleted on the way back and re-completed on the way forward, so
         weekly totals must still equal the sum of daily totals and the pins must survive.
+
+        Tight per-slot floor pruning and day-indexed FC-4 (C4) would reject a low-iron
+        day 0 before the pinned day is ever completed. This test forces the loose top-M
+        bound, disables per-slot filtering, and prefers low-iron candidates first so
+        search still exercises `_uncomplete_day` across a pin day end-to-end.
         """
         from src.planning import phase7_search as p7
 
@@ -1124,6 +1133,33 @@ class TestFullyPinnedDayValidation:
             return real_uncomplete(daily_trackers, weekly_tracker, day_index, *args, **kwargs)
 
         monkeypatch.setattr(p7, "_uncomplete_day", spy)
+        monkeypatch.setattr(p7, "candidate_passes_micro_floor", lambda *a, **k: True)
+
+        def force_loose_bounds(profile, recipe_pool, schedule, D, resolved_ul, **kwargs):
+            from src.planning.phase3_feasibility import (
+                micro_floor_bounds_from_slot_mda,
+                precompute_max_daily_achievable,
+            )
+
+            names = list(profile.micronutrient_targets.keys())
+            slot_counts = {len(schedule[d]) for d in range(D)}
+            mda = precompute_max_daily_achievable(recipe_pool, names, slot_counts)
+            return micro_floor_bounds_from_slot_mda(mda, schedule, D, names)
+
+        monkeypatch.setattr(p7, "precompute_micro_floor_bounds", force_loose_bounds)
+
+        real_ordering = p7.ordering_key
+
+        def low_iron_first(candidate, state, profile, day_index, **kwargs):
+            recipe_view, _score = candidate
+            iron = 0.0
+            micro = getattr(recipe_view.nutrition, "micronutrients", None)
+            if micro is not None:
+                iron = float(getattr(micro, "iron_mg", 0.0) or 0.0)
+            base = real_ordering(candidate, state, profile, day_index, **kwargs)
+            return (iron, base)
+
+        monkeypatch.setattr(p7, "ordering_key", low_iron_first)
 
         def iron(mg: float) -> MicronutrientProfile:
             return MicronutrientProfile(iron_mg=mg)

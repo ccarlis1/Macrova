@@ -259,6 +259,7 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
               proteinG: meal.nutrition.proteinG,
               carbsG: meal.nutrition.carbsG,
               fatG: meal.nutrition.fatG,
+              mealTypeMatch: meal.mealTypeMatch,
             ),
           ),
         );

@@ -9,6 +9,8 @@ class MealCard extends StatelessWidget {
   final double proteinG;
   final double carbsG;
   final double fatG;
+  /// §4.3: false shows a soft mismatch chip; null/true hide it.
+  final bool? mealTypeMatch;
 
   const MealCard({
     super.key,
@@ -18,6 +20,7 @@ class MealCard extends StatelessWidget {
     required this.proteinG,
     required this.carbsG,
     required this.fatG,
+    this.mealTypeMatch,
   });
 
   @override
@@ -64,6 +67,18 @@ class MealCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  if (mealTypeMatch == false) ...[
+                    const SizedBox(height: 4),
+                    Chip(
+                      visualDensity: VisualDensity.compact,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      label: Text('Not tagged as $mealType'),
+                      labelStyle: Theme.of(context).textTheme.labelSmall,
+                      backgroundColor: colorScheme.surfaceContainerHighest,
+                      side: BorderSide(color: colorScheme.outlineVariant),
+                      padding: EdgeInsets.zero,
+                    ),
+                  ],
                   const SizedBox(height: 4),
                   MacroDisplay(
                     calories: calories,

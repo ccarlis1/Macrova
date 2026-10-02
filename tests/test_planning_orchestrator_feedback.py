@@ -73,12 +73,43 @@ def profile(slots=2, kcal=1200, protein=70.0, fat=(20.0, 40.0), carbs=130.0, bus
                                excluded_ingredients=list(excl), liked_foods=[], pinned_assignments={}, micronutrient_targets=micro or {})
 
 
+_MEAL_TAGS = {
+    "cuisine": "unknown",
+    "cost_level": "standard",
+    "prep_time_bucket": "weeknight_meal",
+    "dietary_flags": [],
+    "tag_slugs_by_type": {"context": ["lunch"]},
+}
+
 # chicken 200 g + rice 250 g = 655 kcal / 68.75 p / 7.95 f / 70 c ; two such meals ~ 1310 kcal window
-FIT = {"name": "Chicken and rice", "ingredients": [{"name": "chicken breast", "quantity": 200.0, "unit": "g"}, {"name": "rice", "quantity": 250.0, "unit": "g"}],
-       "instructions": ["Cook.", "Serve."], "cooking_time_minutes": 20}
-FIT2 = {"name": "Rice and chicken plate", "ingredients": [{"name": "chicken breast", "quantity": 190.0, "unit": "g"}, {"name": "rice", "quantity": 240.0, "unit": "g"}, {"name": "olive oil", "quantity": 5.0, "unit": "g"}],
-        "instructions": ["Cook.", "Serve."], "cooking_time_minutes": 15}
-TINY = {"name": "Rice spoon", "ingredients": [{"name": "rice", "quantity": 30.0, "unit": "g"}], "instructions": ["Eat."], "cooking_time_minutes": 1}
+FIT = {
+    "name": "Chicken and rice",
+    "ingredients": [
+        {"name": "chicken breast", "quantity": 200.0, "unit": "g"},
+        {"name": "rice", "quantity": 250.0, "unit": "g"},
+    ],
+    "instructions": ["Cook.", "Serve."],
+    "cooking_time_minutes": 20,
+    "tags": _MEAL_TAGS,
+}
+FIT2 = {
+    "name": "Rice and chicken plate",
+    "ingredients": [
+        {"name": "chicken breast", "quantity": 190.0, "unit": "g"},
+        {"name": "rice", "quantity": 240.0, "unit": "g"},
+        {"name": "olive oil", "quantity": 5.0, "unit": "g"},
+    ],
+    "instructions": ["Cook.", "Serve."],
+    "cooking_time_minutes": 15,
+    "tags": _MEAL_TAGS,
+}
+TINY = {
+    "name": "Rice spoon",
+    "ingredients": [{"name": "rice", "quantity": 30.0, "unit": "g"}],
+    "instructions": ["Eat."],
+    "cooking_time_minutes": 1,
+    "tags": _MEAL_TAGS,
+}
 
 
 def _target_for_two_fits(**kw):
@@ -132,7 +163,16 @@ def test_failed_request_persists_nothing(tmp_path):
 def test_excluded_ingredient_draft_is_rejected_and_never_planned(tmp_path):
     prof = _target_for_two_fits(); prof.excluded_ingredients = ["peanuts"]
     pool = [R("small_a", 100, 5, 2, 10), R("small_b", 120, 6, 2, 12)]
-    pb = {"name": "PB plate", "ingredients": [{"name": "peanut butter", "quantity": 100.0, "unit": "g"}, {"name": "rice", "quantity": 50.0, "unit": "g"}], "instructions": ["Mix."], "cooking_time_minutes": 2}
+    pb = {
+        "name": "PB plate",
+        "ingredients": [
+            {"name": "peanut butter", "quantity": 100.0, "unit": "g"},
+            {"name": "rice", "quantity": 50.0, "unit": "g"},
+        ],
+        "instructions": ["Mix."],
+        "cooking_time_minutes": 2,
+        "tags": _MEAL_TAGS,
+    }
     client = Client([{"drafts": [pb, pb]}])
     out = plan_with_llm_feedback(prof, pool, 1, recipes_path=str(tmp_path / "r.json"), client=client, provider=Provider(),
                                  use_feedback_cache=False, force_live_generation=True, recipes_to_generate_per_attempt=2)
@@ -166,8 +206,26 @@ def test_unrecoverable_cases_never_call_the_llm(tmp_path):
 def test_cook_time_cap_gap_and_claimed_time(tmp_path):
     prof = _target_for_two_fits(busy=[1, 4])  # slot 0: <= 5 min
     pool = [R("a", 655, 68.75, 7.95, 70, t=20), R("b", 655, 68.75, 7.95, 70, t=20)]
-    quick = {"name": "Quick chicken rice", "ingredients": [{"name": "chicken breast", "quantity": 200.0, "unit": "g"}, {"name": "rice", "quantity": 250.0, "unit": "g"}], "instructions": ["Microwave."], "cooking_time_minutes": 4}
-    slow_claim = {"name": "Slow chicken rice", "ingredients": [{"name": "chicken breast", "quantity": 200.0, "unit": "g"}, {"name": "rice", "quantity": 250.0, "unit": "g"}], "instructions": ["Roast."], "cooking_time_minutes": 40}
+    quick = {
+        "name": "Quick chicken rice",
+        "ingredients": [
+            {"name": "chicken breast", "quantity": 200.0, "unit": "g"},
+            {"name": "rice", "quantity": 250.0, "unit": "g"},
+        ],
+        "instructions": ["Microwave."],
+        "cooking_time_minutes": 4,
+        "tags": _MEAL_TAGS,
+    }
+    slow_claim = {
+        "name": "Slow chicken rice",
+        "ingredients": [
+            {"name": "chicken breast", "quantity": 200.0, "unit": "g"},
+            {"name": "rice", "quantity": 250.0, "unit": "g"},
+        ],
+        "instructions": ["Roast."],
+        "cooking_time_minutes": 40,
+        "tags": _MEAL_TAGS,
+    }
     client = Client([{"drafts": [slow_claim, quick]}])
     out = plan_with_llm_feedback(prof, pool, 1, recipes_path=str(tmp_path / "r.json"), client=client, provider=Provider(),
                                  use_feedback_cache=False, force_live_generation=True, recipes_to_generate_per_attempt=2)

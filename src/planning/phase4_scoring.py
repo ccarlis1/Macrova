@@ -67,9 +67,15 @@ class ScoringConfig:
 
     w_pref: float = 1.0
     w_var: float = 2.0
+    # §4.3: soft bonus when recipe carries the slot's meal_type tag.
+    # Tuned via match-rate sweep (see evaluation/reports/benchmark_failure_analysis.md).
+    w_meal_type: float = 8.0
 
 
 DEFAULT_SCORING_CONFIG = ScoringConfig()
+
+# Canonical meal-role slugs (tag semantic_class meal_role).
+MEAL_ROLE_SLUGS = frozenset({"breakfast", "lunch", "dinner", "snack"})
 
 
 def get_daily_tracker(state: ScoringStateView, day_index: int) -> Optional[DailyTracker]:
@@ -148,9 +154,30 @@ def preferred_tag_bonus(
     day_index: int,
     state: ScoringStateView,
     profile: PlanningUserProfile,
-    config: ScoringConfig = DEFAULT_SCORING_CONFIG,
+    config: Optional[ScoringConfig] = None,
 ) -> float:
-    return config.w_pref * float(preferred_match_count(recipe, slot, day_index, state, profile))
+    cfg = config if config is not None else DEFAULT_SCORING_CONFIG
+    return cfg.w_pref * float(preferred_match_count(recipe, slot, day_index, state, profile))
+
+
+def meal_type_matches(recipe: RecipeLike, slot: MealSlot) -> Optional[bool]:
+    """Return whether recipe tags match slot.meal_type; None if meal_type is not a meal role."""
+    meal_type = str(getattr(slot, "meal_type", "") or "").strip().lower()
+    if meal_type not in MEAL_ROLE_SLUGS:
+        return None
+    return meal_type in _recipe_tag_set(recipe)
+
+
+def meal_type_bonus(
+    recipe: RecipeLike,
+    slot: MealSlot,
+    config: Optional[ScoringConfig] = None,
+) -> float:
+    """Bounded soft bonus when recipe is tagged for the slot's meal_type (§4.3)."""
+    cfg = config if config is not None else DEFAULT_SCORING_CONFIG
+    if meal_type_matches(recipe, slot) is True:
+        return float(cfg.w_meal_type)
+    return 0.0
 
 
 def _recent_recipe_ids(
@@ -175,15 +202,16 @@ def variety_penalty(
     recipe: RecipeLike,
     day_index: int,
     state: ScoringStateView,
-    config: ScoringConfig = DEFAULT_SCORING_CONFIG,
+    config: Optional[ScoringConfig] = None,
 ) -> float:
+    cfg = config if config is not None else DEFAULT_SCORING_CONFIG
     recent = _recent_recipe_ids(state, day_index, lookback_days=3)
     if not recent:
         return 0.0
     meal_prep_ids = state.meal_prep_recipe_ids or set()
     effective_recent = {rid for rid in recent if rid not in meal_prep_ids}
     if recipe.id in effective_recent:
-        return config.w_var
+        return cfg.w_var
     return 0.0
 
 
@@ -409,9 +437,10 @@ def composite_score(
     slot_index: int,
     state: ScoringStateView,
     profile: PlanningUserProfile,
-    config: ScoringConfig = DEFAULT_SCORING_CONFIG,
+    config: Optional[ScoringConfig] = None,
 ) -> float:
     """Composite score in [0, 100]. Spec 8.1. Deterministic; no mutation."""
+    config = config if config is not None else DEFAULT_SCORING_CONFIG
     if day_index < 0 or day_index >= len(state.schedule):
         return 50.0
     day_slots = state.schedule[day_index]
@@ -448,5 +477,6 @@ def composite_score(
         + W_SCHEDULE * sched
     )
     composite += preferred_tag_bonus(recipe, slot, day_index, state, profile, config)
+    composite += meal_type_bonus(recipe, slot, config)
     composite -= variety_penalty(recipe, day_index, state, config)
     return _clamp_score(composite)

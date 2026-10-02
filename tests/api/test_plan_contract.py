@@ -733,6 +733,78 @@ def test_plan_response_meal_metadata_slot_index_matches_batch_assignment(tmp_pat
     assert meal["servings"] == 4.0
 
 
+def test_plan_response_includes_meal_type_match_field(tmp_path, monkeypatch):
+    """§4.3: each planned meal reports meal_type_match; report has meal_type_summary."""
+    profile_path = tmp_path / "user_profile.yaml"
+    _write_profile(profile_path)
+    monkeypatch.setenv("NUTRITION_USER_PROFILE_PATH", str(profile_path))
+    monkeypatch.setattr("src.api.server.RecipeDB", _RecipeDBWithKnown)
+    monkeypatch.setattr("src.api.server.NutritionDB", lambda *_a, **_k: object())
+    monkeypatch.setattr(
+        "src.api.server.LocalIngredientProvider", lambda *_a, **_k: _DummyProvider()
+    )
+
+    class _EmptyBatchRepo:
+        def list_active(self):
+            return []
+
+    monkeypatch.setattr(
+        "src.planning.orchestrator.MealPrepBatchRepository",
+        lambda *_a, **_k: _EmptyBatchRepo(),
+    )
+    monkeypatch.setattr(
+        "src.api.server.plan_meals",
+        lambda *_a, **_k: MealPlanResult(
+            success=True,
+            termination_code="TC-1",
+            plan=[Assignment(0, 0, "known-recipe", 0)],
+            daily_trackers={
+                0: DailyTracker(
+                    calories_consumed=100.0,
+                    protein_consumed=10.0,
+                    fat_consumed=5.0,
+                    carbs_consumed=10.0,
+                    slots_assigned=1,
+                    slots_total=1,
+                )
+            },
+            weekly_tracker=None,
+            report={},
+            stats=None,
+        ),
+    )
+
+    client = TestClient(app)
+    resp = client.post(
+        "/api/v1/plan",
+        json={
+            "daily_calories": 2200,
+            "daily_protein_g": 140.0,
+            "daily_fat_g_min": 60.0,
+            "daily_fat_g_max": 90.0,
+            "liked_foods": [],
+            "disliked_foods": [],
+            "allergies": [],
+            "days": 1,
+            "ingredient_source": "local",
+            "schedule": {"08:00": 3},
+        },
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    meal = body["daily_plans"][0]["meals"][0]
+    assert "meal_type_match" in meal
+    assert meal["meal_type_match"] in (True, False, None)
+    assert "meal_type_summary" in body["report"]
+    summary = body["report"]["meal_type_summary"]
+    assert set(summary) >= {
+        "matched",
+        "mismatched",
+        "unknown",
+        "planner_only_mismatch_rate",
+    }
+
+
 def test_plan_rejects_negative_derived_carbs_before_planner(monkeypatch):
     """Carbs still negative at the fat min → 400 INVALID_REQUEST / NEGATIVE_CARBS_DERIVED; planner never runs."""
     called = {"plan_meals": False}

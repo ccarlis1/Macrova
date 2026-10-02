@@ -24,7 +24,10 @@ from src.planning.phase4_scoring import (
     W_SATIETY,
     W_BALANCE,
     W_SCHEDULE,
+    ScoringConfig,
     ScoringStateView,
+    meal_type_bonus,
+    meal_type_matches,
     nutrition_match,
     micronutrient_match,
     satiety_match,
@@ -42,6 +45,7 @@ def _make_recipe(
     carbs: float = 40.0,
     cooking_min: int = 15,
     micronutrients: MicronutrientProfile | None = None,
+    tags: set[str] | None = None,
 ) -> PlanningRecipe:
     return PlanningRecipe(
         id=rid,
@@ -50,11 +54,12 @@ def _make_recipe(
         cooking_time_minutes=cooking_min,
         nutrition=NutritionProfile(calories, protein, fat, carbs, micronutrients=micronutrients),
         primary_carb_contribution=None,
+        canonical_tag_slugs=set(tags or ()),
     )
 
 
-def _make_slot(busyness: int = 2) -> MealSlot:
-    return MealSlot("12:00", busyness, "lunch")
+def _make_slot(busyness: int = 2, meal_type: str = "lunch") -> MealSlot:
+    return MealSlot("12:00", busyness, meal_type)
 
 
 def _make_profile() -> PlanningUserProfile:
@@ -245,3 +250,47 @@ class TestBoundaries:
         recipe = _make_recipe()
         score = composite_score(recipe, 0, 5, state, profile)
         assert score == 50.0
+
+
+class TestMealTypeBonus:
+    """§4.3: soft meal_type bonus; never hard-rejects."""
+
+    def test_match_adds_exactly_w_meal_type(self):
+        cfg = ScoringConfig(w_meal_type=8.0)
+        recipe = _make_recipe(tags={"breakfast"})
+        slot = _make_slot(meal_type="breakfast")
+        assert meal_type_matches(recipe, slot) is True
+        assert meal_type_bonus(recipe, slot, cfg) == 8.0
+
+    def test_mismatch_adds_zero(self):
+        cfg = ScoringConfig(w_meal_type=8.0)
+        recipe = _make_recipe(tags={"dinner"})
+        slot = _make_slot(meal_type="breakfast")
+        assert meal_type_matches(recipe, slot) is False
+        assert meal_type_bonus(recipe, slot, cfg) == 0.0
+
+    def test_unknown_meal_type_adds_zero(self):
+        cfg = ScoringConfig(w_meal_type=8.0)
+        recipe = _make_recipe(tags={"breakfast"})
+        slot = _make_slot(meal_type="meal")
+        assert meal_type_matches(recipe, slot) is None
+        assert meal_type_bonus(recipe, slot, cfg) == 0.0
+
+    def test_match_raises_composite_by_w_meal_type(self):
+        cfg = ScoringConfig(w_meal_type=8.0, w_pref=0.0, w_var=0.0)
+        profile = _make_profile()
+        slot = _make_slot(meal_type="breakfast")
+        state = _make_state(schedule=[[slot]])
+        matched = _make_recipe(rid="match", tags={"breakfast"})
+        mismatched = _make_recipe(rid="miss", tags={"dinner"})
+        s_match = composite_score(matched, 0, 0, state, profile, cfg)
+        s_miss = composite_score(mismatched, 0, 0, state, profile, cfg)
+        assert s_match - s_miss == pytest.approx(8.0)
+
+    def test_determinism_with_meal_type_bonus(self):
+        profile = _make_profile()
+        state = _make_state(schedule=[[_make_slot(meal_type="lunch")]])
+        recipe = _make_recipe(tags={"lunch"})
+        assert composite_score(recipe, 0, 0, state, profile) == composite_score(
+            recipe, 0, 0, state, profile
+        )

@@ -273,6 +273,7 @@ class PlannedMeal(BaseModel):
     recipe_id: Optional[str] = None
     name: Optional[str] = None
     meal_type: Optional[str] = None
+    meal_type_match: Optional[bool] = None
     slot_index: Optional[int] = None
     source: Optional[
         Literal["meal_prep_batch", "pinned_assignment", "planner"]

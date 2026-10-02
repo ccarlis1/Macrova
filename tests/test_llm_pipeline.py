@@ -50,6 +50,7 @@ def test_generate_validate_persist_recipes_happy_path(tmp_path):
                     {"name": "chicken breast", "quantity": 200.0, "unit": "g"},
                 ],
                 "instructions": ["Cook it."],
+            "tags": {"cuisine":"unknown","cost_level":"standard","prep_time_bucket":"weeknight_meal","dietary_flags":[],"tag_slugs_by_type":{"context":["lunch"]}},
             }
         ]
     }
@@ -84,11 +85,13 @@ def test_generate_validate_persist_recipes_partial_acceptance(tmp_path):
                 "name": "Accept",
                 "ingredients": [{"name": "chicken breast", "quantity": 200.0, "unit": "g"}],
                 "instructions": ["Cook it."],
+            "tags": {"cuisine":"unknown","cost_level":"standard","prep_time_bucket":"weeknight_meal","dietary_flags":[],"tag_slugs_by_type":{"context":["lunch"]}},
             },
             {
                 "name": "Reject",
                 "ingredients": [{"name": "missing ingredient", "quantity": 200.0, "unit": "g"}],
                 "instructions": ["Cook it."],
+            "tags": {"cuisine":"unknown","cost_level":"standard","prep_time_bucket":"weeknight_meal","dietary_flags":[],"tag_slugs_by_type":{"context":["lunch"]}},
             },
         ]
     }
@@ -131,6 +134,7 @@ def test_generate_validate_persist_recipes_rejects_non_usda_provider(tmp_path):
                     "name": "X",
                     "ingredients": [{"name": "chicken breast", "quantity": 200.0, "unit": "g"}],
                     "instructions": ["Cook it."],
+                "tags": {"cuisine":"unknown","cost_level":"standard","prep_time_bucket":"weeknight_meal","dietary_flags":[],"tag_slugs_by_type":{"context":["lunch"]}},
                 }
             ]
         }

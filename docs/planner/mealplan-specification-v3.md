@@ -138,7 +138,7 @@ The schedule defines, for each day in the planning horizon, an ordered sequence 
 
 | `busyness_level` | int (1–4) | Cooking time constraint for this slot |
 
-| `meal_type` | str | Label (e.g., "breakfast", "lunch", "snack", "dinner") |
+| `meal_type` | str | Soft scoring hint (e.g., "breakfast", "lunch", "snack", "dinner"). A recipe tagged with the same meal-role slug receives a bounded `MealTypeBonus`; mismatch never rejects a candidate. Strict slots opt in via `required_tag_slugs`. |
 
 | `required_tag_slugs` | Optional[List[str]] | Canonical tag slugs that candidates for this slot must satisfy, unless the slot is resolved by a higher-precedence batch lock or pin. |
 
@@ -1208,11 +1208,11 @@ The cost function assigns a **score** to each candidate recipe r at decision poi
 
   
 
-`Score(r, d, s, S) = w₁·NutritionMatch + w₂·MicronutrientMatch + w₃·SatietyMatch + w₄·Balance + w₅·ScheduleMatch + PreferredTagBonus`
+`Score(r, d, s, S) = w₁·NutritionMatch + w₂·MicronutrientMatch + w₃·SatietyMatch + w₄·Balance + w₅·ScheduleMatch + PreferredTagBonus + MealTypeBonus`
 
   
 
-Each weighted component is normalized to the range [0, 100]. `PreferredTagBonus` is a bounded additive soft bonus derived from slot `preferred_tag_slugs` and tag-derived scoring hints; it is never used as a hard eligibility check.
+Each weighted component is normalized to the range [0, 100]. `PreferredTagBonus` is a bounded additive soft bonus derived from slot `preferred_tag_slugs` and tag-derived scoring hints; it is never used as a hard eligibility check. `MealTypeBonus` is a bounded additive soft bonus when the recipe's canonical tags include the slot's `meal_type` meal-role slug (`breakfast`, `lunch`, `dinner`, `snack`); it is never used as a hard eligibility check. There is no lunch/dinner equivalence in code — a recipe that fits both meals carries both tags.
 
   
 
@@ -1248,7 +1248,7 @@ The normalized weights sum to 1.0. The maximum achievable composite score is 100
 
   
 
-**Note on Preference scoring:** Liked-food preference is addressed through tie-breaking (Section 7.1). Disliked foods are handled by hard exclusion in candidate generation (HC-1). Slot-level preferred tags are soft-only; they may add a bounded score bonus or participate in tie-breaking, but they shall never remove a candidate from `C(d, s)`.
+**Note on Preference scoring:** Liked-food preference is addressed through tie-breaking (Section 7.1). Disliked foods are handled by hard exclusion in candidate generation (HC-1). Slot-level preferred tags and slot `meal_type` are soft-only; they may add a bounded score bonus (`PreferredTagBonus`, `MealTypeBonus`) or participate in tie-breaking, but they shall never remove a candidate from `C(d, s)`.
 
   
 
@@ -1838,3 +1838,5 @@ All open items have been resolved. See Appendix C for the full resolution histor
 | 17 | 2.1.1 / 2.2 / 6.3 | Whether slot-level tag constraints are global filters, soft preferences, or planner-core per-slot checks. | **Resolved: planner-core per-slot checks.** `required_tag_slugs` are hard constraints evaluated per non-pinned slot against hard-eligible canonical recipe tags; `preferred_tag_slugs` are soft-only scoring/ordering hints. |
 
 | 18 | 3.5 / 4 / 6.2 | Precedence among meal-prep locks, explicit pins, required tags, and scoring. | **Resolved: batch lock > explicit pin > required tags > preferred/scoring.** Batch locks are normalized into effective pins before search; required tags apply only to non-pinned candidate generation. |
+
+| 19 | 3.3 / 8.1 | Whether a slot's `meal_type` is a hard constraint, soft preference, or label-only. | **Resolved: soft by default; strict on request.** Matching meal-role tags add a bounded `MealTypeBonus` (`w_meal_type`, tuned to keep breakfast mismatch under 10%). Mismatch never rejects a candidate. Strict slots use `required_tag_slugs`. No lunch/dinner equivalence in code — dual-role recipes carry both tags. |

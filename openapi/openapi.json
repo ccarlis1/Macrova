@@ -1174,6 +1174,17 @@
             ],
             "title": "Meal Type"
           },
+          "meal_type_match": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meal Type Match"
+          },
           "name": {
             "anyOf": [
               {

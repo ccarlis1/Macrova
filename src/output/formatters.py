@@ -11,6 +11,7 @@ from src.planning.phase0_models import (
     micronutrient_profile_to_dict,
 )
 from src.planning.phase10_reporting import MealPlanResult, normalize_planner_report
+from src.planning.phase4_scoring import meal_type_matches
 
 
 # Human-readable names for micronutrients in markdown output
@@ -234,6 +235,9 @@ def format_result_json(
 ) -> Dict[str, Any]:
     """Format a MealPlanResult as a JSON-serializable dict. Top-level: success, termination_code, days, daily_plans, weekly_totals (if D>1), warnings, goals."""
     daily_plans = []
+    match_counts = {"matched": 0, "mismatched": 0, "unknown": 0}
+    planner_known = 0
+    planner_mismatched = 0
     # Include partial / failure plans whenever assignments exist. Do not require
     # daily_trackers: it may be missing in edge cases, and `{}` is falsy in Python.
     if result.plan:
@@ -253,6 +257,13 @@ def format_result_json(
                     continue
                 slot = profile.schedule[day_index][a.slot_index] if day_index < len(profile.schedule) else None
                 meal_type = slot.meal_type if slot else "meal"
+                match: Optional[bool] = meal_type_matches(recipe, slot) if slot is not None else None
+                if match is True:
+                    match_counts["matched"] += 1
+                elif match is False:
+                    match_counts["mismatched"] += 1
+                else:
+                    match_counts["unknown"] += 1
                 rec_nut = recipe.nutrition
                 nutrition_json = {
                     "calories": round(rec_nut.calories, 1),
@@ -267,12 +278,17 @@ def format_result_json(
                     "recipe_id": recipe.id,
                     "name": recipe.name,
                     "meal_type": meal_type,
+                    "meal_type_match": match,
                     "cooking_time_minutes": recipe.cooking_time_minutes,
                     "ingredients": [format_ingredient_string(ing) for ing in recipe.ingredients],
                     "nutrition": nutrition_json,
                     "busyness_level": slot.busyness_level if slot else 3,
                 }
                 _attach_planned_meal_metadata(meal_row, a, meal_metadata_by_slot)
+                if meal_row.get("source") == "planner" and match is not None:
+                    planner_known += 1
+                    if match is False:
+                        planner_mismatched += 1
                 meals_json.append(meal_row)
             t = trackers.get(day_index)
             day_totals = None
@@ -315,6 +331,15 @@ def format_result_json(
         failure_mode=getattr(result, "failure_mode", None),
         report=result.report,
     )
+    planner_mismatch_rate = (
+        float(planner_mismatched) / float(planner_known) if planner_known else 0.0
+    )
+    report["meal_type_summary"] = {
+        "matched": match_counts["matched"],
+        "mismatched": match_counts["mismatched"],
+        "unknown": match_counts["unknown"],
+        "planner_only_mismatch_rate": round(planner_mismatch_rate, 4),
+    }
     has_failures = bool(report.get("failures"))
     has_usable_plan = bool(daily_plans)
     if result.success and not has_failures and not result.plan_incomplete_reason:

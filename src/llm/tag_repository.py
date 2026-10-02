@@ -20,6 +20,26 @@ from src.llm.schemas import (
 _SEED_CREATED_AT = "1970-01-01T00:00:00Z"
 _SEED_TAGS: Dict[str, Dict[str, str]] = {
     "meal-prep": {"display": "Meal Prep", "tag_type": "context"},
+    "breakfast": {
+        "display": "Breakfast",
+        "tag_type": "context",
+        "semantic_class": "meal_role",
+    },
+    "lunch": {
+        "display": "Lunch",
+        "tag_type": "context",
+        "semantic_class": "meal_role",
+    },
+    "dinner": {
+        "display": "Dinner",
+        "tag_type": "context",
+        "semantic_class": "meal_role",
+    },
+    "snack": {
+        "display": "Snack",
+        "tag_type": "context",
+        "semantic_class": "meal_role",
+    },
     "high-omega-3": {"display": "High Omega 3", "tag_type": "nutrition"},
     "high-fiber": {"display": "High Fiber", "tag_type": "nutrition"},
     "high-calcium": {"display": "High Calcium", "tag_type": "nutrition"},
@@ -220,6 +240,7 @@ def _ensure_seed_data(
                     source="system",
                     created_at=_SEED_CREATED_AT,
                     aliases=[],
+                    semantic_class=seed.get("semantic_class"),
                 )
             )
     for meta in registry.values():

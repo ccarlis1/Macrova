@@ -20,11 +20,40 @@ from src.planning.phase0_models import MealSlot, PlanningRecipe, PlanningUserPro
 from src.planning.phase2_constraints import _recipe_contains_excluded_ingredient
 from src.planning.phase3_feasibility import precompute_max_daily_achievable
 from src.planning.phase10_reporting import MealPlanResult
+from src.planning.phase4_scoring import MEAL_ROLE_SLUGS
 from src.planning.slot_attributes import cooking_time_max
 
 MACRO_TOLERANCE = 0.10
 _NEVER_RECOVERABLE = {"FM-3", "FM-BATCH-CONFLICT"}
 _MAX_LIST = 80
+
+
+def _meal_types_for_gap(
+    profile: PlanningUserProfile,
+    slots: Sequence[Sequence[int]],
+) -> List[str]:
+    """Unique meal-role slugs for gap slots; whole schedule when slots is empty."""
+    collected: List[str] = []
+    seen: set[str] = set()
+    if slots:
+        pairs = [(int(d), int(s)) for d, s in slots]
+    else:
+        pairs = [
+            (d, s)
+            for d, day in enumerate(profile.schedule)
+            for s, _ in enumerate(day)
+        ]
+    for d, s in pairs:
+        if d < 0 or d >= len(profile.schedule):
+            continue
+        day = profile.schedule[d]
+        if s < 0 or s >= len(day):
+            continue
+        mt = str(getattr(day[s], "meal_type", "") or "").strip().lower()
+        if mt in MEAL_ROLE_SLUGS and mt not in seen:
+            seen.add(mt)
+            collected.append(mt)
+    return collected
 
 
 def _slot_required(slot: MealSlot) -> List[str]:
@@ -152,12 +181,24 @@ def diagnose(
         slots = [[int(a), int(b)] for a, b in (k.split(":") for k in empty_slots)]
         caps = [cooking_time_max(profile.schedule[d][s].busyness_level) for d, s in slots]
         cap = min((c for c in caps if c is not None), default=None)
-        return GapSpec(kind="candidate_gap", cook_time_cap_minutes=cap, slots=slots,
-                       explanation=f"{len(slots)} slot(s) have no recipe passing exclusions, cook-time cap and required tags.", **base)
+        return GapSpec(
+            kind="candidate_gap",
+            cook_time_cap_minutes=cap,
+            slots=slots,
+            meal_types=_meal_types_for_gap(profile, slots),
+            explanation=f"{len(slots)} slot(s) have no recipe passing exclusions, cook-time cap and required tags.",
+            **base,
+        )
 
     distinct = len({r.id for r in pool})
     if distinct < slots_per_day:
-        return GapSpec(kind="uniqueness_gap", slots=[], explanation=f"Only {distinct} distinct recipes for {slots_per_day} slots per day (same-day uniqueness).", **base)
+        return GapSpec(
+            kind="uniqueness_gap",
+            slots=[],
+            meal_types=_meal_types_for_gap(profile, []),
+            explanation=f"Only {distinct} distinct recipes for {slots_per_day} slots per day (same-day uniqueness).",
+            **base,
+        )
 
     gaps = nutrient_gaps(profile, pool, days)
     if fm == "FM-4" or gaps:
@@ -166,12 +207,22 @@ def diagnose(
             # Planner reported FM-4 but the pool ceiling is not the cause: combinations, not inventory.
             deficient = (result.report or {}).get("deficient_nutrients", []) or []
             need = {str(d.get("nutrient")): round(float(d.get("deficit", 0.0)) / max(1, days), 3) for d in deficient if isinstance(d, dict) and d.get("nutrient")}
-        return GapSpec(kind="nutrient_gap", nutrient_min_per_recipe=need,
-                       explanation="Tracked micronutrient floors exceed what the pool can reach; a useful recipe must contribute at least the listed amount per serving.", **base)
+        return GapSpec(
+            kind="nutrient_gap",
+            nutrient_min_per_recipe=need,
+            meal_types=_meal_types_for_gap(profile, []),
+            explanation="Tracked micronutrient floors exceed what the pool can reach; a useful recipe must contribute at least the listed amount per serving.",
+            **base,
+        )
 
     tight_cap = min((cooking_time_max(sl.busyness_level) or 10**6 for day in profile.schedule for sl in day), default=None)
-    return GapSpec(kind="macro_gap", cook_time_cap_minutes=None if tight_cap in (None, 10**6) else tight_cap,
-                   explanation="Every slot has candidates but no combination meets the daily macro window; a useful recipe lands near the per-meal targets.", **base)
+    return GapSpec(
+        kind="macro_gap",
+        cook_time_cap_minutes=None if tight_cap in (None, 10**6) else tight_cap,
+        meal_types=_meal_types_for_gap(profile, []),
+        explanation="Every slot has candidates but no combination meets the daily macro window; a useful recipe lands near the per-meal targets.",
+        **base,
+    )
 
 
 def feasibility_signal(profile: PlanningUserProfile, pool: Sequence[PlanningRecipe], gap: GapSpec, days: int) -> Dict[str, Any]:

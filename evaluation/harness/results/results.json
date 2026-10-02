@@ -545,7 +545,7 @@
  {
   "id": "MB-022",
   "active_batches": 0,
-  "secs": 0.54,
+  "secs": 0.51,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -661,7 +661,7 @@
  {
   "id": "MB-027",
   "active_batches": 0,
-  "secs": 1.29,
+  "secs": 1.25,
   "success": false,
   "tc": "TC-2",
   "code": "FM-1",
@@ -1438,7 +1438,7 @@
  {
   "id": "MB-058",
   "active_batches": 0,
-  "secs": 0.05,
+  "secs": 0.07,
   "success": false,
   "tc": "TC-2",
   "code": "FM-4",
@@ -1720,7 +1720,7 @@
  {
   "id": "MB-071",
   "active_batches": 0,
-  "secs": 0.1,
+  "secs": 0.09,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1745,7 +1745,7 @@
  {
   "id": "MB-072",
   "active_batches": 0,
-  "secs": 0.49,
+  "secs": 0.5,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -2562,7 +2562,7 @@
  {
   "id": "MB-111",
   "active_batches": 0,
-  "secs": 0.03,
+  "secs": 0.04,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3269,7 +3269,7 @@
  {
   "id": "MB-138",
   "active_batches": 0,
-  "secs": 0.52,
+  "secs": 0.51,
   "success": false,
   "tc": "TC-2",
   "code": "FM-2",
@@ -3294,7 +3294,7 @@
  {
   "id": "MB-139",
   "active_batches": 0,
-  "secs": 0.54,
+  "secs": 0.53,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3472,8 +3472,8 @@
    "0": [
     "bk_protein_oats",
     "ln_roast_beef_wrap",
-    "bk_pb_banana_toast",
-    "bk_salmon_toast"
+    "ln_cottage_box",
+    "dn_bean_quesadilla"
    ]
   }
  },
@@ -3511,9 +3511,9 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "dn_bean_quesadilla",
+    "bk_pb_banana_toast",
     "dn_beef_rice_bowl",
-    "dn_thigh_sheet_pan"
+    "dn_tofu_stir_fry"
    ]
   }
  },

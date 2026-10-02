@@ -6512,10 +6512,8 @@
    "OK"
   ],
   "got": "OK",
-  "status": "INVALID_PLAN",
-  "viol": [
-   "d0s2: SAFETY(intent) bk_pb_banana_toast"
-  ],
+  "status": "MATCH",
+  "viol": [],
   "tc": "TC-4",
   "incomplete": null,
   "report_codes": [],
@@ -6611,10 +6609,8 @@
    "OK"
   ],
   "got": "OK",
-  "status": "INVALID_PLAN",
-  "viol": [
-   "d0s0: SAFETY(intent) dn_bean_quesadilla"
-  ],
+  "status": "MATCH",
+  "viol": [],
   "tc": "TC-4",
   "incomplete": null,
   "report_codes": [],

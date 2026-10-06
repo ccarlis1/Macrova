@@ -1,3 +1,20 @@
+"""Map internal exceptions to deterministic API error payloads.
+
+``INVALID_REQUEST`` (HTTP 400) is used for pre-planning input rejection.
+When raised from :class:`~src.data_layer.macro_targets.MacroTargetsError`,
+the payload includes ``details.reason`` with one of:
+
+- ``NON_POSITIVE_CALORIES`` — ``daily_calories`` must be > 0
+- ``NEGATIVE_PROTEIN`` — ``daily_protein_g`` must not be negative
+- ``NEGATIVE_FAT_MIN`` — ``daily_fat_g.min`` must not be negative
+- ``FAT_RANGE_INVERTED`` — ``daily_fat_g.min`` exceeds ``daily_fat_g.max``
+- ``NEGATIVE_CARBS_DERIVED`` — derived carbs still negative at the fat minimum
+
+Other ``INVALID_REQUEST`` responses (schema / FastAPI validation) may omit
+``details.reason``. See also ``docs/planner/mealplan-specification-v3.md``
+§2.1 / §4.2.
+"""
+
 from __future__ import annotations
 
 from typing import Any, Dict, Tuple

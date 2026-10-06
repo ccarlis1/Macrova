@@ -161,7 +161,7 @@ Chosen: smallest weight with breakfast mismatch under 10% and no scorecard regre
 
 ### 4.4 The data track is untested → measured (E0 / E1 / E1b)
 
-**Status:** measured (draft panel; decision gate open — see reconciliation Q1/Q2). Harness: `evaluation/data_track/` (`reproduce.py`, `decompose.py`, `cache_audit.py`). Results: `evaluation/data_track/results/e{0,1,1b}.json` (generated, gitignored; summary in `results/decision_gate.md`).
+**Status:** Done (PR #42). Harness: `evaluation/data_track/` (`reproduce.py`, `decompose.py`, `cache_audit.py`). Results: `evaluation/data_track/results/e{0,1,1b}.json` (generated, gitignored; summary in `results/decision_gate.md`).
 
 Every benchmark result still uses **stored** nutrition (`StubCalc` in `evaluation/harness/run_benchmark.py`). `/api/v1/plan` recomputes via `NutritionCalculator` from `ingredient_source` local or api. No §3 disagreement is caused mainly by bad data; this section measures the ingredient layer the scorecard skips.
 
@@ -207,7 +207,7 @@ Shipped: `data/reference/ingredient_nutrition.json` (default local source; `revi
 |---|---|---|
 | Planner algorithm defect | C4 fixed (C2a/C2b/C3 fixed) | 0 |
 | API/contract issue | §4.1 fixed, C1 fixed | 0 |
-| Specification ambiguity | C5 fixed (structural agreement); C6 done; §4.3 fixed; **§4.4 Q2 open** | 1 (data acceptability) |
+| Specification ambiguity | C5 fixed (structural agreement); C6 done; §4.3 fixed; **§4.4 Done (PR #42)** | 0 |
 | Validation issue | §4.2 fixed | 0 |
 | Recipe/data limitation | **§4.4 measured** — coverage dominates local; resolution dominates api-cache | 0 planner mismatches (data track separate) |
 | Expected infeasibility | 57 of 57 infeasible scenarios fail correctly after C5 | — |
@@ -231,7 +231,7 @@ C2a's spec gap is closed in §11 attribution steps 2–3.
 | 4 | C2a / C2b failure attribution | **Done.** C2b static pre-check + C2a post-search steps 2–3; 22 diagnoses corrected; exact matches 125 → 145 |
 | 5 | C4 search order (+ C5 structural agreement) | **Done.** Tight valid-day FC-4 bound and per-slot pruning; 145 → 149 exact; MB-067 ACCEPTABLE → MATCH |
 | 6 | C6 allergy class expansion (Q10) | **Done.** Allergies expand via allergen class table; harness sends safety scenarios as allergies; 149 → 151 exact |
-| 7 | §4.4 data track (Q1) | **Measured.** E0/E1/E1b in `evaluation/data_track/`; coverage then resolution dominate. Fix blocked on Q2 gate. |
+| 7 | §4.4 data track (Q1) | **Done (PR #42).** E0/E1/E1b in `evaluation/data_track/`; coverage then resolution dominate; curated table + drop-unresolved shipped. |
 | 8 | §4.2 negative derived carbs | **Done.** D9 fat-minimum fallback, then reject before planning if still negative; MB-053 falls back to 12.5 g and stays FM-2; MB-152 covers the rejection; 151 → 152 exact |
 | 9 | §4.3 meal-type soft scoring | **Done.** Soft `MealTypeBonus` (`w_meal_type=8`); breakfast mismatch 50% → 9.3%; 152/152 exact retained |
 

@@ -82,17 +82,19 @@ def _stem(token: str) -> str:
 
 
 def ingredient_matches_exclusion(ingredient_name: str, excluded: Sequence[str]) -> Optional[str]:
-    """Class-aware exclusion match: 'peanuts' excludes 'peanut butter', 'egg' excludes 'eggs'.
+    """HC-1-aligned exclusion match via allergen class expansion + exact names.
 
-    Deterministic token/prefix matching; returns the matching exclusion term or None.
+    ``peanuts`` expands to ``peanut butter``; ``egg`` does not match ``eggplant``.
+    Returns the original exclusion term that caused the hit, or None.
     """
-    name_tokens = [_stem(t) for t in _WORD.findall(str(ingredient_name).lower())]
+    from src.planning.allergens import expand_allergy_terms
+
+    name = str(ingredient_name).lower().strip()
+    if not name:
+        return None
     for term in excluded:
-        term_tokens = [_stem(t) for t in _WORD.findall(str(term).lower())]
-        if not term_tokens:
-            continue
-        # every token of the exclusion term must appear (as a token or token prefix) in the name
-        if all(any(nt == tt or nt.startswith(tt) for nt in name_tokens) for tt in term_tokens):
+        expanded = set(expand_allergy_terms([str(term)]))
+        if name in expanded:
             return str(term)
     return None
 
@@ -325,6 +327,37 @@ def validate_recipe_draft(
         cooking_time_source = "heuristic_5min_per_step"
     if cook_time_cap_minutes is not None and cooking_time_minutes > int(cook_time_cap_minutes):
         return (False, _validation_failure(error_code="COOK_TIME_EXCEEDS_CAP", message=f"Claimed cook time {cooking_time_minutes} min exceeds the slot cap {cook_time_cap_minutes} min.", field_errors=[f"cap={cook_time_cap_minutes}", f"claimed={cooking_time_minutes}"]))
+
+    # 6b) Dietary-flag consistency: a draft flagged gluten_free/dairy_free/vegetarian/vegan
+    # must not contain a member of the matching HC-1 exclusion class/list.
+    draft_tags = getattr(draft, "tags", None)
+    flagged: List[str] = []
+    if draft_tags is not None:
+        for f in getattr(draft_tags, "dietary_flags", None) or []:
+            flagged.append(str(f))
+        by_type = getattr(draft_tags, "tag_slugs_by_type", None) or {}
+        for slug in by_type.get("constraint") or []:
+            s = str(slug).strip().lower().replace("-", "_")
+            if s in {"gluten_free", "dairy_free", "vegetarian", "vegan"}:
+                flagged.append(s)
+    if flagged:
+        from src.planning.allergens import dietary_flag_violations
+
+        ingredient_names = [str(i.name) for i in validated_ingredients]
+        for flag in flagged:
+            hits = dietary_flag_violations(flag, ingredient_names)
+            if hits:
+                return (
+                    False,
+                    _validation_failure(
+                        error_code="DIETARY_FLAG_INCONSISTENT",
+                        message=(
+                            f"Draft is tagged {flag!r} but contains incompatible "
+                            f"ingredient(s): {', '.join(hits)}."
+                        ),
+                        field_errors=[f"flag={flag}", f"ingredients={hits}"],
+                    ),
+                )
 
     # 7) Fitness against the gap the recipe was requested for.
     if gap_spec is not None:

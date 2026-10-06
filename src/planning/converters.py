@@ -14,7 +14,7 @@ from src.data_layer.models import (
     Ingredient,
 )
 from src.models.schedule import DaySchedule as CanonicalDaySchedule
-from src.planning.allergens import expand_allergy_terms
+from src.planning.allergens import expand_allergy_terms, exclusions_for_dietary_flags
 from src.planning.phase0_models import PlanningRecipe, PlanningUserProfile, MealSlot
 from src.nutrition.calculator import NutritionCalculator
 
@@ -267,6 +267,16 @@ def convert_profile(
     excluded_ingredients = expand_allergy_terms(
         user_profile.allergies
     ) + list(user_profile.disliked_foods)
+    flag_exclusions = exclusions_for_dietary_flags(
+        list(user_profile.dietary_flags or [])
+    )
+    if flag_exclusions:
+        # Preserve allergy/dislike order; append dietary-flag names not already present.
+        seen = {x.lower().strip() for x in excluded_ingredients}
+        for name in flag_exclusions:
+            if name not in seen:
+                excluded_ingredients.append(name)
+                seen.add(name)
 
     workout_after_meal_indices_by_day: Optional[List[List[int]]] = None
     schedule: List[List[MealSlot]]

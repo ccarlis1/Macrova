@@ -280,6 +280,9 @@ class UserProfile:
     liked_foods: List[str]  # Foods to prefer
     disliked_foods: List[str]  # Foods to avoid
     allergies: List[str]  # Allergens to avoid
+    # Optional dietary flags (gluten_free, dairy_free, vegetarian, vegan).
+    # Mapped into HC-1 exclusions in convert_profile; also used as tag filters.
+    dietary_flags: Optional[List[str]] = None
 
     # Calorie Deficit Mode (optional hard constraint)
     max_daily_calories: Optional[int] = None  # Hard cap on daily calories

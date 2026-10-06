@@ -95,6 +95,8 @@ def run(sc, nutrition_mode: str = "stored"):
         "max_daily_calories": p.get("max_daily_calories"),
         "recipe_ids": sc["recipe_pool"]["recipe_ids"], "recipe_tags_path": TAGS,
     }
+    if p.get("dietary_flags"):
+        req["dietary_flags"] = list(p["dietary_flags"])
     try:
         preq = S.PlanRequest.model_validate(req)
     except Exception as e:

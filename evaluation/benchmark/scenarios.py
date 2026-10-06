@@ -62,7 +62,7 @@ def five(b=(2, 1, 3, 1, 3), t=("06:30", "10:00", "13:00", "16:00", "19:30")):
 
 
 def P(kcal, protein, fmin, fmax, *, excluded=(), liked=(), ceiling=None, micros=None, tau=1.0,
-      intent_excluded=None, demographic="adult_male"):
+      intent_excluded=None, demographic="adult_male", dietary_flags=None):
     p = {
         "daily_calories": kcal,
         "daily_protein_g": protein,
@@ -76,6 +76,8 @@ def P(kcal, protein, fmin, fmax, *, excluded=(), liked=(), ceiling=None, micros=
     }
     if intent_excluded is not None:
         p["intent_excluded_ingredients"] = list(intent_excluded)
+    if dietary_flags is not None:
+        p["dietary_flags"] = list(dietary_flags)
     return p
 
 
@@ -1146,13 +1148,23 @@ S("Dairy allergy typed as 'dairy'",
   days=[day(std3(b=(2, 3, 4)))], pool_ids=CORE, pool_note=FULL,
   safety={"must_not_contain_ingredient_class": "dairy", "severity": "allergen"})
 
-S("Gluten-free tag on a recipe with egg bread",
+S("Gluten-free flag on a recipe with sourdough",
   "Celiac, so every meal must be gluten-free. 2,000 kcal, 120 g protein, 55-85 g fat.",
   cats=["tags", "safety", "data-quality"], intended="feasible",
-  profile=P(2000, 120, 55, 85),
-  days=[day(std3(b=(3, 3, 4), req=(["gluten-free"], ["gluten-free"], ["gluten-free"])))],
-  pool_ids=CORE + ["dh_veggie_egg_scramble"], pool_note="full library + data-hazard 'Veggie Egg Scramble' (tagged gluten-free, cache resolves eggs to egg BREAD)",
-  safety={"must_not_contain_recipe_ids": ["dh_veggie_egg_scramble"], "severity": "allergen"})
+  profile=P(
+      2000, 120, 55, 85,
+      dietary_flags=["gluten_free"],
+      excluded=["gluten"],
+      intent_excluded=["pasta", "sourdough bread"],
+  ),
+  days=[day(std3(b=(3, 3, 4)))],
+  pool_ids=CORE + ["dh_veggie_egg_scramble"],
+  pool_note="full library + data-hazard scramble tagged gluten-free but containing sourdough bread",
+  safety={"must_not_contain_recipe_ids": ["dh_veggie_egg_scramble"], "severity": "allergen"},
+  spec_notes=[
+      "F10b: dietary_flags gluten_free maps into HC-1 via wheat_gluten expansion; "
+      "the hazard recipe keeps a lying gluten-free tag for the consistency audit."
+  ])
 
 S("Oat parfait that is really oat oil",
   "Pin my oat yogurt parfait for breakfast (it's light, ~300 kcal). 1,800 kcal, 130 g protein, 40-60 g fat.",

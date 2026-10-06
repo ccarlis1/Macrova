@@ -111,7 +111,8 @@ def test_tag_recipes_happy_path_preserves_order():
     assert out["r1"].cuisine == "mexican"
     assert out["r1"].cost_level == BudgetLevel.cheap
     assert out["r1"].prep_time_bucket == PrepTimeBucket.quick_meal
-    assert out["r1"].dietary_flags == [DietaryFlag.vegan]
+    # Consistency rule drops vegan on a chicken recipe.
+    assert out["r1"].dietary_flags == []
 
     assert out["r2"].cuisine == "italian"
     assert out["r2"].cost_level == BudgetLevel.standard

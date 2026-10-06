@@ -79,9 +79,9 @@ def draft(
 def test_exclusion_match_is_class_aware():
     assert ingredient_matches_exclusion("peanut butter", ["peanuts"]) == "peanuts"
     assert ingredient_matches_exclusion("eggs", ["egg"]) == "egg"
-    assert ingredient_matches_exclusion("large eggs", ["eggs"]) == "eggs"
+    assert ingredient_matches_exclusion("large eggs", ["eggs"]) is None  # exact HC-1 names only
     assert ingredient_matches_exclusion("chicken breast", ["peanuts", "egg"]) is None
-    assert ingredient_matches_exclusion("eggplant", ["egg"]) == "egg"  # conservative: prefix match, rejects the draft rather than risk it
+    assert ingredient_matches_exclusion("eggplant", ["egg"]) is None  # must not false-positive
 
 
 def test_draft_with_excluded_ingredient_is_rejected():

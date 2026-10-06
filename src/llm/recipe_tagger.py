@@ -135,7 +135,10 @@ def tag_recipes(
         "You are a strict recipe tagging engine. Return ONLY valid JSON matching the schema; no commentary. "
         "Use ONLY the enum values shown. For tag_slugs_by_type use ONLY slugs from the allowed lists "
         "(omit a type when nothing applies; never invent slugs; never emit time-* slugs). "
-        "dietary_flags must be justified by the ingredient list (e.g. no 'vegan' when the recipe contains dairy or meat).\n"
+        "dietary_flags must be justified by the ingredient list: never emit gluten_free when "
+        "the recipe contains wheat/gluten products (pasta, sourdough bread, …); never emit "
+        "dairy_free when it contains milk-class ingredients; never emit vegetarian/vegan when "
+        "it contains meat, fish, eggs, or dairy.\n"
         f"JSON schema: {json.dumps(_LLM_TAG_SCHEMA, separators=(',', ':'))}\n"
         f"Allowed tag_slugs_by_type: {json.dumps(allowed, separators=(',', ':'))}"
     )
@@ -179,9 +182,33 @@ def tag_recipes(
         if cuisine not in CUISINE_VOCABULARY:
             cuisine = "unknown"
 
+        from src.planning.allergens import dietary_flag_violations
+
+        ingredient_names = [str(getattr(i, "name", i)) for i in (recipe.ingredients or [])]
+        kept_flags = []
+        for flag in parsed.dietary_flags or []:
+            flag_s = str(getattr(flag, "value", flag))
+            if dietary_flag_violations(flag_s, ingredient_names):
+                continue
+            kept_flags.append(flag)
+        # Also drop inconsistent constraint slugs that mirror dietary flags.
+        constraint = list(slugs_by_type.get("constraint") or [])
+        cleaned_constraint = []
+        for slug in constraint:
+            flag_key = str(slug).strip().lower().replace("-", "_")
+            if flag_key in {"gluten_free", "dairy_free", "vegetarian", "vegan"}:
+                if dietary_flag_violations(flag_key, ingredient_names):
+                    continue
+            cleaned_constraint.append(slug)
+        if cleaned_constraint:
+            slugs_by_type["constraint"] = cleaned_constraint
+        elif "constraint" in slugs_by_type:
+            del slugs_by_type["constraint"]
+
         out[recipe.id] = parsed.model_copy(
             update={
                 "cuisine": cuisine,
+                "dietary_flags": kept_flags,
                 "prep_time_bucket": PrepTimeBucket(deterministic_prep_time_bucket(recipe.cooking_time_minutes)),
                 "tag_slugs_by_type": slugs_by_type or None,
                 "tag_metadata": _quarantined_metadata(proposed, repo_path) or None,

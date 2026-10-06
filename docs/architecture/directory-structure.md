@@ -62,7 +62,6 @@ nutrition-agent/
 │   │   ├── ingredient_parser.py, ingredient_normalizer.py, ingredient_validator.py
 │   │   ├── usda_client.py, ingredient_cache.py
 │   │   ├── nutrient_mapper.py, nutrition_profile_builder.py
-│   │   ├── recipe_retriever.py
 │   │   └── ...
 │   ├── llm/                   # Optional LLM assistance (validated before use)
 │   │   ├── client.py, schemas.py, pipeline.py
@@ -89,8 +88,6 @@ nutrition-agent/
 │   │   ├── ingredient_provider.py
 │   │   ├── local_provider.py, api_provider.py
 │   │   └── summary_hybrid_provider.py
-│   ├── scoring/
-│   │   └── recipe_scorer.py
 │   └── output/
 │       └── formatters.py
 │

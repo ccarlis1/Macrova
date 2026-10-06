@@ -6572,10 +6572,10 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    1698
+    1842
    ],
    "distinct_meal_sets_per_day": [
-    454
+    479
    ],
    "day_enumeration_capped": [
     false
@@ -6642,7 +6642,7 @@
  },
  {
   "id": "MB-146",
-  "title": "Gluten-free tag on a recipe with egg bread",
+  "title": "Gluten-free flag on a recipe with sourdough",
   "cats": [
    "tags",
    "safety",
@@ -6665,17 +6665,19 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    378
+    4300
    ],
    "distinct_meal_sets_per_day": [
-    93
+    1062
    ],
    "day_enumeration_capped": [
     false
    ],
    "multiday_nodes": 1
   },
-  "spec_notes": [],
+  "spec_notes": [
+   "F10b: dietary_flags gluten_free maps into HC-1 via wheat_gluten expansion; the hazard recipe keeps a lying gluten-free tag for the consistency audit."
+  ],
   "n_days": 1,
   "micro": false,
   "pins": 0,

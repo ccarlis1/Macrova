@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 from functools import lru_cache
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence, Set
+from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 DEFAULT_ALLERGEN_CLASSES_PATH = "data/reference/allergen_classes.json"
 
@@ -162,6 +162,111 @@ def unclassified_pool_ingredients(
         if _normalize_name(n) and _normalize_name(n) not in classified
     }
     return sorted(missing)
+
+
+# Animal-product ingredients blocked by vegetarian dietary flags (normalized).
+# Lacto-ovo: meat/fish/poultry only — dairy and eggs are allowed.
+VEGETARIAN_EXCLUDED_INGREDIENTS: frozenset = frozenset(
+    {
+        "chicken breast",
+        "chicken thigh",
+        "turkey",
+        "turkey breast lunchmeat reduced fat",
+        "ground turkey",
+        "hamburger or beef 90%",
+        "hamburger or beef 95%",
+        "roast beef lunchmeat",
+        "salami genoa",
+        "beef",
+        "pork",
+        "bacon",
+        "ham",
+        "salmon",
+        "salmon canned",
+        "tilapia",
+        "tuna",
+        "shrimp",
+    }
+)
+
+# Vegan additionally blocks eggs and dairy-class staples used in the libraries.
+VEGAN_EXCLUDED_INGREDIENTS: frozenset = frozenset(
+    set(VEGETARIAN_EXCLUDED_INGREDIENTS)
+    | {
+        "eggs",
+        "egg yolk",
+        "whey protein powder",
+        "whey protein powder 24 grams of protein per scoop",
+        "cottage cheese 1% fat",
+        "greek yogurt plain nonfat",
+        "low fat greek yogurt",
+        "sharp cheddar cheese",
+        "feta cheese reduced fat",
+        "cheddar cheese natural 50% reduced fat",
+        "parmesan cheese hard",
+        "parmesan grated",
+        "butter",
+        "milk",
+        "milk 1% fat lowfat",
+    }
+)
+
+# dietary_flags -> allergy-class terms (expanded via expand_allergy_terms) or animal lists.
+_DIETARY_FLAG_ALLERGY_TERMS: Dict[str, Tuple[str, ...]] = {
+    "gluten_free": ("gluten",),
+    "gluten-free": ("gluten",),
+    "dairy_free": ("milk",),
+    "dairy-free": ("milk",),
+}
+
+_DIETARY_FLAG_ANIMAL_LISTS: Dict[str, frozenset] = {
+    "vegetarian": VEGETARIAN_EXCLUDED_INGREDIENTS,
+    "vegan": VEGAN_EXCLUDED_INGREDIENTS,
+}
+
+
+def exclusions_for_dietary_flags(
+    flags: Sequence[str],
+    *,
+    path: Optional[str] = None,
+) -> List[str]:
+    """Map dietary flags into HC-1 exclusion names (sorted, deduplicated).
+
+    ``gluten_free`` / ``dairy_free`` expand via the allergen class table.
+    ``vegetarian`` / ``vegan`` add the closed animal-product lists.
+    """
+    out: Set[str] = set()
+    allergy_terms: List[str] = []
+    for raw in flags:
+        flag = _normalize_name(raw).replace("-", "_")
+        hyphen = flag.replace("_", "-")
+        terms = _DIETARY_FLAG_ALLERGY_TERMS.get(flag) or _DIETARY_FLAG_ALLERGY_TERMS.get(hyphen)
+        if terms:
+            allergy_terms.extend(terms)
+        if flag in _DIETARY_FLAG_ANIMAL_LISTS:
+            out.update(_DIETARY_FLAG_ANIMAL_LISTS[flag])
+    if allergy_terms:
+        out.update(expand_allergy_terms(allergy_terms, path=path))
+    return sorted(out)
+
+
+def dietary_flag_violations(
+    flag: str,
+    ingredient_names: Iterable[str],
+    *,
+    path: Optional[str] = None,
+) -> List[str]:
+    """Return ingredient names that contradict a dietary flag (sorted)."""
+    flag_n = _normalize_name(flag).replace("-", "_")
+    blocked = set(exclusions_for_dietary_flags([flag_n], path=path))
+    hits = sorted(
+        {
+            _normalize_name(n)
+            for n in ingredient_names
+            if _normalize_name(n) in blocked
+        }
+    )
+    return hits
 
 
 def exclusion_warning_messages(

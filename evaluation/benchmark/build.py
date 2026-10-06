@@ -74,7 +74,7 @@ def main() -> int:
     # Exclusion strings must hit a real canonical ingredient name, except the
     # deliberately class-level entries used by the exclusion-semantics scenarios.
     names = {i["name"].strip().lower() for r in library for i in r["ingredients"]}
-    deliberate = {"peanuts", "egg", "dairy", "eggs"}
+    deliberate = {"peanuts", "egg", "dairy", "eggs", "gluten"}
     for sc in SCENARIOS:
         for key in ("excluded_ingredients", "intent_excluded_ingredients"):
             for e in sc["profile"].get(key, []):

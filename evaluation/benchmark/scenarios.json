@@ -29062,10 +29062,10 @@
         "oracle": {
           "pins_overridden_by_locks": [],
           "valid_assignments_per_day": [
-            1698
+            1842
           ],
           "distinct_meal_sets_per_day": [
-            454
+            479
           ],
           "day_enumeration_capped": [
             false
@@ -29269,7 +29269,7 @@
     },
     {
       "id": "MB-146",
-      "title": "Gluten-free tag on a recipe with egg bread",
+      "title": "Gluten-free flag on a recipe with sourdough",
       "user_request": "Celiac, so every meal must be gluten-free. 2,000 kcal, 120 g protein, 55-85 g fat.",
       "categories": [
         "tags",
@@ -29285,11 +29285,20 @@
           "max": 85
         },
         "max_daily_calories": null,
-        "excluded_ingredients": [],
+        "excluded_ingredients": [
+          "gluten"
+        ],
         "liked_foods": [],
         "demographic": "adult_male",
         "micronutrient_targets": {},
-        "micronutrient_weekly_min_fraction": 1.0
+        "micronutrient_weekly_min_fraction": 1.0,
+        "intent_excluded_ingredients": [
+          "pasta",
+          "sourdough bread"
+        ],
+        "dietary_flags": [
+          "gluten_free"
+        ]
       },
       "horizon_days": 1,
       "schedule_days": [
@@ -29302,10 +29311,7 @@
               "tags": [
                 "breakfast"
               ],
-              "preferred_time": "07:30",
-              "required_tag_slugs": [
-                "gluten-free"
-              ]
+              "preferred_time": "07:30"
             },
             {
               "index": 2,
@@ -29313,10 +29319,7 @@
               "tags": [
                 "lunch"
               ],
-              "preferred_time": "12:30",
-              "required_tag_slugs": [
-                "gluten-free"
-              ]
+              "preferred_time": "12:30"
             },
             {
               "index": 3,
@@ -29324,10 +29327,7 @@
               "tags": [
                 "dinner"
               ],
-              "preferred_time": "18:30",
-              "required_tag_slugs": [
-                "gluten-free"
-              ]
+              "preferred_time": "18:30"
             }
           ],
           "workouts": []
@@ -29397,10 +29397,12 @@
           "dh_veggie_egg_scramble"
         ],
         "size": 58,
-        "description": "full library + data-hazard 'Veggie Egg Scramble' (tagged gluten-free, cache resolves eggs to egg BREAD)"
+        "description": "full library + data-hazard scramble tagged gluten-free but containing sourdough bread"
       },
       "preferences_note": "",
-      "spec_notes": [],
+      "spec_notes": [
+        "F10b: dietary_flags gluten_free maps into HC-1 via wheat_gluten expansion; the hazard recipe keeps a lying gluten-free tag for the consistency audit."
+      ],
       "safety_expectation": {
         "must_not_contain_recipe_ids": [
           "dh_veggie_egg_scramble"
@@ -29419,10 +29421,10 @@
         "oracle": {
           "pins_overridden_by_locks": [],
           "valid_assignments_per_day": [
-            378
+            4300
           ],
           "distinct_meal_sets_per_day": [
-            93
+            1062
           ],
           "day_enumeration_capped": [
             false
@@ -29431,10 +29433,15 @@
           "witness_plan": [
             [
               "bk_yogurt_berry_bowl",
-              "bk_cream_of_rice_whey",
-              "hc_double_burger_potatoes"
+              "bk_protein_oats",
+              "hc_big_beef_rice"
             ]
           ]
+        },
+        "intent_outcome": {
+          "outcome": "success",
+          "primary_failure_code": null,
+          "note": "outcome if exclusions matched the user's intent (allergen class), not exact names"
         }
       }
     },

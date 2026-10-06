@@ -3676,9 +3676,9 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "bk_tofu_scramble",
-    "ln_black_bean_quinoa",
-    "hc_big_beef_rice"
+    "dn_beef_rice_bowl",
+    "dn_bean_quesadilla",
+    "dn_thigh_quinoa_prep"
    ]
   },
   "nutrition_mode": "stored"

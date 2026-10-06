@@ -5,6 +5,7 @@ Pure functions only. No I/O, no provider access. Deterministic.
 
 import json
 import logging
+from dataclasses import replace
 from typing import Any, Dict, List, Optional, Set
 
 from src.data_layer.models import (
@@ -13,6 +14,7 @@ from src.data_layer.models import (
     NutritionProfile,
     Ingredient,
 )
+from src.data_layer.exceptions import IngredientNotFoundError
 from src.models.schedule import DaySchedule as CanonicalDaySchedule
 from src.planning.allergens import expand_allergy_terms, exclusions_for_dietary_flags
 from src.planning.phase0_models import PlanningRecipe, PlanningUserProfile, MealSlot
@@ -161,6 +163,29 @@ def extract_ingredient_names(recipes: List[Recipe]) -> List[str]:
     return sorted(names)
 
 
+def _normalize_recipe_quantities(recipe: Recipe, calculator: NutritionCalculator) -> Recipe:
+    """Return a copy of ``recipe`` whose ingredients carry grams in ``normalized_quantity``.
+
+    Grams-first (U1/U2): each ingredient converts once, here, after provider
+    resolution. An ingredient that can't convert is left unnormalized; the
+    unresolved check below reports it and drops the recipe. Calculators without
+    ``normalize_ingredient`` (e.g. the harness's stored-nutrition stub) are skipped.
+    """
+    normalize = getattr(calculator, "normalize_ingredient", None)
+    if not callable(normalize):
+        return recipe
+    ingredients = []
+    for ingredient in recipe.ingredients:
+        try:
+            ingredients.append(normalize(ingredient))
+        except IngredientNotFoundError:
+            ingredients.append(ingredient)
+        except RuntimeError:
+            # API provider: name not pre-resolved via resolve_all
+            ingredients.append(ingredient)
+    return replace(recipe, ingredients=ingredients)
+
+
 def convert_recipes(
     recipes: List[Recipe],
     calculator: NutritionCalculator,
@@ -171,7 +196,10 @@ def convert_recipes(
 ) -> List[PlanningRecipe]:
     """Convert data-layer recipes to planning recipes with pre-computed nutrition.
 
-    Calls calculator.calculate_recipe_nutrition for each recipe. Output is sorted
+    Each ingredient first converts to grams once (``normalized_quantity``, via
+    ``calculator.normalize_ingredient``); the planning recipe carries the
+    normalized ingredients. Then calls calculator.calculate_recipe_nutrition
+    for each recipe. Output is sorted
     by recipe.id for determinism. No provider access; calculator only.
 
     When ``drop_unresolved`` is True (default, §4.4), recipes with any
@@ -181,6 +209,7 @@ def convert_recipes(
     """
     out: List[PlanningRecipe] = []
     for recipe in recipes:
+        recipe = _normalize_recipe_quantities(recipe, calculator)
         unresolved: List[str] = []
         lookup = getattr(calculator, "unresolved_ingredient_names", None)
         if callable(lookup):

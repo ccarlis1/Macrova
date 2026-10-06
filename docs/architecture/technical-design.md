@@ -10,8 +10,8 @@ class Ingredient:
     quantity: float              # Amount (e.g., 200.0, or 0.0 for "to taste")
     unit: str                    # Unit (e.g., "g", "oz", "cup", "tsp", "tbsp", "to taste")
     is_to_taste: bool = False    # True if ingredient is "to taste" (excluded from nutrition)
-    normalized_unit: str         # Converted to base unit (e.g., "g" for grams)
-    normalized_quantity: float   # Quantity in base unit
+    normalized_unit: str         # "g" once converted; "" until then
+    normalized_quantity: float   # Grams, filled once by convert_recipes
 ```
 
 ### Nutrition Profile Model
@@ -244,7 +244,7 @@ preferences:
 **Calculation Logic**:
 1. **Filter out "to taste" ingredients** - Skip ingredients where `is_to_taste=True` (per KNOWLEDGE.md: these have negligible nutritional value)
 2. For each remaining ingredient, look up the nutrition record (`per_100g` preferred)
-3. Convert the authored `quantity`/`unit` to **grams** via `NutritionCalculator.to_grams`:
+3. Convert the authored `quantity`/`unit` to **grams**, once per ingredient: `convert_recipes` calls `NutritionCalculator.normalize_ingredient` after provider resolution (the gram weights live on the resolved record, so loading can't do it), which stores the result in `normalized_quantity` (`normalized_unit = "g"`). The conversion rules (`NutritionCalculator.to_grams`):
    - `g` / `gram` / `grams` → quantity
    - the record's `grams_per_unit[unit]` (unit aliases: cups→cup, tablespoon(s)→tbsp, teaspoon(s)→tsp, milliliter(s)→ml), plus explicit `scoop_size_g` / `large_size_g` on the record
    - `oz` → 28.35 (mass)

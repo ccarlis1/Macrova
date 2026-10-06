@@ -774,6 +774,64 @@ class TestWeeklyMicronutrientTau:
         assert result.success is False
 
 
+class TestSingleDayFloorExit:
+    """F13a: at D=1 the TC-4 exit runs the same micronutrient floor check as D>1.
+
+    In-search floor pruning and the pre-search bound are switched off so search
+    reaches the exit with an under-floor day; before F13a that day was returned
+    as a TC-4 success.
+    """
+
+    @staticmethod
+    def _reach_exit_with_low_iron_first(monkeypatch, *, pass_gate: bool = False):
+        from src.planning import phase7_search as p7
+
+        monkeypatch.setattr(p7, "candidate_passes_micro_floor", lambda *a, **k: True)
+        if pass_gate:
+            monkeypatch.setattr(p7, "check_structural_feasibility", lambda *a, **k: True)
+        real_ordering = p7.ordering_key
+
+        def low_iron_first(candidate, state, profile, day_index, **kwargs):
+            recipe_view, _score = candidate
+            micro = getattr(recipe_view.nutrition, "micronutrients", None)
+            iron = float(getattr(micro, "iron_mg", 0.0) or 0.0) if micro is not None else 0.0
+            return (iron, real_ordering(candidate, state, profile, day_index, **kwargs))
+
+        monkeypatch.setattr(p7, "ordering_key", low_iron_first)
+
+    def test_under_floor_day_backtracks_to_a_day_that_meets_it(self, monkeypatch):
+        self._reach_exit_with_low_iron_first(monkeypatch)
+        schedule = _make_schedule(ndays=1, slots_per_day=2)
+        profile = _make_profile(schedule, micronutrient_targets={"iron_mg": 10.0})
+        pool = [
+            _make_recipe("f0", micronutrients=MicronutrientProfile(iron_mg=0.0)),
+            _make_recipe("f1", micronutrients=MicronutrientProfile(iron_mg=2.0)),
+            _make_recipe("f2", micronutrients=MicronutrientProfile(iron_mg=9.0)),
+        ]
+        result = run_meal_plan_search(profile, pool, 1, None)
+        assert result.success is True and result.termination_code == "TC-4"
+        micro = result.weekly_tracker.weekly_totals.micronutrients
+        assert micro.iron_mg >= 10.0 - 1e-6
+        assert {a.recipe_id for a in result.plan} == {"f1", "f2"}
+
+    def test_no_day_meets_the_floor_fails_fm4_from_search(self, monkeypatch):
+        self._reach_exit_with_low_iron_first(monkeypatch, pass_gate=True)
+        schedule = _make_schedule(ndays=1, slots_per_day=2)
+        profile = _make_profile(schedule, micronutrient_targets={"iron_mg": 15.0})
+        pool = [
+            _make_recipe("f0", micronutrients=MicronutrientProfile(iron_mg=0.0)),
+            _make_recipe("f1", micronutrients=MicronutrientProfile(iron_mg=2.0)),
+            _make_recipe("f2", micronutrients=MicronutrientProfile(iron_mg=9.0)),
+        ]
+        result = run_meal_plan_search(profile, pool, 1, None)
+        assert result.success is False
+        assert result.failure_mode == "FM-4"
+        assert result.plan_incomplete_reason == "Did not meet micronutrient floors."
+        deficient = result.report["deficient_nutrients"]
+        assert [d["nutrient"] for d in deficient] == ["iron_mg"]
+        assert deficient[0]["achieved_kind"] == "actual"
+
+
 class TestTauStrictGoldenSnapshot:
     """Frozen expected outputs for τ=1.0 (default vs explicit); catches ordering/termination regressions."""
 

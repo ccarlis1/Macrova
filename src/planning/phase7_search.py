@@ -1489,18 +1489,11 @@ def run_meal_plan_search(
             _debug_log("day_complete", day_index=day_index)
             _validate_planner_state(daily_trackers, weekly_tracker, completed_days, D, schedule)
 
-        # Weekly completion (Section 6.6) or single-day success (TC-4)
+        # Weekly completion (Section 6.6) or single-day success (TC-4).
+        # F13a: D=1 uses the same micronutrient floor check as D>1 on this exit.
         if day_index == D - 1:
             last_tracker = daily_trackers.get(day_index)
             if last_tracker is not None and last_tracker.slots_assigned == last_tracker.slots_total:
-                if D == 1:
-                    if stats is not None and stats.enabled:
-                        stats._end_time = time.perf_counter()
-                        stats.total_attempts = attempt_count
-                        if day_index in stats._day_starts:
-                            stats.day_runtimes[day_index] = stats._end_time - stats._day_starts[day_index]
-                    _stats_dict = {"attempts": attempt_count, "backtracks": backtrack_count} if stats and stats.enabled else None
-                    return result_from_success(list(assignments), dict(daily_trackers), weekly_tracker, profile, D, "TC-4", _stats_dict)
                 ok, reason, sodium_adv = _weekly_validation(D, weekly_tracker, profile)
                 if sodium_adv:
                     sodium_advisory = sodium_adv
@@ -1510,30 +1503,63 @@ def run_meal_plan_search(
                         if stats is not None and stats.enabled:
                             stats._end_time = time.perf_counter()
                             stats.total_attempts = attempt_count
-                        report = build_report_fm4(weekly_tracker, profile, D, max_daily_achievable)
+                        report = build_report_fm4(
+                            weekly_tracker, profile, D, max_daily_achievable
+                        )
                         return result_from_failure(
-                            "TC-2", "FM-4", report, list(assignments), dict(daily_trackers),
-                            attempt_count, backtrack_count, sodium_advisory, _stats_dict,
+                            "TC-2",
+                            "FM-4",
+                            report,
+                            list(assignments),
+                            dict(daily_trackers),
+                            attempt_count,
+                            backtrack_count,
+                            sodium_advisory,
+                            _stats_dict,
                             best_effort_plan=list(assignments),
                             best_effort_daily_trackers=dict(daily_trackers),
                             best_effort_weekly_tracker=weekly_tracker,
-                            plan_incomplete_reason="Did not meet weekly targets.",
+                            plan_incomplete_reason="Did not meet micronutrient floors.",
                         )
                     if stats is not None and stats.enabled:
                         stats._backtrack_depths.append(i - target)
                     backtrack_count += 1
-                    # origin = slot that triggered failure (we already did i += 1 after assigning last slot)
-                    origin_i = i - 1 if i > 0 else 0
                     i, daily_trackers, weekly_tracker, assignments, cache = _unwind_to(
-                        origin_i, target, order, daily_trackers, weekly_tracker, assignments, cache,
-                        completed_days, recipe_by_id, schedule, profile,
+                        i,
+                        target,
+                        order,
+                        daily_trackers,
+                        weekly_tracker,
+                        assignments,
+                        cache,
+                        completed_days,
+                        recipe_by_id,
+                        schedule,
+                        profile,
                     )
                     continue
                 if stats is not None and stats.enabled:
                     stats._end_time = time.perf_counter()
                     stats.total_attempts = attempt_count
-                _stats_dict = {"attempts": attempt_count, "backtracks": backtrack_count} if stats and stats.enabled else None
-                return result_from_success(list(assignments), dict(daily_trackers), weekly_tracker, profile, D, "TC-1", _stats_dict)
+                    if day_index in stats._day_starts:
+                        stats.day_runtimes[day_index] = (
+                            stats._end_time - stats._day_starts[day_index]
+                        )
+                _stats_dict = (
+                    {"attempts": attempt_count, "backtracks": backtrack_count}
+                    if stats and stats.enabled
+                    else None
+                )
+                term = "TC-4" if D == 1 else "TC-1"
+                return result_from_success(
+                    list(assignments),
+                    dict(daily_trackers),
+                    weekly_tracker,
+                    profile,
+                    D,
+                    term,
+                    _stats_dict,
+                )
 
     if stats is not None and stats.enabled:
         stats._end_time = time.perf_counter()

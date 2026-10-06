@@ -79,6 +79,19 @@ def test_soft_deficit_empty_when_tau_strict():
     assert build_micronutrient_soft_deficit_warning(wt, profile, 1) == []
 
 
+def test_d1_soft_deficit_warning_on_success():
+    """Finding 8 / F13a: τ < 1 at D=1 still emits micronutrient_soft_deficit."""
+    D = 1
+    profile = _profile(0.9, {"iron_mg": 10.0})
+    micro = MicronutrientProfile(iron_mg=9.0)  # meets τ floor (9.0) but below full RDI
+    wt = _week_tracker(micro)
+    result = result_from_success([Assignment(0, 0, "r1")], {}, wt, profile, D)
+    assert result.success
+    assert result.warning is not None
+    soft = result.warning.get("micronutrient_soft_deficit") or []
+    assert any(e["nutrient"] == "iron_mg" for e in soft)
+
+
 def test_mixed_nutrients_fm4_only_iron_deficient_soft_only_vitamin_c():
     """A: below τ-floor → FM-4 deficient only; B: in [min, full) → soft deficit; C: ≥ full → absent from both."""
     D = 1

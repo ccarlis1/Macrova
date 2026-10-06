@@ -111,7 +111,7 @@ RECIPES: List[dict] = [
       ["breakfast", "vegan", "vegetarian", "dairy-free", "gluten-free", "nut-free", "high-protein"],
       proposed=["portable"]),
     R("bk_pb_banana_toast", "Peanut Butter Banana Toast", 4,
-      {"sourdough_bread": 80, "peanut_butter": 32, "bananas": 120, "honey": 10},
+      {"sourdough_bread": 80, "peanut_butter": 32, "bananas": 120},
       ["breakfast", "vegan", "vegetarian", "dairy-free", "kid-friendly"]),
     R("bk_chia_pudding", "Blackberry Chia Pudding", 5,
       {"chia_seeds": 35, "milk": 250, "blackberries_unsweetened": 100, "honey": 10},
@@ -159,7 +159,7 @@ RECIPES: List[dict] = [
       {"pasta": 90, "tuna_sashimi": 120, "cucumber": 80, "olive_oil": 10, "lemon_juice": 10, "parsley": 10},
       ["lunch", "pescatarian", "dairy-free", "nut-free", "no-shellfish", "portable", "meal-prep", "high-protein"]),
     R("ln_tofu_quinoa_salad", "Sesame Tofu Quinoa Salad", 25,
-      {"tofu_not_silken_firm": 180, "quinoa": 60, "carrots": 80, "cucumber": 80, "soy_sauce": 10, "sesame_oil": 8},
+      {"tofu_not_silken_firm": 180, "quinoa": 60, "carrots": 80, "cucumber": 80, "tamari": 10, "sesame_oil": 8},
       ["lunch", "vegan", "vegetarian", "dairy-free", "gluten-free", "nut-free", "meal-prep", "portable"],
       proposed=["high-protein"]),
 
@@ -180,7 +180,7 @@ RECIPES: List[dict] = [
       {"pasta": 100, "hamburger_or_beef_90": 150, "salsa_ready-to-serve": 100, "parmesan_grated": 15, "olive_oil": 5, "garlic": 5},
       ["dinner", "nut-free", "meal-prep", "reheats-well", "kid-friendly"]),
     R("dn_tofu_stir_fry", "Tofu Vegetable Stir Fry", 20,
-      {"tofu_not_silken_firm": 250, "jasmine_rice_in_unsalted_water": 220, "red_peppers": 100, "zucchini": 100, "soy_sauce": 20, "sesame_oil": 10},
+      {"tofu_not_silken_firm": 250, "jasmine_rice_in_unsalted_water": 220, "red_peppers": 100, "zucchini": 100, "tamari": 20, "sesame_oil": 10},
       ["dinner", "vegan", "vegetarian", "dairy-free", "gluten-free", "nut-free"],
       proposed=["high-protein", "meal-prep"]),
     R("dn_salmon_potatoes", "Salmon with Roast Potatoes and Asparagus", 35,
@@ -252,10 +252,10 @@ RECIPES: List[dict] = [
       {"almonds": 40, "chocolate_dark_70-85_cacao_solids": 15, "blueberries": 50},
       ["snack", "vegetarian", "gluten-free", "no-cook", "portable"]),
     R("sn_edamame_cup", "Salted Edamame Cup", 5,
-      {"edamame_beans": 200, "soy_sauce": 5},
+      {"edamame_beans": 200, "tamari": 5},
       ["snack", "vegan", "vegetarian", "dairy-free", "gluten-free", "nut-free", "portable", "high-protein"]),
     R("sn_chia_seed_water", "Lemon Chia Water", 2,
-      {"chia_seeds": 20, "lemon_juice": 15, "water": 350, "honey": 10},
+      {"chia_seeds": 20, "lemon_juice": 15, "water": 350},
       ["snack", "vegan", "vegetarian", "dairy-free", "gluten-free", "nut-free", "no-cook", "portable", "high-fiber"]),
 
     # ---------------- high-calorie (bulking) ----------------
@@ -315,6 +315,13 @@ def load_cache() -> Dict[str, dict]:
     out = {}
     for f in sorted(CACHE_DIR.glob("*.json")):
         out[f.stem] = json.loads(f.read_text())
+    # Tamari uses the same FDC nutrition as the cached soy_sauce entry (174278).
+    # .cache/ is gitignored, so synthesize the key when only soy_sauce is present.
+    if "tamari" not in out and "soy_sauce" in out:
+        tamari = dict(out["soy_sauce"])
+        tamari["canonical_name"] = "tamari"
+        tamari["description"] = "Soy sauce made from soy (tamari)"
+        out["tamari"] = tamari
     return out
 
 

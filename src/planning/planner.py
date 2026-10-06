@@ -95,7 +95,7 @@ def _merge_batch_locks_into_pins(
         return (
             MealPlanResult(
                 success=False,
-                termination_code="TC-3",
+                termination_code="TC-2",
                 failure_mode="FM-BATCH-CONFLICT",
                 report=build_report_fm_batch_conflict(conflicts),
                 stats={"attempts": 0, "backtracks": 0},

@@ -62,10 +62,10 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    54244
+    54230
    ],
    "distinct_meal_sets_per_day": [
-    7619
+    7587
    ],
    "day_enumeration_capped": [
     false
@@ -102,21 +102,21 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    23249,
-    23249,
-    23249
+    22991,
+    22991,
+    22991
    ],
    "distinct_meal_sets_per_day": [
-    4843,
-    4843,
-    4843
+    4795,
+    4795,
+    4795
    ],
    "day_enumeration_capped": [
     false,
     false,
     false
    ],
-   "multiday_nodes": 577
+   "multiday_nodes": 574
   },
   "spec_notes": [],
   "n_days": 3,
@@ -200,9 +200,9 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    552,
-    552,
-    552
+    550,
+    550,
+    550
    ],
    "distinct_meal_sets_per_day": [
     136,
@@ -246,10 +246,10 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    792
+    802
    ],
    "distinct_meal_sets_per_day": [
-    262
+    264
    ],
    "day_enumeration_capped": [
     false
@@ -287,12 +287,12 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    4548,
-    4548
+    4189,
+    4189
    ],
    "distinct_meal_sets_per_day": [
-    1022,
-    1022
+    962,
+    962
    ],
    "day_enumeration_capped": [
     false,
@@ -330,10 +330,10 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    26312
+    26510
    ],
    "distinct_meal_sets_per_day": [
-    1684
+    1696
    ],
    "day_enumeration_capped": [
     false
@@ -370,10 +370,10 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    106
+    104
    ],
    "distinct_meal_sets_per_day": [
-    29
+    28
    ],
    "day_enumeration_capped": [
     false
@@ -454,10 +454,10 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    10236
+    10300
    ],
    "distinct_meal_sets_per_day": [
-    2441
+    2449
    ],
    "day_enumeration_capped": [
     false
@@ -494,10 +494,10 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    394
+    396
    ],
    "distinct_meal_sets_per_day": [
-    209
+    210
    ],
    "day_enumeration_capped": [
     false
@@ -582,10 +582,10 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    1218
+    1233
    ],
    "distinct_meal_sets_per_day": [
-    478
+    483
    ],
    "day_enumeration_capped": [
     false
@@ -622,10 +622,10 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    58722
+    57714
    ],
    "distinct_meal_sets_per_day": [
-    3896
+    3859
    ],
    "day_enumeration_capped": [
     false
@@ -665,7 +665,7 @@
     60000
    ],
    "distinct_meal_sets_per_day": [
-    7116
+    7102
    ],
    "day_enumeration_capped": [
     true
@@ -702,16 +702,16 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    16560,
-    16560,
-    16560,
-    16560
+    16528,
+    16528,
+    16528,
+    16528
    ],
    "distinct_meal_sets_per_day": [
-    1914,
-    1914,
-    1914,
-    1914
+    1909,
+    1909,
+    1909,
+    1909
    ],
    "day_enumeration_capped": [
     false,
@@ -719,7 +719,7 @@
     false,
     false
    ],
-   "multiday_nodes": 2586
+   "multiday_nodes": 2632
   },
   "spec_notes": [],
   "n_days": 4,
@@ -837,22 +837,22 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    1218,
-    1218,
-    1218,
-    1218,
-    1218,
-    1218,
-    1218
+    1233,
+    1233,
+    1233,
+    1233,
+    1233,
+    1233,
+    1233
    ],
    "distinct_meal_sets_per_day": [
-    478,
-    478,
-    478,
-    478,
-    478,
-    478,
-    478
+    483,
+    483,
+    483,
+    483,
+    483,
+    483,
+    483
    ],
    "day_enumeration_capped": [
     false,
@@ -896,14 +896,14 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    1896,
-    1896,
-    1896
+    1900,
+    1900,
+    1900
    ],
    "distinct_meal_sets_per_day": [
-    725,
-    725,
-    725
+    723,
+    723,
+    723
    ],
    "day_enumeration_capped": [
     false,
@@ -943,21 +943,21 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    57564,
-    57564,
-    57564
+    56446,
+    56446,
+    56446
    ],
    "distinct_meal_sets_per_day": [
-    6927,
-    6927,
-    6927
+    6849,
+    6849,
+    6849
    ],
    "day_enumeration_capped": [
     false,
     false,
     false
    ],
-   "multiday_nodes": 303
+   "multiday_nodes": 73
   },
   "spec_notes": [],
   "n_days": 3,
@@ -991,11 +991,11 @@
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
     46,
-    1052
+    1036
    ],
    "distinct_meal_sets_per_day": [
     23,
-    279
+    275
    ],
    "day_enumeration_capped": [
     false,
@@ -1027,7 +1027,7 @@
   "got": "FM-3",
   "status": "MATCH",
   "viol": [],
-  "tc": "TC-3",
+  "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
    "FM-3"
@@ -1119,10 +1119,10 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    306
+    309
    ],
    "distinct_meal_sets_per_day": [
-    193
+    195
    ],
    "day_enumeration_capped": [
     false
@@ -1211,12 +1211,12 @@
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
     19,
-    672,
+    680,
     19
    ],
    "distinct_meal_sets_per_day": [
     12,
-    206,
+    208,
     12
    ],
    "day_enumeration_capped": [
@@ -1259,9 +1259,9 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    2171,
-    2171,
-    2171
+    2167,
+    2167,
+    2167
    ],
    "distinct_meal_sets_per_day": [
     855,
@@ -1353,10 +1353,10 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    524
+    532
    ],
    "distinct_meal_sets_per_day": [
-    129
+    131
    ],
    "day_enumeration_capped": [
     false
@@ -1433,10 +1433,10 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    2063
+    2031
    ],
    "distinct_meal_sets_per_day": [
-    720
+    715
    ],
    "day_enumeration_capped": [
     false
@@ -1513,7 +1513,7 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    745
+    747
    ],
    "distinct_meal_sets_per_day": [
     289
@@ -1635,16 +1635,16 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    890,
-    890,
-    890,
-    890
+    888,
+    888,
+    888,
+    888
    ],
    "distinct_meal_sets_per_day": [
-    271,
-    271,
-    271,
-    271
+    269,
+    269,
+    269,
+    269
    ],
    "day_enumeration_capped": [
     false,
@@ -1652,7 +1652,7 @@
     false,
     false
    ],
-   "multiday_nodes": 98
+   "multiday_nodes": 94
   },
   "spec_notes": [],
   "n_days": 4,
@@ -1684,22 +1684,22 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    465,
-    465,
-    465,
-    465,
-    465,
-    465,
-    465
+    453,
+    453,
+    453,
+    453,
+    453,
+    453,
+    453
    ],
    "distinct_meal_sets_per_day": [
-    115,
-    115,
-    115,
-    115,
-    115,
-    115,
-    115
+    112,
+    112,
+    112,
+    112,
+    112,
+    112,
+    112
    ],
    "day_enumeration_capped": [
     false,
@@ -1743,14 +1743,14 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    972,
-    972,
-    972
+    960,
+    960,
+    960
    ],
    "distinct_meal_sets_per_day": [
-    369,
-    369,
-    369
+    364,
+    364,
+    364
    ],
    "day_enumeration_capped": [
     false,
@@ -1790,12 +1790,12 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    1969,
-    1969
+    1958,
+    1958
    ],
    "distinct_meal_sets_per_day": [
-    727,
-    727
+    721,
+    721
    ],
    "day_enumeration_capped": [
     false,
@@ -1834,21 +1834,21 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    1235,
-    1235,
-    1235
+    1223,
+    1223,
+    1223
    ],
    "distinct_meal_sets_per_day": [
-    449,
-    449,
-    449
+    444,
+    444,
+    444
    ],
    "day_enumeration_capped": [
     false,
     false,
     false
    ],
-   "multiday_nodes": 45
+   "multiday_nodes": 41
   },
   "spec_notes": [],
   "n_days": 3,
@@ -1976,7 +1976,7 @@
     60000
    ],
    "distinct_meal_sets_per_day": [
-    13944
+    13842
    ],
    "day_enumeration_capped": [
     true
@@ -2062,7 +2062,7 @@
     60000
    ],
    "distinct_meal_sets_per_day": [
-    5351
+    5176
    ],
    "day_enumeration_capped": [
     true
@@ -2140,18 +2140,18 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    461,
-    461,
-    461,
-    461,
-    461
+    472,
+    472,
+    472,
+    472,
+    472
    ],
    "distinct_meal_sets_per_day": [
-    224,
-    224,
-    224,
-    224,
-    224
+    228,
+    228,
+    228,
+    228,
+    228
    ],
    "day_enumeration_capped": [
     false,
@@ -2160,7 +2160,7 @@
     false,
     false
    ],
-   "multiday_nodes": 171
+   "multiday_nodes": 181
   },
   "spec_notes": [],
   "n_days": 5,
@@ -2376,7 +2376,7 @@
   "report_codes": [
    "FM-MACRO-INFEASIBLE"
   ],
-  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {\"calories\": -842.6500000000001, \"protein_g\": -50.130000000000024, \"fat_g\": -15.720000000000013, \"carbs_g\": -109.89999999999992}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {\"calories\": -842.6500000000001, \"protein_g\": -50.130000000000024, \"fat_g\": -15.720000000000013, \"carbs_g\": -109.89999999999993}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -2569,22 +2569,22 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    877,
-    877,
-    877,
-    877,
-    877,
-    877,
-    877
+    868,
+    868,
+    868,
+    868,
+    868,
+    868,
+    868
    ],
    "distinct_meal_sets_per_day": [
-    295,
-    295,
-    295,
-    295,
-    295,
-    295,
-    295
+    291,
+    291,
+    291,
+    291,
+    291,
+    291,
+    291
    ],
    "day_enumeration_capped": [
     false,
@@ -2636,10 +2636,10 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    2123
+    2127
    ],
    "distinct_meal_sets_per_day": [
-    747
+    750
    ],
    "day_enumeration_capped": [
     false
@@ -2815,7 +2815,7 @@
    "meal-timing",
    "recipe-inventory"
   ],
-  "cls": "borderline",
+  "cls": "feasible",
   "expected": "OK",
   "acceptable": [
    "OK"
@@ -2832,18 +2832,18 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    40320
+    60000
    ],
    "distinct_meal_sets_per_day": [
-    1
+    2
    ],
    "day_enumeration_capped": [
-    false
+    true
    ],
    "multiday_nodes": 1
   },
   "spec_notes": [
-   "Exactly one set of eight distinct <=5-minute recipes fits; any quick recipe removed from the library breaks it."
+   "Was borderline when only one 8-snack packing fit; after H1 (honey removed from sn_chia_seed_water / bk_pb_banana_toast) the oracle enumeration caps with multiple meal sets, so the intended class is feasible."
   ],
   "n_days": 1,
   "micro": false,
@@ -2977,14 +2977,14 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    122,
-    122,
-    122
+    120,
+    120,
+    120
    ],
    "distinct_meal_sets_per_day": [
-    37,
-    37,
-    37
+    36,
+    36,
+    36
    ],
    "day_enumeration_capped": [
     false,
@@ -3030,9 +3030,9 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    538,
-    538,
-    538
+    540,
+    540,
+    540
    ],
    "distinct_meal_sets_per_day": [
     142,
@@ -3084,9 +3084,9 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    538,
-    538,
-    538
+    540,
+    540,
+    540
    ],
    "distinct_meal_sets_per_day": [
     142,
@@ -3214,12 +3214,12 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    2141,
-    2141
+    2154,
+    2154
    ],
    "distinct_meal_sets_per_day": [
-    835,
-    835
+    841,
+    841
    ],
    "day_enumeration_capped": [
     false,
@@ -3259,16 +3259,16 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    57564,
-    57564,
-    57564,
-    57564
+    56446,
+    56446,
+    56446,
+    56446
    ],
    "distinct_meal_sets_per_day": [
-    6927,
-    6927,
-    6927,
-    6927
+    6849,
+    6849,
+    6849,
+    6849
    ],
    "day_enumeration_capped": [
     false,
@@ -3276,7 +3276,7 @@
     false,
     false
    ],
-   "multiday_nodes": 604
+   "multiday_nodes": 144
   },
   "spec_notes": [],
   "n_days": 4,
@@ -3433,12 +3433,12 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    803,
-    803
+    776,
+    776
    ],
    "distinct_meal_sets_per_day": [
-    298,
-    298
+    289,
+    289
    ],
    "day_enumeration_capped": [
     false,
@@ -3716,10 +3716,10 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    11400
+    11280
    ],
    "distinct_meal_sets_per_day": [
-    95
+    94
    ],
    "day_enumeration_capped": [
     false
@@ -3957,7 +3957,7 @@
   "report_codes": [
    "FM-MACRO-INFEASIBLE"
   ],
-  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {\"calories\": -1302.2, \"protein_g\": -74.78999999999999, \"fat_g\": -31.64, \"carbs_g\": -151.425}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-MACRO-INFEASIBLE\", \"message\": \"Macro targets are infeasible under current constraints.\", \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"date\": \"day-1\", \"deltas\": {\"calories\": -1332.6, \"protein_g\": -74.82, \"fat_g\": -31.64, \"carbs_g\": -159.665}, \"constraint\": \"no_valid_combination\"}, \"fix_hint\": \"Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -3978,7 +3978,7 @@
     0,
     1
    ],
-   "min_tolerance_for_feasibility": 0.12
+   "min_tolerance_for_feasibility": 0.15
   },
   "spec_notes": [],
   "n_days": 2,
@@ -4086,7 +4086,7 @@
   "got": "FM-3",
   "status": "MATCH",
   "viol": [],
-  "tc": "TC-3",
+  "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
    "FM-3"
@@ -4126,7 +4126,7 @@
   "got": "FM-3",
   "status": "MATCH",
   "viol": [],
-  "tc": "TC-3",
+  "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
    "FM-3"
@@ -4182,12 +4182,12 @@
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
     40,
-    1256,
+    1252,
     40
    ],
    "distinct_meal_sets_per_day": [
     20,
-    344,
+    342,
     20
    ],
    "day_enumeration_capped": [
@@ -4219,7 +4219,7 @@
   "got": "FM-3",
   "status": "MATCH",
   "viol": [],
-  "tc": "TC-3",
+  "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
    "FM-3"
@@ -4257,7 +4257,7 @@
   "got": "FM-3",
   "status": "MATCH",
   "viol": [],
-  "tc": "TC-3",
+  "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
    "FM-3"
@@ -4297,7 +4297,7 @@
   "got": "FM-3",
   "status": "MATCH",
   "viol": [],
-  "tc": "TC-3",
+  "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
    "FM-3"
@@ -4334,7 +4334,7 @@
   "got": "FM-3",
   "status": "MATCH",
   "viol": [],
-  "tc": "TC-3",
+  "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
    "FM-3"
@@ -4374,7 +4374,7 @@
   "got": "FM-3",
   "status": "MATCH",
   "viol": [],
-  "tc": "TC-3",
+  "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
    "FM-3"
@@ -4412,7 +4412,7 @@
   "got": "FM-3",
   "status": "MATCH",
   "viol": [],
-  "tc": "TC-3",
+  "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
    "FM-3"
@@ -4592,16 +4592,16 @@
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
     38,
-    926,
+    939,
     38,
-    926,
+    939,
     38
    ],
    "distinct_meal_sets_per_day": [
     25,
-    362,
+    364,
     25,
-    362,
+    364,
     25
    ],
    "day_enumeration_capped": [
@@ -4679,10 +4679,10 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    36
+    40
    ],
    "distinct_meal_sets_per_day": [
-    18
+    20
    ],
    "day_enumeration_capped": [
     false
@@ -4860,10 +4860,10 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    143
+    145
    ],
    "distinct_meal_sets_per_day": [
-    91
+    92
    ],
    "day_enumeration_capped": [
     false
@@ -4943,22 +4943,22 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    221,
-    221,
-    221,
-    221,
-    221,
-    221,
-    221
+    219,
+    219,
+    219,
+    219,
+    219,
+    219,
+    219
    ],
    "distinct_meal_sets_per_day": [
-    143,
-    143,
-    143,
-    143,
-    143,
-    143,
-    143
+    142,
+    142,
+    142,
+    142,
+    142,
+    142,
+    142
    ],
    "day_enumeration_capped": [
     false,
@@ -5184,18 +5184,18 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    7763,
-    7763
+    7777,
+    7777
    ],
    "distinct_meal_sets_per_day": [
-    2251,
-    2251
+    2255,
+    2255
    ],
    "day_enumeration_capped": [
     false,
     false
    ],
-   "multiday_nodes": 359
+   "multiday_nodes": 362
   },
   "spec_notes": [],
   "n_days": 2,
@@ -5220,7 +5220,7 @@
   "got": "FM-3",
   "status": "MATCH",
   "viol": [],
-  "tc": "TC-3",
+  "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
    "FM-3"
@@ -5262,7 +5262,7 @@
   "got": "FM-3",
   "status": "MATCH",
   "viol": [],
-  "tc": "TC-3",
+  "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
    "FM-3"
@@ -5308,7 +5308,7 @@
   "got": "FM-3",
   "status": "MATCH",
   "viol": [],
-  "tc": "TC-3",
+  "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
    "FM-3"
@@ -5398,7 +5398,7 @@
   "got": "FM-BATCH-CONFLICT",
   "status": "MATCH",
   "viol": [],
-  "tc": "TC-3",
+  "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
    "FM-BATCH-CONFLICT"
@@ -5506,7 +5506,7 @@
   "got": "FM-3",
   "status": "MATCH",
   "viol": [],
-  "tc": "TC-3",
+  "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
    "FM-3"
@@ -5559,11 +5559,11 @@
    ],
    "valid_assignments_per_day": [
     41,
-    1404
+    1382
    ],
    "distinct_meal_sets_per_day": [
     31,
-    523
+    515
    ],
    "day_enumeration_capped": [
     false,
@@ -5605,12 +5605,12 @@
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
     2,
-    425,
+    426,
     2
    ],
    "distinct_meal_sets_per_day": [
     1,
-    147,
+    148,
     1
    ],
    "day_enumeration_capped": [
@@ -5652,16 +5652,16 @@
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
     41,
-    1404,
+    1382,
     41,
-    1404,
+    1382,
     41
    ],
    "distinct_meal_sets_per_day": [
     31,
-    523,
+    515,
     31,
-    523,
+    515,
     31
    ],
    "day_enumeration_capped": [
@@ -5793,7 +5793,7 @@
   "got": "FM-3",
   "status": "MATCH",
   "viol": [],
-  "tc": "TC-3",
+  "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
    "FM-3"
@@ -5842,22 +5842,22 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    354,
-    354,
-    354,
-    354,
-    354,
-    3942,
-    3942
+    362,
+    362,
+    362,
+    362,
+    362,
+    3972,
+    3972
    ],
    "distinct_meal_sets_per_day": [
-    150,
-    150,
-    150,
-    150,
-    150,
-    657,
-    657
+    152,
+    152,
+    152,
+    152,
+    152,
+    662,
+    662
    ],
    "day_enumeration_capped": [
     false,
@@ -6013,22 +6013,22 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    972,
-    972,
-    972,
-    972,
-    972,
-    972,
-    972
+    960,
+    960,
+    960,
+    960,
+    960,
+    960,
+    960
    ],
    "distinct_meal_sets_per_day": [
-    369,
-    369,
-    369,
-    369,
-    369,
-    369,
-    369
+    364,
+    364,
+    364,
+    364,
+    364,
+    364,
+    364
    ],
    "day_enumeration_capped": [
     false,
@@ -6142,11 +6142,11 @@
     60000
    ],
    "distinct_meal_sets_per_day": [
-    11888,
+    11745,
     368,
-    11888,
+    11745,
     368,
-    11888
+    11745
    ],
    "day_enumeration_capped": [
     true,
@@ -6181,7 +6181,7 @@
   "got": "FM-3",
   "status": "MATCH",
   "viol": [],
-  "tc": "TC-3",
+  "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
    "FM-3"
@@ -6237,22 +6237,22 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    1969,
+    1958,
     0,
-    1969,
+    1958,
     0,
-    1969,
-    1969,
-    1969
+    1958,
+    1958,
+    1958
    ],
    "distinct_meal_sets_per_day": [
-    727,
+    721,
     0,
-    727,
+    721,
     0,
-    727,
-    727,
-    727
+    721,
+    721,
+    721
    ],
    "day_enumeration_capped": [
     false,
@@ -6307,7 +6307,7 @@
    ],
    "distinct_meal_sets_per_day": [
     1,
-    7577
+    7478
    ],
    "day_enumeration_capped": [
     false,
@@ -6348,18 +6348,18 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    293,
-    293,
-    293,
-    293,
-    293
+    294,
+    294,
+    294,
+    294,
+    294
    ],
    "distinct_meal_sets_per_day": [
-    190,
-    190,
-    190,
-    190,
-    190
+    191,
+    191,
+    191,
+    191,
+    191
    ],
    "day_enumeration_capped": [
     false,
@@ -6368,7 +6368,7 @@
     false,
     false
    ],
-   "multiday_nodes": 235
+   "multiday_nodes": 237
   },
   "spec_notes": [
    "Contrast with the 2-day portable-lunch scenario that fails: lower targets here admit several distinct portable lunches, so HC-8 can rotate them."
@@ -6404,22 +6404,22 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    429,
-    429,
-    429,
-    429,
-    429,
-    429,
-    429
+    426,
+    426,
+    426,
+    426,
+    426,
+    426,
+    426
    ],
    "distinct_meal_sets_per_day": [
-    296,
-    296,
-    296,
-    296,
-    296,
-    296,
-    296
+    293,
+    293,
+    293,
+    293,
+    293,
+    293,
+    293
    ],
    "day_enumeration_capped": [
     false,
@@ -6463,22 +6463,22 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    2074,
-    2074,
-    2074,
-    2074,
-    2074,
-    2074,
-    2074
+    2058,
+    2058,
+    2058,
+    2058,
+    2058,
+    2058,
+    2058
    ],
    "distinct_meal_sets_per_day": [
-    808,
-    808,
-    808,
-    808,
-    808,
-    808,
-    808
+    801,
+    801,
+    801,
+    801,
+    801,
+    801,
+    801
    ],
    "day_enumeration_capped": [
     false,
@@ -6523,13 +6523,13 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    60000
+    59808
    ],
    "distinct_meal_sets_per_day": [
-    8318
+    8265
    ],
    "day_enumeration_capped": [
-    true
+    false
    ],
    "multiday_nodes": 1
   },
@@ -6572,10 +6572,10 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    1842
+    1826
    ],
    "distinct_meal_sets_per_day": [
-    479
+    476
    ],
    "day_enumeration_capped": [
     false
@@ -6620,10 +6620,10 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    2283
+    2249
    ],
    "distinct_meal_sets_per_day": [
-    860
+    847
    ],
    "day_enumeration_capped": [
     false
@@ -6665,10 +6665,10 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    1856
+    1284
    ],
    "distinct_meal_sets_per_day": [
-    406
+    284
    ],
    "day_enumeration_capped": [
     false
@@ -6814,14 +6814,14 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    1564,
-    1564,
-    1564
+    1579,
+    1579,
+    1579
    ],
    "distinct_meal_sets_per_day": [
-    598,
-    598,
-    598
+    603,
+    603,
+    603
    ],
    "day_enumeration_capped": [
     false,
@@ -6898,7 +6898,7 @@
   "got": "FM-3",
   "status": "MATCH",
   "viol": [],
-  "tc": "TC-3",
+  "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
    "FM-3"
@@ -6910,11 +6910,11 @@
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
     0,
-    3336
+    3324
    ],
    "distinct_meal_sets_per_day": [
     0,
-    556
+    554
    ],
    "day_enumeration_capped": [
     false,
@@ -6989,7 +6989,7 @@
   "got": "FM-3",
   "status": "MATCH",
   "viol": [],
-  "tc": "TC-3",
+  "tc": "TC-2",
   "incomplete": null,
   "report_codes": [
    "FM-3"

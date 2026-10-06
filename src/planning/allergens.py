@@ -210,6 +210,7 @@ VEGAN_EXCLUDED_INGREDIENTS: frozenset = frozenset(
         "butter",
         "milk",
         "milk 1% fat lowfat",
+        "honey",
     }
 )
 

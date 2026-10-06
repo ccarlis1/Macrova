@@ -1528,9 +1528,9 @@ Possible formulations for the limit:
 
 | TC-1 | **Success.** All D days assigned; daily validation passes for each day; weekly validation passes. | Complete, valid meal plan P. |
 
-| TC-2 | **Exhaustion.** The algorithm has backtracked to the very first non-pinned decision point in the ordering and all candidates at that point have been exhausted. | Failure: no valid plan exists for the given inputs. Report the best partial plan and the specific constraints that could not be satisfied. |
+| TC-2 | **No valid plan.** Proven before search (input/pin/batch/tag/pool rejection with zero attempts) or during search when the algorithm has backtracked to the very first non-pinned decision point and all candidates at that point have been exhausted. | Failure: no valid plan exists for the given inputs. Report the best partial plan (if any) and the specific constraints that could not be satisfied. |
 
-| TC-3 | **Attempt limit reached.** The configurable backtracking/attempt limit (Section 9.4) has been reached. | Failure: search space not fully explored. Return the best complete-but-invalid or best partial plan found during the search, with a summary of unmet constraints. |
+| TC-3 | **Attempt limit reached.** The configurable backtracking/attempt limit (Section 9.4) has been reached. TC-3 is used only with **FM-5** (never for pre-search rejection). | Failure: search space not fully explored. Return the best complete-but-invalid or best partial plan found during the search, with a summary of unmet constraints. |
 
 | TC-4 | **Single-day mode.** When D = 1, termination occurs after daily validation (Section 6.5) **and** the same micronutrient floor check used for weekly validation (`τ × daily_RDI × D`). | If daily and floor validation pass: success (equivalent to TC-1). If floors fail and backtracking is exhausted: **FM-4**. |
 

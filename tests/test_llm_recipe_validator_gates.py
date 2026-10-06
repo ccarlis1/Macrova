@@ -192,3 +192,16 @@ def test_dietary_flag_inconsistent_draft_rejected():
     assert ok is False and res.error_code == "DIETARY_FLAG_INCONSISTENT"
     ok2, _ = validate_recipe_draft(d, Provider(table))
     assert ok2 is True
+
+
+def test_vegan_draft_with_honey_rejected():
+    """H1: vegan-tagged drafts containing honey fail the dietary-flag gate."""
+    table = dict(TABLE, **{"honey": N(304, 0.3, 0, 82), "chia seeds": N(486, 17, 31, 42)})
+    d = draft(ings=(("chia seeds", 20.0, "g"), ("honey", 10.0, "g")))
+    flagged = d.model_copy(
+        update={"tags": d.tags.model_copy(update={"dietary_flags": [DietaryFlag.vegan]})}
+    )
+    ok, res = validate_recipe_draft(flagged, Provider(table))
+    assert ok is False and res.error_code == "DIETARY_FLAG_INCONSISTENT"
+    ok2, _ = validate_recipe_draft(d, Provider(table))
+    assert ok2 is True

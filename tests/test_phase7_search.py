@@ -622,7 +622,7 @@ class TestFailureModes:
         assert result.success is False
         assert isinstance(result, MealPlanResult)
         assert result.failure_mode == "FM-3"
-        assert result.termination_code == "TC-3"
+        assert result.termination_code == "TC-2"
         assert result.stats is not None and result.stats.get("attempts") == 0
         conflicts = result.report.get("pinned_conflicts", [])
         assert len(conflicts) == 1
@@ -673,6 +673,7 @@ class TestFailureModes:
         assert result.success is False
         assert isinstance(result, MealPlanResult)
         assert result.failure_mode == "FM-5"
+        assert result.termination_code == "TC-3"
         assert result.stats is not None and result.stats.get("attempts") == 1
         assert result.report.get("search_exhaustive") is False
         assert "attempts" in result.report and result.report["attempts"] == 1
@@ -1122,7 +1123,7 @@ class TestFullyPinnedDayValidation:
         result = run_meal_plan_search(profile, pool, 2, None)
         assert result.success is False
         assert result.failure_mode == "FM-3"
-        assert result.termination_code == "TC-3"
+        assert result.termination_code == "TC-2"
         assert result.stats is not None and result.stats.get("attempts") == 0
         # The failure reason lives in the report, not in a sodium advisory.
         assert result.warning is None
@@ -1503,3 +1504,105 @@ class TestFullyPinnedDayValidation:
         f2 = run_meal_plan_search(profile_bad, pool_bad, 2, None)
         assert f1.failure_mode == f2.failure_mode == "FM-3"
         assert f1.report.get("pinned_conflicts") == f2.report.get("pinned_conflicts")
+
+
+class TestPreSearchTerminationCodes:
+    """T1: every pre-search failure is TC-2 with 0 attempts; TC-3 only with FM-5."""
+
+    def test_pre_search_fm1_is_tc2_zero_attempts(self):
+        schedule = [[_make_slot(busyness=1), _make_slot(busyness=2)]]
+        profile = _make_profile(schedule)
+        pool = [
+            _make_recipe("r1", 1000.0, 50.0, 32.0, 125.0, cooking_min=30),
+            _make_recipe("r2", 1000.0, 50.0, 32.0, 125.0, cooking_min=30),
+        ]
+        result = run_meal_plan_search(profile, pool, 1, None)
+        assert result.failure_mode == "FM-1"
+        assert result.termination_code == "TC-2"
+        assert result.stats is not None and result.stats.get("attempts") == 0
+
+    def test_pre_search_fm_tag_empty_is_tc2_zero_attempts(self):
+        schedule = [[_make_slot(required_tag_slugs=["high-protein"]), _make_slot()]]
+        profile = _make_profile(schedule)
+        pool = [
+            _make_recipe("r1", 1000.0, 50.0, 32.0, 125.0, canonical_tag_slugs={"quick"}),
+            _make_recipe("r2", 1000.0, 50.0, 32.0, 125.0, canonical_tag_slugs={"comfort"}),
+        ]
+        result = run_meal_plan_search(profile, pool, 1, None)
+        assert result.failure_mode == "FM-TAG-EMPTY"
+        assert result.termination_code == "TC-2"
+        assert result.stats is not None and result.stats.get("attempts") == 0
+
+    def test_pre_search_fm4_structural_is_tc2_zero_attempts(self):
+        schedule = _make_schedule(ndays=2, slots_per_day=2)
+        fiber_pin = MicronutrientProfile(fiber_g=5.0)
+        fiber_free = MicronutrientProfile(fiber_g=5.0)
+        fiber_rich = MicronutrientProfile(fiber_g=50.0)
+        profile = _make_profile(
+            schedule,
+            pinned_assignments={(1, 0): "r_pin1", (1, 1): "r_pin2"},
+            micronutrient_targets={"fiber_g": 15.0},
+        )
+        pool = [
+            _make_recipe("r_pin1", 1000.0, 50.0, 32.0, 125.0, micronutrients=fiber_pin),
+            _make_recipe("r_pin2", 1000.0, 50.0, 32.0, 125.0, micronutrients=fiber_pin),
+            _make_recipe("r3", 1000.0, 50.0, 32.0, 125.0, micronutrients=fiber_free),
+            _make_recipe("r4", 1000.0, 50.0, 32.0, 125.0, micronutrients=fiber_free),
+            _make_recipe("r_rich", 3000.0, 50.0, 32.0, 125.0, micronutrients=fiber_rich),
+        ]
+        result = run_meal_plan_search(profile, pool, 2, None)
+        assert result.failure_mode == "FM-4"
+        assert result.termination_code == "TC-2"
+        assert result.stats is not None and result.stats.get("attempts") == 0
+
+    def test_pre_search_fm3_pin_prevalidation_is_tc2_zero_attempts(self):
+        schedule = _make_schedule(ndays=1, slots_per_day=2)
+        profile = _make_profile(
+            schedule,
+            pinned_assignments={(1, 0): "r_bad"},
+            excluded_ingredients=["peanut"],
+        )
+        pool = [
+            _make_recipe("r1", 1000.0, 50.0, 32.0, 125.0),
+            _make_recipe("r2", 1000.0, 50.0, 32.0, 125.0),
+            _make_recipe(
+                "r_bad",
+                1000.0,
+                50.0,
+                32.0,
+                125.0,
+                ingredients=[Ingredient("peanut", 10.0, "g", False, "g", 10.0)],
+            ),
+        ]
+        result = run_meal_plan_search(profile, pool, 1, None)
+        assert result.failure_mode == "FM-3"
+        assert result.termination_code == "TC-2"
+        assert result.stats is not None and result.stats.get("attempts") == 0
+
+    def test_pre_search_fm3_fully_pinned_day_is_tc2_zero_attempts(self):
+        schedule = _make_schedule(ndays=1, slots_per_day=2)
+        profile = _make_profile(
+            schedule,
+            daily_calories=2000,
+            daily_protein_g=100.0,
+            pinned_assignments={(1, 0): "r1", (1, 1): "r2"},
+        )
+        pool = [
+            _make_recipe("r1", 1000.0, 30.0, 32.0, 125.0),
+            _make_recipe("r2", 1000.0, 30.0, 32.0, 125.0),
+        ]
+        result = run_meal_plan_search(profile, pool, 1, None)
+        assert result.failure_mode == "FM-3"
+        assert result.termination_code == "TC-2"
+        assert result.stats is not None and result.stats.get("attempts") == 0
+
+    def test_tc3_only_with_fm5(self):
+        schedule = _make_schedule(ndays=1, slots_per_day=2)
+        profile = _make_profile(schedule)
+        pool = [
+            _make_recipe("r1", 1000.0, 50.0, 32.0, 125.0),
+            _make_recipe("r2", 1000.0, 50.0, 32.0, 125.0),
+        ]
+        result = run_meal_plan_search(profile, pool, 1, None, attempt_limit=1)
+        assert result.termination_code == "TC-3"
+        assert result.failure_mode == "FM-5"

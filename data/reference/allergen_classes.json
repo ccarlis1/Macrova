@@ -3,8 +3,15 @@
   "note": "An ingredient is classified if it appears in any class members list or in no_major_allergen. Allergy terms expand to the matching class's members; dislikes stay exact.",
   "classes": {
     "peanut": {
-      "terms": ["peanut", "peanuts", "groundnut", "groundnuts"],
-      "members": ["peanut butter"]
+      "terms": [
+        "peanut",
+        "peanuts",
+        "groundnut",
+        "groundnuts"
+      ],
+      "members": [
+        "peanut butter"
+      ]
     },
     "tree_nut": {
       "terms": [
@@ -19,7 +26,10 @@
         "nut",
         "nuts"
       ],
-      "members": ["almonds", "almond butter unsalted"]
+      "members": [
+        "almonds",
+        "almond butter unsalted"
+      ]
     },
     "milk": {
       "terms": [
@@ -52,8 +62,14 @@
       ]
     },
     "egg": {
-      "terms": ["egg", "eggs"],
-      "members": ["eggs", "egg yolk"]
+      "terms": [
+        "egg",
+        "eggs"
+      ],
+      "members": [
+        "eggs",
+        "egg yolk"
+      ]
     },
     "wheat_gluten": {
       "terms": [
@@ -64,15 +80,37 @@
         "coeliac",
         "flour"
       ],
-      "members": ["pasta", "sourdough bread"]
+      "members": [
+        "pasta",
+        "sourdough bread",
+        "soy sauce"
+      ]
     },
     "soy": {
-      "terms": ["soy", "soya", "soybean", "soybeans", "soya bean", "soya beans"],
-      "members": ["soy sauce", "tofu not silken firm", "edamame beans"]
+      "terms": [
+        "soy",
+        "soya",
+        "soybean",
+        "soybeans",
+        "soya bean",
+        "soya beans"
+      ],
+      "members": [
+        "edamame beans",
+        "soy sauce",
+        "tamari",
+        "tofu not silken firm"
+      ]
     },
     "fish": {
-      "terms": ["fish"],
-      "members": ["salmon canned", "tilapia", "tuna sashimi"]
+      "terms": [
+        "fish"
+      ],
+      "members": [
+        "salmon canned",
+        "tilapia",
+        "tuna sashimi"
+      ]
     },
     "shellfish": {
       "terms": [
@@ -98,8 +136,14 @@
       "members": []
     },
     "sesame": {
-      "terms": ["sesame", "sesame seed", "sesame seeds"],
-      "members": ["sesame oil"]
+      "terms": [
+        "sesame",
+        "sesame seed",
+        "sesame seeds"
+      ],
+      "members": [
+        "sesame oil"
+      ]
     }
   },
   "no_major_allergen": [

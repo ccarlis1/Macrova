@@ -8,14 +8,31 @@ from src.ingestion.nutrition_scaler import BASE_SERVING_WEIGHTS
 
 
 class NutritionCalculator:
-    """Calculator for nutrition values of ingredients and recipes."""
+    """Calculator for nutrition values of ingredients and recipes.
 
-    # Common unit conversions (for MVP - common cases only)
-    UNIT_CONVERSIONS = {
-        "oz": 28.35,  # oz to grams
-        "cup": 240.0,  # cup to ml (approximate)
-        "tsp": 4.93,  # tsp to ml
-        "tbsp": 14.79,  # tbsp to ml
+    Quantities are converted to grams once via ``to_grams`` (using the
+    ingredient record's ``grams_per_unit`` and explicit serving weights).
+    Nutrition is then scaled from ``per_100g`` (or an equivalent per-unit
+    block with a known gram size). Unknown units raise
+    ``IngredientNotFoundError`` so the recipe leaves the planning pool
+    with ``warnings.nutrition`` — never silent zeros or density guesses.
+    """
+
+    # Mass-only conversion; volume needs per-ingredient grams_per_unit.
+    OZ_TO_GRAMS = 28.35
+
+    UNIT_ALIASES = {
+        "gram": "g",
+        "grams": "g",
+        "ounce": "oz",
+        "ounces": "oz",
+        "cups": "cup",
+        "tablespoon": "tbsp",
+        "tablespoons": "tbsp",
+        "teaspoon": "tsp",
+        "teaspoons": "tsp",
+        "milliliter": "ml",
+        "milliliters": "ml",
     }
 
     # Micronutrient field names that match MicronutrientProfile attributes
@@ -71,7 +88,8 @@ class NutritionCalculator:
             NutritionProfile with calculated nutrition
         
         Raises:
-            IngredientNotFoundError: If ingredient not found in database
+            IngredientNotFoundError: If ingredient not found, or quantity
+                cannot be converted to grams, or no nutrition block exists
             ValueError: If ingredient is marked as "to taste"
         """
         if ingredient.is_to_taste:
@@ -82,48 +100,19 @@ class NutritionCalculator:
         if ingredient_info is None:
             raise IngredientNotFoundError(ingredient.name)
 
-        # Find appropriate unit key for nutrition lookup
-        unit_key = self._find_nutrition_unit_key(ingredient, ingredient_info)
-        if unit_key is None:
+        grams = self.to_grams(ingredient, ingredient_info)
+        nutrition_data, unit_size_g = self._nutrition_block_for_grams(ingredient_info)
+        if nutrition_data is None or unit_size_g is None:
             raise IngredientNotFoundError(
                 f"{ingredient.name} (no matching nutrition unit found)"
             )
 
-        # Get nutrition data for the unit
-        nutrition_data = ingredient_info.get(unit_key)
-        if nutrition_data is None:
-            raise IngredientNotFoundError(
-                f"{ingredient.name} (no nutrition data for {unit_key})"
-            )
-
-        # Get unit size for calculation
-        unit_size = self._get_unit_size(unit_key, ingredient_info)
-
-        # For per_scoop and per_large, quantity is already in the right unit
-        # For per_100g, we need to convert quantity to grams
-        if unit_key == "per_100g":
-            # Convert quantity to grams
-            converted_quantity = self._convert_quantity_to_grams(ingredient)
-            # Calculate: (nutrition_per_100g * converted_quantity_g) / 100
-            calories = (nutrition_data.get("calories", 0.0) * converted_quantity) / 100.0
-            protein_g = (nutrition_data.get("protein_g", 0.0) * converted_quantity) / 100.0
-            fat_g = (nutrition_data.get("fat_g", 0.0) * converted_quantity) / 100.0
-            carbs_g = (nutrition_data.get("carbs_g", 0.0) * converted_quantity) / 100.0
-            # Calculate micronutrients with same scaling
-            micronutrients = self._calculate_micronutrients(
-                nutrition_data, converted_quantity / 100.0
-            )
-        else:
-            # For per_scoop or per_large, quantity is already in the right unit
-            # Calculate: nutrition_per_unit * quantity
-            calories = nutrition_data.get("calories", 0.0) * ingredient.quantity
-            protein_g = nutrition_data.get("protein_g", 0.0) * ingredient.quantity
-            fat_g = nutrition_data.get("fat_g", 0.0) * ingredient.quantity
-            carbs_g = nutrition_data.get("carbs_g", 0.0) * ingredient.quantity
-            # Calculate micronutrients with same scaling
-            micronutrients = self._calculate_micronutrients(
-                nutrition_data, ingredient.quantity
-            )
+        multiplier = grams / unit_size_g
+        calories = nutrition_data.get("calories", 0.0) * multiplier
+        protein_g = nutrition_data.get("protein_g", 0.0) * multiplier
+        fat_g = nutrition_data.get("fat_g", 0.0) * multiplier
+        carbs_g = nutrition_data.get("carbs_g", 0.0) * multiplier
+        micronutrients = self._calculate_micronutrients(nutrition_data, multiplier)
 
         return NutritionProfile(
             calories=calories,
@@ -138,6 +127,9 @@ class NutritionCalculator:
 
         Used by ``convert_recipes`` to drop incomplete recipes from the pool
         (§4.4: no silent zeros). Does not mutate state.
+
+        Conversion failures include the unit in ``IngredientNotFoundError.ingredient_name``
+        (e.g. ``"quinoa (no gram conversion for 'cup')"``) so warnings name both.
         """
         missing: set[str] = set()
         for ingredient in recipe.ingredients:
@@ -145,8 +137,8 @@ class NutritionCalculator:
                 continue
             try:
                 self.calculate_ingredient_nutrition(ingredient)
-            except IngredientNotFoundError:
-                missing.add(ingredient.name)
+            except IngredientNotFoundError as exc:
+                missing.add(exc.ingredient_name)
             except RuntimeError:
                 # API provider: name not pre-resolved via resolve_all
                 missing.add(ingredient.name)
@@ -198,106 +190,71 @@ class NutritionCalculator:
             micronutrients=MicronutrientProfile(**total_micros),
         )
 
-    def _find_nutrition_unit_key(
+    def to_grams(
         self, ingredient: Ingredient, ingredient_info: Dict[str, Any]
-    ) -> Optional[str]:
-        """Find appropriate unit key for nutrition lookup.
-        
-        Args:
-            ingredient: Ingredient object
-            ingredient_info: Full ingredient info from provider
-        
-        Returns:
-            Unit key (e.g., "per_100g", "per_scoop", "per_large") or None
+    ) -> float:
+        """Convert an ingredient quantity to grams using explicit weights only.
+
+        Order:
+          1. ``g`` / ``gram`` / ``grams`` → quantity
+          2. ``grams_per_unit[unit]`` (plus ``scoop_size_g`` / ``large_size_g`` on the record)
+          3. ``oz`` → 28.35 (mass, safe for any ingredient)
+          4. ``BASE_SERVING_WEIGHTS`` for count units with a named entry
+          5. otherwise ``IngredientNotFoundError`` (no density guesses)
         """
-        unit = ingredient.unit.lower()
+        quantity = float(ingredient.quantity)
+        raw_unit = (ingredient.unit or "").lower().strip()
+        unit = self.UNIT_ALIASES.get(raw_unit, raw_unit)
+        name_lower = (ingredient.name or "").lower().strip()
 
-        # Map ingredient units to nutrition DB keys
-        unit_mapping = {
-            "g": "per_100g",
-            "gram": "per_100g",
-            "grams": "per_100g",
-            "oz": "per_100g",  # Will convert oz to g
-            "ounce": "per_100g",
-            "ounces": "per_100g",
-            "scoop": "per_scoop",
-            "large": "per_large",
-            "serving": "per_100g",  # Default to per_100g for servings
-        }
-
-        # Try direct mapping first
-        if unit in unit_mapping:
-            key = unit_mapping[unit]
-            # Check if this key exists in ingredient_info
-            if key in ingredient_info:
-                return key
-
-        # Try to find any matching key
-        # Priority: per_scoop, per_large, per_100g
-        for key in ["per_scoop", "per_large", "per_100g"]:
-            if key in ingredient_info:
-                return key
-
-        return None
-
-    def _convert_quantity_to_grams(self, ingredient: Ingredient) -> float:
-        """Convert ingredient quantity to grams.
-        
-        Args:
-            ingredient: Ingredient object
-        
-        Returns:
-            Quantity in grams
-        """
-        quantity = ingredient.quantity
-        unit = ingredient.unit.lower().strip()
-
-        if unit == "g" or unit == "gram" or unit == "grams":
-            return quantity
-        elif unit == "oz" or unit == "ounce" or unit == "ounces":
-            return quantity * self.UNIT_CONVERSIONS["oz"]
-        elif unit == "serving":
-            return quantity * 100.0
-        elif unit in ("large", "medium", "small"):
-            # Count-based units: use BASE_SERVING_WEIGHTS from nutrition_scaler
-            name_lower = (ingredient.name or "").lower().strip()
-            weights = BASE_SERVING_WEIGHTS.get(unit, {})
-            weight_per = weights.get(name_lower) or weights.get(name_lower.rstrip("s"))
-            if weight_per is not None:
-                return quantity * weight_per
-            # Fallback for common ingredients not in table (e.g. "eggs" with typo)
-            if unit == "large" and "egg" in name_lower:
-                return quantity * 50.0
-            if unit == "medium" and "egg" in name_lower:
-                return quantity * 44.0
-            if unit == "small" and "egg" in name_lower:
-                return quantity * 38.0
-            # Generic fallback: assume 50g per "large", 40g per "medium", 30g per "small"
-            defaults = {"large": 50.0, "medium": 40.0, "small": 30.0}
-            return quantity * defaults.get(unit, 50.0)
-        else:
+        if unit == "g":
             return quantity
 
-    def _get_unit_size(self, unit_key: str, ingredient_info: Dict[str, Any]) -> float:
-        """Get the size of the unit for nutrition calculation.
-        
-        Args:
-            unit_key: Nutrition unit key (e.g., "per_100g")
-            ingredient_info: Full ingredient info
-        
-        Returns:
-            Unit size (e.g., 100.0 for "per_100g")
+        gpu = dict(ingredient_info.get("grams_per_unit") or {})
+        # Explicit size fields on the record are the same kind of data as grams_per_unit.
+        if "scoop" not in gpu and ingredient_info.get("scoop_size_g") is not None:
+            gpu["scoop"] = float(ingredient_info["scoop_size_g"])
+        if "large" not in gpu and ingredient_info.get("large_size_g") is not None:
+            gpu["large"] = float(ingredient_info["large_size_g"])
+        if unit in gpu:
+            return quantity * float(gpu[unit])
+
+        if unit == "oz":
+            return quantity * self.OZ_TO_GRAMS
+
+        weights = BASE_SERVING_WEIGHTS.get(unit, {})
+        weight_per = weights.get(name_lower) or weights.get(name_lower.rstrip("s"))
+        if weight_per is not None:
+            return quantity * float(weight_per)
+
+        raise IngredientNotFoundError(
+            f"{ingredient.name} (no gram conversion for '{ingredient.unit}')"
+        )
+
+    def _nutrition_block_for_grams(
+        self, ingredient_info: Dict[str, Any]
+    ) -> tuple[Optional[Dict[str, Any]], Optional[float]]:
+        """Return (nutrition_dict, grams_per_block) for scaling by grams.
+
+        Prefers ``per_100g``. Falls back to ``per_scoop`` / ``per_large`` when
+        those blocks have an explicit gram size on the record.
         """
-        if unit_key == "per_100g":
-            return 100.0
-        elif unit_key == "per_scoop":
-            # Get scoop size from ingredient_info if available
-            return ingredient_info.get("scoop_size_g", 30.0)  # Default 30g
-        elif unit_key == "per_large":
-            # Get large size from ingredient_info if available
-            return ingredient_info.get("large_size_g", 50.0)  # Default 50g
-        else:
-            return 1.0  # Default to 1
+        if "per_100g" in ingredient_info and ingredient_info["per_100g"] is not None:
+            return ingredient_info["per_100g"], 100.0
+
+        if "per_scoop" in ingredient_info and ingredient_info["per_scoop"] is not None:
+            scoop_g = ingredient_info.get("scoop_size_g")
+            if scoop_g is not None:
+                return ingredient_info["per_scoop"], float(scoop_g)
+
+        if "per_large" in ingredient_info and ingredient_info["per_large"] is not None:
+            large_g = ingredient_info.get("large_size_g")
+            if large_g is not None:
+                return ingredient_info["per_large"], float(large_g)
+            # Count-weight table may still define the size for a named ingredient.
+            # Without a size, we cannot scale from grams — caller raises.
+
+        return None, None
 
     def _calculate_micronutrients(
         self, nutrition_data: Dict[str, Any], multiplier: float
@@ -331,4 +288,3 @@ class NutritionCalculator:
         """
         for field in self.MICRONUTRIENT_FIELDS:
             totals[field] += getattr(micros, field, 0.0)
-

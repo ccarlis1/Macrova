@@ -30,10 +30,10 @@ def _request(**overrides) -> PlanRequest:
 @pytest.mark.parametrize(
     "flag, must_exclude",
     [
-        ("gluten_free", {"pasta", "sourdough bread"}),
+        ("gluten_free", {"pasta", "sourdough bread", "soy sauce"}),
         ("dairy_free", {"milk", "butter"}),
         ("vegetarian", {"chicken breast", "salmon"}),
-        ("vegan", {"eggs", "chicken breast"}),
+        ("vegan", {"eggs", "chicken breast", "honey"}),
     ],
 )
 def test_plan_request_flag_becomes_hc1_exclusion(flag, must_exclude):

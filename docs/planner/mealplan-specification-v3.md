@@ -1532,7 +1532,7 @@ Possible formulations for the limit:
 
 | TC-3 | **Attempt limit reached.** The configurable backtracking/attempt limit (Section 9.4) has been reached. | Failure: search space not fully explored. Return the best complete-but-invalid or best partial plan found during the search, with a summary of unmet constraints. |
 
-| TC-4 | **Single-day mode.** When D = 1, termination occurs after daily validation (Section 6.5). Weekly validation is not performed. | If daily validation passes: success (equivalent to TC-1). If daily validation fails and backtracking is exhausted: failure (equivalent to TC-2). |
+| TC-4 | **Single-day mode.** When D = 1, termination occurs after daily validation (Section 6.5) **and** the same micronutrient floor check used for weekly validation (`τ × daily_RDI × D`). | If daily and floor validation pass: success (equivalent to TC-1). If floors fail and backtracking is exhausted: **FM-4**. |
 
   
 

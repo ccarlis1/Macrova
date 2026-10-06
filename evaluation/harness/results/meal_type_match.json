@@ -2,6 +2,9 @@
  "planner_slots_known": 646,
  "planner_slots_mismatched": 126,
  "planner_mismatch_rate": 0.19504643962848298,
+ "lunch_mismatches": 59,
+ "avoidable_lunch_mismatches": 59,
+ "avoidable_lunch_mismatch_rate": 1.0,
  "by_meal_type": {
   "breakfast": {
    "known": 204,

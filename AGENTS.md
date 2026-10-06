@@ -226,9 +226,9 @@ There is one canonical tag source of truth. Do not create another.
 
 ## Data and Persistence Rules
 
-- Default local ingredient nutrition is the committed table `data/reference/ingredient_nutrition.json` (§4.4 / Q2d; `review_status: draft`, not yet human-reviewed). USDA API mode may cache new names only after a macro plausibility gate.
+- Default local ingredient nutrition is the committed table `data/reference/ingredient_nutrition.json` (§4.4 / Q2d; `review_status: draft`, not yet human-reviewed). USDA API mode may cache new names only after a macro plausibility gate. Volume and count units convert via each record's `grams_per_unit` (and explicit serving weights); unknown units are unresolved — never silent density guesses.
 - `data/recipes/recipes.json` is committed. Legacy `data/ingredients/custom_ingredients.json` remains gitignored; copy from `*.example` only if an older path is needed. Profile config still uses `config/user_profile.yaml.example`.
-- Ingredient nutrition flows through the provider abstraction into internal `NutritionProfile` / `MicronutrientProfile` objects. Recipes with unresolved ingredients are dropped from the pool with `warnings.nutrition` (no silent zeros).
+- Ingredient nutrition flows through the provider abstraction into internal `NutritionProfile` / `MicronutrientProfile` objects. Recipes with unresolved ingredients (including missing gram conversions) are dropped from the pool with `warnings.nutrition` (no silent zeros).
 - Upper-limit reference data lives under `data/reference/` and is enforced per-day.
 - Do not persist generated recipes unless nutrition validation and ingredient resolution pass.
 - Treat the recipe/tag/meal-prep file stores as backed by their repositories (`recipe_db.py`, `tag_repository.py`, `meal_prep.py`); do not add duplicate write paths around them.

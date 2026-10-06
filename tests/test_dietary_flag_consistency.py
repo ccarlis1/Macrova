@@ -106,7 +106,6 @@ _NOT_ANIMAL = {
     "almond butter unsalted": "plant nut butter",
     "peanut butter": "plant nut butter",
     "cream of rice dry": "rice cereal",
-    "honey": "spec question: whether vegan excludes honey is undecided",
 }
 
 

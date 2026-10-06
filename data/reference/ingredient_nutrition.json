@@ -4,6 +4,52 @@
   "ingredients": [
     {
       "aliases": [
+        "Avocados, raw, all commercial varieties"
+      ],
+      "data_type": "SR Legacy",
+      "description": "Avocados, raw, all commercial varieties",
+      "fdc_id": 171705,
+      "grams_per_unit": {
+        "g": 1.0
+      },
+      "name": "Avocados, raw, all commercial varieties",
+      "notes": "",
+      "per_100g": {
+        "b12_cobalamin_ug": 0.0,
+        "b1_thiamine_mg": 0.067,
+        "b2_riboflavin_mg": 0.13,
+        "b3_niacin_mg": 1.738,
+        "b5_pantothenic_acid_mg": 1.389,
+        "b6_pyridoxine_mg": 0.257,
+        "calcium_mg": 12.0,
+        "calories": 160.0,
+        "carbs_g": 8.53,
+        "copper_mg": 0.19,
+        "fat_g": 14.66,
+        "fiber_g": 6.7,
+        "folate_ug": 81.0,
+        "iron_mg": 0.55,
+        "magnesium_mg": 29.0,
+        "manganese_mg": 0.142,
+        "omega_3_g": 0.0,
+        "omega_6_g": 1.674,
+        "phosphorus_mg": 52.0,
+        "potassium_mg": 485.0,
+        "protein_g": 2.0,
+        "selenium_ug": 0.4,
+        "sodium_mg": 7.0,
+        "vitamin_a_ug": 7.0,
+        "vitamin_c_mg": 10.0,
+        "vitamin_d_iu": 0.0,
+        "vitamin_e_mg": 2.07,
+        "vitamin_k_ug": 21.0,
+        "zinc_mg": 0.64
+      },
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
+    },
+    {
+      "aliases": [
         "almond butter unsalted"
       ],
       "data_type": "SR Legacy",
@@ -228,52 +274,6 @@
         "vitamin_e_mg": 0.0,
         "vitamin_k_ug": 0.0,
         "zinc_mg": 0.0
-      },
-      "source": "evaluation/data_track/panel.json",
-      "reviewed": null
-    },
-    {
-      "aliases": [
-        "Avocados, raw, all commercial varieties"
-      ],
-      "data_type": "SR Legacy",
-      "description": "Avocados, raw, all commercial varieties",
-      "fdc_id": 171705,
-      "grams_per_unit": {
-        "g": 1.0
-      },
-      "name": "Avocados, raw, all commercial varieties",
-      "notes": "",
-      "per_100g": {
-        "b12_cobalamin_ug": 0.0,
-        "b1_thiamine_mg": 0.067,
-        "b2_riboflavin_mg": 0.13,
-        "b3_niacin_mg": 1.738,
-        "b5_pantothenic_acid_mg": 1.389,
-        "b6_pyridoxine_mg": 0.257,
-        "calcium_mg": 12.0,
-        "calories": 160.0,
-        "carbs_g": 8.53,
-        "copper_mg": 0.19,
-        "fat_g": 14.66,
-        "fiber_g": 6.7,
-        "folate_ug": 81.0,
-        "iron_mg": 0.55,
-        "magnesium_mg": 29.0,
-        "manganese_mg": 0.142,
-        "omega_3_g": 0.0,
-        "omega_6_g": 1.674,
-        "phosphorus_mg": 52.0,
-        "potassium_mg": 485.0,
-        "protein_g": 2.0,
-        "selenium_ug": 0.4,
-        "sodium_mg": 7.0,
-        "vitamin_a_ug": 7.0,
-        "vitamin_c_mg": 10.0,
-        "vitamin_d_iu": 0.0,
-        "vitamin_e_mg": 2.07,
-        "vitamin_k_ug": 21.0,
-        "zinc_mg": 0.64
       },
       "source": "evaluation/data_track/panel.json",
       "reviewed": null
@@ -2919,13 +2919,13 @@
         "soy sauce"
       ],
       "data_type": "SR Legacy",
-      "description": "Soy sauce made from soy (tamari)",
+      "description": "Soy sauce (regular, typically brewed with wheat)",
       "fdc_id": 174278,
       "grams_per_unit": {
         "g": 1.0
       },
       "name": "soy sauce",
-      "notes": "",
+      "notes": "Regular soy sauce (brewed with wheat); also in wheat_gluten.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.059,
@@ -3094,6 +3094,53 @@
         "vitamin_e_mg": 0.26,
         "vitamin_k_ug": 1.8,
         "zinc_mg": 0.3
+      },
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
+    },
+    {
+      "aliases": [
+        "tamari",
+        "tamari soy sauce"
+      ],
+      "data_type": "SR Legacy",
+      "description": "Soy sauce made from soy (tamari)",
+      "fdc_id": 174278,
+      "grams_per_unit": {
+        "g": 1.0
+      },
+      "name": "tamari",
+      "notes": "Gluten-free soy sauce (tamari); classified soy only.",
+      "per_100g": {
+        "b12_cobalamin_ug": 0.0,
+        "b1_thiamine_mg": 0.059,
+        "b2_riboflavin_mg": 0.152,
+        "b3_niacin_mg": 3.951,
+        "b5_pantothenic_acid_mg": 0.376,
+        "b6_pyridoxine_mg": 0.2,
+        "calcium_mg": 20.0,
+        "calories": 60.0,
+        "carbs_g": 5.57,
+        "copper_mg": 0.135,
+        "fat_g": 0.1,
+        "fiber_g": 0.8,
+        "folate_ug": 18.0,
+        "iron_mg": 2.38,
+        "magnesium_mg": 40.0,
+        "manganese_mg": 0.499,
+        "omega_3_g": 0.0,
+        "omega_6_g": 0.039,
+        "phosphorus_mg": 130.0,
+        "potassium_mg": 212.0,
+        "protein_g": 10.51,
+        "selenium_ug": 0.8,
+        "sodium_mg": 5586.0,
+        "vitamin_a_ug": 0.0,
+        "vitamin_c_mg": 0.0,
+        "vitamin_d_iu": 0.0,
+        "vitamin_e_mg": 0.0,
+        "vitamin_k_ug": 0.0,
+        "zinc_mg": 0.43
       },
       "source": "evaluation/data_track/panel.json",
       "reviewed": null
@@ -3385,7 +3432,8 @@
       "description": "Water, tap",
       "fdc_id": 2710707,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "ml": 1.0
       },
       "name": "water",
       "notes": "",

@@ -96,6 +96,8 @@ def test_batch_lock_conflict_returns_fm_batch_conflict():
 
     assert result.success is False
     assert result.failure_mode == "FM-BATCH-CONFLICT"
+    assert result.termination_code == "TC-2"
+    assert result.stats is not None and result.stats.get("attempts") == 0
     assert "batch_conflicts" in result.report
     assert len(result.report["batch_conflicts"]) == 1
     failures = result.report.get("failures", [])
@@ -192,7 +194,7 @@ def test_fully_batch_locked_day_that_misses_macros_returns_fm3():
     )
     assert result.success is False
     assert result.failure_mode == "FM-3"
-    assert result.termination_code == "TC-3"
+    assert result.termination_code == "TC-2"
     conflicts = result.report.get("pinned_conflicts", [])
     assert len(conflicts) == 1
     assert conflicts[0]["violation_type"] == "downstream"

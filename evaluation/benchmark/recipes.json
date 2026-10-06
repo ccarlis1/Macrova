@@ -582,12 +582,6 @@
           "cache_key": "bananas",
           "quantity": 120,
           "unit": "g"
-        },
-        {
-          "name": "honey",
-          "cache_key": "honey",
-          "quantity": 10,
-          "unit": "g"
         }
       ],
       "tags": [
@@ -602,36 +596,36 @@
       "uses_quarantined_ingredients": [],
       "notes": "",
       "nutrition": {
-        "calories": 546.16,
-        "protein_g": 17.04,
+        "calories": 515.76,
+        "protein_g": 17.01,
         "fat_g": 18.78,
-        "carbs_g": 84.29,
+        "carbs_g": 76.05,
         "micronutrients": {
           "b12_cobalamin_ug": 0.0,
           "b1_thiamine_mg": 0.653,
-          "b2_riboflavin_mg": 0.494,
-          "b3_niacin_mg": 8.856,
-          "b5_pantothenic_acid_mg": 0.772,
-          "b6_pyridoxine_mg": 0.67,
-          "calcium_mg": 63.88,
-          "copper_mg": 0.354,
-          "fiber_g": 6.5,
-          "folate_ug": 150.44,
-          "iron_mg": 4.039,
-          "magnesium_mg": 111.96,
-          "manganese_mg": 0.794,
+          "b2_riboflavin_mg": 0.491,
+          "b3_niacin_mg": 8.844,
+          "b5_pantothenic_acid_mg": 0.765,
+          "b6_pyridoxine_mg": 0.667,
+          "calcium_mg": 63.28,
+          "copper_mg": 0.35,
+          "fiber_g": 6.48,
+          "folate_ug": 150.24,
+          "iron_mg": 3.997,
+          "magnesium_mg": 111.76,
+          "manganese_mg": 0.786,
           "omega_3_g": 0.0,
           "omega_6_g": 4.623,
-          "phosphorus_mg": 218.0,
-          "potassium_mg": 706.96,
-          "selenium_ug": 25.472,
-          "sodium_mg": 619.52,
+          "phosphorus_mg": 217.6,
+          "potassium_mg": 701.76,
+          "selenium_ug": 25.392,
+          "sodium_mg": 619.12,
           "vitamin_a_ug": 3.6,
-          "vitamin_c_mg": 10.49,
+          "vitamin_c_mg": 10.44,
           "vitamin_d_iu": 0.0,
           "vitamin_e_mg": 3.2,
           "vitamin_k_ug": 1.256,
-          "zinc_mg": 1.837
+          "zinc_mg": 1.815
         }
       }
     },
@@ -1833,8 +1827,8 @@
           "unit": "g"
         },
         {
-          "name": "soy sauce",
-          "cache_key": "soy_sauce",
+          "name": "tamari",
+          "cache_key": "tamari",
           "quantity": 10,
           "unit": "g"
         },
@@ -2349,8 +2343,8 @@
           "unit": "g"
         },
         {
-          "name": "soy sauce",
-          "cache_key": "soy_sauce",
+          "name": "tamari",
+          "cache_key": "tamari",
           "quantity": 20,
           "unit": "g"
         },
@@ -4052,8 +4046,8 @@
           "unit": "g"
         },
         {
-          "name": "soy sauce",
-          "cache_key": "soy_sauce",
+          "name": "tamari",
+          "cache_key": "tamari",
           "quantity": 5,
           "unit": "g"
         }
@@ -4128,12 +4122,6 @@
           "cache_key": "water",
           "quantity": 350,
           "unit": "g"
-        },
-        {
-          "name": "honey",
-          "cache_key": "honey",
-          "quantity": 10,
-          "unit": "g"
         }
       ],
       "tags": [
@@ -4152,36 +4140,36 @@
       "uses_quarantined_ingredients": [],
       "notes": "",
       "nutrition": {
-        "calories": 130.9,
-        "protein_g": 3.39,
+        "calories": 100.5,
+        "protein_g": 3.36,
         "fat_g": 6.18,
-        "carbs_g": 17.7,
+        "carbs_g": 9.46,
         "micronutrients": {
           "b12_cobalamin_ug": 0.0,
           "b1_thiamine_mg": 0.128,
-          "b2_riboflavin_mg": 0.04,
-          "b3_niacin_mg": 1.792,
-          "b5_pantothenic_acid_mg": 0.026,
-          "b6_pyridoxine_mg": 0.009,
-          "calcium_mg": 138.2,
-          "copper_mg": 0.226,
-          "fiber_g": 6.945,
-          "folate_ug": 13.0,
-          "iron_mg": 1.598,
-          "magnesium_mg": 71.6,
-          "manganese_mg": 0.554,
+          "b2_riboflavin_mg": 0.036,
+          "b3_niacin_mg": 1.78,
+          "b5_pantothenic_acid_mg": 0.02,
+          "b6_pyridoxine_mg": 0.007,
+          "calcium_mg": 137.6,
+          "copper_mg": 0.222,
+          "fiber_g": 6.925,
+          "folate_ug": 12.8,
+          "iron_mg": 1.556,
+          "magnesium_mg": 71.4,
+          "manganese_mg": 0.546,
           "omega_3_g": 0.0,
           "omega_6_g": 1.169,
-          "phosphorus_mg": 173.6,
-          "potassium_mg": 102.05,
-          "selenium_ug": 11.135,
-          "sodium_mg": 17.75,
+          "phosphorus_mg": 173.2,
+          "potassium_mg": 96.85,
+          "selenium_ug": 11.055,
+          "sodium_mg": 17.35,
           "vitamin_a_ug": 0.0,
-          "vitamin_c_mg": 6.175,
+          "vitamin_c_mg": 6.125,
           "vitamin_d_iu": 0.0,
           "vitamin_e_mg": 0.122,
           "vitamin_k_ug": 0.0,
-          "zinc_mg": 0.981
+          "zinc_mg": 0.959
         }
       }
     },

@@ -13,6 +13,7 @@ from src.data_layer.models import Ingredient, NutritionProfile, UserProfile
 from src.llm.recipe_validator import validate_recipe_draft
 from src.llm.schemas import RecipeDraft
 from src.planning.allergens import (
+    dietary_flag_violations,
     exclusions_for_dietary_flags,
     expand_allergy_terms,
     is_classified,
@@ -142,6 +143,64 @@ class TestNoFalsePositives:
             nutrition=NutritionProfile(200, 12, 16, 1),
         )
         assert _recipe_contains_excluded_ingredient(recipe, profile.excluded_ingredients) is False
+
+
+class TestSoySauceGlutenAndHoneyVegan:
+    """S1 / H1: soy sauce is wheat_gluten; honey is excluded for vegan."""
+
+    def test_gluten_free_excludes_soy_sauce_not_tamari(self):
+        excluded = set(exclusions_for_dietary_flags(["gluten_free"]))
+        assert "soy sauce" in excluded
+        assert "tamari" not in excluded
+        assert dietary_flag_violations("gluten_free", ["soy sauce", "tofu not silken firm"]) == [
+            "soy sauce"
+        ]
+        assert dietary_flag_violations("gluten_free", ["tamari", "edamame beans"]) == []
+
+    def test_vegan_excludes_honey(self):
+        excluded = set(exclusions_for_dietary_flags(["vegan"]))
+        assert "honey" in excluded
+        assert dietary_flag_violations("vegan", ["honey", "chia seeds"]) == ["honey"]
+
+    def test_gluten_free_plan_never_assigns_soy_sauce_recipe(self):
+        """End-to-end: a gluten_free profile drops soy-sauce recipes via HC-1."""
+        profile = convert_profile(
+            UserProfile(
+                daily_calories=2000,
+                daily_protein_g=100,
+                daily_fat_g=(50, 80),
+                daily_carbs_g=250,
+                schedule={"12:00": 2},
+                liked_foods=[],
+                disliked_foods=[],
+                allergies=[],
+                dietary_flags=["gluten_free"],
+            ),
+            days=1,
+        )
+        assert "soy sauce" in profile.excluded_ingredients
+        soy_recipe = PlanningRecipe(
+            id="r_soy",
+            name="Soy bowl",
+            ingredients=[Ingredient(name="soy sauce", quantity=10, unit="g")],
+            cooking_time_minutes=5,
+            nutrition=NutritionProfile(50, 1, 0, 5),
+        )
+        tamari_recipe = PlanningRecipe(
+            id="r_tamari",
+            name="Tamari bowl",
+            ingredients=[Ingredient(name="tamari", quantity=10, unit="g")],
+            cooking_time_minutes=5,
+            nutrition=NutritionProfile(50, 1, 0, 5),
+        )
+        assert (
+            _recipe_contains_excluded_ingredient(soy_recipe, profile.excluded_ingredients)
+            is True
+        )
+        assert (
+            _recipe_contains_excluded_ingredient(tamari_recipe, profile.excluded_ingredients)
+            is False
+        )
 
 
 class TestCoverage:

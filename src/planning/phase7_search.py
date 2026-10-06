@@ -960,7 +960,7 @@ def run_meal_plan_search(
         report = build_report_fm3(
             pinned_conflicts=[{"day": 0, "slot_index": 0, "recipe_id": "", "violation_type": PIN_VIOLATION_DIRECT, "remaining_budget": {}}],
         )
-        return result_from_failure("TC-3", "FM-3", report, [], {}, 0, 0, None, {"attempts": 0, "backtracks": 0})
+        return result_from_failure("TC-2", "FM-3", report, [], {}, 0, 0, None, {"attempts": 0, "backtracks": 0})
     recipe_by_id = {r.id: r for r in recipe_pool}
 
     # Pinned pre-validation (Section 3.5)
@@ -976,7 +976,7 @@ def run_meal_plan_search(
         report = build_report_fm3(
             pinned_conflicts=[{"day": day_0, "slot_index": slot_0, "recipe_id": rid, "violation_type": PIN_VIOLATION_DIRECT, "remaining_budget": {}}],
         )
-        return result_from_failure("TC-3", "FM-3", report, [], {}, 0, 0, None, {"attempts": 0, "backtracks": 0})
+        return result_from_failure("TC-2", "FM-3", report, [], {}, 0, 0, None, {"attempts": 0, "backtracks": 0})
 
     # Attribution step 1: static FM-1 / FM-TAG-EMPTY before search (C2b).
     # Diagnose any unfillable non-pinned slot ahead of FC-5 look-ahead.
@@ -1020,7 +1020,7 @@ def run_meal_plan_search(
             attempt_count=0,
             backtrack_count=0,
             stats_dict={"attempts": 0, "backtracks": 0},
-            termination_code="TC-3",
+            termination_code="TC-2",
         )
 
     macro_bounds = precompute_macro_bounds(recipe_pool, max_slots=8)

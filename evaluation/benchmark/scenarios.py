@@ -547,7 +547,7 @@ S("Allergy list wipes the pool",
   "Allergic to dairy proteins and soy and I can't do whey or nuts. 2,000 kcal, 120 g protein, 50-80 g fat, but only these five recipes.",
   cats=["infeasible", "recipe-inventory", "preferences"], intended="infeasible",
   profile=P(2000, 120, 50, 80, excluded=["milk", "whey protein powder", "greek yogurt plain nonfat", "cottage cheese 1% fat",
-                                         "peanut butter", "almonds", "soy sauce", "tofu not silken firm", "edamame beans"]),
+                                         "peanut butter", "almonds", "soy sauce", "tamari", "tofu not silken firm", "edamame beans"]),
   days=[day(std3())],
   pool_ids=["bk_yogurt_berry_bowl", "bk_protein_oats", "sn_protein_shake", "dn_tofu_stir_fry", "sn_edamame_cup"],
   pool_note="five-recipe user list, every one contains an excluded ingredient")
@@ -562,11 +562,15 @@ S("Seven days, three recipes",
 
 S("Eight meals, 1,400 kcal",
   "My GI doctor wants 8 tiny meals, 1,400 kcal, 90 g protein, 35-50 g fat.",
-  cats=["borderline", "meal-timing", "recipe-inventory"], intended="borderline",
+  cats=["feasible", "meal-timing", "recipe-inventory"], intended="feasible",
   profile=P(1400, 90, 35, 50),
   days=[day([M(f"{h:02d}:00", 1, "snack") for h in (7, 9, 11, 13, 15, 17, 19, 21)])],
   pool_ids=CORE, pool_note=FULL,
-  spec_notes=["Exactly one set of eight distinct <=5-minute recipes fits; any quick recipe removed from the library breaks it."])
+  spec_notes=[
+      "Was borderline when only one 8-snack packing fit; after H1 (honey removed from "
+      "sn_chia_seed_water / bk_pb_banana_toast) the oracle enumeration caps with multiple "
+      "meal sets, so the intended class is feasible."
+  ])
 
 S("Bulk on vegan snacks only",
   "Vegan, 3,000 kcal, 120 g protein, 80-110 g fat, and all four meals must be 5-minute stuff.",
@@ -735,7 +739,7 @@ S("Excluded ingredients shrink pool",
                                          "milk", "butter", "whey protein powder", "greek yogurt plain nonfat", "low fat greek yogurt",
                                          "cottage cheese 1% fat", "sharp cheddar cheese", "feta cheese reduced fat",
                                          "cheddar cheese natural 50% reduced fat", "parmesan cheese hard", "parmesan grated",
-                                         "soy sauce", "tofu not silken firm", "edamame beans"]),
+                                         "soy sauce", "tamari", "tofu not silken firm", "edamame beans"]),
   days=rep(day(std3(b=(3, 3, 4))), 2), pool_ids=CORE, pool_note=FULL)
 
 # ======================================================================

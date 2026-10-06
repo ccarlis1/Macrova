@@ -243,10 +243,15 @@ preferences:
 
 **Calculation Logic**:
 1. **Filter out "to taste" ingredients** - Skip ingredients where `is_to_taste=True` (per KNOWLEDGE.md: these have negligible nutritional value)
-2. For each remaining ingredient, look up nutrition per unit in nutrition DB
-3. Convert quantity to match unit in DB (e.g., oz → g)
-4. Calculate: `nutrition = (per_unit_nutrition * quantity) / unit_size`
-5. Sum all ingredient nutrition values
+2. For each remaining ingredient, look up the nutrition record (`per_100g` preferred)
+3. Convert the authored `quantity`/`unit` to **grams** via `NutritionCalculator.to_grams`:
+   - `g` / `gram` / `grams` → quantity
+   - the record's `grams_per_unit[unit]` (unit aliases: cups→cup, tablespoon(s)→tbsp, teaspoon(s)→tsp, milliliter(s)→ml), plus explicit `scoop_size_g` / `large_size_g` on the record
+   - `oz` → 28.35 (mass)
+   - named `BASE_SERVING_WEIGHTS` entries for count units (`large`/`medium`/`small`)
+   - otherwise raise `IngredientNotFoundError` (no density guesses; the recipe leaves the planning pool with `warnings.nutrition`)
+4. Calculate: `nutrition = per_100g * (grams / 100)` (or the equivalent per-block size for legacy `per_scoop` / `per_large` records)
+5. Sum all ingredient nutrition values. Authored `quantity`/`unit` stay for display.
 
 **Example**:
 - 200g cream of rice: 200g × (370 cal/100g) = 740 calories

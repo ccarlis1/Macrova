@@ -24,7 +24,7 @@ Unblocks: FE-3, FE-7.
   - `len(assignments) <= total_servings`, and `total_servings >= 2`.
   - No duplicate `(date, slot_id)` within the batch.
   - No `(date, slot_id)` conflict against an existing active batch → 409 `BATCH_CONFLICT`.
-- On `DELETE /api/v1/recipes/{id}`, call `MealPrepBatchRepository.mark_orphaned_for_recipe(id)`; affected batches surface in `GET ... ?active=true` with status `orphaned`.
+- On `DELETE /api/v1/recipes/{id}`, call `MealPrepBatchRepository.mark_orphaned_for_recipe(id)`; orphaned batches appear only in `GET ... ?active=false` (via `list_all()`), never in `list_active()`, and the planner never sees them.
 - Error taxonomy via `src/api/error_mapping.py`: `RECIPE_NOT_FOUND`, `RECIPE_NOT_BATCHABLE`, `BATCH_CONFLICT`, `BATCH_INVALID`.
 - OpenAPI regenerated.
 - Integration tests cover the happy path, each validation failure, and the orphan hook.

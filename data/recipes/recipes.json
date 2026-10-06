@@ -353,16 +353,11 @@
           "name": "chia seeds",
           "quantity": 15.0,
           "unit": "g"
-        },
-        {
-          "name": "acai berry",
-          "quantity": 70.0,
-          "unit": "g"
         }
       ],
       "cooking_time_minutes": 5,
       "instructions": [
-        "Layer Greek yogurt with blackberries, almond butter, honey, chia seeds, and acai. Serve immediately."
+        "Layer Greek yogurt with blackberries, almond butter, honey, and chia seeds. Serve immediately."
       ]
     },
     {

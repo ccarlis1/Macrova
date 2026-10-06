@@ -66,13 +66,67 @@ def _build_calculator(nutrition_mode: str):
 
 
 def data_recipe(r):
-    ings = [Ingredient(name=i["name"], quantity=float(i["quantity"]), unit=i["unit"],
-                       normalized_unit="g", normalized_quantity=float(i["quantity"])) for i in r["ingredients"]]
-    kw = dict(id=r["id"], name=r["name"], ingredients=ings, cooking_time_minutes=r["cooking_time_minutes"], instructions=[])
+    """Build a data-layer Recipe using the real unit normalizer (not unit='g' stubs).
+
+    Ingredient *names* stay as authored so HC-1 / tag fixtures stay aligned; only
+    quantity/unit are normalized through IngredientValidator.
+    """
+    from src.ingestion.ingredient_validator import IngredientValidator
+    from src.data_layer.models import IngredientInput
+
+    validator = IngredientValidator()
+    ings = []
+    for i in r["ingredients"]:
+        unit = str(i.get("unit") or "g")
+        qty = float(i["quantity"])
+        name = str(i["name"])
+        if unit == "to taste":
+            ings.append(
+                Ingredient(
+                    name=name,
+                    quantity=0.0,
+                    unit="to taste",
+                    is_to_taste=True,
+                    normalized_unit="to taste",
+                    normalized_quantity=0.0,
+                )
+            )
+            continue
+        vres = validator.validate(IngredientInput(name=name, quantity=qty, unit=unit))
+        if vres.is_valid and vres.ingredient is not None:
+            v = vres.ingredient
+            ings.append(
+                Ingredient(
+                    name=name,
+                    quantity=float(v.normalized_quantity),
+                    unit=str(v.normalized_unit),
+                    is_to_taste=False,
+                    normalized_unit=str(v.normalized_unit),
+                    normalized_quantity=float(v.normalized_quantity),
+                )
+            )
+        else:
+            ings.append(
+                Ingredient(
+                    name=name,
+                    quantity=qty,
+                    unit=unit,
+                    normalized_unit=unit,
+                    normalized_quantity=qty,
+                )
+            )
+    kw = dict(
+        id=r["id"],
+        name=r["name"],
+        ingredients=ings,
+        cooking_time_minutes=r["cooking_time_minutes"],
+        instructions=[],
+    )
     try:
         return Recipe(**kw)
     except TypeError:
-        kw.pop("instructions"); return Recipe(**kw)
+        kw.pop("instructions")
+        return Recipe(**kw)
 
 
 def run(sc, nutrition_mode: str = "stored"):

@@ -4,52 +4,6 @@
   "ingredients": [
     {
       "aliases": [
-        "acai berry"
-      ],
-      "data_type": "SR Legacy",
-      "description": "Beverages, Acai berry drink, fortified",
-      "fdc_id": 173175,
-      "grams_per_unit": {
-        "g": 1.0
-      },
-      "ground_truth_unavailable": true,
-      "name": "acai berry",
-      "notes": "No SR Legacy/Foundation acai fruit puree in FDC; only fortified beverages. Fruit ground-truth unavailable \u2014 resolution still flagged as beverage-not-fruit when reviewing by hand.",
-      "per_100g": {
-        "b12_cobalamin_ug": 3.4,
-        "b1_thiamine_mg": 0.03,
-        "b2_riboflavin_mg": 0.04,
-        "b3_niacin_mg": 9.06,
-        "b5_pantothenic_acid_mg": 3.333,
-        "b6_pyridoxine_mg": 1.1,
-        "calcium_mg": 19.0,
-        "calories": 62.0,
-        "carbs_g": 12.83,
-        "copper_mg": 0.076,
-        "fat_g": 0.83,
-        "fiber_g": 1.2,
-        "folate_ug": 4.0,
-        "iron_mg": 0.16,
-        "magnesium_mg": 11.0,
-        "manganese_mg": 1.66,
-        "omega_3_g": 0.0,
-        "omega_6_g": 0.0,
-        "phosphorus_mg": 13.0,
-        "potassium_mg": 130.0,
-        "protein_g": 0.83,
-        "selenium_ug": 0.0,
-        "sodium_mg": 13.0,
-        "vitamin_a_ug": 485.0,
-        "vitamin_c_mg": 42.1,
-        "vitamin_d_iu": 0.0,
-        "vitamin_e_mg": 11.11,
-        "vitamin_k_ug": 16.7,
-        "zinc_mg": 0.11
-      },
-      "source": "evaluation/data_track/panel.json"
-    },
-    {
-      "aliases": [
         "almond butter unsalted"
       ],
       "data_type": "SR Legacy",
@@ -91,7 +45,8 @@
         "vitamin_k_ug": 0.0,
         "zinc_mg": 3.29
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -136,7 +91,8 @@
         "vitamin_k_ug": 0.0,
         "zinc_mg": 3.12
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -181,7 +137,8 @@
         "vitamin_k_ug": 41.6,
         "zinc_mg": 0.54
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -226,7 +183,8 @@
         "vitamin_k_ug": 21.0,
         "zinc_mg": 0.64
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -271,7 +229,8 @@
         "vitamin_k_ug": 0.0,
         "zinc_mg": 0.0
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -316,7 +275,8 @@
         "vitamin_k_ug": 21.0,
         "zinc_mg": 0.64
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -361,7 +321,8 @@
         "vitamin_k_ug": 0.5,
         "zinc_mg": 0.15
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -406,7 +367,8 @@
         "vitamin_k_ug": 0.5,
         "zinc_mg": 0.15
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -451,7 +413,8 @@
         "vitamin_k_ug": 2.9,
         "zinc_mg": 1.12
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -496,7 +459,8 @@
         "vitamin_k_ug": 7.4,
         "zinc_mg": 0.13
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -541,7 +505,8 @@
         "vitamin_k_ug": 2.3,
         "zinc_mg": 0.54
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -586,7 +551,8 @@
         "vitamin_k_ug": 19.8,
         "zinc_mg": 0.25
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -631,7 +597,8 @@
         "vitamin_k_ug": 19.3,
         "zinc_mg": 0.16
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -676,7 +643,8 @@
         "vitamin_k_ug": 7.0,
         "zinc_mg": 0.09
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -722,7 +690,8 @@
         "vitamin_k_ug": 13.2,
         "zinc_mg": 0.24
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -767,7 +736,8 @@
         "vitamin_k_ug": 15.5,
         "zinc_mg": 0.27
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -813,7 +783,8 @@
         "vitamin_k_ug": 0.6,
         "zinc_mg": 1.82
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -858,7 +829,8 @@
         "vitamin_k_ug": 7.9,
         "zinc_mg": 0.17
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -903,7 +875,8 @@
         "vitamin_k_ug": 0.0,
         "zinc_mg": 4.58
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -949,7 +922,8 @@
         "vitamin_k_ug": 0.0,
         "zinc_mg": 0.68
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -994,7 +968,8 @@
         "vitamin_k_ug": 2.9,
         "zinc_mg": 1.58
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -1039,7 +1014,8 @@
         "vitamin_k_ug": 3.4,
         "zinc_mg": 0.63
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -1085,7 +1061,8 @@
         "vitamin_k_ug": 7.3,
         "zinc_mg": 3.31
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -1130,7 +1107,8 @@
         "vitamin_k_ug": 0.1,
         "zinc_mg": 0.38
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -1177,7 +1155,8 @@
         "vitamin_k_ug": 0.1,
         "zinc_mg": 1.12
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -1222,7 +1201,8 @@
         "vitamin_k_ug": 7.2,
         "zinc_mg": 0.17
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -1267,7 +1247,8 @@
         "vitamin_k_ug": 26.7,
         "zinc_mg": 1.37
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -1312,7 +1293,8 @@
         "vitamin_k_ug": 0.7,
         "zinc_mg": 2.3
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -1357,7 +1339,8 @@
         "vitamin_k_ug": 0.3,
         "zinc_mg": 1.29
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -1402,7 +1385,8 @@
         "vitamin_k_ug": 1.8,
         "zinc_mg": 2.88
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -1447,7 +1431,8 @@
         "vitamin_k_ug": 1.7,
         "zinc_mg": 1.16
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -1493,7 +1478,8 @@
         "vitamin_k_ug": 0.0,
         "zinc_mg": 0.52
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -1539,7 +1525,8 @@
         "vitamin_k_ug": 0.8,
         "zinc_mg": 4.79
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -1585,7 +1572,8 @@
         "vitamin_k_ug": 0.5,
         "zinc_mg": 4.97
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -1631,7 +1619,8 @@
         "vitamin_k_ug": 0.0,
         "zinc_mg": 0.22
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -1676,7 +1665,8 @@
         "vitamin_k_ug": 0.0,
         "zinc_mg": 0.4
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -1721,7 +1711,8 @@
         "vitamin_k_ug": 0.0,
         "zinc_mg": 0.5
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -1766,7 +1757,8 @@
         "vitamin_k_ug": 40.3,
         "zinc_mg": 0.14
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -1812,7 +1804,8 @@
         "vitamin_k_ug": 0.0,
         "zinc_mg": 0.05
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -1857,7 +1850,8 @@
         "vitamin_k_ug": 140.3,
         "zinc_mg": 0.2
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -1903,7 +1897,8 @@
         "vitamin_k_ug": 0.2,
         "zinc_mg": 0.6
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -1949,7 +1944,8 @@
         "vitamin_k_ug": 0.0,
         "zinc_mg": 0.0
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -1994,7 +1990,8 @@
         "vitamin_k_ug": 0.1,
         "zinc_mg": 0.42
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -2039,7 +2036,8 @@
         "vitamin_k_ug": 2.0,
         "zinc_mg": 3.64
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -2085,7 +2083,8 @@
         "vitamin_k_ug": 60.2,
         "zinc_mg": 0.0
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -2130,7 +2129,8 @@
         "vitamin_k_ug": 2.6,
         "zinc_mg": 0.08
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -2175,7 +2175,8 @@
         "vitamin_k_ug": 1.7,
         "zinc_mg": 2.75
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -2220,7 +2221,8 @@
         "vitamin_k_ug": 1.7,
         "zinc_mg": 4.2
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -2265,7 +2267,8 @@
         "vitamin_k_ug": 1640.0,
         "zinc_mg": 1.07
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -2310,7 +2313,8 @@
         "vitamin_k_ug": 0.1,
         "zinc_mg": 1.41
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -2355,7 +2359,8 @@
         "vitamin_k_ug": 0.3,
         "zinc_mg": 2.51
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -2400,7 +2405,8 @@
         "vitamin_k_ug": 2.0,
         "zinc_mg": 0.3
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -2445,7 +2451,8 @@
         "vitamin_k_ug": 0.0,
         "zinc_mg": 0.0
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -2490,7 +2497,8 @@
         "vitamin_k_ug": 7.4,
         "zinc_mg": 0.13
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -2535,7 +2543,8 @@
         "vitamin_k_ug": 1.6,
         "zinc_mg": 3.2
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -2580,7 +2589,8 @@
         "vitamin_k_ug": 0.0,
         "zinc_mg": 0.0
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -2625,7 +2635,8 @@
         "vitamin_k_ug": 0.0,
         "zinc_mg": 0.0
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -2670,7 +2681,8 @@
         "vitamin_k_ug": 0.1,
         "zinc_mg": 0.67
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -2715,7 +2727,8 @@
         "vitamin_k_ug": 4.3,
         "zinc_mg": 0.18
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -2760,7 +2773,8 @@
         "vitamin_k_ug": 13.0,
         "zinc_mg": 0.19
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -2805,7 +2819,8 @@
         "vitamin_k_ug": 13.6,
         "zinc_mg": 0.0
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -2850,7 +2865,8 @@
         "vitamin_k_ug": 2.4,
         "zinc_mg": 3.74
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -2895,7 +2911,8 @@
         "vitamin_k_ug": 0.7,
         "zinc_mg": 1.04
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -2940,7 +2957,8 @@
         "vitamin_k_ug": 0.0,
         "zinc_mg": 0.43
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -2985,7 +3003,8 @@
         "vitamin_k_ug": 0.3,
         "zinc_mg": 0.24
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -3030,7 +3049,8 @@
         "vitamin_k_ug": 482.9,
         "zinc_mg": 0.53
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -3075,7 +3095,8 @@
         "vitamin_k_ug": 1.8,
         "zinc_mg": 0.3
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -3120,7 +3141,8 @@
         "vitamin_k_ug": 1.4,
         "zinc_mg": 0.33
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -3166,7 +3188,8 @@
         "vitamin_k_ug": 0.0,
         "zinc_mg": 1.57
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -3212,7 +3235,8 @@
         "vitamin_k_ug": 7.9,
         "zinc_mg": 0.17
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -3257,7 +3281,8 @@
         "vitamin_k_ug": 0.0,
         "zinc_mg": 1.31
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -3303,7 +3328,8 @@
         "vitamin_k_ug": 0.1,
         "zinc_mg": 0.37
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -3348,7 +3374,8 @@
         "vitamin_k_ug": 0.0,
         "zinc_mg": 0.94
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -3393,7 +3420,8 @@
         "vitamin_k_ug": 0.0,
         "zinc_mg": 0.01
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -3438,7 +3466,8 @@
         "vitamin_k_ug": 46.5,
         "zinc_mg": 8.72
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -3483,7 +3512,8 @@
         "vitamin_k_ug": 46.5,
         "zinc_mg": 8.72
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     },
     {
       "aliases": [
@@ -3528,10 +3558,12 @@
         "vitamin_k_ug": 0.0,
         "zinc_mg": 0.83
       },
-      "source": "evaluation/data_track/panel.json"
+      "source": "evaluation/data_track/panel.json",
+      "reviewed": null
     }
   ],
   "notes": "Draft per-100g table for committed + benchmark ingredients (Q2=d+a), promoted from the draft panel; pending human FDC review. Default local NutritionDB source. USDA lookups for new names must pass macro plausibility before caching.",
   "schema_version": 1,
-  "source_panel": "evaluation/data_track/panel.json"
+  "source_panel": "evaluation/data_track/panel.json",
+  "review_notes": "Per-entry reviewed dates; flip review_status to reviewed only when every entry has reviewed set."
 }

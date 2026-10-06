@@ -13,6 +13,7 @@ from src.planning.phase7_search import (
     SearchStats,
     _CandidateCacheEntry,
     _decision_order,
+    _uncomplete_day,
     _unwind_to,
     _update_weekly_after_day,
     run_meal_plan_search,
@@ -938,6 +939,26 @@ class TestPlannerStateInvariants:
         with pytest.raises(PlannerStateError, match="negative weekly macro"):
             _validate_planner_state(daily_trackers, wt, completed_days, 1, schedule)
 
+    def test_uncomplete_day_raises_when_completed_without_tracker(self):
+        from src.planning.phase0_models import WeeklyTracker
+        from src.data_layer.models import NutritionProfile
+
+        schedule = _make_schedule(ndays=2, slots_per_day=2)
+        profile = _make_profile(schedule)
+        wt = WeeklyTracker(
+            weekly_totals=NutritionProfile(2000.0, 100.0, 65.0, 250.0),
+            days_completed=1,
+            days_remaining=1,
+            carryover_needs={},
+        )
+        daily_trackers: dict = {}
+        completed_days = {0}
+        with pytest.raises(PlannerStateError, match="completed day 0 has no daily tracker"):
+            _uncomplete_day(
+                daily_trackers, wt, 0, schedule, profile, completed_days
+            )
+        assert 0 in completed_days  # must not silently discard
+
 
 def _make_full_tracker(slots_total: int):
     from src.planning.phase0_models import DailyTracker
@@ -1182,6 +1203,10 @@ class TestFullyPinnedDayValidation:
         day 0 before the pinned day is ever completed. This test forces the loose top-M
         bound, disables per-slot filtering, and prefers low-iron candidates first so
         search still exercises `_uncomplete_day` across a pin day end-to-end.
+
+        B2 mutation check: disabling the C3 fully-pinned unwind loop in `_unwind_to`
+        fails ``assert 1 in uncompleted_days`` — the test already catches the
+        regression, so no further weekly-total assertion was added.
         """
         from src.planning import phase7_search as p7
 

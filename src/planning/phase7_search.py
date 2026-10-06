@@ -362,8 +362,9 @@ def _uncomplete_day(
         return
     tracker = daily_trackers.get(day_index)
     if tracker is None:
-        completed_days.discard(day_index)
-        return
+        raise PlannerStateError(
+            f"completed day {day_index} has no daily tracker; cannot uncomplete"
+        )
     D = len(schedule)
     valid = list(MicronutrientProfile.__dataclass_fields__.keys())
     kwargs = {k: tracker.micronutrients_consumed.get(k, 0.0) for k in valid}

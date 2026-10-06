@@ -577,6 +577,18 @@ def diagnose_exhausted_search(
                     )
                 if unpinned.feasible:
                     code = "FM-3"
+            pinned_slot_rows: List[Dict[str, Any]] = []
+            provenance = getattr(profile, "pin_provenance", None) or {}
+            for (_, s), rid in sorted(day_pins.items()):
+                row: Dict[str, Any] = {"slot_index": s, "recipe_id": rid, "source": "pin"}
+                prov = provenance.get((d + 1, s)) or {}
+                if prov.get("source") == "batch":
+                    row["source"] = "batch"
+                    if prov.get("batch_id") is not None:
+                        row["batch_id"] = str(prov["batch_id"])
+                elif prov.get("source"):
+                    row["source"] = str(prov["source"])
+                pinned_slot_rows.append(row)
             return Attribution(
                 status="attributed",
                 code=code,
@@ -584,10 +596,7 @@ def diagnose_exhausted_search(
                 details={
                     "infeasible_day": d,
                     "has_pins": bool(day_pins),
-                    "pinned_slots": [
-                        {"slot_index": s, "recipe_id": rid}
-                        for (_, s), rid in sorted(day_pins.items())
-                    ],
+                    "pinned_slots": pinned_slot_rows,
                 },
                 nodes=nodes,
                 step="day_check",

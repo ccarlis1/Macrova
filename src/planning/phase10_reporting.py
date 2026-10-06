@@ -42,6 +42,10 @@ class Failure:
 
 _FIX_HINTS: Dict[str, str] = {
     "FM-1": "No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.",
+    "FM-2": (
+        "No combination of recipes meets this day's calorie and macro targets. "
+        "Widen the macro ranges or add recipes that fit."
+    ),
     "FM-3": "A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.",
     "FM-4": "Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.",
     "FM-5": "Planning hit the attempt limit. Simplify the schedule, widen macro targets, or reduce constraints.",
@@ -49,6 +53,12 @@ _FIX_HINTS: Dict[str, str] = {
     "FM-BATCH-CONFLICT": "Batch locks conflict for this slot. Remove one lock so only one batch assignment remains.",
     "FM-MACRO-INFEASIBLE": "Daily macro targets are infeasible. Widen macro ranges or adjust meal constraints.",
 }
+
+# FM-3 when any pinned_slots entry came from a meal-prep batch lock.
+FM3_BATCH_FIX_HINT = (
+    "A meal-prep batch lock conflicts with planning rules. "
+    "Change the batch assignment, pick a compatible recipe, or relax constraints."
+)
 
 
 # FM-1 from attribution step 3: slots have candidates, but HC-8 blocks every day sequence.
@@ -213,23 +223,30 @@ def _fm3_failures_from_report(report: Dict[str, Any]) -> List[Dict[str, Any]]:
             details["constraint"] = conflict.get("constraint")
         if conflict.get("pinned_slots") is not None:
             details["pinned_slots"] = conflict.get("pinned_slots")
-        out.append(
-            normalize_failure_object(
-                {
-                    "code": "FM-3",
-                    "message": "Pinned assignment conflicts with planner constraints.",
-                    "day_index": day_index,
-                    "slot_index": slot_index,
-                    "details": details,
-                    "date": "" if day_index is None else f"day-{day_index + 1}",
-                    "slot_id": (
-                        ""
-                        if day_index is None or slot_index is None
-                        else f"day-{day_index + 1}-slot-{slot_index}"
-                    ),
-                }
-            )
+        pinned_slots = details.get("pinned_slots") or []
+        has_batch = any(
+            isinstance(p, dict) and p.get("source") == "batch" for p in pinned_slots
         )
+        failure = normalize_failure_object(
+            {
+                "code": "FM-3",
+                "message": "Pinned assignment conflicts with planner constraints.",
+                "day_index": day_index,
+                "slot_index": slot_index,
+                "details": details,
+                "date": "" if day_index is None else f"day-{day_index + 1}",
+                "slot_id": (
+                    ""
+                    if day_index is None or slot_index is None
+                    else f"day-{day_index + 1}-slot-{slot_index}"
+                ),
+                "fix_hint": FM3_BATCH_FIX_HINT if has_batch else fix_hint_for_code("FM-3"),
+            }
+        )
+        # Downstream FM-3 is day-level: keep slot_index explicitly null for clients.
+        if slot_index is None and "slot_index" not in failure:
+            failure["slot_index"] = None
+        out.append(failure)
     return out
 
 
@@ -502,8 +519,15 @@ def _deficient_nutrients_list(
     D: int,
     max_daily_achievable: Optional[Dict[str, Dict[int, float]]] = None,
     max_slots: int = 8,
+    *,
+    achieved_kind: str = "actual",
+    achieved_totals: Optional[Dict[str, float]] = None,
 ) -> List[Dict[str, Any]]:
-    """Compute deficient nutrients: achieved, required, deficit, classification (marginal vs structural)."""
+    """Compute deficient nutrients: achieved, required, deficit, classification (marginal vs structural).
+
+    ``achieved_kind`` is ``"actual"`` (search-time weekly totals) or ``"upper_bound"``
+    (pre-search structural ceiling from ``achieved_totals`` / per-day MDA × D).
+    """
     from src.planning.phase0_models import micronutrient_profile_to_dict
 
     tracked = profile.micronutrient_targets
@@ -517,14 +541,28 @@ def _deficient_nutrients_list(
             continue
         required = weekly_minimum_total(daily_rdi, D, tau)
         full_req = weekly_minimum_total(daily_rdi, D, 1.0)
-        achieved = micro.get(n, 0.0)
+        if achieved_kind == "upper_bound" and achieved_totals is not None:
+            achieved = float(achieved_totals.get(n, 0.0))
+        elif achieved_kind == "upper_bound" and max_daily_achievable and n in max_daily_achievable:
+            # Fallback: max over slot counts × D when per-day totals are unavailable.
+            mda_one_day = max(
+                (max_daily_achievable[n].get(s, 0.0) for s in range(1, max_slots + 1)),
+                default=0.0,
+            )
+            achieved = mda_one_day * D
+        else:
+            achieved = micro.get(n, 0.0)
         deficit = required - achieved
         if deficit <= 0:
             continue
         mda_one_day = 0.0
         if max_daily_achievable and n in max_daily_achievable:
             mda_one_day = max(max_daily_achievable[n].get(s, 0.0) for s in range(1, max_slots + 1))
-        classification = "marginal" if deficit <= mda_one_day * 1.0 else "structural"
+        if achieved_kind == "upper_bound":
+            # Ceiling already below the floor — structural by definition.
+            classification = "structural"
+        else:
+            classification = "marginal" if deficit <= mda_one_day * 1.0 else "structural"
         out.append({
             "nutrient": n,
             "achieved": achieved,
@@ -532,6 +570,7 @@ def _deficient_nutrients_list(
             "full_req": full_req,
             "deficit": deficit,
             "classification": classification,
+            "achieved_kind": achieved_kind,
         })
     return out
 
@@ -541,9 +580,19 @@ def build_report_fm4(
     profile: PlanningUserProfile,
     D: int,
     max_daily_achievable: Optional[Dict[str, Dict[int, float]]] = None,
+    *,
+    achieved_kind: str = "actual",
+    achieved_totals: Optional[Dict[str, float]] = None,
 ) -> Dict[str, Any]:
     """FM-4: Weekly micronutrient infeasibility. Spec Section 11."""
-    deficient_nutrients = _deficient_nutrients_list(weekly_tracker, profile, D, max_daily_achievable)
+    deficient_nutrients = _deficient_nutrients_list(
+        weekly_tracker,
+        profile,
+        D,
+        max_daily_achievable,
+        achieved_kind=achieved_kind,
+        achieved_totals=achieved_totals,
+    )
     return {"deficient_nutrients": deficient_nutrients}
 
 

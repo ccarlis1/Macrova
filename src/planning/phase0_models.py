@@ -5,7 +5,7 @@ No search, constraint, or scoring logic — data structures and validation only.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Tuple, NamedTuple
+from typing import Any, Dict, List, Optional, Set, Tuple, NamedTuple
 
 from src.data_layer.models import NutritionProfile, MicronutrientProfile, Ingredient
 
@@ -104,6 +104,9 @@ class PlanningUserProfile:
     # Canonical meal-prep locks addressed as (day_index, slot_index).
     # Planner resolves these into pinned_assignments before search.
     batch_locks: List["PlanningBatchLock"] = field(default_factory=list)
+    # Provenance for effective pins after batch merge: (day_1based, slot_index) ->
+    # {"source": "pin"|"batch", "batch_id": ...} (batch_id only when source is batch).
+    pin_provenance: Dict[Tuple[int, int], Dict[str, Any]] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

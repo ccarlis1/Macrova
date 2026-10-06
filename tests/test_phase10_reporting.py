@@ -251,17 +251,59 @@ def test_normalize_planner_report_maps_legacy_codes():
             "pinned_conflicts": [
                 {
                     "day": 0,
-                    "slot_index": 0,
-                    "recipe_id": "r1",
+                    "slot_index": None,
+                    "recipe_id": None,
                     "violation_type": "downstream",
                     "constraint": "calories",
+                    "pinned_slots": [
+                        {"slot_index": 0, "recipe_id": "r1", "source": "pin"},
+                        {"slot_index": 1, "recipe_id": "r2", "source": "pin"},
+                    ],
                 }
             ],
             "remaining_budget": {"calories": -400.0},
         },
     )
-    assert fm3_downstream["failures"][0]["details"]["constraint"] == "calories"
-    assert fm3_downstream["failures"][0]["details"]["violation_type"] == "downstream"
+    hit = fm3_downstream["failures"][0]
+    assert hit["code"] == "FM-3"
+    assert hit["slot_index"] is None
+    assert hit["slot_id"] == ""
+    assert hit["details"]["constraint"] == "calories"
+    assert hit["details"]["violation_type"] == "downstream"
+    assert hit["details"]["pinned_slots"] == [
+        {"slot_index": 0, "recipe_id": "r1", "source": "pin"},
+        {"slot_index": 1, "recipe_id": "r2", "source": "pin"},
+    ]
+    assert hit["fix_hint"] == fix_hint_for_code("FM-3")
+
+    fm3_batch = normalize_planner_report(
+        failure_mode="FM-3",
+        report={
+            "pinned_conflicts": [
+                {
+                    "day": 0,
+                    "slot_index": None,
+                    "recipe_id": None,
+                    "violation_type": "downstream",
+                    "constraint": "protein",
+                    "pinned_slots": [
+                        {
+                            "slot_index": 0,
+                            "recipe_id": "r1",
+                            "source": "batch",
+                            "batch_id": "b1",
+                        },
+                    ],
+                }
+            ],
+            "remaining_budget": {},
+        },
+    )
+    from src.planning.phase10_reporting import FM3_BATCH_FIX_HINT
+
+    assert fm3_batch["failures"][0]["fix_hint"] == FM3_BATCH_FIX_HINT
+    assert fm3_batch["failures"][0]["details"]["pinned_slots"][0]["source"] == "batch"
+    assert fm3_batch["failures"][0]["details"]["pinned_slots"][0]["batch_id"] == "b1"
 
     fm4 = normalize_planner_report(
         failure_mode="FM-4",

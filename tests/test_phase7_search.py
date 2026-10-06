@@ -1130,8 +1130,10 @@ class TestFullyPinnedDayValidation:
         assert stats.total_attempts == 0
         deficient = result.report.get("deficient_nutrients", [])
         fiber_entry = next(e for e in deficient if e["nutrient"] == "fiber_g")
-        # Pre-search: nothing assigned yet; classification is structural vs tight day max.
-        assert fiber_entry["achieved"] == 0.0
+        # Pre-search: achieved is the structural upper bound (sum of per-day maxima).
+        assert fiber_entry["achieved_kind"] == "upper_bound"
+        assert fiber_entry["achieved"] > 0.0
+        assert fiber_entry["achieved"] < fiber_entry["required"]
         assert fiber_entry["required"] == pytest.approx(30.0)
         assert fiber_entry["classification"] == "structural"
     def test_last_day_fully_pinned_succeeds(self):

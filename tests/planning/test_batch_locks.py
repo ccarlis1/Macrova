@@ -197,3 +197,16 @@ def test_fully_batch_locked_day_that_misses_macros_returns_fm3():
     assert len(conflicts) == 1
     assert conflicts[0]["violation_type"] == "downstream"
     assert {p["slot_index"] for p in conflicts[0]["pinned_slots"]} == {0, 1}
+    by_slot = {p["slot_index"]: p for p in conflicts[0]["pinned_slots"]}
+    assert by_slot[0]["source"] == "batch"
+    assert by_slot[0]["batch_id"] == "batch-a"
+    assert by_slot[1]["source"] == "batch"
+    assert by_slot[1]["batch_id"] == "batch-b"
+    failures = result.report.get("failures", [])
+    assert failures
+    assert failures[0]["slot_index"] is None
+    assert failures[0]["slot_id"] == ""
+    assert failures[0]["details"]["pinned_slots"]
+    from src.planning.phase10_reporting import FM3_BATCH_FIX_HINT
+
+    assert failures[0]["fix_hint"] == FM3_BATCH_FIX_HINT

@@ -645,6 +645,24 @@ def _tag_empty_failure(
     )
 
 
+def _pinned_slot_entry(
+    profile: PlanningUserProfile,
+    day_index: int,
+    slot_idx: int,
+    recipe_id: str,
+) -> Dict[str, Any]:
+    """Build a pinned_slots row with pin/batch provenance when available."""
+    entry: Dict[str, Any] = {"slot_index": slot_idx, "recipe_id": recipe_id}
+    prov = (getattr(profile, "pin_provenance", None) or {}).get((day_index + 1, slot_idx))
+    if isinstance(prov, dict) and prov.get("source"):
+        entry["source"] = str(prov["source"])
+        if prov.get("source") == "batch" and prov.get("batch_id") is not None:
+            entry["batch_id"] = str(prov["batch_id"])
+    else:
+        entry["source"] = "pin"
+    return entry
+
+
 def _downstream_pin_conflict_result(
     *,
     day_index: int,
@@ -661,7 +679,7 @@ def _downstream_pin_conflict_result(
 ) -> MealPlanResult:
     """FM-3 downstream: day-level pin conflict (fully pinned pre-search or attribution)."""
     pinned_slots = [
-        {"slot_index": slot_idx, "recipe_id": rid}
+        _pinned_slot_entry(profile, day_index, slot_idx, rid)
         for slot_idx in range(len(schedule[day_index]))
         for rid in [_get_pinned_recipe_id(profile, day_index, slot_idx)]
         if rid is not None
@@ -1021,7 +1039,21 @@ def run_meal_plan_search(
             days_remaining=D,
             carryover_needs={n: 0.0 for n in profile.micronutrient_targets},
         )
-        report = build_report_fm4(zero_weekly, profile, D, max_daily_achievable)
+        # Pre-search FM-4: report the structural upper bound (sum of per-day maxima),
+        # not zeros from an empty weekly tracker.
+        ub_totals = (
+            dict(floor_bounds.suffix_max[0])
+            if getattr(floor_bounds, "suffix_max", None)
+            else {}
+        )
+        report = build_report_fm4(
+            zero_weekly,
+            profile,
+            D,
+            max_daily_achievable,
+            achieved_kind="upper_bound",
+            achieved_totals=ub_totals,
+        )
         return result_from_failure(
             "TC-2", "FM-4", report, list(assignments), dict(daily_trackers), 0, 0, None,
             {"attempts": 0, "backtracks": 0},

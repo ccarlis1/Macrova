@@ -334,7 +334,7 @@ def validate_recipe_draft(
     flagged: List[str] = []
     if draft_tags is not None:
         for f in getattr(draft_tags, "dietary_flags", None) or []:
-            flagged.append(str(f))
+            flagged.append(str(getattr(f, "value", f)))
         by_type = getattr(draft_tags, "tag_slugs_by_type", None) or {}
         for slug in by_type.get("constraint") or []:
             s = str(slug).strip().lower().replace("-", "_")

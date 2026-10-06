@@ -13,6 +13,7 @@ from src.data_layer.models import Ingredient, NutritionProfile, UserProfile
 from src.llm.recipe_validator import validate_recipe_draft
 from src.llm.schemas import RecipeDraft
 from src.planning.allergens import (
+    exclusions_for_dietary_flags,
     expand_allergy_terms,
     is_classified,
     unmatched_exclusion_terms,
@@ -162,7 +163,9 @@ class TestCoverage:
             if not intent:
                 continue
             terms = sc["profile"].get("excluded_ingredients", [])
-            expanded = set(expand_allergy_terms(terms))
+            expanded = set(expand_allergy_terms(terms)) | set(
+                exclusions_for_dietary_flags(sc["profile"].get("dietary_flags") or [])
+            )
             missing = sorted(
                 n.strip().lower() for n in intent if n.strip().lower() not in expanded
             )

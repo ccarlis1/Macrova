@@ -170,6 +170,7 @@ VEGETARIAN_EXCLUDED_INGREDIENTS: frozenset = frozenset(
     {
         "chicken breast",
         "chicken thigh",
+        "chicken thigh skin removed",
         "turkey",
         "turkey breast lunchmeat reduced fat",
         "ground turkey",
@@ -185,6 +186,7 @@ VEGETARIAN_EXCLUDED_INGREDIENTS: frozenset = frozenset(
         "salmon canned",
         "tilapia",
         "tuna",
+        "tuna sashimi",
         "shrimp",
     }
 )
@@ -214,15 +216,25 @@ VEGAN_EXCLUDED_INGREDIENTS: frozenset = frozenset(
 # dietary_flags -> allergy-class terms (expanded via expand_allergy_terms) or animal lists.
 _DIETARY_FLAG_ALLERGY_TERMS: Dict[str, Tuple[str, ...]] = {
     "gluten_free": ("gluten",),
-    "gluten-free": ("gluten",),
     "dairy_free": ("milk",),
-    "dairy-free": ("milk",),
 }
 
 _DIETARY_FLAG_ANIMAL_LISTS: Dict[str, frozenset] = {
     "vegetarian": VEGETARIAN_EXCLUDED_INGREDIENTS,
     "vegan": VEGAN_EXCLUDED_INGREDIENTS,
 }
+
+
+def dietary_flag_key(raw: object) -> str:
+    """Normalize a dietary flag (enum member or string) to its snake_case key.
+
+    Raises ValueError for a flag with no exclusion rule, so a safety flag can
+    never be dropped silently (``str(DietaryFlag.gluten_free)`` is not a key).
+    """
+    flag = _normalize_name(getattr(raw, "value", raw)).replace("-", "_")
+    if flag not in _DIETARY_FLAG_ALLERGY_TERMS and flag not in _DIETARY_FLAG_ANIMAL_LISTS:
+        raise ValueError(f"unknown dietary flag {raw!r}")
+    return flag
 
 
 def exclusions_for_dietary_flags(
@@ -238,9 +250,8 @@ def exclusions_for_dietary_flags(
     out: Set[str] = set()
     allergy_terms: List[str] = []
     for raw in flags:
-        flag = _normalize_name(raw).replace("-", "_")
-        hyphen = flag.replace("_", "-")
-        terms = _DIETARY_FLAG_ALLERGY_TERMS.get(flag) or _DIETARY_FLAG_ALLERGY_TERMS.get(hyphen)
+        flag = dietary_flag_key(raw)
+        terms = _DIETARY_FLAG_ALLERGY_TERMS.get(flag)
         if terms:
             allergy_terms.extend(terms)
         if flag in _DIETARY_FLAG_ANIMAL_LISTS:
@@ -257,8 +268,7 @@ def dietary_flag_violations(
     path: Optional[str] = None,
 ) -> List[str]:
     """Return ingredient names that contradict a dietary flag (sorted)."""
-    flag_n = _normalize_name(flag).replace("-", "_")
-    blocked = set(exclusions_for_dietary_flags([flag_n], path=path))
+    blocked = set(exclusions_for_dietary_flags([flag], path=path))
     hits = sorted(
         {
             _normalize_name(n)

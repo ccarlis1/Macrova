@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
-from src.planning.allergens import dietary_flag_violations
+from src.planning.allergens import (
+    VEGAN_EXCLUDED_INGREDIENTS,
+    VEGETARIAN_EXCLUDED_INGREDIENTS,
+    dietary_flag_violations,
+)
 
 _REPO = Path(__file__).resolve().parents[1]
 _FLAG_KEYS = {"gluten_free", "dairy_free", "vegetarian", "vegan"}
@@ -85,3 +90,48 @@ def test_dietary_flag_consistency_over_committed_and_benchmark_libraries():
     assert not unexpected, "Unexpected dietary-flag inconsistencies:\n" + "\n".join(
         unexpected[:40]
     )
+
+
+_MEAT_WORDS = re.compile(
+    r"chicken|beef|pork|turkey|bacon|\bham\b|salami|sausage|lamb|steak|jerky|fish|salmon|tuna|"
+    r"tilapia|\bcod\b|shrimp|prawn|crab|lobster|anchov|sardine|pepperoni|prosciutto|gelatin|"
+    r"lunchmeat|veal|duck"
+)
+_ANIMAL_WORDS = re.compile(
+    r"egg|milk|cheese|yogurt|whey|butter|cream|casein|honey|ghee|kefir|mayonnaise|parmesan|feta|"
+    r"cheddar|mozzarella|ricotta"
+)
+# Names that match a keyword above but are not animal products (or are an open spec question).
+_NOT_ANIMAL = {
+    "almond butter unsalted": "plant nut butter",
+    "peanut butter": "plant nut butter",
+    "cream of rice dry": "rice cereal",
+    "honey": "spec question: whether vegan excludes honey is undecided",
+}
+
+
+def _all_committed_ingredient_names() -> set[str]:
+    names: set[str] = set()
+    for path in (_REPO / "data/recipes/recipes.json", _REPO / "evaluation/benchmark/recipes.json"):
+        payload = json.loads(path.read_text())
+        for recipe in payload.get("recipes", payload if isinstance(payload, list) else []):
+            names.update(n.strip().lower() for n in _ingredient_names_from_recipe(recipe))
+    return names
+
+
+def test_vegetarian_and_vegan_lists_cover_committed_animal_ingredients():
+    """The animal-product lists are closed; a new meat/dairy/egg ingredient must be added to them.
+
+    Without this, a recipe with e.g. 'chicken thigh skin removed' passes a vegetarian flag.
+    """
+    names = _all_committed_ingredient_names()
+    missing_veg = sorted(n for n in names if _MEAT_WORDS.search(n) and n not in VEGETARIAN_EXCLUDED_INGREDIENTS)
+    missing_vegan = sorted(
+        n
+        for n in names
+        if (_MEAT_WORDS.search(n) or _ANIMAL_WORDS.search(n))
+        and n not in VEGAN_EXCLUDED_INGREDIENTS
+        and n not in _NOT_ANIMAL
+    )
+    assert not missing_veg, f"add to VEGETARIAN_EXCLUDED_INGREDIENTS: {missing_veg}"
+    assert not missing_vegan, f"add to VEGAN_EXCLUDED_INGREDIENTS (or _NOT_ANIMAL with a reason): {missing_vegan}"

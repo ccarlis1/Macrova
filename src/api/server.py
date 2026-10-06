@@ -775,7 +775,7 @@ def _build_user_profile(
         disliked_foods=[str(food) for food in request.disliked_foods],
         allergies=[str(allergen) for allergen in request.allergies],
         dietary_flags=(
-            [str(f) for f in request.dietary_flags]
+            [str(getattr(f, "value", f)) for f in request.dietary_flags]
             if request.dietary_flags is not None
             else None
         ),

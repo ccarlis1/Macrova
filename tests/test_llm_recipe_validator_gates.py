@@ -11,7 +11,7 @@ from src.llm.recipe_validator import (
     validate_recipe_drafts,
 )
 from src.llm.recovery_types import GapSpec
-from src.llm.schemas import RecipeDraft
+from src.llm.schemas import DietaryFlag, RecipeDraft
 from src.providers.ingredient_provider import IngredientDataProvider
 
 
@@ -79,9 +79,9 @@ def draft(
 def test_exclusion_match_is_class_aware():
     assert ingredient_matches_exclusion("peanut butter", ["peanuts"]) == "peanuts"
     assert ingredient_matches_exclusion("eggs", ["egg"]) == "egg"
-    assert ingredient_matches_exclusion("large eggs", ["eggs"]) == "eggs"
+    assert ingredient_matches_exclusion("large eggs", ["eggs"]) is None  # exact HC-1 names only
     assert ingredient_matches_exclusion("chicken breast", ["peanuts", "egg"]) is None
-    assert ingredient_matches_exclusion("eggplant", ["egg"]) == "egg"  # conservative: prefix match, rejects the draft rather than risk it
+    assert ingredient_matches_exclusion("eggplant", ["egg"]) is None  # must not false-positive
 
 
 def test_draft_with_excluded_ingredient_is_rejected():
@@ -181,3 +181,14 @@ def test_accepted_recipe_carries_provenance():
     ok, rec = validate_recipe_draft(draft(cook=12), Provider(TABLE, descriptions={"chicken breast": "Chicken, breast, raw", "rice": "Rice, white"}))
     assert ok and rec.provenance["source"] == "llm" and rec.provenance["resolved_fdc_ids"] == {"chicken breast": 1, "rice": 1}
     assert rec.provenance["computed_nutrition"]["calories"] == pytest.approx(165 * 2 + 130 * 1.5, abs=0.2)
+
+
+def test_dietary_flag_inconsistent_draft_rejected():
+    """F9b: a draft flagged gluten_free (enum) must not contain a wheat_gluten member."""
+    table = dict(TABLE, **{"sourdough bread": N(270, 10, 2, 50)})
+    d = draft(ings=(("chicken breast", 200.0, "g"), ("sourdough bread", 60.0, "g")))
+    flagged = d.model_copy(update={"tags": d.tags.model_copy(update={"dietary_flags": [DietaryFlag.gluten_free]})})
+    ok, res = validate_recipe_draft(flagged, Provider(table))
+    assert ok is False and res.error_code == "DIETARY_FLAG_INCONSISTENT"
+    ok2, _ = validate_recipe_draft(d, Provider(table))
+    assert ok2 is True

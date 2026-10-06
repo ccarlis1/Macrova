@@ -20,13 +20,22 @@ from src.planning.phase10_reporting import (
 def _merge_batch_locks_into_pins(
     profile: PlanningUserProfile,
     recipe_pool: List[PlanningRecipe],
-) -> Tuple[Optional[MealPlanResult], Dict[Tuple[int, int], str], List[Dict[str, Any]], List[Dict[str, Any]]]:
-    """Return (early_failure, effective_pins, conflicts, tag_mismatches)."""
+) -> Tuple[
+    Optional[MealPlanResult],
+    Dict[Tuple[int, int], str],
+    Dict[Tuple[int, int], Dict[str, Any]],
+    List[Dict[str, Any]],
+    List[Dict[str, Any]],
+]:
+    """Return (early_failure, effective_pins, pin_provenance, conflicts, tag_mismatches)."""
     # Integration approach: plan_meals reads profile.batch_locks and normalizes them
     # into pinned assignments before search.
     # Precedence is: batch lock > explicit pin > required tags > free search scoring.
     # Reusing pinned semantics keeps locked slots deterministic and included in nutrition/state updates.
     effective_pins: Dict[Tuple[int, int], str] = dict(profile.pinned_assignments)
+    pin_provenance: Dict[Tuple[int, int], Dict[str, Any]] = {
+        key: {"source": "pin"} for key in effective_pins
+    }
     conflicts: List[Dict[str, Any]] = []
     tag_mismatches: List[Dict[str, Any]] = []
 
@@ -52,7 +61,12 @@ def _merge_batch_locks_into_pins(
             )
             continue
         seen_slots[slot_address] = {"batch_id": str(lock.batch_id), "recipe_id": str(lock.recipe_id)}
-        effective_pins[(slot_address[0] + 1, slot_address[1])] = str(lock.recipe_id)
+        pin_key = (slot_address[0] + 1, slot_address[1])
+        effective_pins[pin_key] = str(lock.recipe_id)
+        pin_provenance[pin_key] = {
+            "source": "batch",
+            "batch_id": str(lock.batch_id),
+        }
 
         if 0 <= slot_address[0] < len(profile.schedule):
             day_slots = profile.schedule[slot_address[0]]
@@ -87,10 +101,11 @@ def _merge_batch_locks_into_pins(
                 stats={"attempts": 0, "backtracks": 0},
             ),
             effective_pins,
+            pin_provenance,
             conflicts,
             tag_mismatches,
         )
-    return None, effective_pins, conflicts, tag_mismatches
+    return None, effective_pins, pin_provenance, conflicts, tag_mismatches
 
 
 def plan_meals(
@@ -123,14 +138,15 @@ def plan_meals(
         raise ValueError(
             f"profile.schedule length ({len(profile.schedule)}) must equal days ({days})"
         )
-    early_failure, effective_pins, _conflicts, tag_mismatches = _merge_batch_locks_into_pins(
-        profile, recipe_pool
+    early_failure, effective_pins, pin_provenance, _conflicts, tag_mismatches = (
+        _merge_batch_locks_into_pins(profile, recipe_pool)
     )
     if early_failure is not None:
         return early_failure
 
     search_profile = copy.deepcopy(profile)
     search_profile.pinned_assignments = effective_pins
+    search_profile.pin_provenance = pin_provenance
     result = run_meal_plan_search(
         search_profile,
         recipe_pool,

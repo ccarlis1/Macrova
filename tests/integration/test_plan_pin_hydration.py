@@ -262,5 +262,7 @@ def test_batch_lock_precedence_still_wins_over_pin():
             )
         ],
     )
-    _early_failure, effective_pins, _conflicts, _mismatches = _merge_batch_locks_into_pins(profile, [])
+    _early_failure, effective_pins, _provenance, _conflicts, _mismatches = (
+        _merge_batch_locks_into_pins(profile, [])
+    )
     assert effective_pins[(1, 0)] == "locked-recipe"

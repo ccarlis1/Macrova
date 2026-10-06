@@ -379,7 +379,7 @@
  {
   "id": "MB-016",
   "active_batches": 0,
-  "secs": 0.0,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -687,7 +687,7 @@
  {
   "id": "MB-027",
   "active_batches": 0,
-  "secs": 1.27,
+  "secs": 1.23,
   "success": false,
   "tc": "TC-2",
   "code": "FM-1",
@@ -1041,7 +1041,7 @@
  {
   "id": "MB-040",
   "active_batches": 0,
-  "secs": 0.05,
+  "secs": 0.04,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1072,7 +1072,7 @@
  {
   "id": "MB-041",
   "active_batches": 0,
-  "secs": 0.06,
+  "secs": 0.07,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1507,7 +1507,7 @@
   "report_codes": [
    "FM-4"
   ],
-  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"fiber_g\", \"achieved\": 0.0, \"required\": 420.0, \"full_req\": 420.0, \"deficit\": 420.0, \"classification\": \"structural\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
+  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"fiber_g\", \"achieved\": 371.60200000000003, \"required\": 420.0, \"full_req\": 420.0, \"deficit\": 48.39799999999997, \"classification\": \"structural\", \"achieved_kind\": \"upper_bound\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
   "warnings": "null",
   "nutrition_mode": "stored"
  },
@@ -1526,7 +1526,7 @@
   "report_codes": [
    "FM-4"
   ],
-  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"vitamin_c_mg\", \"achieved\": 0.0, \"required\": 400.0, \"full_req\": 400.0, \"deficit\": 400.0, \"classification\": \"structural\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
+  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"vitamin_c_mg\", \"achieved\": 353.79, \"required\": 400.0, \"full_req\": 400.0, \"deficit\": 46.20999999999998, \"classification\": \"structural\", \"achieved_kind\": \"upper_bound\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
   "warnings": "null",
   "nutrition_mode": "stored"
  },
@@ -1647,7 +1647,7 @@
  {
   "id": "MB-065",
   "active_batches": 0,
-  "secs": 0.01,
+  "secs": 0.0,
   "success": false,
   "tc": "TC-2",
   "code": "FM-4",
@@ -1659,7 +1659,7 @@
   "report_codes": [
    "FM-4"
   ],
-  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"fiber_g\", \"achieved\": 0.0, \"required\": 70.0, \"full_req\": 70.0, \"deficit\": 70.0, \"classification\": \"structural\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
+  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"fiber_g\", \"achieved\": 57.532, \"required\": 70.0, \"full_req\": 70.0, \"deficit\": 12.468000000000004, \"classification\": \"structural\", \"achieved_kind\": \"upper_bound\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
   "warnings": "null",
   "nutrition_mode": "stored"
  },
@@ -1709,7 +1709,7 @@
   "report_codes": [
    "FM-4"
   ],
-  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"iron_mg\", \"achieved\": 0.0, \"required\": 81.0, \"full_req\": 81.0, \"deficit\": 81.0, \"classification\": \"structural\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
+  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"iron_mg\", \"achieved\": 71.319, \"required\": 81.0, \"full_req\": 81.0, \"deficit\": 9.680999999999997, \"classification\": \"structural\", \"achieved_kind\": \"upper_bound\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
   "warnings": "null",
   "nutrition_mode": "stored"
  },
@@ -2408,7 +2408,7 @@
   "report_codes": [
    "FM-3"
   ],
-  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"recipe_id\": null, \"violation_type\": \"downstream\", \"remaining_budget\": {\"calories\": 629.3599999999999, \"protein_g\": 45.88000000000001, \"carbs_g\": 72.215, \"fat_g\": {\"min\": 55.0, \"max\": 80.0, \"consumed\": 50.19}}, \"constraint\": \"calories\", \"pinned_slots\": [{\"slot_index\": 0, \"recipe_id\": \"bk_protein_oats\"}, {\"slot_index\": 1, \"recipe_id\": \"ln_turkey_sandwich\"}, {\"slot_index\": 2, \"recipe_id\": \"dn_beef_rice_bowl\"}]}, \"fix_hint\": \"A pinned meal conflicts wit",
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"recipe_id\": null, \"violation_type\": \"downstream\", \"remaining_budget\": {\"calories\": 629.3599999999999, \"protein_g\": 45.88000000000001, \"carbs_g\": 72.215, \"fat_g\": {\"min\": 55.0, \"max\": 80.0, \"consumed\": 50.19}}, \"constraint\": \"calories\", \"pinned_slots\": [{\"slot_index\": 0, \"recipe_id\": \"bk_protein_oats\", \"source\": \"pin\"}, {\"slot_index\": 1, \"recipe_id\": \"ln_turkey_sandwich\", \"source\": \"pin\"}, {\"slot_index\": 2, \"recipe_id\": \"dn_beef_rice_bowl\", \"source\":",
   "warnings": "null",
   "plan": {
    "0": [
@@ -3336,14 +3336,14 @@
   "report_codes": [
    "FM-4"
   ],
-  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"calcium_mg\", \"achieved\": 0.0, \"required\": 6500.0, \"full_req\": 6500.0, \"deficit\": 6500.0, \"classification\": \"structural\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
+  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"calcium_mg\", \"achieved\": 3020.2999999999997, \"required\": 6500.0, \"full_req\": 6500.0, \"deficit\": 3479.7000000000003, \"classification\": \"structural\", \"achieved_kind\": \"upper_bound\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
   "warnings": "null",
   "nutrition_mode": "stored"
  },
  {
   "id": "MB-136",
   "active_batches": 0,
-  "secs": 0.02,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3406,7 +3406,7 @@
  {
   "id": "MB-138",
   "active_batches": 0,
-  "secs": 0.5,
+  "secs": 0.51,
   "success": false,
   "tc": "TC-2",
   "code": "FM-2",
@@ -3432,7 +3432,7 @@
  {
   "id": "MB-139",
   "active_batches": 0,
-  "secs": 0.51,
+  "secs": 0.52,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3676,9 +3676,9 @@
   "warnings": "null",
   "plan": {
    "0": [
-    "bk_tofu_scramble",
-    "ln_black_bean_quinoa",
-    "hc_big_beef_rice"
+    "dn_beef_rice_bowl",
+    "dn_bean_quesadilla",
+    "dn_thigh_quinoa_prep"
    ]
   },
   "nutrition_mode": "stored"
@@ -3698,7 +3698,7 @@
   "report_codes": [
    "FM-3"
   ],
-  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"recipe_id\": null, \"violation_type\": \"downstream\", \"remaining_budget\": {\"calories\": 1252.4, \"protein_g\": 109.0, \"carbs_g\": 180.47, \"fat_g\": {\"min\": 40.0, \"max\": 60.0, \"consumed\": 41.04}}, \"constraint\": \"no_valid_combination\", \"pinned_slots\": [{\"slot_index\": 0, \"recipe_id\": \"dh_oat_yogurt_parfait\"}]}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"recipe_id\": null, \"violation_type\": \"downstream\", \"remaining_budget\": {\"calories\": 1252.4, \"protein_g\": 109.0, \"carbs_g\": 180.47, \"fat_g\": {\"min\": 40.0, \"max\": 60.0, \"consumed\": 41.04}}, \"constraint\": \"no_valid_combination\", \"pinned_slots\": [{\"slot_index\": 0, \"recipe_id\": \"dh_oat_yogurt_parfait\", \"source\": \"pin\"}]}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\", \"slot_index",
   "warnings": "null",
   "plan": {
    "0": [
@@ -3723,7 +3723,7 @@
   "report_codes": [
    "FM-3"
   ],
-  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"recipe_id\": null, \"violation_type\": \"downstream\", \"remaining_budget\": {\"calories\": 1334.6, \"protein_g\": 136.82, \"carbs_g\": 127.94, \"fat_g\": {\"min\": 40.0, \"max\": 60.0, \"consumed\": 19.27}}, \"constraint\": \"no_valid_combination\", \"pinned_slots\": [{\"slot_index\": 1, \"recipe_id\": \"dh_chicken_breast_rice\"}]}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"recipe_id\": null, \"violation_type\": \"downstream\", \"remaining_budget\": {\"calories\": 1334.6, \"protein_g\": 136.82, \"carbs_g\": 127.94, \"fat_g\": {\"min\": 40.0, \"max\": 60.0, \"consumed\": 19.27}}, \"constraint\": \"no_valid_combination\", \"pinned_slots\": [{\"slot_index\": 1, \"recipe_id\": \"dh_chicken_breast_rice\", \"source\": \"pin\"}]}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\", \"slot_ind",
   "warnings": "null",
   "plan": {
    "0": [
@@ -3800,7 +3800,7 @@
   "report_codes": [
    "FM-3"
   ],
-  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"recipe_id\": null, \"violation_type\": \"downstream\", \"remaining_budget\": {\"calories\": 424.26, \"protein_g\": 35.650000000000006, \"carbs_g\": 59.88499999999999, \"fat_g\": {\"min\": 45.0, \"max\": 60.0, \"consumed\": 50.980000000000004}}, \"constraint\": \"calories\", \"pinned_slots\": [{\"slot_index\": 0, \"recipe_id\": \"bk_protein_oats\"}, {\"slot_index\": 1, \"recipe_id\": \"ln_turkey_sandwich\"}, {\"slot_index\": 2, \"recipe_id\": \"sn_almonds_chocolate\"}]}, \"fix_hint\": \"A pinned m",
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"recipe_id\": null, \"violation_type\": \"downstream\", \"remaining_budget\": {\"calories\": 424.26, \"protein_g\": 35.650000000000006, \"carbs_g\": 59.88499999999999, \"fat_g\": {\"min\": 45.0, \"max\": 60.0, \"consumed\": 50.980000000000004}}, \"constraint\": \"calories\", \"pinned_slots\": [{\"slot_index\": 0, \"recipe_id\": \"bk_protein_oats\", \"source\": \"pin\"}, {\"slot_index\": 1, \"recipe_id\": \"ln_turkey_sandwich\", \"source\": \"pin\"}, {\"slot_index\": 2, \"recipe_id\": \"sn_almonds_choc",
   "warnings": "null",
   "plan": {
    "0": [
@@ -3817,6 +3817,25 @@
   "code": "INVALID_REQUEST",
   "stage": "input_validation",
   "detail": "NEGATIVE_CARBS_DERIVED: Derived carbs are negative: protein and fat use more calories than the daily calorie target, even at the fat minimum.",
+  "nutrition_mode": "stored"
+ },
+ {
+  "id": "MB-153",
+  "active_batches": 0,
+  "secs": 0.0,
+  "success": false,
+  "tc": "TC-3",
+  "code": "FM-3",
+  "incomplete": null,
+  "stats": {
+   "attempts": 0,
+   "backtracks": 0
+  },
+  "report_codes": [
+   "FM-3"
+  ],
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"recipe_id\": \"dh_veggie_egg_scramble\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "warnings": "null",
   "nutrition_mode": "stored"
  }
 ]

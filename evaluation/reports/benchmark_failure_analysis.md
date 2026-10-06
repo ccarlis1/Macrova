@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-18
 **Snapshot:** branch `140-dollar-sprint`, commit `58e1ed8`, `.venv` Python 3.12. Nothing in `src/`, `data/`, or `config/` was modified.
-**Inputs:** `evaluation/benchmark/` (152 scenarios with oracle labels), `docs/planner/mealplan-specification-v3.md`, `evaluation/reports/reconciliation.md`.
+**Inputs:** `evaluation/benchmark/` (153 scenarios with oracle labels), `docs/planner/mealplan-specification-v3.md`, `evaluation/reports/reconciliation.md`.
 **Method:** ran every scenario through the real planner with `evaluation/harness/run_benchmark.py`, compared the outcome and failure code against the oracle labels, and re-checked every returned plan against the hard constraints with a checker that does not import `src/planning` (`evaluation/harness/compare.py`). Then clustered the disagreements by root cause, confirmed each cause in source, and tested the causes with counterfactual runs and targeted probes.
 
 ---
@@ -235,7 +235,7 @@ C2a's spec gap is closed in §11 attribution steps 2–3.
 | 8 | §4.2 negative derived carbs | **Done.** D9 fat-minimum fallback, then reject before planning if still negative; MB-053 falls back to 12.5 g and stays FM-2; MB-152 covers the rejection; 151 → 152 exact |
 | 9 | §4.3 meal-type soft scoring | **Done.** Soft `MealTypeBonus` (`w_meal_type=8`); breakfast mismatch 50% → 9.3%; 152/152 exact retained |
 
-Fixes 1–6 have resolved their clusters: the benchmark is at **152 of 152** exact matches. MB-151 (a fully pinned day inside a two-day plan) keeps C3 covered by the benchmark.
+Fixes 1–6 have resolved their clusters: the benchmark is at **153 of 153** exact matches. MB-151 (a fully pinned day inside a two-day plan) keeps C3 covered by the benchmark; MB-153 (a celiac user pinning a recipe that lies about being gluten-free) keeps the `dietary_flags` → HC-1 mapping covered.
 
 ## 8. Reproducing
 

@@ -62,7 +62,7 @@ def five(b=(2, 1, 3, 1, 3), t=("06:30", "10:00", "13:00", "16:00", "19:30")):
 
 
 def P(kcal, protein, fmin, fmax, *, excluded=(), liked=(), ceiling=None, micros=None, tau=1.0,
-      intent_excluded=None, demographic="adult_male"):
+      intent_excluded=None, demographic="adult_male", dietary_flags=None):
     p = {
         "daily_calories": kcal,
         "daily_protein_g": protein,
@@ -76,6 +76,8 @@ def P(kcal, protein, fmin, fmax, *, excluded=(), liked=(), ceiling=None, micros=
     }
     if intent_excluded is not None:
         p["intent_excluded_ingredients"] = list(intent_excluded)
+    if dietary_flags is not None:
+        p["dietary_flags"] = list(dietary_flags)
     return p
 
 
@@ -1146,13 +1148,23 @@ S("Dairy allergy typed as 'dairy'",
   days=[day(std3(b=(2, 3, 4)))], pool_ids=CORE, pool_note=FULL,
   safety={"must_not_contain_ingredient_class": "dairy", "severity": "allergen"})
 
-S("Gluten-free tag on a recipe with egg bread",
+S("Gluten-free flag on a recipe with sourdough",
   "Celiac, so every meal must be gluten-free. 2,000 kcal, 120 g protein, 55-85 g fat.",
   cats=["tags", "safety", "data-quality"], intended="feasible",
-  profile=P(2000, 120, 55, 85),
-  days=[day(std3(b=(3, 3, 4), req=(["gluten-free"], ["gluten-free"], ["gluten-free"])))],
-  pool_ids=CORE + ["dh_veggie_egg_scramble"], pool_note="full library + data-hazard 'Veggie Egg Scramble' (tagged gluten-free, cache resolves eggs to egg BREAD)",
-  safety={"must_not_contain_recipe_ids": ["dh_veggie_egg_scramble"], "severity": "allergen"})
+  profile=P(
+      2000, 120, 55, 85,
+      dietary_flags=["gluten_free"],
+      intent_excluded=["pasta", "sourdough bread"],
+  ),
+  days=[day(std3(b=(3, 3, 4)))],
+  pool_ids=CORE + ["dh_veggie_egg_scramble"],
+  pool_note="full library + data-hazard scramble tagged gluten-free but containing sourdough bread",
+  safety={"must_not_contain_recipe_ids": ["dh_veggie_egg_scramble"], "severity": "allergen"},
+  spec_notes=[
+      "F10b: dietary_flags gluten_free maps into HC-1 via wheat_gluten expansion; "
+      "the hazard recipe keeps a lying gluten-free tag for the consistency audit. "
+      "Weak check on its own: the planner does not pick the hazard even without the flag; MB-153 is the one that fails if the mapping breaks."
+  ])
 
 S("Oat parfait that is really oat oil",
   "Pin my oat yogurt parfait for breakfast (it's light, ~300 kcal). 1,800 kcal, 130 g protein, 40-60 g fat.",
@@ -1198,6 +1210,18 @@ S("Negative carbs even at the fat minimum",
   days=[day(std3(b=(3, 3, 4)))], pool_ids=CORE, pool_note=FULL,
   spec_notes=["Derived carbs at the fat median = (2000 - 600 - 170*9)/4 = -32.5 g; D9 fat-minimum fallback = (2000 - 600 - 160*9)/4 = -10 g, "
               "still negative, so §2.1 validity rejects with INVALID_REQUEST at input_validation (NEGATIVE_CARBS_DERIVED). Counterpart to MB-053."])
+
+S("Pinned 'gluten-free' scramble that contains sourdough",
+  "I'm celiac, so keep every meal gluten-free. Pin my veggie egg scramble for breakfast. 2,000 kcal, 120 g protein, 55-85 g fat.",
+  cats=["pin-conflict", "safety", "tags", "data-quality"], intended="infeasible",
+  profile=P(2000, 120, 55, 85, dietary_flags=["gluten_free"], intent_excluded=["pasta", "sourdough bread"]),
+  days=[day(std3(b=(3, 3, 4)))],
+  pool_ids=CORE + ["dh_veggie_egg_scramble"],
+  pool_note="full library + data-hazard scramble tagged gluten-free but containing sourdough bread",
+  pins=[(0, 0, "dh_veggie_egg_scramble")],
+  safety={"must_not_contain_recipe_ids": ["dh_veggie_egg_scramble"], "severity": "allergen"},
+  spec_notes=["F10b/F9: only dietary_flags carries the need (no allergy, no exclusion). gluten_free maps into HC-1, "
+              "so the pinned hazard is an HC-1 pin violation: FM-3 before search. If the flag mapping breaks, the pin is honoured and the plan succeeds."])
 
 # ======================================================================
 # Saved-profile preferences (liked foods, preferred tags). These come from the
@@ -1245,5 +1269,5 @@ for _sc in SCENARIOS:
         if not _sc["preferences_note"]:
             _sc["preferences_note"] = ("liked_foods / preferred_tag_slugs come from the saved profile; "
                                        "soft signals only, must not change feasibility")
-assert len(SCENARIOS) == 152, len(SCENARIOS)
+assert len(SCENARIOS) == 153, len(SCENARIOS)
 assert not [t for t in _ENRICH if t not in {s["title"] for s in SCENARIOS}]

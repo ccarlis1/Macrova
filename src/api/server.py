@@ -774,6 +774,11 @@ def _build_user_profile(
         liked_foods=[str(food) for food in request.liked_foods],
         disliked_foods=[str(food) for food in request.disliked_foods],
         allergies=[str(allergen) for allergen in request.allergies],
+        dietary_flags=(
+            [str(getattr(f, "value", f)) for f in request.dietary_flags]
+            if request.dietary_flags is not None
+            else None
+        ),
         daily_micronutrient_targets=request.micronutrient_goals,
         micronutrient_weekly_min_fraction=request.micronutrient_weekly_min_fraction,
         max_daily_calories=request.max_daily_calories,

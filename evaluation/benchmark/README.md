@@ -1,6 +1,6 @@
 # Macrova planning benchmark (v1)
 
-152 realistic meal-planning requests with oracle-verified expected outcomes, built only from the locally cached ingredients in `.cache/ingredients/`.
+153 realistic meal-planning requests with oracle-verified expected outcomes, built only from the locally cached ingredients in `.cache/ingredients/`.
 
 | File | What it is |
 |---|---|

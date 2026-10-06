@@ -11,7 +11,7 @@ from src.llm.schemas import RecipeDraft
 
 
 DEFAULT_FEEDBACK_CACHE_PATH = "data/llm/feedback_cache.json"
-DEFAULT_CACHE_SCHEMA_VERSION = 1
+DEFAULT_CACHE_SCHEMA_VERSION = 2
 
 
 class FeedbackCacheError(RuntimeError):

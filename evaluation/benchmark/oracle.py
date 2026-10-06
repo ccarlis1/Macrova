@@ -6,6 +6,8 @@ constraints so benchmark labels are independent of the planner under test.
 Semantics (docs/planner/mealplan-specification-v3.md):
 - HC-1 exact normalized-name exclusion (spec) plus an "intent" variant that also
   matches the allergen/dislike class expansion supplied by the scenario.
+  ``dietary_flags`` gluten_free / dairy_free add their allergen class (terms and
+  members, read from data/reference/allergen_classes.json) to both variants (F9).
 - HC-2 same-day uniqueness; HC-3 busyness cook-time caps; HC-5 calorie ceiling;
   HC-6 pins; batch locks > pins; HC-8 consecutive-day non-workout repetition;
   HC-9 required tags on hard-eligible tags only (pinned/locked slots exempt).
@@ -21,13 +23,36 @@ instance becomes feasible.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 
 COOK_CAP = {1: 5, 2: 15, 3: 30, 4: None}
 DAY_SOLUTION_CAP = 60000
 MULTIDAY_NODE_CAP = 3_000_000
+ALLERGEN_CLASSES = Path(__file__).resolve().parents[2] / "data/reference/allergen_classes.json"
+FLAG_CLASSES = {"gluten_free": "wheat_gluten", "dairy_free": "milk"}
+
+
+def dietary_flag_exclusions(flags) -> List[str]:
+    """Exact names a dietary flag excludes under HC-1: the flag's allergen class terms and members.
+
+    Reads the reference data directly (not src/). Flags without a class here
+    (vegetarian, vegan) raise, so no scenario is labelled with a flag the oracle ignores.
+    """
+    if not flags:
+        return []
+    classes = json.loads(ALLERGEN_CLASSES.read_text())["classes"]
+    out = set()
+    for f in flags:
+        key = str(f).strip().lower().replace("-", "_")
+        if key not in FLAG_CLASSES:
+            raise ValueError(f"oracle has no exclusion rule for dietary flag {f!r}")
+        c = classes[FLAG_CLASSES[key]]
+        out.update(x.strip().lower() for x in c["terms"] + c["members"])
+    return sorted(out)
 
 
 def carbs_target(p: dict) -> float:
@@ -188,7 +213,7 @@ class Oracle:
         pool = list(sc["recipe_pool"]["recipe_ids"])
         days = sc["schedule_days"]
         D = len(days)
-        excluded = list(prof.get(excluded_key) or [])
+        excluded = list(prof.get(excluded_key) or []) + dietary_flag_exclusions(prof.get("dietary_flags"))
         out: dict = {"stage": None, "failure_code": None, "details": {}}
 
         # ---- 0a. macro-target validity (§2.1 / §4.2) ----

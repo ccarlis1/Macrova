@@ -66,13 +66,27 @@ def _build_calculator(nutrition_mode: str):
 
 
 def data_recipe(r):
-    ings = [Ingredient(name=i["name"], quantity=float(i["quantity"]), unit=i["unit"],
-                       normalized_unit="g", normalized_quantity=float(i["quantity"])) for i in r["ingredients"]]
-    kw = dict(id=r["id"], name=r["name"], ingredients=ings, cooking_time_minutes=r["cooking_time_minutes"], instructions=[])
+    """Build a data-layer Recipe exactly as the API path loads stored recipes.
+
+    Units stay as authored and NutritionCalculator converts them, so
+    ``--nutrition computed`` matches /api/v1/plan, including its known
+    volume-unit gap (tests/test_volume_unit_api_path.py).
+    """
+    from src.data_layer.recipe_db import parse_ingredient
+
+    ings = [parse_ingredient(i) for i in r["ingredients"]]
+    kw = dict(
+        id=r["id"],
+        name=r["name"],
+        ingredients=ings,
+        cooking_time_minutes=r["cooking_time_minutes"],
+        instructions=[],
+    )
     try:
         return Recipe(**kw)
     except TypeError:
-        kw.pop("instructions"); return Recipe(**kw)
+        kw.pop("instructions")
+        return Recipe(**kw)
 
 
 def run(sc, nutrition_mode: str = "stored"):
@@ -95,6 +109,8 @@ def run(sc, nutrition_mode: str = "stored"):
         "max_daily_calories": p.get("max_daily_calories"),
         "recipe_ids": sc["recipe_pool"]["recipe_ids"], "recipe_tags_path": TAGS,
     }
+    if p.get("dietary_flags"):
+        req["dietary_flags"] = list(p["dietary_flags"])
     try:
         preq = S.PlanRequest.model_validate(req)
     except Exception as e:

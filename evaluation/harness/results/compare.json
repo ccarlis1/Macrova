@@ -2563,7 +2563,7 @@
   "report_codes": [
    "FM-4"
   ],
-  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"fiber_g\", \"achieved\": 0.0, \"required\": 420.0, \"full_req\": 420.0, \"deficit\": 420.0, \"classification\": \"structural\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
+  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"fiber_g\", \"achieved\": 371.60200000000003, \"required\": 420.0, \"full_req\": 420.0, \"deficit\": 48.39799999999997, \"classification\": \"structural\", \"achieved_kind\": \"upper_bound\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -2630,7 +2630,7 @@
   "report_codes": [
    "FM-4"
   ],
-  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"vitamin_c_mg\", \"achieved\": 0.0, \"required\": 400.0, \"full_req\": 400.0, \"deficit\": 400.0, \"classification\": \"structural\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
+  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"vitamin_c_mg\", \"achieved\": 353.79, \"required\": 400.0, \"full_req\": 400.0, \"deficit\": 46.20999999999998, \"classification\": \"structural\", \"achieved_kind\": \"upper_bound\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -2920,7 +2920,7 @@
   "report_codes": [
    "FM-4"
   ],
-  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"fiber_g\", \"achieved\": 0.0, \"required\": 70.0, \"full_req\": 70.0, \"deficit\": 70.0, \"classification\": \"structural\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
+  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"fiber_g\", \"achieved\": 57.532, \"required\": 70.0, \"full_req\": 70.0, \"deficit\": 12.468000000000004, \"classification\": \"structural\", \"achieved_kind\": \"upper_bound\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -3024,7 +3024,7 @@
   "report_codes": [
    "FM-4"
   ],
-  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"iron_mg\", \"achieved\": 0.0, \"required\": 81.0, \"full_req\": 81.0, \"deficit\": 81.0, \"classification\": \"structural\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
+  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"iron_mg\", \"achieved\": 71.319, \"required\": 81.0, \"full_req\": 81.0, \"deficit\": 9.680999999999997, \"classification\": \"structural\", \"achieved_kind\": \"upper_bound\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -4417,7 +4417,7 @@
   "report_codes": [
    "FM-3"
   ],
-  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"recipe_id\": null, \"violation_type\": \"downstream\", \"remaining_budget\": {\"calories\": 629.3599999999999, \"protein_g\": 45.88000000000001, \"carbs_g\": 72.215, \"fat_g\": {\"min\": 55.0, \"max\": 80.0, \"consumed\": 50.19}}, \"constraint\": \"calories\", \"pinned_slots\": [{\"slot_index\": 0, \"recipe_id\": \"bk_protein_oats\"}, {\"slot_index\": 1, \"recipe_id\": \"ln_turkey_sandwich\"}, {\"slot_index\": 2, \"recipe_id\": \"dn_beef_rice_bowl\"}]}, \"fix_hint\": \"A pinned meal conflicts wit",
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"recipe_id\": null, \"violation_type\": \"downstream\", \"remaining_budget\": {\"calories\": 629.3599999999999, \"protein_g\": 45.88000000000001, \"carbs_g\": 72.215, \"fat_g\": {\"min\": 55.0, \"max\": 80.0, \"consumed\": 50.19}}, \"constraint\": \"calories\", \"pinned_slots\": [{\"slot_index\": 0, \"recipe_id\": \"bk_protein_oats\", \"source\": \"pin\"}, {\"slot_index\": 1, \"recipe_id\": \"ln_turkey_sandwich\", \"source\": \"pin\"}, {\"slot_index\": 2, \"recipe_id\": \"dn_beef_rice_bowl\", \"source\":",
   "detail": null,
   "stage_exp": "pre_search",
   "oracle": {
@@ -6070,7 +6070,7 @@
   "report_codes": [
    "FM-4"
   ],
-  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"calcium_mg\", \"achieved\": 0.0, \"required\": 6500.0, \"full_req\": 6500.0, \"deficit\": 6500.0, \"classification\": \"structural\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
+  "report_first": "[{\"code\": \"FM-4\", \"message\": \"Weekly micronutrient targets are infeasible with current constraints.\", \"details\": {\"deficient_nutrients\": [{\"nutrient\": \"calcium_mg\", \"achieved\": 3020.2999999999997, \"required\": 6500.0, \"full_req\": 6500.0, \"deficit\": 3479.7000000000003, \"classification\": \"structural\", \"achieved_kind\": \"upper_bound\"}]}, \"fix_hint\": \"Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.\"}]",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -6572,10 +6572,10 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    1698
+    1842
    ],
    "distinct_meal_sets_per_day": [
-    454
+    479
    ],
    "day_enumeration_capped": [
     false
@@ -6642,7 +6642,7 @@
  },
  {
   "id": "MB-146",
-  "title": "Gluten-free tag on a recipe with egg bread",
+  "title": "Gluten-free flag on a recipe with sourdough",
   "cats": [
    "tags",
    "safety",
@@ -6665,17 +6665,19 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    378
+    1856
    ],
    "distinct_meal_sets_per_day": [
-    93
+    406
    ],
    "day_enumeration_capped": [
     false
    ],
    "multiday_nodes": 1
   },
-  "spec_notes": [],
+  "spec_notes": [
+   "F10b: dietary_flags gluten_free maps into HC-1 via wheat_gluten expansion; the hazard recipe keeps a lying gluten-free tag for the consistency audit. Weak check on its own: the planner does not pick the hazard even without the flag; MB-153 is the one that fails if the mapping breaks."
+  ],
   "n_days": 1,
   "micro": false,
   "pins": 0,
@@ -6709,7 +6711,7 @@
   "report_codes": [
    "FM-3"
   ],
-  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"recipe_id\": null, \"violation_type\": \"downstream\", \"remaining_budget\": {\"calories\": 1252.4, \"protein_g\": 109.0, \"carbs_g\": 180.47, \"fat_g\": {\"min\": 40.0, \"max\": 60.0, \"consumed\": 41.04}}, \"constraint\": \"no_valid_combination\", \"pinned_slots\": [{\"slot_index\": 0, \"recipe_id\": \"dh_oat_yogurt_parfait\"}]}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"recipe_id\": null, \"violation_type\": \"downstream\", \"remaining_budget\": {\"calories\": 1252.4, \"protein_g\": 109.0, \"carbs_g\": 180.47, \"fat_g\": {\"min\": 40.0, \"max\": 60.0, \"consumed\": 41.04}}, \"constraint\": \"no_valid_combination\", \"pinned_slots\": [{\"slot_index\": 0, \"recipe_id\": \"dh_oat_yogurt_parfait\", \"source\": \"pin\"}]}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\", \"slot_index",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -6760,7 +6762,7 @@
   "report_codes": [
    "FM-3"
   ],
-  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"recipe_id\": null, \"violation_type\": \"downstream\", \"remaining_budget\": {\"calories\": 1334.6, \"protein_g\": 136.82, \"carbs_g\": 127.94, \"fat_g\": {\"min\": 40.0, \"max\": 60.0, \"consumed\": 19.27}}, \"constraint\": \"no_valid_combination\", \"pinned_slots\": [{\"slot_index\": 1, \"recipe_id\": \"dh_chicken_breast_rice\"}]}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"recipe_id\": null, \"violation_type\": \"downstream\", \"remaining_budget\": {\"calories\": 1334.6, \"protein_g\": 136.82, \"carbs_g\": 127.94, \"fat_g\": {\"min\": 40.0, \"max\": 60.0, \"consumed\": 19.27}}, \"constraint\": \"no_valid_combination\", \"pinned_slots\": [{\"slot_index\": 1, \"recipe_id\": \"dh_chicken_breast_rice\", \"source\": \"pin\"}]}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\", \"slot_ind",
   "detail": null,
   "stage_exp": "search",
   "oracle": {
@@ -6901,7 +6903,7 @@
   "report_codes": [
    "FM-3"
   ],
-  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"recipe_id\": null, \"violation_type\": \"downstream\", \"remaining_budget\": {\"calories\": 424.26, \"protein_g\": 35.650000000000006, \"carbs_g\": 59.88499999999999, \"fat_g\": {\"min\": 45.0, \"max\": 60.0, \"consumed\": 50.980000000000004}}, \"constraint\": \"calories\", \"pinned_slots\": [{\"slot_index\": 0, \"recipe_id\": \"bk_protein_oats\"}, {\"slot_index\": 1, \"recipe_id\": \"ln_turkey_sandwich\"}, {\"slot_index\": 2, \"recipe_id\": \"sn_almonds_chocolate\"}]}, \"fix_hint\": \"A pinned m",
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_id\": \"\", \"date\": \"day-1\", \"details\": {\"recipe_id\": null, \"violation_type\": \"downstream\", \"remaining_budget\": {\"calories\": 424.26, \"protein_g\": 35.650000000000006, \"carbs_g\": 59.88499999999999, \"fat_g\": {\"min\": 45.0, \"max\": 60.0, \"consumed\": 50.980000000000004}}, \"constraint\": \"calories\", \"pinned_slots\": [{\"slot_index\": 0, \"recipe_id\": \"bk_protein_oats\", \"source\": \"pin\"}, {\"slot_index\": 1, \"recipe_id\": \"ln_turkey_sandwich\", \"source\": \"pin\"}, {\"slot_index\": 2, \"recipe_id\": \"sn_almonds_choc",
   "detail": null,
   "stage_exp": "pre_search",
   "oracle": {
@@ -6969,5 +6971,52 @@
   "pins": 0,
   "batches": 0,
   "safety": null
+ },
+ {
+  "id": "MB-153",
+  "title": "Pinned 'gluten-free' scramble that contains sourdough",
+  "cats": [
+   "pin-conflict",
+   "safety",
+   "tags",
+   "data-quality"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-3",
+  "acceptable": [
+   "FM-3"
+  ],
+  "got": "FM-3",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-3",
+  "incomplete": null,
+  "report_codes": [
+   "FM-3"
+  ],
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"recipe_id\": \"dh_veggie_egg_scramble\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "detail": null,
+  "stage_exp": "pre_search",
+  "oracle": {
+   "pin": [
+    0,
+    0,
+    "dh_veggie_egg_scramble"
+   ],
+   "violation": "HC-1"
+  },
+  "spec_notes": [
+   "F10b/F9: only dietary_flags carries the need (no allergy, no exclusion). gluten_free maps into HC-1, so the pinned hazard is an HC-1 pin violation: FM-3 before search. If the flag mapping breaks, the pin is honoured and the plan succeeds."
+  ],
+  "n_days": 1,
+  "micro": false,
+  "pins": 1,
+  "batches": 0,
+  "safety": {
+   "must_not_contain_recipe_ids": [
+    "dh_veggie_egg_scramble"
+   ],
+   "severity": "allergen"
+  }
  }
 ]

@@ -170,9 +170,10 @@ class RecipeDB:
 def parse_ingredient(ing_data: dict) -> Ingredient:
     """Parse one stored ingredient the way the API path loads it.
 
-    Units are kept as authored (``normalized_unit = unit``); the nutrition
-    calculator converts them. The benchmark harness uses this too, so its
-    computed-nutrition mode follows ``/api/v1/plan``.
+    Units are kept as authored. Grams are filled in later, once, by
+    ``convert_recipes`` (``NutritionCalculator.normalize_ingredient``), because
+    the gram weights come from the resolved ingredient provider. The benchmark
+    harness uses this too, so its computed-nutrition mode follows ``/api/v1/plan``.
     """
     unit = ing_data.get("unit", "")
     is_to_taste = unit == "to taste" or "to taste" in unit.lower()
@@ -185,6 +186,7 @@ def parse_ingredient(ing_data: dict) -> Ingredient:
         quantity=quantity,
         unit=unit,
         is_to_taste=is_to_taste,
-        normalized_unit=unit,  # Will be normalized later by unit converter
-        normalized_quantity=quantity,  # Will be normalized later by unit converter
+        # Not normalized yet: convert_recipes fills grams after provider resolution.
+        normalized_unit="",
+        normalized_quantity=0.0,
     )

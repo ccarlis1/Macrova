@@ -14,6 +14,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from src.data_layer.exceptions import IngredientNotFoundError
 from src.data_layer.models import Ingredient, Recipe
 from src.data_layer.nutrition_db import NutritionDB
 from src.nutrition.calculator import NutritionCalculator
@@ -133,3 +134,64 @@ def test_api_provider_volume_unit_is_unresolved():
     )
     unresolved = calc.unresolved_ingredient_names(recipe)
     assert any("no gram conversion" in u and "cup" in u for u in unresolved)
+
+
+def _committed_recipe(recipe_id: str) -> Recipe:
+    from src.data_layer.recipe_db import parse_ingredient
+
+    data = json.loads(_RECIPES.read_text(encoding="utf-8"))
+    row = next(r for r in data["recipes"] if r["id"] == recipe_id)
+    return Recipe(
+        id=row["id"],
+        name=row["name"],
+        ingredients=[parse_ingredient(i) for i in row["ingredients"]],
+        cooking_time_minutes=row["cooking_time_minutes"],
+        instructions=[],
+    )
+
+
+def test_parse_ingredient_leaves_grams_unfilled():
+    """Grams-first: loading keeps the authored unit; grams come later, once."""
+    recipe = _committed_recipe("recipe_007")
+    yogurt = next(i for i in recipe.ingredients if i.name == "low fat greek yogurt")
+    assert (yogurt.quantity, yogurt.unit) == (2.0, "tbsp")
+    assert (yogurt.normalized_unit, yogurt.normalized_quantity) == ("", 0.0)
+
+
+def test_convert_recipes_fills_grams_once_and_keeps_authored_unit():
+    """convert_recipes is the single conversion point: pool ingredients carry grams."""
+    pool = convert_recipes([_committed_recipe("recipe_007")], _calculator())
+    assert len(pool) == 1
+    yogurt = next(i for i in pool[0].ingredients if i.name == "low fat greek yogurt")
+    assert yogurt.normalized_unit == "g"
+    assert yogurt.normalized_quantity == pytest.approx(30.0)  # 2 tbsp × 15 g
+    assert (yogurt.quantity, yogurt.unit) == (2.0, "tbsp")  # display unchanged
+    for ing in pool[0].ingredients:
+        if not ing.is_to_taste:
+            assert ing.normalized_unit == "g", ing.name
+
+
+def test_calculator_uses_normalized_grams():
+    """Once normalized, nutrition is computed from normalized_quantity, not the unit."""
+    calc = _calculator()
+    raw = Ingredient(name="low fat greek yogurt", quantity=2.0, unit="tbsp")
+    normalized = calc.normalize_ingredient(raw)
+    assert calc.calculate_ingredient_nutrition(normalized).calories == pytest.approx(
+        calc.calculate_ingredient_nutrition(raw).calories
+    )
+    doubled = Ingredient(
+        name="low fat greek yogurt",
+        quantity=2.0,
+        unit="tbsp",
+        normalized_unit="g",
+        normalized_quantity=60.0,
+    )
+    assert calc.calculate_ingredient_nutrition(doubled).calories == pytest.approx(
+        2 * calc.calculate_ingredient_nutrition(normalized).calories
+    )
+
+
+def test_normalize_ingredient_raises_without_conversion():
+    with pytest.raises(IngredientNotFoundError) as exc:
+        _calculator().normalize_ingredient(Ingredient(name="quinoa", quantity=1.0, unit="cup"))
+    assert "no gram conversion" in str(exc.value)

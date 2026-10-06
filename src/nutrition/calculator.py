@@ -1,4 +1,5 @@
 """Nutrition calculator for computing nutrition values for ingredients and recipes."""
+from dataclasses import replace
 from typing import Dict, Any, Optional, List
 
 from src.data_layer.models import Ingredient, Recipe, NutritionProfile, MicronutrientProfile
@@ -12,6 +13,10 @@ class NutritionCalculator:
 
     Quantities are converted to grams once via ``to_grams`` (using the
     ingredient record's ``grams_per_unit`` and explicit serving weights).
+    Pool builders call ``normalize_ingredient`` once per ingredient, which
+    stores the grams in ``normalized_quantity`` (``normalized_unit="g"``);
+    nutrition is then computed from that value. The authored
+    ``quantity``/``unit`` stay for display.
     Nutrition is then scaled from ``per_100g`` (or an equivalent per-unit
     block with a known gram size). Unknown units raise
     ``IngredientNotFoundError`` so the recipe leaves the planning pool
@@ -100,7 +105,7 @@ class NutritionCalculator:
         if ingredient_info is None:
             raise IngredientNotFoundError(ingredient.name)
 
-        grams = self.to_grams(ingredient, ingredient_info)
+        grams = self._grams(ingredient, ingredient_info)
         nutrition_data, unit_size_g = self._nutrition_block_for_grams(ingredient_info)
         if nutrition_data is None or unit_size_g is None:
             raise IngredientNotFoundError(
@@ -189,6 +194,31 @@ class NutritionCalculator:
             carbs_g=total_carbs,
             micronutrients=MicronutrientProfile(**total_micros),
         )
+
+    def normalize_ingredient(self, ingredient: Ingredient) -> Ingredient:
+        """Return a copy with ``normalized_quantity`` in grams (``normalized_unit="g"``).
+
+        The single conversion step of the grams-first design: ``convert_recipes``
+        calls it once per ingredient when it builds the planning pool, after
+        provider resolution. "To taste" ingredients are returned unchanged.
+
+        Raises:
+            IngredientNotFoundError: If the ingredient is unknown or its unit
+                has no gram conversion.
+        """
+        if ingredient.is_to_taste:
+            return ingredient
+        ingredient_info = self.provider.get_ingredient_info(ingredient.name)
+        if ingredient_info is None:
+            raise IngredientNotFoundError(ingredient.name)
+        grams = self.to_grams(ingredient, ingredient_info)
+        return replace(ingredient, normalized_unit="g", normalized_quantity=grams)
+
+    def _grams(self, ingredient: Ingredient, ingredient_info: Dict[str, Any]) -> float:
+        """Grams for an ingredient: its normalized value, or ``to_grams`` if not normalized yet."""
+        if ingredient.normalized_unit == "g":
+            return float(ingredient.normalized_quantity)
+        return self.to_grams(ingredient, ingredient_info)
 
     def to_grams(
         self, ingredient: Ingredient, ingredient_info: Dict[str, Any]

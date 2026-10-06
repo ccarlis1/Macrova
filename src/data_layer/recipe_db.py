@@ -110,28 +110,8 @@ class RecipeDB:
         )
 
     def _parse_ingredient(self, ing_data: dict) -> Ingredient:
-        """Parse a single ingredient from dictionary data.
-
-        Args:
-            ing_data: Dictionary containing ingredient data
-
-        Returns:
-            Ingredient object
-        """
-        unit = ing_data.get("unit", "")
-        is_to_taste = unit == "to taste" or "to taste" in unit.lower()
-
-        # For "to taste" ingredients, set quantity to 0
-        quantity = 0.0 if is_to_taste else float(ing_data.get("quantity", 0.0))
-
-        return Ingredient(
-            name=ing_data["name"],
-            quantity=quantity,
-            unit=unit,
-            is_to_taste=is_to_taste,
-            normalized_unit=unit,  # Will be normalized later by unit converter
-            normalized_quantity=quantity,  # Will be normalized later by unit converter
-        )
+        """Parse a single ingredient from dictionary data."""
+        return parse_ingredient(ing_data)
 
     def get_all_recipes(self) -> List[Recipe]:
         """Get all recipes in the database.
@@ -186,3 +166,25 @@ class RecipeDB:
         with open(self.json_path, "w", encoding="utf-8") as f:
             json.dump(payload, f, indent=2)
 
+
+def parse_ingredient(ing_data: dict) -> Ingredient:
+    """Parse one stored ingredient the way the API path loads it.
+
+    Units are kept as authored (``normalized_unit = unit``); the nutrition
+    calculator converts them. The benchmark harness uses this too, so its
+    computed-nutrition mode follows ``/api/v1/plan``.
+    """
+    unit = ing_data.get("unit", "")
+    is_to_taste = unit == "to taste" or "to taste" in unit.lower()
+
+    # For "to taste" ingredients, set quantity to 0
+    quantity = 0.0 if is_to_taste else float(ing_data.get("quantity", 0.0))
+
+    return Ingredient(
+        name=ing_data["name"],
+        quantity=quantity,
+        unit=unit,
+        is_to_taste=is_to_taste,
+        normalized_unit=unit,  # Will be normalized later by unit converter
+        normalized_quantity=quantity,  # Will be normalized later by unit converter
+    )

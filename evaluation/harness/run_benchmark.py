@@ -66,55 +66,15 @@ def _build_calculator(nutrition_mode: str):
 
 
 def data_recipe(r):
-    """Build a data-layer Recipe using the real unit normalizer (not unit='g' stubs).
+    """Build a data-layer Recipe exactly as the API path loads stored recipes.
 
-    Ingredient *names* stay as authored so HC-1 / tag fixtures stay aligned; only
-    quantity/unit are normalized through IngredientValidator.
+    Units stay as authored and NutritionCalculator converts them, so
+    ``--nutrition computed`` matches /api/v1/plan, including its known
+    volume-unit gap (tests/test_volume_unit_api_path.py).
     """
-    from src.ingestion.ingredient_validator import IngredientValidator
-    from src.data_layer.models import IngredientInput
+    from src.data_layer.recipe_db import parse_ingredient
 
-    validator = IngredientValidator()
-    ings = []
-    for i in r["ingredients"]:
-        unit = str(i.get("unit") or "g")
-        qty = float(i["quantity"])
-        name = str(i["name"])
-        if unit == "to taste":
-            ings.append(
-                Ingredient(
-                    name=name,
-                    quantity=0.0,
-                    unit="to taste",
-                    is_to_taste=True,
-                    normalized_unit="to taste",
-                    normalized_quantity=0.0,
-                )
-            )
-            continue
-        vres = validator.validate(IngredientInput(name=name, quantity=qty, unit=unit))
-        if vres.is_valid and vres.ingredient is not None:
-            v = vres.ingredient
-            ings.append(
-                Ingredient(
-                    name=name,
-                    quantity=float(v.normalized_quantity),
-                    unit=str(v.normalized_unit),
-                    is_to_taste=False,
-                    normalized_unit=str(v.normalized_unit),
-                    normalized_quantity=float(v.normalized_quantity),
-                )
-            )
-        else:
-            ings.append(
-                Ingredient(
-                    name=name,
-                    quantity=qty,
-                    unit=unit,
-                    normalized_unit=unit,
-                    normalized_quantity=qty,
-                )
-            )
+    ings = [parse_ingredient(i) for i in r["ingredients"]]
     kw = dict(
         id=r["id"],
         name=r["name"],

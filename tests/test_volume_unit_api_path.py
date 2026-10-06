@@ -1,4 +1,10 @@
-"""API-path volume-unit conversion check (E2 / §4.4 units channel)."""
+"""API-path volume-unit conversion check (E2 / §4.4 units channel).
+
+Known gap, tracked as its own follow-up: ``NutritionCalculator._convert_quantity_to_grams``
+returns the raw quantity for ``tbsp``/``tsp``/``cup``/``ml``, so 2 tbsp yogurt counts
+as 2 g. The hand-calculated checks below are strict xfails: fixing the converter
+makes them pass, which fails the run until the xfail marks are removed.
+"""
 
 from __future__ import annotations
 
@@ -17,55 +23,28 @@ _RECIPES = _ROOT / "data" / "recipes" / "recipes.json"
 _REF = _ROOT / "data" / "reference" / "ingredient_nutrition.json"
 
 
-def _load_recipe(recipe_id: str) -> dict:
-    data = json.loads(_RECIPES.read_text(encoding="utf-8"))
-    for recipe in data["recipes"]:
-        if recipe["id"] == recipe_id:
-            return recipe
-    raise KeyError(recipe_id)
+def _calculator() -> NutritionCalculator:
+    return NutritionCalculator(LocalIngredientProvider(NutritionDB(str(_REF))))
 
 
-def test_tbsp_cup_api_path_vs_hand_calculated_grams():
-    """NutritionCalculator currently treats tbsp/cup quantities as grams.
+# (name, quantity, unit, hand-calculated grams from culinary densities)
+_HAND_GRAMS = [
+    ("low fat greek yogurt", 2.0, "tbsp", 30.0),  # ~15 g/tbsp
+    ("tomato", 1.0, "cup", 180.0),  # chopped
+    ("carrots", 4.0, "tbsp", 40.0),  # ~10 g/tbsp grated
+]
 
-    Hand-calculated (approximate culinary densities):
-      - 2 tbsp yogurt ≈ 30 g (≈15 g/tbsp)
-      - 1 cup tomato ≈ 180 g
-      - 4 tbsp carrots ≈ 40 g (≈10 g/tbsp grated)
 
-    The API path via ``_convert_quantity_to_grams`` returns the raw quantity for
-    volume units (2 / 1 / 4). This documents the known units gap; fixing the
-    converter is a separate follow-up.
-    """
-    provider = LocalIngredientProvider(NutritionDB(str(_REF)))
-    calc = NutritionCalculator(provider)
-
-    # recipe_007: 2 tbsp yogurt; recipe with cup/tbsp veg: recipe pasta sauce area
-    yogurt = Ingredient(name="low fat greek yogurt", quantity=2.0, unit="tbsp")
-    tomato = Ingredient(name="tomato", quantity=1.0, unit="cup")
-    carrots = Ingredient(name="carrots", quantity=4.0, unit="tbsp")
-
-    assert calc._convert_quantity_to_grams(yogurt) == pytest.approx(2.0)
-    assert calc._convert_quantity_to_grams(tomato) == pytest.approx(1.0)
-    assert calc._convert_quantity_to_grams(carrots) == pytest.approx(4.0)
-
-    hand = {
-        "yogurt_tbsp_g": 30.0,
-        "tomato_cup_g": 180.0,
-        "carrots_tbsp_g": 40.0,
-    }
-    api = {
-        "yogurt_tbsp_g": calc._convert_quantity_to_grams(yogurt),
-        "tomato_cup_g": calc._convert_quantity_to_grams(tomato),
-        "carrots_tbsp_g": calc._convert_quantity_to_grams(carrots),
-    }
-    # Document the gap; do not assert equality until the converter is fixed.
-    assert api["yogurt_tbsp_g"] < hand["yogurt_tbsp_g"]
-    assert api["tomato_cup_g"] < hand["tomato_cup_g"]
-    assert api["carrots_tbsp_g"] < hand["carrots_tbsp_g"]
+@pytest.mark.xfail(strict=True, reason="volume units are counted as grams on the API path (open follow-up)")
+@pytest.mark.parametrize("name, qty, unit, grams", _HAND_GRAMS)
+def test_volume_units_convert_to_hand_calculated_grams(name, qty, unit, grams):
+    got = _calculator()._convert_quantity_to_grams(Ingredient(name=name, quantity=qty, unit=unit))
+    assert got == pytest.approx(grams, rel=0.25)
 
 
 def test_committed_recipe_007_uses_tbsp_unit():
-    recipe = _load_recipe("recipe_007")
+    """Keeps a committed recipe on the volume path so the gap stays visible in production data."""
+    data = json.loads(_RECIPES.read_text(encoding="utf-8"))
+    recipe = next(r for r in data["recipes"] if r["id"] == "recipe_007")
     units = {i["name"]: i["unit"] for i in recipe["ingredients"]}
     assert units.get("low fat greek yogurt") == "tbsp"

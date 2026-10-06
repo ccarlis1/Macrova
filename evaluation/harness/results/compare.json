@@ -6665,10 +6665,10 @@
   "oracle": {
    "pins_overridden_by_locks": [],
    "valid_assignments_per_day": [
-    4300
+    1856
    ],
    "distinct_meal_sets_per_day": [
-    1062
+    406
    ],
    "day_enumeration_capped": [
     false
@@ -6676,7 +6676,7 @@
    "multiday_nodes": 1
   },
   "spec_notes": [
-   "F10b: dietary_flags gluten_free maps into HC-1 via wheat_gluten expansion; the hazard recipe keeps a lying gluten-free tag for the consistency audit."
+   "F10b: dietary_flags gluten_free maps into HC-1 via wheat_gluten expansion; the hazard recipe keeps a lying gluten-free tag for the consistency audit. Weak check on its own: the planner does not pick the hazard even without the flag; MB-153 is the one that fails if the mapping breaks."
   ],
   "n_days": 1,
   "micro": false,
@@ -6971,5 +6971,52 @@
   "pins": 0,
   "batches": 0,
   "safety": null
+ },
+ {
+  "id": "MB-153",
+  "title": "Pinned 'gluten-free' scramble that contains sourdough",
+  "cats": [
+   "pin-conflict",
+   "safety",
+   "tags",
+   "data-quality"
+  ],
+  "cls": "infeasible",
+  "expected": "FM-3",
+  "acceptable": [
+   "FM-3"
+  ],
+  "got": "FM-3",
+  "status": "MATCH",
+  "viol": [],
+  "tc": "TC-3",
+  "incomplete": null,
+  "report_codes": [
+   "FM-3"
+  ],
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"recipe_id\": \"dh_veggie_egg_scramble\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "detail": null,
+  "stage_exp": "pre_search",
+  "oracle": {
+   "pin": [
+    0,
+    0,
+    "dh_veggie_egg_scramble"
+   ],
+   "violation": "HC-1"
+  },
+  "spec_notes": [
+   "F10b/F9: only dietary_flags carries the need (no allergy, no exclusion). gluten_free maps into HC-1, so the pinned hazard is an HC-1 pin violation: FM-3 before search. If the flag mapping breaks, the pin is honoured and the plan succeeds."
+  ],
+  "n_days": 1,
+  "micro": false,
+  "pins": 1,
+  "batches": 0,
+  "safety": {
+   "must_not_contain_recipe_ids": [
+    "dh_veggie_egg_scramble"
+   ],
+   "severity": "allergen"
+  }
  }
 ]

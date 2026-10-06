@@ -1154,7 +1154,6 @@ S("Gluten-free flag on a recipe with sourdough",
   profile=P(
       2000, 120, 55, 85,
       dietary_flags=["gluten_free"],
-      excluded=["gluten"],
       intent_excluded=["pasta", "sourdough bread"],
   ),
   days=[day(std3(b=(3, 3, 4)))],
@@ -1163,7 +1162,8 @@ S("Gluten-free flag on a recipe with sourdough",
   safety={"must_not_contain_recipe_ids": ["dh_veggie_egg_scramble"], "severity": "allergen"},
   spec_notes=[
       "F10b: dietary_flags gluten_free maps into HC-1 via wheat_gluten expansion; "
-      "the hazard recipe keeps a lying gluten-free tag for the consistency audit."
+      "the hazard recipe keeps a lying gluten-free tag for the consistency audit. "
+      "Weak check on its own: the planner does not pick the hazard even without the flag; MB-153 is the one that fails if the mapping breaks."
   ])
 
 S("Oat parfait that is really oat oil",
@@ -1211,6 +1211,18 @@ S("Negative carbs even at the fat minimum",
   spec_notes=["Derived carbs at the fat median = (2000 - 600 - 170*9)/4 = -32.5 g; D9 fat-minimum fallback = (2000 - 600 - 160*9)/4 = -10 g, "
               "still negative, so §2.1 validity rejects with INVALID_REQUEST at input_validation (NEGATIVE_CARBS_DERIVED). Counterpart to MB-053."])
 
+S("Pinned 'gluten-free' scramble that contains sourdough",
+  "I'm celiac, so keep every meal gluten-free. Pin my veggie egg scramble for breakfast. 2,000 kcal, 120 g protein, 55-85 g fat.",
+  cats=["pin-conflict", "safety", "tags", "data-quality"], intended="infeasible",
+  profile=P(2000, 120, 55, 85, dietary_flags=["gluten_free"], intent_excluded=["pasta", "sourdough bread"]),
+  days=[day(std3(b=(3, 3, 4)))],
+  pool_ids=CORE + ["dh_veggie_egg_scramble"],
+  pool_note="full library + data-hazard scramble tagged gluten-free but containing sourdough bread",
+  pins=[(0, 0, "dh_veggie_egg_scramble")],
+  safety={"must_not_contain_recipe_ids": ["dh_veggie_egg_scramble"], "severity": "allergen"},
+  spec_notes=["F10b/F9: only dietary_flags carries the need (no allergy, no exclusion). gluten_free maps into HC-1, "
+              "so the pinned hazard is an HC-1 pin violation: FM-3 before search. If the flag mapping breaks, the pin is honoured and the plan succeeds."])
+
 # ======================================================================
 # Saved-profile preferences (liked foods, preferred tags). These come from the
 # user's stored profile rather than the request text, and never change
@@ -1257,5 +1269,5 @@ for _sc in SCENARIOS:
         if not _sc["preferences_note"]:
             _sc["preferences_note"] = ("liked_foods / preferred_tag_slugs come from the saved profile; "
                                        "soft signals only, must not change feasibility")
-assert len(SCENARIOS) == 152, len(SCENARIOS)
+assert len(SCENARIOS) == 153, len(SCENARIOS)
 assert not [t for t in _ENRICH if t not in {s["title"] for s in SCENARIOS}]

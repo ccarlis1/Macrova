@@ -379,7 +379,7 @@
  {
   "id": "MB-016",
   "active_batches": 0,
-  "secs": 0.0,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-4",
   "code": "OK",
@@ -687,7 +687,7 @@
  {
   "id": "MB-027",
   "active_batches": 0,
-  "secs": 1.27,
+  "secs": 1.23,
   "success": false,
   "tc": "TC-2",
   "code": "FM-1",
@@ -1041,7 +1041,7 @@
  {
   "id": "MB-040",
   "active_batches": 0,
-  "secs": 0.05,
+  "secs": 0.04,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1072,7 +1072,7 @@
  {
   "id": "MB-041",
   "active_batches": 0,
-  "secs": 0.06,
+  "secs": 0.07,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -1647,7 +1647,7 @@
  {
   "id": "MB-065",
   "active_batches": 0,
-  "secs": 0.01,
+  "secs": 0.0,
   "success": false,
   "tc": "TC-2",
   "code": "FM-4",
@@ -3343,7 +3343,7 @@
  {
   "id": "MB-136",
   "active_batches": 0,
-  "secs": 0.02,
+  "secs": 0.01,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3406,7 +3406,7 @@
  {
   "id": "MB-138",
   "active_batches": 0,
-  "secs": 0.5,
+  "secs": 0.51,
   "success": false,
   "tc": "TC-2",
   "code": "FM-2",
@@ -3432,7 +3432,7 @@
  {
   "id": "MB-139",
   "active_batches": 0,
-  "secs": 0.51,
+  "secs": 0.52,
   "success": true,
   "tc": "TC-1",
   "code": "OK",
@@ -3817,6 +3817,25 @@
   "code": "INVALID_REQUEST",
   "stage": "input_validation",
   "detail": "NEGATIVE_CARBS_DERIVED: Derived carbs are negative: protein and fat use more calories than the daily calorie target, even at the fat minimum.",
+  "nutrition_mode": "stored"
+ },
+ {
+  "id": "MB-153",
+  "active_batches": 0,
+  "secs": 0.0,
+  "success": false,
+  "tc": "TC-3",
+  "code": "FM-3",
+  "incomplete": null,
+  "stats": {
+   "attempts": 0,
+   "backtracks": 0
+  },
+  "report_codes": [
+   "FM-3"
+  ],
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 0, \"slot_index\": 0, \"slot_id\": \"day-1-slot-0\", \"date\": \"day-1\", \"details\": {\"recipe_id\": \"dh_veggie_egg_scramble\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "warnings": "null",
   "nutrition_mode": "stored"
  }
 ]

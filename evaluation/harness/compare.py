@@ -11,7 +11,7 @@ from src.llm.tag_repository import (
     load_hard_eligible_recipe_tag_slugs,
 )
 from src.planning.phase4_scoring import MEAL_ROLE_SLUGS
-from oracle import COOK_CAP, carbs_target
+from oracle import COOK_CAP, carbs_target, dietary_flag_exclusions
 SP = Path(__file__).parent / "results"
 LIB = {r["id"]: r for r in json.load(open(BENCH / "recipes.json"))["recipes"]}
 HARD = load_hard_eligible_recipe_tag_slugs(str(BENCH / "recipe_tags.json"))
@@ -24,6 +24,7 @@ def verify(sc, plan):
     v = []
     p = sc["profile"]; days = sc["schedule_days"]; D = len(days)
     ex = {e.strip().lower() for e in p.get("excluded_ingredients") or []}
+    ex |= set(dietary_flag_exclusions(p.get("dietary_flags")))
     iex = {e.strip().lower() for e in p.get("intent_excluded_ingredients") or []}
     pins = {(x["day_index"], x["slot_index"]): x["recipe_id"] for x in sc.get("pins") or []}
     for b in sc.get("meal_prep_batches") or []:

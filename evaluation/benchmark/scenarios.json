@@ -1,7 +1,7 @@
 {
   "benchmark": "macrova-planning-v1",
   "spec": "docs/planner/mealplan-specification-v3.md",
-  "scenario_count": 152,
+  "scenario_count": 153,
   "scenarios": [
     {
       "id": "MB-001",
@@ -29285,9 +29285,7 @@
           "max": 85
         },
         "max_daily_calories": null,
-        "excluded_ingredients": [
-          "gluten"
-        ],
+        "excluded_ingredients": [],
         "liked_foods": [],
         "demographic": "adult_male",
         "micronutrient_targets": {},
@@ -29401,7 +29399,7 @@
       },
       "preferences_note": "",
       "spec_notes": [
-        "F10b: dietary_flags gluten_free maps into HC-1 via wheat_gluten expansion; the hazard recipe keeps a lying gluten-free tag for the consistency audit."
+        "F10b: dietary_flags gluten_free maps into HC-1 via wheat_gluten expansion; the hazard recipe keeps a lying gluten-free tag for the consistency audit. Weak check on its own: the planner does not pick the hazard even without the flag; MB-153 is the one that fails if the mapping breaks."
       ],
       "safety_expectation": {
         "must_not_contain_recipe_ids": [
@@ -29421,10 +29419,10 @@
         "oracle": {
           "pins_overridden_by_locks": [],
           "valid_assignments_per_day": [
-            4300
+            1856
           ],
           "distinct_meal_sets_per_day": [
-            1062
+            406
           ],
           "day_enumeration_capped": [
             false
@@ -30514,6 +30512,177 @@
           "fat_kcal_min": 1440.0,
           "fat_kcal_median": 1530.0,
           "daily_calories": 2000.0
+        }
+      }
+    },
+    {
+      "id": "MB-153",
+      "title": "Pinned 'gluten-free' scramble that contains sourdough",
+      "user_request": "I'm celiac, so keep every meal gluten-free. Pin my veggie egg scramble for breakfast. 2,000 kcal, 120 g protein, 55-85 g fat.",
+      "categories": [
+        "pin-conflict",
+        "safety",
+        "tags",
+        "data-quality"
+      ],
+      "intended_class": "infeasible",
+      "profile": {
+        "daily_calories": 2000,
+        "daily_protein_g": 120,
+        "daily_fat_g": {
+          "min": 55,
+          "max": 85
+        },
+        "max_daily_calories": null,
+        "excluded_ingredients": [],
+        "liked_foods": [],
+        "demographic": "adult_male",
+        "micronutrient_targets": {},
+        "micronutrient_weekly_min_fraction": 1.0,
+        "intent_excluded_ingredients": [
+          "pasta",
+          "sourdough bread"
+        ],
+        "dietary_flags": [
+          "gluten_free"
+        ]
+      },
+      "horizon_days": 1,
+      "schedule_days": [
+        {
+          "day_index": 1,
+          "meals": [
+            {
+              "index": 1,
+              "busyness_level": 3,
+              "tags": [
+                "breakfast"
+              ],
+              "preferred_time": "07:30"
+            },
+            {
+              "index": 2,
+              "busyness_level": 3,
+              "tags": [
+                "lunch"
+              ],
+              "preferred_time": "12:30"
+            },
+            {
+              "index": 3,
+              "busyness_level": 4,
+              "tags": [
+                "dinner"
+              ],
+              "preferred_time": "18:30"
+            }
+          ],
+          "workouts": []
+        }
+      ],
+      "pins": [
+        {
+          "day_index": 0,
+          "slot_index": 0,
+          "recipe_id": "dh_veggie_egg_scramble"
+        }
+      ],
+      "meal_prep_batches": [],
+      "recipe_pool": {
+        "recipe_ids": [
+          "bk_yogurt_berry_bowl",
+          "bk_overnight_oats",
+          "bk_protein_oats",
+          "bk_cottage_papaya",
+          "bk_avocado_toast_feta",
+          "bk_cream_of_rice_whey",
+          "bk_tofu_scramble",
+          "bk_pb_banana_toast",
+          "bk_chia_pudding",
+          "bk_salmon_toast",
+          "bk_yolk_spinach_toast",
+          "bk_big_oat_bowl",
+          "ln_turkey_sandwich",
+          "ln_roast_beef_wrap",
+          "ln_tuna_poke",
+          "ln_chickpea_salad",
+          "ln_black_bean_quinoa",
+          "ln_salmon_salad",
+          "ln_white_bean_soup",
+          "ln_salami_plate",
+          "ln_cottage_box",
+          "ln_tuna_pasta_salad",
+          "ln_tofu_quinoa_salad",
+          "dn_beef_rice_bowl",
+          "dn_beef_chili",
+          "dn_thigh_sheet_pan",
+          "dn_tilapia_rice",
+          "dn_bolognese",
+          "dn_tofu_stir_fry",
+          "dn_salmon_potatoes",
+          "dn_burger_bowl",
+          "dn_veggie_pasta",
+          "dn_thigh_quinoa_prep",
+          "dn_edamame_fried_rice",
+          "dn_cauli_beef_bowl",
+          "dn_big_pasta_night",
+          "dn_bean_quesadilla",
+          "dn_tuna_steak_salad",
+          "dn_chickpea_curry",
+          "sn_protein_shake",
+          "sn_whey_water",
+          "sn_banana_pb",
+          "sn_almonds_chocolate",
+          "sn_yogurt_honey",
+          "sn_krispie_banana",
+          "sn_cottage_blueberry",
+          "sn_carrots_almond_butter",
+          "sn_turkey_rollups",
+          "sn_papaya_yogurt",
+          "sn_bedtime_cottage",
+          "sn_trail_mix",
+          "sn_edamame_cup",
+          "sn_chia_seed_water",
+          "hc_mass_gainer",
+          "hc_double_burger_potatoes",
+          "hc_big_beef_rice",
+          "hc_pasta_salmon_bake",
+          "dh_veggie_egg_scramble"
+        ],
+        "size": 58,
+        "description": "full library + data-hazard scramble tagged gluten-free but containing sourdough bread"
+      },
+      "preferences_note": "",
+      "spec_notes": [
+        "F10b/F9: only dietary_flags carries the need (no allergy, no exclusion). gluten_free maps into HC-1, so the pinned hazard is an HC-1 pin violation: FM-3 before search. If the flag mapping breaks, the pin is honoured and the plan succeeds."
+      ],
+      "safety_expectation": {
+        "must_not_contain_recipe_ids": [
+          "dh_veggie_egg_scramble"
+        ],
+        "severity": "allergen"
+      },
+      "expected": {
+        "class": "infeasible",
+        "outcome": "failure",
+        "primary_failure_code": "FM-3",
+        "acceptable_failure_codes": [
+          "FM-3"
+        ],
+        "failure_stage": "pre_search",
+        "derived_daily_carbs_g": 222.5,
+        "oracle": {
+          "pin": [
+            0,
+            0,
+            "dh_veggie_egg_scramble"
+          ],
+          "violation": "HC-1"
+        },
+        "intent_outcome": {
+          "outcome": "failure",
+          "primary_failure_code": "FM-3",
+          "note": "outcome if exclusions matched the user's intent (allergen class), not exact names"
         }
       }
     }

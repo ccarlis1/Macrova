@@ -95,15 +95,29 @@ def _slot_meal_type(meal: dict, slot_index: int, n_meals: int) -> str:
     return order[min(slot_index, 3)]
 
 
+def _lunch_swap_feasible(sc, plan, day_key, slot_index, lunch_ids):
+    """True if some other lunch-tagged recipe can replace plan[day_key][slot_index] and pass verify."""
+    current = plan[day_key][slot_index]
+    for rid in lunch_ids:
+        if rid == current:
+            continue
+        swapped = {k: list(v) for k, v in plan.items()}
+        swapped[day_key][slot_index] = rid
+        if not verify(sc, swapped):
+            return True
+    return False
+
+
 def meal_type_match_stats(results):
     """§4.3 metric: mismatch rates for planner-chosen slots with a known meal_type.
 
     Pins and meal-prep locks are excluded (assigned before scoring).
 
-    An avoidable lunch mismatch is a lunch slot whose chosen recipe lacks the
-    lunch tag when at least one lunch-tagged candidate was feasible for that
-    slot's hard constraints (cook-time / HC-1 / required tags ignored here —
-    we only check that a lunch-tagged recipe exists in the scenario pool).
+    A lunch mismatch is avoidable when some other lunch-tagged recipe in the
+    pool can take that slot, with the rest of the plan unchanged, and the plan
+    still passes ``verify`` (every hard constraint, daily windows, HC-8 and the
+    horizon micronutrient floors). This is a lower bound: a mismatch that only a
+    different whole plan avoids counts as unavoidable.
     """
     by_type = {m: {"known": 0, "mismatch": 0} for m in sorted(MEAL_ROLE_SLUGS)}
     known = mismatch = 0
@@ -114,11 +128,11 @@ def meal_type_match_stats(results):
             continue
         sc = SC[r["id"]]
         pool_ids = list((sc.get("recipe_pool") or {}).get("recipe_ids") or [])
-        lunch_in_pool = {
+        lunch_in_pool = sorted(
             rid
             for rid in pool_ids
             if "lunch" in {str(t).strip().lower() for t in CANON.get(rid, set())}
-        }
+        )
         pins = {(x["day_index"], x["slot_index"]) for x in sc.get("pins") or []}
         for b in sc.get("meal_prep_batches") or []:
             for a in b["assignments"]:
@@ -147,8 +161,7 @@ def meal_type_match_stats(results):
                     by_type[mt]["mismatch"] += 1
                     if mt == "lunch":
                         lunch_mismatches += 1
-                        # Avoidable if the pool had any other lunch-tagged recipe.
-                        if any(x != rid for x in lunch_in_pool):
+                        if _lunch_swap_feasible(sc, plan, di_str, si, lunch_in_pool):
                             avoidable_lunch += 1
     out = {
         "planner_slots_known": known,
@@ -156,7 +169,11 @@ def meal_type_match_stats(results):
         "planner_mismatch_rate": (mismatch / known) if known else 0.0,
         "lunch_mismatches": lunch_mismatches,
         "avoidable_lunch_mismatches": avoidable_lunch,
-        "avoidable_lunch_mismatch_rate": (
+        # Share of all planner-chosen lunch slots (compare with by_meal_type.lunch.mismatch_rate).
+        "avoidable_lunch_slot_rate": (
+            (avoidable_lunch / by_type["lunch"]["known"]) if by_type["lunch"]["known"] else 0.0
+        ),
+        "avoidable_share_of_lunch_mismatches": (
             (avoidable_lunch / lunch_mismatches) if lunch_mismatches else 0.0
         ),
         "by_meal_type": {

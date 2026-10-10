@@ -87,3 +87,10 @@ Thumbs.db
 
 # Local planner debug exports (see scripts/export_planner_debug_artifacts.py)
 debug_artifacts/
+
+# Claude Code hook scratch state (see .claude/hooks/_common.py::state_dir)
+.claude/.hook-state/
+
+# Flutter tool state, recreated by every `flutter analyze` / `flutter test` run
+frontend/.config/
+frontend/.flutter

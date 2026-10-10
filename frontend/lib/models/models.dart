@@ -82,12 +82,16 @@ class MealSlot {
   final int busynessLevel;
   final List<String>? tags;
   final String? preferredTime;
+  final List<String>? requiredTagSlugs;
+  final List<String>? preferredTagSlugs;
 
   const MealSlot({
     required this.index,
     required this.busynessLevel,
     this.tags,
     this.preferredTime,
+    this.requiredTagSlugs,
+    this.preferredTagSlugs,
   });
 
   factory MealSlot.fromJson(Map<String, dynamic> json) {
@@ -96,6 +100,12 @@ class MealSlot {
       busynessLevel: json['busyness_level'] as int,
       tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList(),
       preferredTime: json['preferred_time'] as String?,
+      requiredTagSlugs: (json['required_tag_slugs'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      preferredTagSlugs: (json['preferred_tag_slugs'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
     );
   }
 
@@ -104,6 +114,8 @@ class MealSlot {
         'busyness_level': busynessLevel,
         if (tags != null) 'tags': tags,
         if (preferredTime != null) 'preferred_time': preferredTime,
+        if (requiredTagSlugs != null) 'required_tag_slugs': requiredTagSlugs,
+        if (preferredTagSlugs != null) 'preferred_tag_slugs': preferredTagSlugs,
       };
 }
 
@@ -184,8 +196,16 @@ class PlanRequest {
   final String ingredientSource;
   final Map<String, double>? micronutrientGoals;
   final double micronutrientWeeklyMinFraction;
+  /// HC-5 hard daily calorie ceiling. Omitted from JSON when null.
+  final int? maxDailyCalories;
   final String? planningMode;
   final List<String>? recipeIds;
+  // Canonical pool-level tag filtering fields (backed by recipe_tags.json).
+  final List<String>? cuisine;
+  final String? costLevel;
+  final String? prepTimeBucket;
+  final List<String>? dietaryFlags;
+  final String? recipeTagsPath;
 
   const PlanRequest({
     required this.dailyCalories,
@@ -201,8 +221,14 @@ class PlanRequest {
     this.ingredientSource = 'local',
     this.micronutrientGoals,
     this.micronutrientWeeklyMinFraction = 1.0,
+    this.maxDailyCalories,
     this.planningMode,
     this.recipeIds,
+    this.cuisine,
+    this.costLevel,
+    this.prepTimeBucket,
+    this.dietaryFlags,
+    this.recipeTagsPath,
   });
 
   factory PlanRequest.fromJson(Map<String, dynamic> json) {
@@ -234,10 +260,20 @@ class PlanRequest {
       micronutrientWeeklyMinFraction:
           (json['micronutrient_weekly_min_fraction'] as num?)?.toDouble() ??
               1.0,
+      maxDailyCalories: (json['max_daily_calories'] as num?)?.toInt(),
       planningMode: json['planning_mode'] as String?,
       recipeIds: (json['recipe_ids'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
+      cuisine: (json['cuisine'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      costLevel: json['cost_level'] as String?,
+      prepTimeBucket: json['prep_time_bucket'] as String?,
+      dietaryFlags: (json['dietary_flags'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      recipeTagsPath: json['recipe_tags_path'] as String?,
     );
   }
 
@@ -266,12 +302,33 @@ class PlanRequest {
     if (micros != null && micros.isNotEmpty) {
       map['micronutrient_goals'] = micros;
     }
+    final maxCals = maxDailyCalories;
+    if (maxCals != null) {
+      map['max_daily_calories'] = maxCals;
+    }
     if (planningMode != null && planningMode!.isNotEmpty) {
       map['planning_mode'] = planningMode;
     }
     final ids = recipeIds;
     if (ids != null && ids.isNotEmpty) {
       map['recipe_ids'] = ids;
+    }
+    final cuisineValues = cuisine;
+    if (cuisineValues != null && cuisineValues.isNotEmpty) {
+      map['cuisine'] = cuisineValues;
+    }
+    if (costLevel != null && costLevel!.isNotEmpty) {
+      map['cost_level'] = costLevel;
+    }
+    if (prepTimeBucket != null && prepTimeBucket!.isNotEmpty) {
+      map['prep_time_bucket'] = prepTimeBucket;
+    }
+    final dietaryValues = dietaryFlags;
+    if (dietaryValues != null && dietaryValues.isNotEmpty) {
+      map['dietary_flags'] = dietaryValues;
+    }
+    if (recipeTagsPath != null && recipeTagsPath!.isNotEmpty) {
+      map['recipe_tags_path'] = recipeTagsPath;
     }
     return map;
   }
@@ -347,12 +404,15 @@ class Meal {
   final Map<String, dynamic> recipe;
   final NutritionProfile nutrition;
   final int busynessLevel;
+  /// §4.3: whether the recipe is tagged for [mealType]; null when unknown.
+  final bool? mealTypeMatch;
 
   const Meal({
     required this.mealType,
     required this.recipe,
     required this.nutrition,
     required this.busynessLevel,
+    this.mealTypeMatch,
   });
 
   factory Meal.fromJson(Map<String, dynamic> json) {
@@ -362,6 +422,7 @@ class Meal {
       nutrition:
           NutritionProfile.fromJson(json['nutrition'] as Map<String, dynamic>),
       busynessLevel: json['busyness_level'] as int,
+      mealTypeMatch: json['meal_type_match'] as bool?,
     );
   }
 
@@ -383,6 +444,7 @@ class Meal {
           carbsG: 0,
         ),
         busynessLevel: 3,
+        mealTypeMatch: m['meal_type_match'] as bool?,
       );
     }
 
@@ -404,6 +466,7 @@ class Meal {
       },
       nutrition: NutritionProfile.fromJson(nutritionMap),
       busynessLevel: m['busyness_level'] as int? ?? 3,
+      mealTypeMatch: m['meal_type_match'] as bool?,
     );
   }
 }

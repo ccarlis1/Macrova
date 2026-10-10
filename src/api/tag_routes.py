@@ -1,159 +1,137 @@
 from __future__ import annotations
 
+import json
 import sys
-from collections import Counter
-from typing import Callable, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from src.api.error_mapping import map_exception_to_api_error
-from src.data_layer.recipe_db import RecipeDB
-from src.llm.schemas import TagMeta, TagType
-from src.llm.tag_repository import (
-    TagRegistry,
-    load_recipe_tag_slugs,
-)
+from src.llm import tag_repository
+from src.llm.tag_repository import TagRepositoryError
 
-router = APIRouter()
+DEFAULT_TAG_PATH = "data/recipes/recipe_tags.json"
 
-_tag_path_getter: Callable[[], str] = lambda: "data/recipes/recipe_tags.json"
-_recipes_path_getter: Callable[[], str] = lambda: "data/recipes/recipes.json"
-
-
-def configure_tag_routes(
-    *,
-    tag_path_getter: Callable[[], str],
-    recipes_path_getter: Callable[[], str],
-) -> None:
-    global _tag_path_getter, _recipes_path_getter
-    _tag_path_getter = tag_path_getter
-    _recipes_path_getter = recipes_path_getter
+router = APIRouter(prefix="/tags", tags=["tags"])
 
 
 class TagCreateRequest(BaseModel):
-    display: str
-    type: TagType
     slug: Optional[str] = None
+    display: str = Field(..., min_length=1)
+    type: Literal["context", "time", "nutrition", "constraint"]
 
 
 class TagRenameRequest(BaseModel):
-    display: str
+    display: str = Field(..., min_length=1)
 
 
 class TagAliasRequest(BaseModel):
-    alias_slug: str
+    alias_slug: str = Field(..., min_length=1)
+
+def _to_payload(meta: Any, recipe_count: int) -> Dict[str, Any]:
+    enriched = tag_repository.enrich_tag_meta(meta)
+    return {
+        "slug": enriched.slug,
+        "display": enriched.display,
+        "type": enriched.tag_type,
+        "source": enriched.source,
+        "created_at": enriched.created_at,
+        "aliases": list(enriched.aliases),
+        "recipe_count": recipe_count,
+        "semantic_class": enriched.semantic_class,
+        "eligibility": enriched.eligibility,
+        "hard_filter_allowed": enriched.hard_filter_allowed,
+        "soft_score_allowed": enriched.soft_score_allowed,
+        "display_only": enriched.display_only,
+        "planner_hard_eligible": tag_repository.is_planner_hard_eligible(enriched),
+    }
 
 
-class TagResponse(BaseModel):
-    slug: str
-    display: str
-    type: TagType
-    source: str
-    created_at: str
-    aliases: List[str]
-    eligibility: str
-    recipe_count: int = 0
+def _compute_recipe_counts() -> Dict[str, int]:
+    return tag_repository.compute_recipe_tag_counts(DEFAULT_TAG_PATH)
 
 
-def _registry() -> TagRegistry:
-    return TagRegistry(_tag_path_getter())
-
-
-def _tag_response(tag: TagMeta, *, recipe_count: int = 0) -> TagResponse:
-    return TagResponse(
-        slug=tag.slug,
-        display=tag.display,
-        type=tag.type,
-        source=tag.source,
-        created_at=tag.created_at,
-        aliases=list(tag.aliases),
-        eligibility=tag.eligibility,
-        recipe_count=recipe_count,
+def _log_mutation(action: str, payload: Dict[str, Any]) -> None:
+    print(
+        json.dumps({"action": action, **payload}, sort_keys=True, ensure_ascii=True),
+        file=sys.stderr,
     )
 
 
-def _recipe_counts_by_slug() -> Counter[str]:
+@router.get("")
+def list_tags_endpoint(
+    type: Optional[Literal["context", "time", "nutrition", "constraint"]] = Query(  # noqa: A002
+        default=None
+    ),
+) -> Any:
     try:
-        recipe_ids = {
-            recipe.id for recipe in RecipeDB(_recipes_path_getter()).get_all_recipes()
-        }
-    except FileNotFoundError:
-        recipe_ids = set()
-
-    slugs_by_id = load_recipe_tag_slugs(_tag_path_getter())
-    counts: Counter[str] = Counter()
-    for recipe_id, slugs in slugs_by_id.items():
-        if recipe_id not in recipe_ids:
-            continue
-        counts.update(set(slugs))
-    return counts
-
-
-def _log_mutation(action: str, slug: str) -> None:
-    print(f"tag_mutation action={action} slug={slug}", file=sys.stderr)
-
-
-@router.get("/tags", response_model=List[TagResponse])
-def list_tags(
-    type: Optional[TagType] = Query(default=None),
-) -> List[TagResponse] | JSONResponse:
-    try:
-        counts = _recipe_counts_by_slug()
-        return [
-            _tag_response(tag, recipe_count=counts.get(tag.slug, 0))
-            for tag in _registry().list_by_type(type)
-        ]
-    except Exception as exc:
+        tags = tag_repository.list_by_type(DEFAULT_TAG_PATH, type)
+        counts = _compute_recipe_counts()
+        return {"tags": [_to_payload(meta, counts.get(meta.slug, 0)) for meta in tags]}
+    except TagRepositoryError as exc:
         status_code, payload = map_exception_to_api_error(exc)
         return JSONResponse(status_code=status_code, content=payload)
 
 
-@router.post("/tags", response_model=TagResponse)
-def create_tag(body: TagCreateRequest) -> TagResponse | JSONResponse:
+@router.post("")
+def create_tag_endpoint(body: TagCreateRequest) -> Any:
     try:
-        tag = _registry().create(
-            display=body.display,
-            type=body.type,
+        meta = tag_repository.create(
+            path=DEFAULT_TAG_PATH,
             slug=body.slug,
+            display=body.display,
+            tag_type=body.type,
             source="user",
         )
-        _log_mutation("create", tag.slug)
-        return _tag_response(tag)
-    except Exception as exc:
+        _log_mutation("create_tag", {"slug": meta.slug})
+        return {"tag": _to_payload(meta, 0)}
+    except TagRepositoryError as exc:
         status_code, payload = map_exception_to_api_error(exc)
         return JSONResponse(status_code=status_code, content=payload)
 
 
-@router.patch("/tags/{slug}", response_model=TagResponse)
-def rename_tag(slug: str, body: TagRenameRequest) -> TagResponse | JSONResponse:
+@router.patch("/{slug}")
+def rename_tag_endpoint(slug: str, body: TagRenameRequest) -> Any:
     try:
-        tag = _registry().rename_display(slug, body.display)
-        _log_mutation("rename", tag.slug)
-        return _tag_response(tag)
-    except Exception as exc:
+        meta = tag_repository.rename_display(
+            path=DEFAULT_TAG_PATH,
+            slug=slug,
+            display=body.display,
+        )
+        counts = _compute_recipe_counts()
+        _log_mutation("rename_tag", {"slug": meta.slug})
+        return {"tag": _to_payload(meta, counts.get(meta.slug, 0))}
+    except TagRepositoryError as exc:
         status_code, payload = map_exception_to_api_error(exc)
         return JSONResponse(status_code=status_code, content=payload)
 
 
-@router.post("/tags/{slug}/alias", response_model=TagResponse)
-def add_tag_alias(slug: str, body: TagAliasRequest) -> TagResponse | JSONResponse:
+@router.post("/{slug}/alias")
+def add_alias_endpoint(slug: str, body: TagAliasRequest) -> Any:
     try:
-        tag = _registry().add_alias(slug, body.alias_slug)
-        _log_mutation("alias", tag.slug)
-        return _tag_response(tag)
-    except Exception as exc:
+        meta = tag_repository.add_alias(
+            path=DEFAULT_TAG_PATH,
+            slug=slug,
+            alias_slug=body.alias_slug,
+        )
+        counts = _compute_recipe_counts()
+        _log_mutation("add_alias", {"slug": meta.slug, "alias_slug": body.alias_slug})
+        return {"tag": _to_payload(meta, counts.get(meta.slug, 0))}
+    except TagRepositoryError as exc:
         status_code, payload = map_exception_to_api_error(exc)
         return JSONResponse(status_code=status_code, content=payload)
 
 
-@router.post("/tags/{src_slug}/merge_into/{dst_slug}", response_model=None)
-def merge_tag(src_slug: str, dst_slug: str):
+@router.post("/{src_slug}/merge_into/{dst_slug}")
+def merge_tag_endpoint(src_slug: str, dst_slug: str) -> Any:
     try:
-        _registry().merge(src_slug, dst_slug)
-        _log_mutation("merge", src_slug)
-        return {"merged": src_slug, "into": dst_slug}
-    except Exception as exc:
+        tag_repository.merge(src_slug, dst_slug, DEFAULT_TAG_PATH)
+        merged = tag_repository.resolve(dst_slug, DEFAULT_TAG_PATH)
+        counts = _compute_recipe_counts()
+        _log_mutation("merge_tag", {"src_slug": src_slug, "dst_slug": dst_slug})
+        return {"tag": _to_payload(merged, counts.get(merged.slug, 0))}
+    except TagRepositoryError as exc:
         status_code, payload = map_exception_to_api_error(exc)
         return JSONResponse(status_code=status_code, content=payload)

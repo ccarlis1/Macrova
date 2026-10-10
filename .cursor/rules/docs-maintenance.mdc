@@ -1,0 +1,17 @@
+---
+description: Documentation maintenance triggers for Macrova
+globs: "**/*.py,**/*.dart,**/*.md,**/*.mdc,Makefile,requirements*.txt,.python-version"
+alwaysApply: false
+---
+
+# Documentation Maintenance
+
+When making relevant changes, check whether the nearest canonical doc must be updated.
+
+**Update docs when a change affects:** setup/canonical commands, test commands, Python/Flutter environment, API routes or OpenAPI, planner behavior or failure modes, LLM/tagging behavior, data model or persistence, frontend screens/providers/wiring, architecture boundaries, agent rules/subagents, or roadmap status.
+
+**Do not update** for purely internal refactors with no behavior, command, contract, or workflow change.
+
+**Source-of-truth hierarchy:** see [AGENTS.md](../../AGENTS.md). Prefer source code and tests over prose; update the nearest canonical doc only — avoid duplication.
+
+**Final response requirement:** include `Docs updated:` / `Docs checked, no update needed:` / `Docs not checked:` (with reason if blocked).

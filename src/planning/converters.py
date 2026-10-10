@@ -5,7 +5,8 @@ Pure functions only. No I/O, no provider access. Deterministic.
 
 import json
 import logging
-from typing import List, Optional
+from dataclasses import replace
+from typing import Any, Dict, List, Optional, Set
 
 from src.data_layer.models import (
     Recipe,
@@ -13,7 +14,9 @@ from src.data_layer.models import (
     NutritionProfile,
     Ingredient,
 )
+from src.data_layer.exceptions import IngredientNotFoundError
 from src.models.schedule import DaySchedule as CanonicalDaySchedule
+from src.planning.allergens import expand_allergy_terms, exclusions_for_dietary_flags
 from src.planning.phase0_models import PlanningRecipe, PlanningUserProfile, MealSlot
 from src.nutrition.calculator import NutritionCalculator
 
@@ -30,6 +33,26 @@ _DEFAULT_MEAL_CLOCKS: tuple[str, ...] = (
     "20:00",
     "21:00",
 )
+
+
+def normalize_schedule_days_for_api(
+    schedule_days: List[CanonicalDaySchedule],
+) -> List[Dict[str, Any]]:
+    """Canonical JSON for persisted/API schedule_days (matches PUT /profile/schedule output).
+
+    Deterministic ordering: days by day_index, meals by index, workouts by gap then type.
+    """
+
+    normalized: List[Dict[str, Any]] = []
+    for day in sorted(schedule_days, key=lambda d: d.day_index):
+        day_payload = day.model_dump(mode="json", exclude_none=True)
+        day_payload["meals"] = sorted(day_payload.get("meals", []), key=lambda m: m["index"])
+        day_payload["workouts"] = sorted(
+            day_payload.get("workouts", []),
+            key=lambda w: (w["after_meal_index"], w["type"]),
+        )
+        normalized.append(day_payload)
+    return normalized
 
 
 def _expand_schedule_days(
@@ -112,6 +135,8 @@ def _canonical_day_to_planning_slots(
                 time=clock,
                 busyness_level=m.busyness_level,
                 meal_type=meal_type,
+                required_tag_slugs=list(m.required_tag_slugs or []) or None,
+                preferred_tag_slugs=list(m.preferred_tag_slugs or []) or None,
             )
         )
     return slots
@@ -138,17 +163,72 @@ def extract_ingredient_names(recipes: List[Recipe]) -> List[str]:
     return sorted(names)
 
 
+def _normalize_recipe_quantities(recipe: Recipe, calculator: NutritionCalculator) -> Recipe:
+    """Return a copy of ``recipe`` whose ingredients carry grams in ``normalized_quantity``.
+
+    Grams-first (U1/U2): each ingredient converts once, here, after provider
+    resolution. An ingredient that can't convert is left unnormalized; the
+    unresolved check below reports it and drops the recipe. Calculators without
+    ``normalize_ingredient`` (e.g. the harness's stored-nutrition stub) are skipped.
+    """
+    normalize = getattr(calculator, "normalize_ingredient", None)
+    if not callable(normalize):
+        return recipe
+    ingredients = []
+    for ingredient in recipe.ingredients:
+        try:
+            ingredients.append(normalize(ingredient))
+        except IngredientNotFoundError:
+            ingredients.append(ingredient)
+        except RuntimeError:
+            # API provider: name not pre-resolved via resolve_all
+            ingredients.append(ingredient)
+    return replace(recipe, ingredients=ingredients)
+
+
 def convert_recipes(
     recipes: List[Recipe],
     calculator: NutritionCalculator,
+    canonical_tag_slugs_by_id: Optional[Dict[str, Set[str]]] = None,
+    *,
+    drop_unresolved: bool = True,
+    unresolved_log: Optional[List[Dict[str, Any]]] = None,
 ) -> List[PlanningRecipe]:
     """Convert data-layer recipes to planning recipes with pre-computed nutrition.
 
-    Calls calculator.calculate_recipe_nutrition for each recipe. Output is sorted
+    Each ingredient first converts to grams once (``normalized_quantity``, via
+    ``calculator.normalize_ingredient``); the planning recipe carries the
+    normalized ingredients. Then calls calculator.calculate_recipe_nutrition
+    for each recipe. Output is sorted
     by recipe.id for determinism. No provider access; calculator only.
+
+    When ``drop_unresolved`` is True (default, §4.4), recipes with any
+    non-to-taste ingredient the calculator cannot resolve are omitted from the
+    pool. If ``unresolved_log`` is provided, each dropped recipe is appended as
+    ``{"recipe_id", "recipe_name", "unresolved_ingredients"}``.
     """
     out: List[PlanningRecipe] = []
     for recipe in recipes:
+        recipe = _normalize_recipe_quantities(recipe, calculator)
+        unresolved: List[str] = []
+        lookup = getattr(calculator, "unresolved_ingredient_names", None)
+        if callable(lookup):
+            unresolved = list(lookup(recipe))
+        if unresolved and drop_unresolved:
+            if unresolved_log is not None:
+                unresolved_log.append(
+                    {
+                        "recipe_id": recipe.id,
+                        "recipe_name": recipe.name,
+                        "unresolved_ingredients": unresolved,
+                    }
+                )
+            logger.warning(
+                "Dropping recipe %s from pool: unresolved ingredients %s",
+                recipe.id,
+                unresolved,
+            )
+            continue
         nutrition = calculator.calculate_recipe_nutrition(recipe)
         out.append(
             PlanningRecipe(
@@ -159,6 +239,9 @@ def convert_recipes(
                 nutrition=nutrition,
                 primary_carb_contribution=None,
                 primary_carb_source=None,
+                canonical_tag_slugs=set(
+                    (canonical_tag_slugs_by_id or {}).get(recipe.id, set())
+                ),
             )
         )
     out.sort(key=lambda r: r.id)
@@ -182,7 +265,13 @@ def _schedule_dict_to_slots_one_day(
         else:
             meal_type = meal_type_by_position[min(i, 3)]
         slots.append(
-            MealSlot(time=time_str, busyness_level=busyness, meal_type=meal_type)
+            MealSlot(
+                time=time_str,
+                busyness_level=busyness,
+                meal_type=meal_type,
+                required_tag_slugs=None,
+                preferred_tag_slugs=None,
+            )
         )
     return slots
 
@@ -194,15 +283,29 @@ def convert_profile(
 ) -> PlanningUserProfile:
     """Convert UserProfile and planning horizon to PlanningUserProfile.
 
-    Excluded ingredients = allergies + disliked_foods. Schedule is replicated
-    for `days` days. Micronutrient targets from daily_micronutrient_targets
+    Excluded ingredients = allergy terms expanded by allergen class, plus
+    disliked_foods kept exact. Allergies are a safety guarantee (HC-1 / Q10);
+    dislikes are exact-name hard exclusions only. Schedule is replicated for
+    `days` days. Micronutrient targets from daily_micronutrient_targets
     (daily RDI values, pass-through). Deterministic.
 
     When ``user_profile.schedule_days`` is set, per-day meal counts, busyness,
     and workout gaps are taken from the canonical model; otherwise the legacy
     ``schedule`` dict path is used without explicit workout topology.
     """
-    excluded_ingredients = list(user_profile.allergies) + list(user_profile.disliked_foods)
+    excluded_ingredients = expand_allergy_terms(
+        user_profile.allergies
+    ) + list(user_profile.disliked_foods)
+    flag_exclusions = exclusions_for_dietary_flags(
+        list(user_profile.dietary_flags or [])
+    )
+    if flag_exclusions:
+        # Preserve allergy/dislike order; append dietary-flag names not already present.
+        seen = {x.lower().strip() for x in excluded_ingredients}
+        for name in flag_exclusions:
+            if name not in seen:
+                excluded_ingredients.append(name)
+                seen.add(name)
 
     workout_after_meal_indices_by_day: Optional[List[List[int]]] = None
     schedule: List[List[MealSlot]]
@@ -252,6 +355,12 @@ def convert_profile(
             schedule.append(slots_d)
 
     micronutrient_targets = dict(user_profile.daily_micronutrient_targets or {})
+    # Hydration boundary: canonical persisted (day_index, slot_index) enters planner
+    # as (day_1based, slot_index) pinned_assignments.
+    pinned_assignments = {
+        (int(pin.day_index) + 1, int(pin.slot_index)): str(pin.recipe_id)
+        for pin in (user_profile.pins or [])
+    }
 
     return PlanningUserProfile(
         daily_calories=user_profile.daily_calories,
@@ -264,7 +373,7 @@ def convert_profile(
         liked_foods=list(user_profile.liked_foods),
         demographic="adult_male",
         upper_limits_overrides=None,
-        pinned_assignments={},
+        pinned_assignments=pinned_assignments,
         micronutrient_targets=micronutrient_targets,
         micronutrient_weekly_min_fraction=user_profile.micronutrient_weekly_min_fraction,
         activity_schedule={},

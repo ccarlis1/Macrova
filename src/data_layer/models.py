@@ -221,10 +221,23 @@ class Recipe:
     ingredients: List[Ingredient]  # List of ingredients
     cooking_time_minutes: int  # Total cooking time
     instructions: List[str]  # Step-by-step instructions
-    # Future fields (post-MVP):
-    # cuisine_type: Optional[str]
-    # tags: List[str]
-    # difficulty: Optional[str]
+    default_servings: int = 1
+    # Deprecated compatibility projection only. Canonical planner/filter tags live in
+    # data/recipes/recipe_tags.json -> tags_by_id.
+    tags: List[Dict[str, str]] = field(default_factory=list)
+    # Optional provenance for generated/synced recipes: source, created_at, model,
+    # cooking_time_source, resolved ingredient fdc_ids, validation version.
+    provenance: Optional[Dict[str, object]] = None
+
+    @property
+    def is_meal_prep_capable(self) -> bool:
+        """True when recipe serves 2+ and has a context meal-prep tag."""
+        if self.default_servings < 2:
+            return False
+        for tag in self.tags:
+            if tag.get("slug") == "meal-prep" and tag.get("type") == "context":
+                return True
+        return False
 
 
 @dataclass
@@ -267,6 +280,9 @@ class UserProfile:
     liked_foods: List[str]  # Foods to prefer
     disliked_foods: List[str]  # Foods to avoid
     allergies: List[str]  # Allergens to avoid
+    # Optional dietary flags (gluten_free, dairy_free, vegetarian, vegan).
+    # Mapped into HC-1 exclusions in convert_profile; also used as tag filters.
+    dietary_flags: Optional[List[str]] = None
 
     # Calorie Deficit Mode (optional hard constraint)
     max_daily_calories: Optional[int] = None  # Hard cap on daily calories
@@ -281,8 +297,20 @@ class UserProfile:
     # derived meal-only (1–4) for legacy planner paths.
     schedule_days: Optional[List[DaySchedule]] = None
 
+    # Canonical slot pins persisted in profile storage.
+    pins: Optional[List["ProfilePin"]] = None
+
     # Future (post-MVP)
     # meal_prep_meals: List[Meal]
+
+
+@dataclass(frozen=True)
+class ProfilePin:
+    """Canonical persisted profile pin."""
+
+    day_index: int
+    slot_index: int
+    recipe_id: str
 
 
 @dataclass

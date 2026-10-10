@@ -1,0 +1,32 @@
+{
+ "offline": {
+  "T-01_unknown_slug_rejected": true,
+  "T-02_proposed_tags_in_fixture": 4,
+  "T-02_proposed_leaked_into_hard": [],
+  "T-03_alias_batch_cook": "meal-prep",
+  "T-04_entries_before_after": [
+   64,
+   1
+  ],
+  "T-04_curated_entries_lost": 64,
+  "T-07_free_cuisine_schema_accepts": "martian fusion 2000"
+ },
+ "live": {
+  "tagged_count": [
+   0,
+   0
+  ],
+  "per_recipe": {
+   "bk_tofu_scramble": "dropped",
+   "ln_turkey_sandwich": "dropped",
+   "dn_salmon_potatoes": "dropped",
+   "sn_yogurt_honey": "dropped",
+   "dn_bean_quesadilla": "dropped",
+   "hc_mass_gainer": "dropped"
+  },
+  "T05_bucket_agreement": "0/6",
+  "T06_contradictions": 0,
+  "T07_distinct_cuisine_strings": [],
+  "T08_determinism": "0/6"
+ }
+}

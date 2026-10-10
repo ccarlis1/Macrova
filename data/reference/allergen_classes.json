@@ -1,0 +1,204 @@
+{
+  "source": "C6 / reconciliation Q10: HC-1 allergy class expansion",
+  "note": "An ingredient is classified if it appears in any class members list or in no_major_allergen. Allergy terms expand to the matching class's members; dislikes stay exact.",
+  "classes": {
+    "peanut": {
+      "terms": [
+        "peanut",
+        "peanuts",
+        "groundnut",
+        "groundnuts"
+      ],
+      "members": [
+        "peanut butter"
+      ]
+    },
+    "tree_nut": {
+      "terms": [
+        "tree nut",
+        "tree nuts",
+        "tree-nut",
+        "tree-nuts",
+        "treenut",
+        "treenuts",
+        "almond",
+        "almonds",
+        "nut",
+        "nuts"
+      ],
+      "members": [
+        "almonds",
+        "almond butter unsalted"
+      ]
+    },
+    "milk": {
+      "terms": [
+        "dairy",
+        "milk",
+        "lactose",
+        "cheese",
+        "yogurt",
+        "yoghurt",
+        "butter",
+        "whey",
+        "cream"
+      ],
+      "members": [
+        "milk",
+        "milk 1% fat lowfat",
+        "butter",
+        "whey protein powder",
+        "whey protein powder 24 grams of protein per scoop",
+        "greek yogurt plain nonfat",
+        "low fat greek yogurt",
+        "cottage cheese 1% fat",
+        "sharp cheddar cheese",
+        "feta cheese reduced fat",
+        "cheddar cheese natural 50% reduced fat",
+        "parmesan cheese hard",
+        "parmesan grated",
+        "chocolate dark 70-85% cacao solids",
+        "kellogg's rice krispies treats original"
+      ]
+    },
+    "egg": {
+      "terms": [
+        "egg",
+        "eggs"
+      ],
+      "members": [
+        "eggs",
+        "egg yolk"
+      ]
+    },
+    "wheat_gluten": {
+      "terms": [
+        "wheat",
+        "gluten",
+        "wheat gluten",
+        "celiac",
+        "coeliac",
+        "flour"
+      ],
+      "members": [
+        "pasta",
+        "sourdough bread",
+        "soy sauce"
+      ]
+    },
+    "soy": {
+      "terms": [
+        "soy",
+        "soya",
+        "soybean",
+        "soybeans",
+        "soya bean",
+        "soya beans"
+      ],
+      "members": [
+        "edamame beans",
+        "soy sauce",
+        "tamari",
+        "tofu not silken firm"
+      ]
+    },
+    "fish": {
+      "terms": [
+        "fish"
+      ],
+      "members": [
+        "salmon canned",
+        "tilapia",
+        "tuna sashimi"
+      ]
+    },
+    "shellfish": {
+      "terms": [
+        "shellfish",
+        "crustacean",
+        "crustaceans",
+        "mollusk",
+        "mollusks",
+        "shrimp",
+        "prawn",
+        "prawns",
+        "crab",
+        "lobster",
+        "clam",
+        "clams",
+        "mussel",
+        "mussels",
+        "oyster",
+        "oysters",
+        "scallop",
+        "scallops"
+      ],
+      "members": []
+    },
+    "sesame": {
+      "terms": [
+        "sesame",
+        "sesame seed",
+        "sesame seeds"
+      ],
+      "members": [
+        "sesame oil"
+      ]
+    }
+  },
+  "no_major_allergen": [
+    "acai berry",
+    "asparagus",
+    "avocado black skin",
+    "avocado oil",
+    "avocados, raw, all commercial varieties",
+    "bananas",
+    "beans white mature seeds",
+    "bell pepper",
+    "black beans drained",
+    "blackberries unsweetened",
+    "blueberries",
+    "carrots",
+    "cauliflower",
+    "cherry tomatoes",
+    "chia seeds",
+    "chicken breast",
+    "chicken thigh skin removed",
+    "chickpeas drained",
+    "cream of rice",
+    "cream of rice dry",
+    "cucumber",
+    "garlic",
+    "hamburger or beef 90%",
+    "hamburger or beef 95%",
+    "honey",
+    "jasmine rice in unsalted water",
+    "kiwi fruit green",
+    "lemon juice",
+    "lettuce",
+    "mushrooms",
+    "oats",
+    "olive oil",
+    "papaya",
+    "parsley",
+    "potatoes flesh",
+    "quinoa",
+    "red peppers",
+    "rice",
+    "roast beef lunchmeat",
+    "rolled oats",
+    "salami genoa",
+    "salsa ready-to-serve",
+    "salt",
+    "sauerkraut",
+    "spaghetti squash",
+    "spinach",
+    "sweet potato",
+    "tomato",
+    "tortillas corn",
+    "turkey breast lunchmeat reduced fat",
+    "water",
+    "white rice",
+    "zucchini"
+  ]
+}

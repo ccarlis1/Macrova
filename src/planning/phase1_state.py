@@ -21,6 +21,7 @@ from src.planning.phase0_models import (
     validate_planning_horizon,
     micronutrient_profile_to_dict,
 )
+from src.planning.phase2_constraints import _recipe_contains_excluded_ingredient
 from src.planning.slot_attributes import (
     activity_context_for_profile,
     is_workout_slot,
@@ -47,22 +48,6 @@ class PinnedValidationResult:
     failed_pin_day_1based: Optional[int] = None
     failed_pin_slot_index: Optional[int] = None
     failed_pin_recipe_id: Optional[str] = None
-
-
-def _normalize_ingredient_name(name: str) -> str:
-    """Normalize for HC-1 matching. Spec: matching on normalized ingredient names."""
-    return name.lower().strip()
-
-
-def _recipe_contains_excluded_ingredient(recipe: PlanningRecipe, excluded: List[str]) -> bool:
-    """HC-1: True if recipe contains any ingredient in excluded list (normalized match)."""
-    if not excluded:
-        return False
-    excluded_norm = {_normalize_ingredient_name(x) for x in excluded}
-    for ing in recipe.ingredients:
-        if _normalize_ingredient_name(ing.name) in excluded_norm:
-            return True
-    return False
 
 
 def validate_pinned_assignments(

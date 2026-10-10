@@ -69,6 +69,9 @@ def test_planner_regression_llm_disabled_golden_json(monkeypatch):
                         "recipe_id": "r1",
                         "name": "Test Chicken",
                         "meal_type": "breakfast",
+                        "meal_type_match": False,
+                        "slot_index": 0,
+                        "source": "planner",
                         "cooking_time_minutes": 10,
                         "ingredients": ["100 g chicken breast"],
                         "nutrition": {
@@ -83,6 +86,9 @@ def test_planner_regression_llm_disabled_golden_json(monkeypatch):
                         "recipe_id": "r1",
                         "name": "Test Chicken",
                         "meal_type": "lunch",
+                        "meal_type_match": False,
+                        "slot_index": 1,
+                        "source": "planner",
                         "cooking_time_minutes": 10,
                         "ingredients": ["100 g chicken breast"],
                         "nutrition": {
@@ -110,6 +116,18 @@ def test_planner_regression_llm_disabled_golden_json(monkeypatch):
                     "schedule_days with MealSlot and WorkoutSlot."
                 ),
             },
+            "exclusions": [
+                "Exclusion term 'mushroom' matched no allergen class and no ingredient in the recipe pool."
+            ],
+        },
+        "report": {
+            "failures": [],
+            "meal_type_summary": {
+                "matched": 0,
+                "mismatched": 2,
+                "unknown": 0,
+                "planner_only_mismatch_rate": 1.0,
+            },
         },
         "goals": {
             "daily_calories": 2400,
@@ -118,6 +136,7 @@ def test_planner_regression_llm_disabled_golden_json(monkeypatch):
             "daily_fat_g_max": 100.0,
             "daily_carbs_g": 281.25,
         },
+        "plan_status": "success",
     }
 
     monkeypatch.setattr("src.api.server.RecipeDB", DummyRecipeDB)
@@ -129,7 +148,7 @@ def test_planner_regression_llm_disabled_golden_json(monkeypatch):
 
     monkeypatch.setattr(
         "src.api.server.convert_recipes",
-        lambda recipes, calculator: [recipe],
+        lambda recipes, calculator, **_k: [recipe],
     )
 
     def _fake_plan_meals(profile, recipe_pool, days):

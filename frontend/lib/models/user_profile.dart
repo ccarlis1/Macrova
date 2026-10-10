@@ -257,7 +257,76 @@ class UserProfile {
 
   /// Midpoint of [fatGMin]–[fatGMax] (e.g. for single-value macro displays).
   double get fatG => (fatGMin + fatGMax) / 2;
-  final bool calorieDeficitMode;
+
+  /// Derive carbs from calories / protein / fat median (§2.1), falling back
+  /// to the fat minimum when the median leaves negative carbs (D9).
+  ///
+  /// Returns the raw value (may still be negative or NaN); callers that need a
+  /// validity check should use [macroTargetsErrorFor] or [macroTargetsError].
+  static double deriveCarbsG(
+    double calories,
+    double proteinG,
+    double fatGMin,
+    double fatGMax,
+  ) {
+    final remainingKcal = calories - proteinG * 4;
+    final medianFatG = (fatGMin + fatGMax) / 2;
+    final carbs = (remainingKcal - medianFatG * 9) / 4;
+    if (carbs < 0) {
+      return (remainingKcal - fatGMin * 9) / 4;
+    }
+    return carbs;
+  }
+
+  /// User-facing error when macro targets are invalid (§2.1 / §4.2), or null.
+  static String? macroTargetsErrorFor(
+    double calories,
+    double proteinG,
+    double fatGMin,
+    double fatGMax,
+  ) {
+    if (calories <= 0) {
+      return 'Calories must be greater than zero.';
+    }
+    if (proteinG < 0) {
+      return 'Protein must not be negative.';
+    }
+    if (fatGMin < 0) {
+      return 'Fat min must not be negative.';
+    }
+    if (fatGMin > fatGMax) {
+      return 'Fat min is above fat max.';
+    }
+    final carbs = deriveCarbsG(calories, proteinG, fatGMin, fatGMax);
+    if (carbs.isNaN) {
+      return 'Could not derive carbs from these targets.';
+    }
+    if (carbs < 0) {
+      final proteinKcal = proteinG * 4;
+      final fatKcal = fatGMin * 9;
+      final used = (proteinKcal + fatKcal).round();
+      final cal = calories.round();
+      return 'Protein and minimum fat already use $used of your $cal kcal.';
+    }
+    return null;
+  }
+
+  /// Same as [macroTargetsErrorFor] for this profile's stored macros.
+  String? get macroTargetsError =>
+      macroTargetsErrorFor(calories, proteinG, fatGMin, fatGMax);
+
+  /// Hard daily calorie ceiling (HC-5). When set, the planner never exceeds this.
+  final int? maxDailyCalories;
+
+  /// Set only by [fromJson] when an old SharedPreferences profile had
+  /// `calorie_deficit_mode: true` with no `max_daily_calories`. Keeps the
+  /// profile-screen switch on until the user enters a ceiling or turns it off.
+  final bool legacyDeficitModePending;
+
+  /// True when a ceiling is set, or when a legacy profile is still pending a number.
+  bool get calorieDeficitMode =>
+      maxDailyCalories != null || legacyDeficitModePending;
+
   final String demographicGroup;
   final List<String> allergies;
   final MicronutrientGoals micronutrientGoals;
@@ -277,7 +346,8 @@ class UserProfile {
     this.proteinPct = 30,
     this.carbsPct = 40,
     this.fatPct = 30,
-    this.calorieDeficitMode = false,
+    this.maxDailyCalories,
+    this.legacyDeficitModePending = false,
     this.demographicGroup = '',
     this.allergies = const [],
     this.micronutrientGoals = const MicronutrientGoals(),
@@ -296,7 +366,8 @@ class UserProfile {
     double? proteinPct,
     double? carbsPct,
     double? fatPct,
-    bool? calorieDeficitMode,
+    int? maxDailyCalories,
+    bool clearMaxDailyCalories = false,
     String? demographicGroup,
     List<String>? allergies,
     MicronutrientGoals? micronutrientGoals,
@@ -305,6 +376,18 @@ class UserProfile {
     String? llmApiKey,
     String? llmProvider,
   }) {
+    final int? nextMax;
+    final bool nextPending;
+    if (clearMaxDailyCalories) {
+      nextMax = null;
+      nextPending = false;
+    } else if (maxDailyCalories != null) {
+      nextMax = maxDailyCalories;
+      nextPending = false;
+    } else {
+      nextMax = this.maxDailyCalories;
+      nextPending = legacyDeficitModePending;
+    }
     return UserProfile(
       calories: calories ?? this.calories,
       proteinG: proteinG ?? this.proteinG,
@@ -314,7 +397,8 @@ class UserProfile {
       proteinPct: proteinPct ?? this.proteinPct,
       carbsPct: carbsPct ?? this.carbsPct,
       fatPct: fatPct ?? this.fatPct,
-      calorieDeficitMode: calorieDeficitMode ?? this.calorieDeficitMode,
+      maxDailyCalories: nextMax,
+      legacyDeficitModePending: nextPending,
       demographicGroup: demographicGroup ?? this.demographicGroup,
       allergies: allergies ?? this.allergies,
       micronutrientGoals: micronutrientGoals ?? this.micronutrientGoals,
@@ -349,6 +433,7 @@ class UserProfile {
         'protein_pct': proteinPct,
         'carbs_pct': carbsPct,
         'fat_pct': fatPct,
+        'max_daily_calories': maxDailyCalories,
         'calorie_deficit_mode': calorieDeficitMode,
         'demographic_group': demographicGroup,
         'allergies': allergies,
@@ -380,6 +465,8 @@ class UserProfile {
       fatGMin = fatGMax;
       fatGMax = t;
     }
+    final maxDaily = (json['max_daily_calories'] as num?)?.toInt();
+    final legacyBool = json['calorie_deficit_mode'] as bool? ?? false;
     return UserProfile(
       calories: (json['calories'] as num?)?.toDouble() ?? 2000,
       proteinG: (json['protein_g'] as num?)?.toDouble() ?? 150,
@@ -389,7 +476,8 @@ class UserProfile {
       proteinPct: (json['protein_pct'] as num?)?.toDouble() ?? 30,
       carbsPct: (json['carbs_pct'] as num?)?.toDouble() ?? 40,
       fatPct: (json['fat_pct'] as num?)?.toDouble() ?? 30,
-      calorieDeficitMode: json['calorie_deficit_mode'] as bool? ?? false,
+      maxDailyCalories: maxDaily,
+      legacyDeficitModePending: legacyBool && maxDaily == null,
       demographicGroup: json['demographic_group'] as String? ?? '',
       allergies: List<String>.from(json['allergies'] ?? const []),
       micronutrientGoals: json['micronutrient_goals'] != null
@@ -438,21 +526,16 @@ class UserProfile {
       fatGMin = 60;
       fatGMax = 74;
     }
-    if (fatGMax < fatGMin) {
-      final t = fatGMin;
-      fatGMin = fatGMax;
-      fatGMax = t;
-    }
+    // Do not swap inverted fat ranges; keep the real values so validators can
+    // surface FAT_RANGE_INVERTED (§4.2). Backend rejects them.
 
     final medianFatG = (fatGMin + fatGMax) / 2;
-    var carbsG =
-        (calories - proteinG * 4 - medianFatG * 9) / 4;
-    if (carbsG.isNaN || carbsG < 0) {
+    var carbsG = deriveCarbsG(calories, proteinG, fatGMin, fatGMax);
+    if (carbsG.isNaN) {
       carbsG = 0;
     }
 
-    final maxDaily = ng['max_daily_calories'];
-    final calorieDeficitMode = maxDaily != null;
+    final maxDailyCalories = (ng['max_daily_calories'] as num?)?.toInt();
 
     final tauRaw = ng['micronutrient_weekly_min_fraction'];
     final tau = tauRaw is num
@@ -485,8 +568,9 @@ class UserProfile {
         calories > 0 ? (proteinG * 4 / calories * 100).clamp(0.0, 100.0) : 30.0;
     final fatPct =
         calories > 0 ? (medianFatG * 9 / calories * 100).clamp(0.0, 100.0) : 30.0;
-    final carbsPct =
-        calories > 0 ? (carbsG * 4 / calories * 100).clamp(0.0, 100.0) : 40.0;
+    final carbsPct = calories > 0 && !carbsG.isNaN
+        ? (carbsG * 4 / calories * 100).clamp(-100.0, 100.0)
+        : 40.0;
 
     return UserProfile(
       calories: calories,
@@ -497,7 +581,7 @@ class UserProfile {
       proteinPct: proteinPct,
       carbsPct: carbsPct,
       fatPct: fatPct,
-      calorieDeficitMode: calorieDeficitMode,
+      maxDailyCalories: maxDailyCalories,
       demographicGroup: demographic,
       allergies: allergies,
       micronutrientGoals: microGoals,

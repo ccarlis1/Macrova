@@ -145,4 +145,6 @@ class APIIngredientProvider(IngredientDataProvider):
         return {
             "name": name,
             "per_100g": per_100g,
+            # Additive provenance (fdc_id, description, data_type, method, mapper_version ...).
+            "provenance": entry.provenance_record(),
         }

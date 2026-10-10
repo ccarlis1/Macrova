@@ -349,3 +349,22 @@ class TestResultShape:
         assert all(isinstance(x, tuple) and len(x) == 2 for x in res.candidates)
         assert isinstance(res.trigger_backtrack, bool)
         assert isinstance(res.calorie_excess_rejections, set)
+
+
+class TestStaticSlotCheckEligibleIds:
+    def test_eligible_recipe_ids_sorted_and_tagged(self):
+        from src.planning.phase6_candidates import check_slot_statically
+
+        pool = [
+            _make_recipe("z_tagged", cooking_min=10),
+            _make_recipe("a_tagged", cooking_min=10),
+            _make_recipe("slow", cooking_min=60),
+        ]
+        pool[0].canonical_tag_slugs = {"dairy-free"}
+        pool[1].canonical_tag_slugs = {"dairy-free"}
+        slot = MealSlot("12:00", 2, "lunch", required_tag_slugs=["dairy-free"])
+        profile = _make_profile()
+        check = check_slot_statically(pool, 0, slot, profile, None)
+        assert check.code is None
+        assert check.eligible_count == 2
+        assert check.eligible_recipe_ids == ("a_tagged", "z_tagged")

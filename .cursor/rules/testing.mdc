@@ -1,0 +1,14 @@
+---
+description: Backend test execution rules for Macrova
+globs: tests/**,scripts/run_pytest.py,pytest.ini
+alwaysApply: false
+---
+
+# Testing
+
+- **Never** run bare `pytest`, `python -m pytest`, or `python3 -m pytest`.
+- **Always** use `python3 scripts/run_pytest.py` from the repo root.
+- Canonical virtualenv: **`.venv/`** only — never `venv/`.
+- Tests require no network; USDA-dependent paths use mocks.
+- For frontend: `flutter test` from `frontend/`.
+- Report test results honestly.

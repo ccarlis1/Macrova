@@ -1,7 +1,7 @@
 """Formatters for meal plan output (JSON and Markdown)."""
 
 import json
-from typing import Dict, List, Any, Optional, Union
+from typing import Dict, List, Any, Optional, Tuple, Union
 
 from src.data_layer.models import Ingredient, NutritionProfile, MicronutrientProfile
 from src.planning.phase0_models import (
@@ -10,7 +10,8 @@ from src.planning.phase0_models import (
     Assignment,
     micronutrient_profile_to_dict,
 )
-from src.planning.phase10_reporting import MealPlanResult
+from src.planning.phase10_reporting import MealPlanResult, normalize_planner_report
+from src.planning.phase4_scoring import meal_type_matches
 
 
 # Human-readable names for micronutrients in markdown output
@@ -130,6 +131,26 @@ def format_nutrition_breakdown(
 # --- Canonical formatters (MealPlanResult) ---
 
 
+def _attach_planned_meal_metadata(
+    meal_dict: Dict[str, Any],
+    assignment: Assignment,
+    meal_metadata_by_slot: Optional[Dict[Tuple[int, int], Dict[str, Any]]],
+) -> None:
+    """Add ``slot_index``, ``source``, and optionally ``batch_id`` / ``servings`` (batch only)."""
+    meal_dict["slot_index"] = assignment.slot_index
+    meta = (meal_metadata_by_slot or {}).get((assignment.day_index, assignment.slot_index))
+    if meta and meta.get("recipe_id") == assignment.recipe_id:
+        if meta.get("kind") == "batch":
+            meal_dict["source"] = "meal_prep_batch"
+            meal_dict["batch_id"] = meta["batch_id"]
+            meal_dict["servings"] = float(meta.get("servings", 1.0))
+            return
+        if meta.get("kind") == "pin":
+            meal_dict["source"] = "pinned_assignment"
+            return
+    meal_dict["source"] = "planner"
+
+
 def format_result_markdown(
     result: MealPlanResult,
     recipe_by_id: Dict[str, PlanningRecipe],
@@ -210,9 +231,13 @@ def format_result_json(
     recipe_by_id: Dict[str, PlanningRecipe],
     profile: PlanningUserProfile,
     D: int,
+    meal_metadata_by_slot: Optional[Dict[Tuple[int, int], Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """Format a MealPlanResult as a JSON-serializable dict. Top-level: success, termination_code, days, daily_plans, weekly_totals (if D>1), warnings, goals."""
     daily_plans = []
+    match_counts = {"matched": 0, "mismatched": 0, "unknown": 0}
+    planner_known = 0
+    planner_mismatched = 0
     # Include partial / failure plans whenever assignments exist. Do not require
     # daily_trackers: it may be missing in edge cases, and `{}` is falsy in Python.
     if result.plan:
@@ -226,10 +251,19 @@ def format_result_json(
             for a in assignments:
                 recipe = recipe_by_id.get(a.recipe_id)
                 if recipe is None:
-                    meals_json.append({"recipe_id": a.recipe_id, "error": "not in pool"})
+                    missing: Dict[str, Any] = {"recipe_id": a.recipe_id, "error": "not in pool"}
+                    _attach_planned_meal_metadata(missing, a, meal_metadata_by_slot)
+                    meals_json.append(missing)
                     continue
                 slot = profile.schedule[day_index][a.slot_index] if day_index < len(profile.schedule) else None
                 meal_type = slot.meal_type if slot else "meal"
+                match: Optional[bool] = meal_type_matches(recipe, slot) if slot is not None else None
+                if match is True:
+                    match_counts["matched"] += 1
+                elif match is False:
+                    match_counts["mismatched"] += 1
+                else:
+                    match_counts["unknown"] += 1
                 rec_nut = recipe.nutrition
                 nutrition_json = {
                     "calories": round(rec_nut.calories, 1),
@@ -240,15 +274,22 @@ def format_result_json(
                 micro_rec = _micronutrients_to_dict(getattr(rec_nut, "micronutrients", None))
                 if micro_rec:
                     nutrition_json["micronutrients"] = {k: round(v, 1) for k, v in micro_rec.items()}
-                meals_json.append({
+                meal_row: Dict[str, Any] = {
                     "recipe_id": recipe.id,
                     "name": recipe.name,
                     "meal_type": meal_type,
+                    "meal_type_match": match,
                     "cooking_time_minutes": recipe.cooking_time_minutes,
                     "ingredients": [format_ingredient_string(ing) for ing in recipe.ingredients],
                     "nutrition": nutrition_json,
                     "busyness_level": slot.busyness_level if slot else 3,
-                })
+                }
+                _attach_planned_meal_metadata(meal_row, a, meal_metadata_by_slot)
+                if meal_row.get("source") == "planner" and match is not None:
+                    planner_known += 1
+                    if match is False:
+                        planner_mismatched += 1
+                meals_json.append(meal_row)
             t = trackers.get(day_index)
             day_totals = None
             if t is not None:
@@ -286,18 +327,41 @@ def format_result_json(
         "daily_carbs_g": profile.daily_carbs_g,
     }
 
+    report = normalize_planner_report(
+        failure_mode=getattr(result, "failure_mode", None),
+        report=result.report,
+    )
+    planner_mismatch_rate = (
+        float(planner_mismatched) / float(planner_known) if planner_known else 0.0
+    )
+    report["meal_type_summary"] = {
+        "matched": match_counts["matched"],
+        "mismatched": match_counts["mismatched"],
+        "unknown": match_counts["unknown"],
+        "planner_only_mismatch_rate": round(planner_mismatch_rate, 4),
+    }
+    has_failures = bool(report.get("failures"))
+    has_usable_plan = bool(daily_plans)
+    if result.success and not has_failures and not result.plan_incomplete_reason:
+        plan_status = "success"
+    elif has_usable_plan:
+        plan_status = "partial"
+    else:
+        plan_status = "failed"
+
     out = {
         "success": result.success,
         "termination_code": result.termination_code,
+        "plan_status": plan_status,
         "days": D,
         "daily_plans": daily_plans,
         "warnings": result.warning if result.warning else {},
+        "report": report,
         "goals": goals,
     }
     if weekly_totals is not None:
         out["weekly_totals"] = weekly_totals
     if result.plan_incomplete_reason:
-        out["plan_status"] = "incomplete"
         out["plan_status_message"] = result.plan_incomplete_reason
     return out
 
@@ -308,7 +372,11 @@ def format_result_json_string(
     profile: PlanningUserProfile,
     D: int,
     indent: int = 2,
+    meal_metadata_by_slot: Optional[Dict[Tuple[int, int], Dict[str, Any]]] = None,
 ) -> str:
     """Format a MealPlanResult as a JSON string."""
-    return json.dumps(format_result_json(result, recipe_by_id, profile, D), indent=indent)
+    return json.dumps(
+        format_result_json(result, recipe_by_id, profile, D, meal_metadata_by_slot),
+        indent=indent,
+    )
 

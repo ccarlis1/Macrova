@@ -1,6 +1,20 @@
 import json
+from pathlib import Path
 
+import pytest
+
+from src.data_layer.recipe_db import RecipeDB
+from src.llm.schemas import BudgetLevel, PrepTimeBucket, RecipeTagsJson
 from src.llm.repository import append_validated_recipes
+from src.llm.tag_repository import (
+    add_alias,
+    create,
+    list_by_type,
+    merge,
+    rename_display,
+    resolve,
+    upsert_recipe_tags,
+)
 from src.data_layer.models import Ingredient, Recipe
 from src.llm.types import ValidatedRecipeForPersistence
 
@@ -174,4 +188,304 @@ def test_append_validated_recipes_rejects_raw_recipe(tmp_path):
         assert False, "Expected TypeError when persisting raw Recipe"
     except TypeError as e:
         assert "ValidatedRecipeForPersistence" in str(e)
+
+
+def test_resolve_normalization_variants_map_to_high_fiber(tmp_path):
+    tags_path = str(tmp_path / "recipe_tags.json")
+    upsert_recipe_tags(
+        tags_path,
+        {
+            "r1": RecipeTagsJson(
+                cuisine="mexican",
+                cost_level=BudgetLevel.cheap,
+                prep_time_bucket=PrepTimeBucket.quick_meal,
+                dietary_flags=[],
+            )
+        },
+    )
+
+    assert resolve("High Fiber", tags_path).slug == "high-fiber"
+    assert resolve("high fiber!", tags_path).slug == "high-fiber"
+    assert resolve("HIGH-FIBER", tags_path).slug == "high-fiber"
+
+
+def test_resolve_alias_valid_and_invalid(tmp_path):
+    tags_path = tmp_path / "recipe_tags.json"
+    tags_path.write_text(
+        json.dumps(
+            {
+                "tags_by_id": {},
+                "tag_registry": {
+                    "high-fiber": {
+                        "slug": "high-fiber",
+                        "display": "High Fiber",
+                        "tag_type": "nutrition",
+                        "source": "system",
+                        "created_at": "1970-01-01T00:00:00Z",
+                        "aliases": ["fiber-high"],
+                    }
+                },
+                "tag_aliases": {"fiber-rich": "high-fiber"},
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    assert resolve("fiber-rich", str(tags_path)).slug == "high-fiber"
+    assert resolve("fiber-high", str(tags_path)).slug == "high-fiber"
+    with pytest.raises(ValueError):
+        resolve("not-a-real-alias", str(tags_path))
+
+
+def test_registry_create_rename_alias_and_list_preserve_recipe_tags(tmp_path):
+    tags_path = str(tmp_path / "recipe_tags.json")
+    upsert_recipe_tags(
+        tags_path,
+        {
+            "r1": RecipeTagsJson(
+                cuisine="mexican",
+                cost_level=BudgetLevel.cheap,
+                prep_time_bucket=PrepTimeBucket.quick_meal,
+                dietary_flags=[],
+            )
+        },
+    )
+
+    created = create(
+        path=tags_path,
+        display="High Protein",
+        tag_type="nutrition",
+        source="user",
+    )
+    renamed = rename_display(
+        path=tags_path,
+        slug=created.slug,
+        display="Protein Rich",
+    )
+    aliased = add_alias(
+        path=tags_path,
+        slug=renamed.slug,
+        alias_slug="protein-rich",
+    )
+
+    assert aliased.slug == "high-protein"
+    assert resolve("protein-rich", tags_path).slug == "high-protein"
+    assert resolve("Protein Rich", tags_path).slug == "high-protein"
+    assert "high-protein" in {tag.slug for tag in list_by_type(tags_path, "nutrition")}
+
+    payload = json.loads((tmp_path / "recipe_tags.json").read_text(encoding="utf-8"))
+    assert set(payload["tags_by_id"].keys()) == {"r1"}
+    assert payload["tag_aliases"]["protein-rich"] == "high-protein"
+
+
+def test_merge_updates_registry_and_recipes_without_duplicates(tmp_path):
+    recipes_path = tmp_path / "recipes.json"
+    recipes_path.write_text(
+        json.dumps(
+            {
+                "recipes": [
+                    {
+                        "id": "r1",
+                        "name": "Tagged",
+                        "ingredients": [],
+                        "cooking_time_minutes": 10,
+                        "instructions": [],
+                        "default_servings": 1,
+                        "tags": [
+                            {"slug": "fiber-rich", "type": "nutrition"},
+                            {"slug": "high-fiber", "type": "nutrition"},
+                            {"slug": "high-fiber", "type": "nutrition"},
+                        ],
+                    }
+                ]
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    tags_path = tmp_path / "recipe_tags.json"
+    tags_path.write_text(
+        json.dumps(
+            {
+                "tags_by_id": {
+                    "r1": {
+                        "cuisine": "mexican",
+                        "cost_level": "cheap",
+                        "prep_time_bucket": "quick_meal",
+                        "dietary_flags": [],
+                        "tag_slugs_by_type": {"nutrition": ["fiber-rich", "high-fiber"]},
+                    }
+                },
+                "tag_registry": {
+                    "fiber-rich": {
+                        "slug": "fiber-rich",
+                        "display": "Fiber Rich",
+                        "tag_type": "nutrition",
+                        "source": "system",
+                        "created_at": "1970-01-01T00:00:00Z",
+                        "aliases": [],
+                    },
+                    "high-fiber": {
+                        "slug": "high-fiber",
+                        "display": "High Fiber",
+                        "tag_type": "nutrition",
+                        "source": "system",
+                        "created_at": "1970-01-01T00:00:00Z",
+                        "aliases": [],
+                    },
+                },
+                "tag_aliases": {},
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    merge("fiber-rich", "high-fiber", str(tags_path))
+
+    merged_payload = json.loads(tags_path.read_text(encoding="utf-8"))
+    assert "fiber-rich" not in merged_payload["tag_registry"]
+    assert merged_payload["tag_aliases"]["fiber-rich"] == "high-fiber"
+    assert merged_payload["tags_by_id"]["r1"]["tag_slugs_by_type"]["nutrition"] == ["high-fiber"]
+
+    recipe = RecipeDB(str(recipes_path), tag_repo_path=str(tags_path)).get_all_recipes()[0]
+    assert recipe.tags == [{"slug": "high-fiber", "type": "nutrition"}]
+
+
+def test_recipe_db_drops_unknown_tags(tmp_path):
+    recipes_path = tmp_path / "recipes.json"
+    recipes_path.write_text(
+        json.dumps(
+            {
+                "recipes": [
+                    {
+                        "id": "r1",
+                        "name": "Unknown Tag Recipe",
+                        "ingredients": [],
+                        "cooking_time_minutes": 10,
+                        "instructions": [],
+                        "tags": [{"slug": "does-not-exist", "type": "nutrition"}],
+                    }
+                ]
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    tags_path = tmp_path / "recipe_tags.json"
+    upsert_recipe_tags(
+        str(tags_path),
+        {
+            "r1": RecipeTagsJson(
+                cuisine="mexican",
+                cost_level=BudgetLevel.cheap,
+                prep_time_bucket=PrepTimeBucket.quick_meal,
+                dietary_flags=[],
+            )
+        },
+    )
+
+    recipe = RecipeDB(str(recipes_path), tag_repo_path=str(tags_path)).get_all_recipes()[0]
+    assert recipe.tags == []
+
+
+def test_recipe_db_roundtrip_tags_stable(tmp_path):
+    recipes_path = tmp_path / "recipes.json"
+    recipes_path.write_text(
+        json.dumps(
+            {
+                "recipes": [
+                    {
+                        "id": "r1",
+                        "name": "Roundtrip",
+                        "ingredients": [],
+                        "cooking_time_minutes": 10,
+                        "instructions": [],
+                        "default_servings": 3,
+                        "tags": [{"slug": "high-fiber", "type": "nutrition"}],
+                    }
+                ]
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    tags_path = tmp_path / "recipe_tags.json"
+    upsert_recipe_tags(
+        str(tags_path),
+        {
+            "r1": RecipeTagsJson(
+                cuisine="mexican",
+                cost_level=BudgetLevel.cheap,
+                prep_time_bucket=PrepTimeBucket.quick_meal,
+                dietary_flags=[],
+                tag_slugs_by_type={"nutrition": ["high-fiber"]},
+            )
+        },
+    )
+
+    db = RecipeDB(str(recipes_path), tag_repo_path=str(tags_path))
+    db.save()
+    reloaded = RecipeDB(str(recipes_path), tag_repo_path=str(tags_path)).get_all_recipes()[0]
+    assert reloaded.default_servings == 3
+    assert reloaded.tags == [{"slug": "high-fiber", "type": "nutrition"}]
+
+
+def test_default_seed_path_loads_required_slugs_and_aliases():
+    tags_path = "data/recipes/recipe_tags.json"
+    required_slugs = {
+        "meal-prep",
+        "time-0",
+        "time-1",
+        "time-2",
+        "time-3",
+        "time-4",
+    }
+
+    for slug in required_slugs:
+        assert resolve(slug, tags_path).slug == slug
+    assert resolve("batch-cook", tags_path).slug == "meal-prep"
+
+
+def test_empty_user_store_still_includes_system_seed_tags(tmp_path):
+    tags_path = tmp_path / "recipe_tags.json"
+    tags_path.write_text(
+        json.dumps({"tags_by_id": {}, "tag_registry": {}, "tag_aliases": {}}, indent=2),
+        encoding="utf-8",
+    )
+
+    assert resolve("meal-prep", str(tags_path)).slug == "meal-prep"
+    assert resolve("time-0", str(tags_path)).slug == "time-0"
+    assert resolve("high-fiber", str(tags_path)).slug == "high-fiber"
+    assert resolve("no-shellfish", str(tags_path)).slug == "no-shellfish"
+
+
+def test_seeded_tags_have_required_fields_and_unique_slugs():
+    payload = json.loads(Path("data/recipes/recipe_tags.json").read_text(encoding="utf-8"))
+    registry = payload["tag_registry"]
+    required_slugs = {
+        "meal-prep",
+        "time-0",
+        "time-1",
+        "time-2",
+        "time-3",
+        "time-4",
+    }
+
+    assert required_slugs.issubset(set(registry.keys()))
+    assert set(payload.keys()) == {"tags_by_id", "tag_registry", "tag_aliases"}
+    assert isinstance(payload["tags_by_id"], dict)
+    assert isinstance(payload["tag_aliases"], dict)
+
+    slugs = [meta["slug"] for meta in registry.values()]
+    assert len(slugs) == len(set(slugs))
+
+    for slug in required_slugs:
+        meta = registry[slug]
+        assert isinstance(meta["slug"], str) and meta["slug"]
+        assert isinstance(meta["display"], str) and meta["display"]
+        assert isinstance(meta["tag_type"], str) and meta["tag_type"]
+        assert isinstance(meta["source"], str) and meta["source"]
+        assert isinstance(meta["aliases"], list)
 

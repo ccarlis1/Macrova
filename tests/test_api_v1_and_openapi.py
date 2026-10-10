@@ -1,5 +1,8 @@
 """v1 route parity, OpenAPI contract paths, recipe_ids, deterministic ingredients."""
 
+import subprocess
+import sys
+from pathlib import Path
 from unittest.mock import MagicMock
 
 from fastapi.testclient import TestClient
@@ -8,6 +11,135 @@ from src.api.server import PlanRequest, _filter_recipes_by_ids, app
 from src.ingestion.usda_client import FoodDetailsResult, USDAClient
 from src.planning.phase0_models import Assignment, DailyTracker
 from src.planning.phase10_reporting import MealPlanResult
+
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+
+
+def _openapi_components():
+    return app.openapi()["components"]["schemas"]
+
+
+def _schema_ref_name(schema: dict) -> str:
+    if "$ref" in schema:
+        return schema["$ref"].split("/")[-1]
+    return ""
+
+
+def test_openapi_export_check_passes_when_snapshot_current():
+    result = subprocess.run(
+        [sys.executable, "scripts/export_openapi.py", "--check"],
+        cwd=_REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr or result.stdout
+
+
+def test_openapi_includes_v1_contract_paths():
+    schema = app.openapi()
+    paths = schema["paths"]
+    required = [
+        "/api/v1/plan",
+        "/api/v1/plan-from-text",
+        "/api/v1/recipes",
+        "/api/v1/recipes/sync",
+        "/api/v1/recipes/{recipe_id}",
+        "/api/v1/recipes/generate-validated",
+        "/api/v1/recipes/tags/generate",
+        "/api/v1/ingredients/match",
+        "/api/v1/ingredients/search",
+        "/api/v1/ingredients/resolve",
+        "/api/v1/nutrition/summary",
+        "/api/v1/llm/status",
+        "/api/v1/profile/schedule",
+        "/api/v1/profile/pins",
+        "/api/v1/profile/pins/{day_index}/{slot_index}",
+        "/api/v1/meal_prep_batches",
+        "/api/v1/meal_prep_batches/{batch_id}",
+    ]
+    missing = [p for p in required if p not in paths]
+    assert not missing, f"missing paths: {missing}"
+
+
+def test_openapi_profile_schedule_uses_schedule_days_response():
+    schema = app.openapi()
+    schedule = schema["paths"]["/api/v1/profile/schedule"]
+    for method in ("get", "put"):
+        response = schedule[method]["responses"]["200"]["content"]["application/json"]["schema"]
+        assert response["$ref"] == "#/components/schemas/ProfileScheduleWriteResponse"
+    props = _openapi_components()["ProfileScheduleWriteResponse"]["properties"]
+    assert "schedule_days" in props
+
+
+def test_openapi_profile_pins_contracts():
+    schema = app.openapi()
+    components = _openapi_components()
+    pins = schema["paths"]["/api/v1/profile/pins"]
+    assert (
+        pins["get"]["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
+        == "#/components/schemas/ProfilePinListResponse"
+    )
+    assert "pins" in components["ProfilePinListResponse"]["properties"]
+
+    slot = schema["paths"]["/api/v1/profile/pins/{day_index}/{slot_index}"]
+    assert (
+        slot["put"]["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
+        == "#/components/schemas/ProfilePinUpsertResponse"
+    )
+    pin_props = components["ProfilePinDto"]["properties"]
+    for field in ("day_index", "slot_index", "recipe_id"):
+        assert field in pin_props
+
+
+def test_openapi_recipe_sync_and_detail_typed_fields():
+    components = _openapi_components()
+    sync_props = components["RecipeSyncItem"]["properties"]
+    assert "default_servings" in sync_props
+    assert "tag_slugs_by_type" in sync_props
+
+    detail_props = components["RecipeDetailResponse"]["properties"]
+    for field in ("default_servings", "tag_slugs_by_type", "is_meal_prep_capable"):
+        assert field in detail_props
+
+
+def test_openapi_planned_meal_metadata_fields():
+    components = _openapi_components()
+    meal_props = components["PlannedMeal"]["properties"]
+    for field in ("slot_index", "source", "batch_id", "servings", "meal_type_match"):
+        assert field in meal_props
+
+    plan_response = components["PlanResponse"]
+    daily_plans = plan_response["properties"]["daily_plans"]
+    item_schema = daily_plans["items"]
+    daily_plan_name = _schema_ref_name(item_schema)
+    daily_plan = components[daily_plan_name]
+    meals = daily_plan["properties"]["meals"]
+    assert _schema_ref_name(meals["items"]) == "PlannedMeal"
+
+
+def test_openapi_meal_prep_batch_response_fields():
+    components = _openapi_components()
+    batch_props = components["MealPrepBatchResponse"]["properties"]
+    for field in (
+        "id",
+        "recipe_id",
+        "total_servings",
+        "assigned_servings",
+        "remaining_servings",
+        "cook_date",
+        "status",
+        "assignments",
+    ):
+        assert field in batch_props
+
+    assignment_props = components["MealPrepAssignmentResponse"]["properties"]
+    for field in ("day_index", "slot_index", "servings", "date", "slot_id"):
+        assert field in assignment_props
+
+    request_props = components["CreateMealPrepBatchRequest"]["properties"]
+    for field in ("recipe_id", "total_servings", "cook_date", "assignments"):
+        assert field in request_props
 
 
 class _Recipe:
@@ -34,10 +166,6 @@ def test_openapi_includes_v1_contract_paths():
         "/api/v1/recipes/{recipe_id}",
         "/api/v1/recipes/generate-validated",
         "/api/v1/recipes/tags/generate",
-        "/api/v1/tags",
-        "/api/v1/tags/{slug}",
-        "/api/v1/tags/{slug}/alias",
-        "/api/v1/tags/{src_slug}/merge_into/{dst_slug}",
         "/api/v1/ingredients/match",
         "/api/v1/ingredients/search",
         "/api/v1/ingredients/resolve",
@@ -61,6 +189,51 @@ def test_openapi_plan_request_has_recipe_ids():
         plan_schema = body
     props = plan_schema.get("properties", {})
     assert "recipe_ids" in props
+
+
+def test_openapi_plan_request_has_max_daily_calories():
+    schema = app.openapi()
+    body = schema["paths"]["/api/v1/plan"]["post"]["requestBody"]["content"][
+        "application/json"
+    ]["schema"]
+    if "$ref" in body:
+        ref_name = body["$ref"].split("/")[-1]
+        plan_schema = schema["components"]["schemas"][ref_name]
+    else:
+        plan_schema = body
+    props = plan_schema.get("properties", {})
+    assert "max_daily_calories" in props
+
+
+def test_openapi_plan_response_includes_failure_codes():
+    schema = app.openapi()
+    components = schema["components"]["schemas"]
+    assert "PlanFailure" in components
+    failure_props = components["PlanFailure"]["properties"]
+    for field in ("code", "message", "details", "fix_hint", "day_index", "slot_index"):
+        assert field in failure_props
+
+    failure_schema_text = str(components["PlanFailure"])
+    for code in (
+        "FM-TAG-EMPTY",
+        "FM-BATCH-CONFLICT",
+        "FM-MACRO-INFEASIBLE",
+        "FM-1",
+        "FM-3",
+        "FM-4",
+        "FM-5",
+    ):
+        assert code in failure_schema_text
+
+    report_props = components["PlanReport"]["properties"]
+    assert "failures" in report_props
+
+    response_schema = schema["paths"]["/api/v1/plan"]["post"]["responses"]["200"][
+        "content"
+    ]["application/json"]["schema"]
+    assert response_schema["$ref"] == "#/components/schemas/PlanResponse"
+    plan_response = components["PlanResponse"]
+    assert plan_response["properties"]["plan_status"]["enum"] == ["success", "partial", "failed"]
 
 
 def test_api_v1_recipes_lists_same_as_legacy(monkeypatch):
@@ -160,10 +333,11 @@ def test_nutrition_summary_totals_match_local_db():
     )
     assert resp.status_code == 200
     body = resp.json()
+    # Values from data/reference/ingredient_nutrition.json (cream of rice alias).
     assert body["calories"] == 370.0
     assert body["per_serving_calories"] == 185.0
     assert body["servings"] == 2
-    assert body["protein_g"] == 7.5
+    assert body["protein_g"] == 6.3
 
 
 def test_plan_request_model_accepts_recipe_ids():
@@ -206,9 +380,7 @@ def test_recipe_sync_writes_json_and_plan_sees_recipe(tmp_path, monkeypatch):
     assert "cream of rice" in data
 
     def _stub_plan_meals(planning_profile, recipe_pool, days):
-        assert any(
-            r.id == rid for r in recipe_pool
-        ), "synced recipe missing from planner pool"
+        assert any(r.id == rid for r in recipe_pool), "synced recipe missing from planner pool"
         tracker = DailyTracker(
             calories_consumed=350.0,
             protein_consumed=7.5,

@@ -34,7 +34,11 @@ from src.planning.phase3_feasibility import (
     check_fc2_daily_macros,
     check_fc3_incremental_ul,
 )
-from src.planning.slot_attributes import activity_context_for_profile, is_workout_slot
+from src.planning.slot_attributes import (
+    activity_context_for_profile,
+    cooking_time_max,
+    is_workout_slot,
+)
 from src.planning.phase9_carb_scaling import generate_scaled_variants
 
 
@@ -50,6 +54,10 @@ class CandidateGenerationResult:
     trigger_backtrack: bool
     calorie_excess_rejections: Set[str] = field(default_factory=set)  # metadata for Phase 9
     variant_nutritions: Dict[Tuple[str, int], NutritionProfile] = field(default_factory=dict)
+    required_tag_slugs: List[str] = field(default_factory=list)
+    required_tag_filter_applied: bool = False
+    candidate_count_before_required: int = 0
+    candidate_count_after_required: int = 0
 
 
 def _get_slot(
@@ -84,6 +92,139 @@ def _rejected_solely_calorie_fc1(
     return (current_cal + recipe_cal) > profile.max_daily_calories
 
 
+def _matches_slot_required_tags(recipe: PlanningRecipe, slot: MealSlot) -> bool:
+    required = [
+        str(slug).strip().lower()
+        for slug in (getattr(slot, "required_tag_slugs", None) or [])
+        if str(slug).strip()
+    ]
+    if not required:
+        return True
+    hard_eligible_raw = getattr(recipe, "hard_eligible_tag_slugs", None)
+    if hard_eligible_raw is None:
+        decision_tags = set(getattr(recipe, "canonical_tag_slugs", set()) or set())
+    else:
+        decision_tags = set(hard_eligible_raw or set())
+    recipe_tags = {str(slug).strip().lower() for slug in decision_tags if str(slug).strip()}
+    return set(required).issubset(recipe_tags)
+
+
+@dataclass(frozen=True)
+class StaticSlotCheck:
+    """Result of a state-independent HC-1/HC-3/required-tag slot check.
+
+    code is None when the slot has at least one recipe that passes HC-1, HC-3,
+    and (when present) required tags. Spec §11 attribution step 1.
+
+    eligible_recipe_ids: sorted recipe IDs that pass HC-1, HC-3, and required
+    tags (empty when code is set). Used by post-search day diagnosis (C2a)
+    so it reuses this filter instead of duplicating it.
+    """
+
+    code: Optional[str]  # None | "FM-1" | "FM-TAG-EMPTY"
+    eligible_count: int  # recipes passing HC-1 and HC-3
+    blocking_constraints: List[str]
+    required_tag_slugs: List[str]
+    missing_tag_slugs: List[str]
+    eligible_recipe_ids: Tuple[str, ...] = ()
+
+
+def _recipe_decision_tags(recipe: PlanningRecipe) -> Set[str]:
+    hard_eligible_raw = getattr(recipe, "hard_eligible_tag_slugs", None)
+    if hard_eligible_raw is None:
+        decision_tags = set(getattr(recipe, "canonical_tag_slugs", set()) or set())
+    else:
+        decision_tags = set(hard_eligible_raw or set())
+    return {str(slug).strip().lower() for slug in decision_tags if str(slug).strip()}
+
+
+def check_slot_statically(
+    recipe_pool: List[PlanningRecipe],
+    day_index: int,
+    slot: MealSlot,
+    profile: PlanningUserProfile,
+    resolved_ul: Optional[UpperLimits],
+) -> StaticSlotCheck:
+    """Static slot check: HC-1 + HC-3, then required tags. Spec §11 step 1.
+
+    Does not depend on search state (HC-2/HC-5/HC-8 are deferred to search).
+    Matches Oracle._slot_filter attribution.
+    """
+    required_tag_slugs = [
+        str(slug).strip().lower()
+        for slug in (getattr(slot, "required_tag_slugs", None) or [])
+        if str(slug).strip()
+    ]
+    empty_state = ConstraintStateView(daily_trackers={})
+
+    after_hc1: List[PlanningRecipe] = [
+        r
+        for r in recipe_pool
+        if check_hc1_excluded_ingredients(r, slot, day_index, empty_state, profile, resolved_ul)
+    ]
+    base: List[PlanningRecipe] = [
+        r
+        for r in after_hc1
+        if check_hc3_cooking_time_bound(r, slot, day_index, empty_state, profile, resolved_ul)
+    ]
+
+    if not base:
+        blocking: List[str] = []
+        if not after_hc1:
+            blocking.append("HC-1")
+        else:
+            cap = cooking_time_max(slot.busyness_level)
+            if cap is None:
+                blocking.append("HC-3")
+            else:
+                blocking.append(f"HC-3: cook time <= {cap} min")
+        return StaticSlotCheck(
+            code="FM-1",
+            eligible_count=0,
+            blocking_constraints=blocking,
+            required_tag_slugs=required_tag_slugs,
+            missing_tag_slugs=[],
+            eligible_recipe_ids=(),
+        )
+
+    if not required_tag_slugs:
+        return StaticSlotCheck(
+            code=None,
+            eligible_count=len(base),
+            blocking_constraints=[],
+            required_tag_slugs=[],
+            missing_tag_slugs=[],
+            eligible_recipe_ids=tuple(sorted(r.id for r in base)),
+        )
+
+    tagged = [r for r in base if _matches_slot_required_tags(r, slot)]
+    if tagged:
+        return StaticSlotCheck(
+            code=None,
+            eligible_count=len(base),
+            blocking_constraints=[],
+            required_tag_slugs=required_tag_slugs,
+            missing_tag_slugs=[],
+            eligible_recipe_ids=tuple(sorted(r.id for r in tagged)),
+        )
+
+    # Tags held by no recipe in base; if every slug appears somewhere but no
+    # recipe holds the full set, report all required slugs.
+    held_anywhere: Set[str] = set()
+    for r in base:
+        held_anywhere |= _recipe_decision_tags(r)
+    individually_missing = [t for t in required_tag_slugs if t not in held_anywhere]
+    missing = individually_missing if individually_missing else list(required_tag_slugs)
+    return StaticSlotCheck(
+        code="FM-TAG-EMPTY",
+        eligible_count=len(base),
+        blocking_constraints=[],
+        required_tag_slugs=required_tag_slugs,
+        missing_tag_slugs=missing,
+        eligible_recipe_ids=(),
+    )
+
+
 def _filter_step_1_through_7(
     recipe_pool: List[PlanningRecipe],
     day_index: int,
@@ -95,17 +236,28 @@ def _filter_step_1_through_7(
     resolved_ul: Optional[UpperLimits],
     macro_bounds: MacroBoundsPrecomputation,
     is_workout: bool,
-) -> Tuple[Set[str], Set[str]]:
-    """Apply steps 1–7. Returns (candidate_ids, calorie_excess_rejections)."""
+) -> Tuple[Set[str], Set[str], int, int, List[str], bool]:
+    """Apply steps 1–7 with required-tag metadata."""
     calorie_excess: Set[str] = set()
+    required_tag_slugs = [
+        str(slug).strip().lower()
+        for slug in (getattr(slot, "required_tag_slugs", None) or [])
+        if str(slug).strip()
+    ]
+    required_filter_applied = bool(required_tag_slugs)
+    candidate_count_before_required = len(recipe_pool)
+    candidate_count_after_required = 0
     # Step 1–2: HC-1, HC-2
     surviving: List[PlanningRecipe] = []
     for r in recipe_pool:
+        if not _matches_slot_required_tags(r, slot):
+            continue
         if not check_hc1_excluded_ingredients(r, slot, day_index, constraint_state, profile, resolved_ul):
             continue
         if not check_hc2_no_same_day_reuse(r, slot, day_index, constraint_state, profile, resolved_ul):
             continue
         surviving.append(r)
+    candidate_count_after_required = len(surviving)
 
     # Step 3: HC-3
     surviving = [r for r in surviving if check_hc3_cooking_time_bound(r, slot, day_index, constraint_state, profile, resolved_ul)]
@@ -144,7 +296,14 @@ def _filter_step_1_through_7(
             continue
         candidates.append(r)
 
-    return {r.id for r in candidates}, calorie_excess
+    return (
+        {r.id for r in candidates},
+        calorie_excess,
+        candidate_count_before_required,
+        candidate_count_after_required,
+        required_tag_slugs,
+        required_filter_applied,
+    )
 
 
 def _filter_hard_constraints_only(
@@ -162,6 +321,8 @@ def _filter_hard_constraints_only(
     """
     surviving: List[PlanningRecipe] = []
     for r in recipe_pool:
+        if not _matches_slot_required_tags(r, slot):
+            continue
         if not check_hc1_excluded_ingredients(r, slot, day_index, constraint_state, profile, resolved_ul):
             continue
         if not check_hc2_no_same_day_reuse(r, slot, day_index, constraint_state, profile, resolved_ul):
@@ -239,6 +400,10 @@ def generate_candidates(
             trigger_backtrack=True,
             calorie_excess_rejections=set(),
             variant_nutritions={},
+            required_tag_slugs=[],
+            required_tag_filter_applied=False,
+            candidate_count_before_required=0,
+            candidate_count_after_required=0,
         )
 
     constraint_state = ConstraintStateView(daily_trackers=daily_trackers)
@@ -254,7 +419,14 @@ def generate_candidates(
     )
     is_workout = is_workout_slot(act_ctx)
 
-    base_candidate_ids, calorie_excess_rejections = _filter_step_1_through_7(
+    (
+        base_candidate_ids,
+        calorie_excess_rejections,
+        candidate_count_before_required,
+        candidate_count_after_required,
+        required_tag_slugs,
+        required_filter_applied,
+    ) = _filter_step_1_through_7(
         recipe_pool,
         day_index,
         slot_index,
@@ -310,4 +482,8 @@ def generate_candidates(
         trigger_backtrack=trigger,
         calorie_excess_rejections=calorie_excess_rejections,
         variant_nutritions=variant_nutritions,
+        required_tag_slugs=required_tag_slugs,
+        required_tag_filter_applied=required_filter_applied,
+        candidate_count_before_required=candidate_count_before_required,
+        candidate_count_after_required=candidate_count_after_required,
     )

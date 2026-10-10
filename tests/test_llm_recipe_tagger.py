@@ -55,6 +55,38 @@ def _recipe(*, recipe_id: str, name: str):
     )
 
 
+def test_llm_proposed_breakfast_is_not_hard_eligible(tmp_path, monkeypatch):
+    """§4.3: LLM meal-role tags enter as proposed (soft-only until curated)."""
+    from src.llm import tag_repository
+    from src.llm.tag_repository import is_planner_hard_eligible, enrich_tag_meta
+
+    tag_path = tmp_path / "recipe_tags.json"
+    # Seed from committed registry so breakfast exists.
+    src = os.path.join(os.path.dirname(__file__), "..", "data", "recipes", "recipe_tags.json")
+    with open(src, encoding="utf-8") as f:
+        data = json.load(f)
+    data["tags_by_id"] = {}
+    tag_path.write_text(json.dumps(data), encoding="utf-8")
+
+    recipe = _recipe(recipe_id="r_breakfast", name="Oatmeal")
+    raw = {
+        "cuisine": "american",
+        "cost_level": "cheap",
+        "prep_time_bucket": "quick_meal",
+        "dietary_flags": ["vegetarian"],
+        "tag_slugs_by_type": {"context": ["breakfast"]},
+    }
+    client = DummyLLMClient(raw_responses=[raw])
+    out = tag_recipes(client, [recipe], tag_repo_path=str(tag_path))
+    assert "r_breakfast" in out
+    tags = out["r_breakfast"]
+    assert "breakfast" in (tags.tag_slugs_by_type or {}).get("context", [])
+    meta = (tags.tag_metadata or {})["breakfast"]
+    assert meta.source == "llm"
+    assert meta.eligibility == "proposed"
+    assert is_planner_hard_eligible(enrich_tag_meta(meta)) is False
+
+
 def test_tag_recipes_happy_path_preserves_order():
     r1 = _recipe(recipe_id="r1", name="Taco Chicken")
     r2 = _recipe(recipe_id="r2", name="Veggie Bowl")
@@ -79,11 +111,13 @@ def test_tag_recipes_happy_path_preserves_order():
     assert out["r1"].cuisine == "mexican"
     assert out["r1"].cost_level == BudgetLevel.cheap
     assert out["r1"].prep_time_bucket == PrepTimeBucket.quick_meal
-    assert out["r1"].dietary_flags == [DietaryFlag.vegan]
+    # Consistency rule drops vegan on a chicken recipe.
+    assert out["r1"].dietary_flags == []
 
     assert out["r2"].cuisine == "italian"
     assert out["r2"].cost_level == BudgetLevel.standard
-    assert out["r2"].prep_time_bucket == PrepTimeBucket.weeknight_meal
+    # prep_time_bucket is derived from the known cooking time (10 min), never taken from the model.
+    assert out["r2"].prep_time_bucket == PrepTimeBucket.quick_meal
     assert out["r2"].dietary_flags == []
 
     assert len(client.calls) == 2

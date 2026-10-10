@@ -1,0 +1,65 @@
+[
+  {
+    "w_meal_type": 0.0,
+    "exact_matches": 152,
+    "n_scenarios": 152,
+    "planner_mismatch_rate": 0.4567,
+    "breakfast_mismatch_rate": 0.5,
+    "breakfast_known": 204,
+    "ok_successes": 91
+  },
+  {
+    "w_meal_type": 2.0,
+    "exact_matches": 152,
+    "n_scenarios": 152,
+    "planner_mismatch_rate": 0.37,
+    "breakfast_mismatch_rate": 0.3578,
+    "breakfast_known": 204,
+    "ok_successes": 91
+  },
+  {
+    "w_meal_type": 4.0,
+    "exact_matches": 152,
+    "n_scenarios": 152,
+    "planner_mismatch_rate": 0.2817,
+    "breakfast_mismatch_rate": 0.2304,
+    "breakfast_known": 204,
+    "ok_successes": 91
+  },
+  {
+    "w_meal_type": 6.0,
+    "exact_matches": 152,
+    "n_scenarios": 152,
+    "planner_mismatch_rate": 0.2384,
+    "breakfast_mismatch_rate": 0.1569,
+    "breakfast_known": 204,
+    "ok_successes": 91
+  },
+  {
+    "w_meal_type": 8.0,
+    "exact_matches": 152,
+    "n_scenarios": 152,
+    "planner_mismatch_rate": 0.1935,
+    "breakfast_mismatch_rate": 0.0931,
+    "breakfast_known": 204,
+    "ok_successes": 91
+  },
+  {
+    "w_meal_type": 12.0,
+    "exact_matches": 152,
+    "n_scenarios": 152,
+    "planner_mismatch_rate": 0.1409,
+    "breakfast_mismatch_rate": 0.0441,
+    "breakfast_known": 204,
+    "ok_successes": 91
+  },
+  {
+    "w_meal_type": 16.0,
+    "exact_matches": 152,
+    "n_scenarios": 152,
+    "planner_mismatch_rate": 0.1207,
+    "breakfast_mismatch_rate": 0.0294,
+    "breakfast_known": 204,
+    "ok_successes": 91
+  }
+]

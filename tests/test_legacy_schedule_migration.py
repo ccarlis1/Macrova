@@ -34,6 +34,17 @@ def test_workout_between_meal_2_and_3():
     assert set(legacy_meals.values()) <= {1, 2, 3, 4}
 
 
+def test_legacy_to_day_schedule_round_trip_meal_output():
+    legacy = {"07:00": 2, "12:00": 3, "15:00": 0, "18:00": 4}
+    day, _ = legacy_schedule_dict_to_day_schedule(legacy, day_index=1)
+
+    # Legacy-compatible output intentionally keeps only meal slots.
+    roundtrip_legacy = canonical_day_to_meal_only_legacy_dict(day)
+    assert roundtrip_legacy == {"07:00": 2, "12:00": 3, "18:00": 4}
+    assert len(day.workouts) == 1
+    assert day.workouts[0].after_meal_index == 2
+
+
 def test_replicate_across_days():
     days, w = legacy_schedule_dict_to_schedule_days(
         {"08:00": 2, "18:00": 3},

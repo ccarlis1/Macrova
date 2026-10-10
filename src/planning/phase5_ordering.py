@@ -2,16 +2,21 @@
 
 Orders already-scored candidates when composite scores are equal.
 No scoring, no constraints, no feasibility, no state mutation.
+Tie-break cascade for equal score:
+1) higher preferred-tag match count, 2) lower recipe.id lexicographic, 3) seeded RNG.
 Reference: MEALPLAN_SPECIFICATION_v1.md Section 7.1.
 """
 
 from __future__ import annotations
 
+import random
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Protocol, Tuple
 
+from src.planning.phase4_scoring import preferred_match_count
 from src.planning.phase0_models import (
     DailyTracker,
+    MealSlot,
     PlanningUserProfile,
     WeeklyTracker,
     micronutrient_profile_to_dict,
@@ -147,18 +152,16 @@ def ordering_key(
     state: OrderingStateView,
     profile: PlanningUserProfile,
     day_index: int,
-) -> Tuple[float, int, float, int, str]:
-    """Key for stable sort: primary score descending, then cascade. Spec 7.1.
-
-    Returns (neg_score, neg_gap_fill, neg_deficit_red, neg_liked, id) so that
-    ascending sort gives: highest score first, then more gap-fill, then more deficit reduction,
-    then more liked, then lexicographically smaller id.
-    """
+    slot: Optional[MealSlot] = None,
+    tie_break_seed: str = "phase5-seed",
+) -> Tuple[float, int, str, float]:
+    """Primary score descending, then preferred tags, recipe.id, seeded RNG."""
     recipe, score = item
-    gap = gap_fill_count(recipe, state, profile, day_index)
-    def_red = deficit_reduction(recipe, state, profile, day_index)
-    liked = liked_foods_count(recipe, profile)
-    return (-float(score), -gap, -def_red, -liked, recipe.id)
+    pref_matches = 0
+    if slot is not None:
+        pref_matches = preferred_match_count(recipe, slot, day_index, state, profile)
+    rng = random.Random(f"{tie_break_seed}:{day_index}:{recipe.id}")
+    return (-float(score), -pref_matches, recipe.id, rng.random())
 
 
 # --- Public API: order scored candidates ---
@@ -169,6 +172,8 @@ def order_scored_candidates(
     state: OrderingStateView,
     profile: PlanningUserProfile,
     day_index: int,
+    slot: Optional[MealSlot] = None,
+    tie_break_seed: str = "phase5-seed",
 ) -> List[Tuple[RecipeLike, float]]:
     """Return a fully ordered list: by composite score descending, then by tie-break cascade. Spec 7.1.
 
@@ -176,5 +181,7 @@ def order_scored_candidates(
     """
     return sorted(
         scored_candidates,
-        key=lambda item: ordering_key(item, state, profile, day_index),
+        key=lambda item: ordering_key(
+            item, state, profile, day_index, slot=slot, tie_break_seed=tie_break_seed
+        ),
     )

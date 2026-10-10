@@ -84,7 +84,8 @@ def check_hc1_excluded_ingredients(
 ) -> bool:
     """HC-1: Recipe must contain no ingredient matching user_profile.excluded_ingredients. Spec Section 4.
 
-    Matching is normalized (case-insensitive, trimmed).
+    Matching is normalized (case-insensitive, trimmed) against
+    ``user_profile.excluded_ingredients`` (allergies already class-expanded).
     Returns True if allowed, False if violation.
     """
     return not _recipe_contains_excluded_ingredient(

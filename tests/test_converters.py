@@ -188,9 +188,12 @@ class TestConvertProfile:
     def test_excluded_ingredients_combined(self):
         profile = _user_profile_no_weekly()
         planning = convert_profile(profile, days=1)
-        assert "peanut" in planning.excluded_ingredients
-        assert "mushroom" in planning.excluded_ingredients
-        assert set(planning.excluded_ingredients) == {"peanut", "mushroom"}
+        # Allergy "peanut" expands by class; dislike "mushroom" stays exact.
+        assert set(planning.excluded_ingredients) == {
+            "peanut",
+            "peanut butter",
+            "mushroom",
+        }
 
     def test_without_weekly_targets_empty_micro(self):
         profile = _user_profile_no_weekly()
@@ -298,6 +301,22 @@ class TestConvertProfile:
         assert len(p1.schedule) == len(p2.schedule) == 3
         assert p1.micronutrient_targets == p2.micronutrient_targets
         assert p1.excluded_ingredients == p2.excluded_ingredients
+
+    def test_api_path_carb_downscaling_disabled(self):
+        """API convert_profile must leave primary carb downscaling off.
+
+        Attribution treats carb-downscaling profiles as inconclusive
+        (failure_attribution.py ~L544). If this flag is ever True on the
+        API path, fix attribution before enabling it — do not silently
+        leave FM-2/FM-3 undiagnosable over HTTP.
+        """
+        planning = convert_profile(_user_profile_no_weekly(), days=1)
+        assert planning.enable_primary_carb_downscaling is False, (
+            "convert_profile must keep enable_primary_carb_downscaling=False "
+            "for the API path; enabling it requires updating "
+            "failure_attribution.py (~L544) so day_check does not return "
+            "inconclusive for carb_downscaling."
+        )
 
 
 # ---------------------------------------------------------------------------

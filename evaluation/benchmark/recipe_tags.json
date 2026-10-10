@@ -1,0 +1,1883 @@
+{
+  "tag_aliases": {
+    "batch-cook": "meal-prep"
+  },
+  "tag_registry": {
+    "breakfast": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "Breakfast",
+      "slug": "breakfast",
+      "source": "system",
+      "tag_type": "context"
+    },
+    "dairy-free": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "Dairy Free",
+      "slug": "dairy-free",
+      "source": "system",
+      "tag_type": "constraint"
+    },
+    "dinner": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "Dinner",
+      "slug": "dinner",
+      "source": "system",
+      "tag_type": "context"
+    },
+    "gluten-free": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "Gluten Free",
+      "slug": "gluten-free",
+      "source": "system",
+      "tag_type": "constraint"
+    },
+    "high-fiber": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "High Fiber",
+      "slug": "high-fiber",
+      "source": "system",
+      "tag_type": "nutrition"
+    },
+    "high-protein": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "High Protein",
+      "slug": "high-protein",
+      "source": "system",
+      "tag_type": "nutrition"
+    },
+    "kid-friendly": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "Kid Friendly",
+      "slug": "kid-friendly",
+      "source": "system",
+      "tag_type": "context"
+    },
+    "low-carb": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "Low Carb",
+      "slug": "low-carb",
+      "source": "system",
+      "tag_type": "nutrition"
+    },
+    "low-fat": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "Low Fat",
+      "slug": "low-fat",
+      "source": "system",
+      "tag_type": "nutrition"
+    },
+    "lunch": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "Lunch",
+      "slug": "lunch",
+      "source": "system",
+      "tag_type": "context"
+    },
+    "meal-prep": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "Meal Prep",
+      "slug": "meal-prep",
+      "source": "system",
+      "tag_type": "context"
+    },
+    "no-cook": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "No Cook",
+      "slug": "no-cook",
+      "source": "system",
+      "tag_type": "context"
+    },
+    "no-shellfish": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "No Shellfish",
+      "slug": "no-shellfish",
+      "source": "system",
+      "tag_type": "constraint"
+    },
+    "nut-free": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "Nut Free",
+      "slug": "nut-free",
+      "source": "system",
+      "tag_type": "constraint"
+    },
+    "pescatarian": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "Pescatarian",
+      "slug": "pescatarian",
+      "source": "system",
+      "tag_type": "constraint"
+    },
+    "portable": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "Portable",
+      "slug": "portable",
+      "source": "system",
+      "tag_type": "context"
+    },
+    "post-workout": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "Post-Workout",
+      "slug": "post-workout",
+      "source": "system",
+      "tag_type": "context"
+    },
+    "pre-workout": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "Pre-Workout",
+      "slug": "pre-workout",
+      "source": "system",
+      "tag_type": "context"
+    },
+    "reheats-well": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "Reheats Well",
+      "slug": "reheats-well",
+      "source": "system",
+      "tag_type": "context"
+    },
+    "snack": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "Snack",
+      "slug": "snack",
+      "source": "system",
+      "tag_type": "context"
+    },
+    "time-0": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "time-0",
+      "slug": "time-0",
+      "source": "system",
+      "tag_type": "time"
+    },
+    "time-1": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "time-1",
+      "slug": "time-1",
+      "source": "system",
+      "tag_type": "time"
+    },
+    "time-2": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "time-2",
+      "slug": "time-2",
+      "source": "system",
+      "tag_type": "time"
+    },
+    "time-3": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "time-3",
+      "slug": "time-3",
+      "source": "system",
+      "tag_type": "time"
+    },
+    "time-4": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "time-4",
+      "slug": "time-4",
+      "source": "system",
+      "tag_type": "time"
+    },
+    "vegan": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "Vegan",
+      "slug": "vegan",
+      "source": "system",
+      "tag_type": "constraint"
+    },
+    "vegetarian": {
+      "aliases": [],
+      "created_at": "1970-01-01T00:00:00Z",
+      "display": "Vegetarian",
+      "slug": "vegetarian",
+      "source": "system",
+      "tag_type": "constraint"
+    }
+  },
+  "tags_by_id": {
+    "bk_avocado_toast_feta": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian"
+      ],
+      "prep_time_bucket": "quick_meal",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "nut-free",
+          "vegetarian"
+        ],
+        "context": [
+          "breakfast"
+        ],
+        "time": [
+          "time-2"
+        ]
+      }
+    },
+    "bk_big_oat_bowl": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian"
+      ],
+      "prep_time_bucket": "quick_meal",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "vegetarian"
+        ],
+        "context": [
+          "breakfast"
+        ],
+        "nutrition": [
+          "high-fiber"
+        ],
+        "time": [
+          "time-2"
+        ]
+      }
+    },
+    "bk_chia_pudding": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "prep_time_bucket": "snack",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "gluten-free",
+          "nut-free",
+          "vegetarian"
+        ],
+        "context": [
+          "breakfast",
+          "meal-prep",
+          "no-cook",
+          "snack"
+        ],
+        "nutrition": [
+          "high-fiber"
+        ],
+        "time": [
+          "time-1"
+        ]
+      }
+    },
+    "bk_cottage_papaya": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "prep_time_bucket": "snack",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "gluten-free",
+          "vegetarian"
+        ],
+        "context": [
+          "breakfast",
+          "no-cook",
+          "snack"
+        ],
+        "nutrition": [
+          "high-protein"
+        ],
+        "time": [
+          "time-0"
+        ]
+      }
+    },
+    "bk_cream_of_rice_whey": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "prep_time_bucket": "quick_meal",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "gluten-free",
+          "nut-free",
+          "vegetarian"
+        ],
+        "context": [
+          "breakfast",
+          "pre-workout"
+        ],
+        "nutrition": [
+          "low-fat"
+        ],
+        "time": [
+          "time-2"
+        ]
+      }
+    },
+    "bk_overnight_oats": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian"
+      ],
+      "prep_time_bucket": "snack",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "nut-free",
+          "vegetarian"
+        ],
+        "context": [
+          "breakfast",
+          "meal-prep",
+          "no-cook"
+        ],
+        "nutrition": [
+          "high-fiber"
+        ],
+        "time": [
+          "time-1"
+        ]
+      }
+    },
+    "bk_pb_banana_toast": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian",
+        "vegan",
+        "dairy_free"
+      ],
+      "prep_time_bucket": "snack",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "dairy-free",
+          "vegan",
+          "vegetarian"
+        ],
+        "context": [
+          "breakfast",
+          "kid-friendly"
+        ],
+        "time": [
+          "time-1"
+        ]
+      }
+    },
+    "bk_protein_oats": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian"
+      ],
+      "prep_time_bucket": "quick_meal",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "vegetarian"
+        ],
+        "context": [
+          "breakfast",
+          "post-workout"
+        ],
+        "nutrition": [
+          "high-protein"
+        ],
+        "time": [
+          "time-2"
+        ]
+      }
+    },
+    "bk_salmon_toast": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [],
+      "prep_time_bucket": "snack",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "nut-free",
+          "pescatarian"
+        ],
+        "context": [
+          "breakfast",
+          "lunch"
+        ],
+        "nutrition": [
+          "high-protein"
+        ],
+        "time": [
+          "time-1"
+        ]
+      }
+    },
+    "bk_tofu_scramble": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "dairy_free"
+      ],
+      "prep_time_bucket": "quick_meal",
+      "tag_metadata": {
+        "portable": {
+          "aliases": [],
+          "created_at": "2026-09-18T00:00:00Z",
+          "display": "Portable",
+          "eligibility": "proposed",
+          "slug": "portable",
+          "source": "llm",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "constraint": [
+          "dairy-free",
+          "gluten-free",
+          "nut-free",
+          "vegan",
+          "vegetarian"
+        ],
+        "context": [
+          "breakfast",
+          "portable"
+        ],
+        "nutrition": [
+          "high-protein"
+        ],
+        "time": [
+          "time-2"
+        ]
+      }
+    },
+    "bk_yogurt_berry_bowl": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "prep_time_bucket": "snack",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "gluten-free",
+          "nut-free",
+          "vegetarian"
+        ],
+        "context": [
+          "breakfast",
+          "no-cook",
+          "snack"
+        ],
+        "nutrition": [
+          "high-protein"
+        ],
+        "time": [
+          "time-1"
+        ]
+      }
+    },
+    "bk_yolk_spinach_toast": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian"
+      ],
+      "prep_time_bucket": "quick_meal",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "nut-free",
+          "vegetarian"
+        ],
+        "context": [
+          "breakfast"
+        ],
+        "time": [
+          "time-2"
+        ]
+      }
+    },
+    "dh_chicken_breast_rice": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "gluten_free",
+        "dairy_free"
+      ],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "dairy-free",
+          "gluten-free"
+        ],
+        "context": [
+          "dinner",
+          "lunch"
+        ],
+        "nutrition": [
+          "high-protein"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "dh_kiwi_smoothie": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "prep_time_bucket": "snack",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "gluten-free",
+          "vegetarian"
+        ],
+        "context": [
+          "breakfast",
+          "no-cook",
+          "snack"
+        ],
+        "time": [
+          "time-1"
+        ]
+      }
+    },
+    "dh_oat_yogurt_parfait": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian"
+      ],
+      "prep_time_bucket": "snack",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "vegetarian"
+        ],
+        "context": [
+          "breakfast",
+          "no-cook"
+        ],
+        "time": [
+          "time-1"
+        ]
+      }
+    },
+    "dh_sweet_potato_hash": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "gluten_free",
+        "dairy_free"
+      ],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "dairy-free",
+          "gluten-free"
+        ],
+        "context": [
+          "dinner"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "dh_veggie_egg_scramble": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "prep_time_bucket": "quick_meal",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "gluten-free",
+          "vegetarian"
+        ],
+        "context": [
+          "breakfast"
+        ],
+        "nutrition": [
+          "high-protein"
+        ],
+        "time": [
+          "time-2"
+        ]
+      }
+    },
+    "dn_bean_quesadilla": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian"
+      ],
+      "prep_time_bucket": "quick_meal",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "nut-free",
+          "vegetarian"
+        ],
+        "context": [
+          "dinner",
+          "kid-friendly",
+          "lunch"
+        ],
+        "nutrition": [
+          "high-fiber"
+        ],
+        "time": [
+          "time-2"
+        ]
+      }
+    },
+    "dn_beef_chili": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "gluten_free"
+      ],
+      "prep_time_bucket": "meal_prep",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "gluten-free",
+          "nut-free"
+        ],
+        "context": [
+          "dinner",
+          "lunch",
+          "meal-prep",
+          "reheats-well"
+        ],
+        "nutrition": [
+          "high-fiber",
+          "high-protein"
+        ],
+        "time": [
+          "time-4"
+        ]
+      }
+    },
+    "dn_beef_rice_bowl": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "dairy_free"
+      ],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "dairy-free",
+          "nut-free"
+        ],
+        "context": [
+          "dinner",
+          "lunch",
+          "reheats-well"
+        ],
+        "nutrition": [
+          "high-protein"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "dn_big_pasta_night": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [],
+      "prep_time_bucket": "meal_prep",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "nut-free"
+        ],
+        "context": [
+          "dinner",
+          "kid-friendly"
+        ],
+        "time": [
+          "time-4"
+        ]
+      }
+    },
+    "dn_bolognese": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "nut-free"
+        ],
+        "context": [
+          "dinner",
+          "kid-friendly",
+          "meal-prep",
+          "reheats-well"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "dn_burger_bowl": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "gluten_free"
+      ],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "gluten-free",
+          "nut-free"
+        ],
+        "context": [
+          "dinner",
+          "kid-friendly"
+        ],
+        "nutrition": [
+          "high-protein"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "dn_cauli_beef_bowl": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "gluten_free"
+      ],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "gluten-free",
+          "nut-free"
+        ],
+        "context": [
+          "dinner"
+        ],
+        "nutrition": [
+          "high-protein",
+          "low-carb"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "dn_chickpea_curry": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "dairy_free"
+      ],
+      "prep_time_bucket": "meal_prep",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "dairy-free",
+          "gluten-free",
+          "nut-free",
+          "vegan",
+          "vegetarian"
+        ],
+        "context": [
+          "dinner",
+          "meal-prep",
+          "reheats-well"
+        ],
+        "nutrition": [
+          "high-fiber"
+        ],
+        "time": [
+          "time-4"
+        ]
+      }
+    },
+    "dn_edamame_fried_rice": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian",
+        "dairy_free"
+      ],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "dairy-free",
+          "nut-free",
+          "vegetarian"
+        ],
+        "context": [
+          "dinner"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "dn_salmon_potatoes": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "gluten_free",
+        "dairy_free"
+      ],
+      "prep_time_bucket": "meal_prep",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "dairy-free",
+          "gluten-free",
+          "no-shellfish",
+          "nut-free",
+          "pescatarian"
+        ],
+        "context": [
+          "dinner"
+        ],
+        "nutrition": [
+          "high-protein"
+        ],
+        "time": [
+          "time-4"
+        ]
+      }
+    },
+    "dn_thigh_quinoa_prep": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "gluten_free",
+        "dairy_free"
+      ],
+      "prep_time_bucket": "meal_prep",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "dairy-free",
+          "gluten-free",
+          "nut-free"
+        ],
+        "context": [
+          "dinner",
+          "lunch",
+          "meal-prep",
+          "reheats-well"
+        ],
+        "nutrition": [
+          "high-protein"
+        ],
+        "time": [
+          "time-4"
+        ]
+      }
+    },
+    "dn_thigh_sheet_pan": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "gluten_free",
+        "dairy_free"
+      ],
+      "prep_time_bucket": "meal_prep",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "dairy-free",
+          "gluten-free",
+          "nut-free"
+        ],
+        "context": [
+          "dinner",
+          "meal-prep",
+          "reheats-well"
+        ],
+        "nutrition": [
+          "high-protein"
+        ],
+        "time": [
+          "time-4"
+        ]
+      }
+    },
+    "dn_tilapia_rice": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "gluten_free"
+      ],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "gluten-free",
+          "no-shellfish",
+          "nut-free",
+          "pescatarian"
+        ],
+        "context": [
+          "dinner"
+        ],
+        "nutrition": [
+          "high-protein"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "dn_tofu_stir_fry": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "dairy_free"
+      ],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_metadata": {
+        "high-protein": {
+          "aliases": [],
+          "created_at": "2026-09-18T00:00:00Z",
+          "display": "High Protein",
+          "eligibility": "proposed",
+          "slug": "high-protein",
+          "source": "llm",
+          "tag_type": "nutrition"
+        },
+        "meal-prep": {
+          "aliases": [],
+          "created_at": "2026-09-18T00:00:00Z",
+          "display": "Meal Prep",
+          "eligibility": "proposed",
+          "slug": "meal-prep",
+          "source": "llm",
+          "tag_type": "context"
+        }
+      },
+      "tag_slugs_by_type": {
+        "constraint": [
+          "dairy-free",
+          "gluten-free",
+          "nut-free",
+          "vegan",
+          "vegetarian"
+        ],
+        "context": [
+          "dinner",
+          "meal-prep"
+        ],
+        "nutrition": [
+          "high-protein"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "dn_tuna_steak_salad": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "gluten_free",
+        "dairy_free"
+      ],
+      "prep_time_bucket": "quick_meal",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "dairy-free",
+          "gluten-free",
+          "no-shellfish",
+          "nut-free",
+          "pescatarian"
+        ],
+        "context": [
+          "dinner",
+          "lunch"
+        ],
+        "nutrition": [
+          "high-protein",
+          "low-carb"
+        ],
+        "time": [
+          "time-2"
+        ]
+      }
+    },
+    "dn_veggie_pasta": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian"
+      ],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "nut-free",
+          "vegetarian"
+        ],
+        "context": [
+          "dinner",
+          "kid-friendly"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "dup_beef_rice_bowl_v2": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "dairy_free"
+      ],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "dairy-free",
+          "nut-free"
+        ],
+        "context": [
+          "dinner",
+          "lunch",
+          "reheats-well"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "dup_beef_rice_bowl_v3": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "dairy_free"
+      ],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "dairy-free",
+          "nut-free"
+        ],
+        "context": [
+          "dinner",
+          "lunch"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "hc_big_beef_rice": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "gluten_free"
+      ],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "gluten-free",
+          "nut-free"
+        ],
+        "context": [
+          "dinner",
+          "lunch"
+        ],
+        "nutrition": [
+          "high-protein"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "hc_double_burger_potatoes": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "gluten_free"
+      ],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "gluten-free",
+          "nut-free"
+        ],
+        "context": [
+          "dinner"
+        ],
+        "nutrition": [
+          "high-protein"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "hc_mass_gainer": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian"
+      ],
+      "prep_time_bucket": "snack",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "vegetarian"
+        ],
+        "context": [
+          "breakfast",
+          "no-cook",
+          "portable",
+          "post-workout",
+          "snack"
+        ],
+        "nutrition": [
+          "high-protein"
+        ],
+        "time": [
+          "time-1"
+        ]
+      }
+    },
+    "hc_pasta_salmon_bake": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [],
+      "prep_time_bucket": "meal_prep",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "nut-free",
+          "pescatarian"
+        ],
+        "context": [
+          "dinner",
+          "meal-prep",
+          "reheats-well"
+        ],
+        "nutrition": [
+          "high-protein"
+        ],
+        "time": [
+          "time-4"
+        ]
+      }
+    },
+    "ln_black_bean_quinoa": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "dairy_free"
+      ],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "dairy-free",
+          "gluten-free",
+          "nut-free",
+          "vegan",
+          "vegetarian"
+        ],
+        "context": [
+          "dinner",
+          "lunch",
+          "meal-prep",
+          "reheats-well"
+        ],
+        "nutrition": [
+          "high-fiber"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "ln_chickpea_salad": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "prep_time_bucket": "quick_meal",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "gluten-free",
+          "nut-free",
+          "vegetarian"
+        ],
+        "context": [
+          "lunch",
+          "meal-prep",
+          "no-cook",
+          "portable"
+        ],
+        "nutrition": [
+          "high-fiber"
+        ],
+        "time": [
+          "time-2"
+        ]
+      }
+    },
+    "ln_cottage_box": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "prep_time_bucket": "snack",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "gluten-free",
+          "vegetarian"
+        ],
+        "context": [
+          "lunch",
+          "no-cook",
+          "portable",
+          "snack"
+        ],
+        "nutrition": [
+          "high-protein"
+        ],
+        "time": [
+          "time-1"
+        ]
+      }
+    },
+    "ln_roast_beef_wrap": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [],
+      "prep_time_bucket": "snack",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "nut-free"
+        ],
+        "context": [
+          "lunch",
+          "no-cook",
+          "portable"
+        ],
+        "nutrition": [
+          "high-protein"
+        ],
+        "time": [
+          "time-1"
+        ]
+      }
+    },
+    "ln_salami_plate": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [],
+      "prep_time_bucket": "snack",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "nut-free"
+        ],
+        "context": [
+          "lunch",
+          "no-cook",
+          "portable",
+          "snack"
+        ],
+        "time": [
+          "time-1"
+        ]
+      }
+    },
+    "ln_salmon_salad": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "gluten_free",
+        "dairy_free"
+      ],
+      "prep_time_bucket": "snack",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "dairy-free",
+          "gluten-free",
+          "nut-free",
+          "pescatarian"
+        ],
+        "context": [
+          "lunch",
+          "no-cook"
+        ],
+        "nutrition": [
+          "high-protein",
+          "low-carb"
+        ],
+        "time": [
+          "time-1"
+        ]
+      }
+    },
+    "ln_tofu_quinoa_salad": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "dairy_free"
+      ],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_metadata": {
+        "high-protein": {
+          "aliases": [],
+          "created_at": "2026-09-18T00:00:00Z",
+          "display": "High Protein",
+          "eligibility": "proposed",
+          "slug": "high-protein",
+          "source": "llm",
+          "tag_type": "nutrition"
+        }
+      },
+      "tag_slugs_by_type": {
+        "constraint": [
+          "dairy-free",
+          "gluten-free",
+          "nut-free",
+          "vegan",
+          "vegetarian"
+        ],
+        "context": [
+          "lunch",
+          "meal-prep",
+          "portable"
+        ],
+        "nutrition": [
+          "high-protein"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "ln_tuna_pasta_salad": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "dairy_free"
+      ],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "dairy-free",
+          "no-shellfish",
+          "nut-free",
+          "pescatarian"
+        ],
+        "context": [
+          "lunch",
+          "meal-prep",
+          "portable"
+        ],
+        "nutrition": [
+          "high-protein"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "ln_tuna_poke": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "dairy_free"
+      ],
+      "prep_time_bucket": "quick_meal",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "dairy-free",
+          "no-shellfish",
+          "nut-free",
+          "pescatarian"
+        ],
+        "context": [
+          "dinner",
+          "lunch"
+        ],
+        "nutrition": [
+          "high-protein"
+        ],
+        "time": [
+          "time-2"
+        ]
+      }
+    },
+    "ln_turkey_sandwich": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [],
+      "prep_time_bucket": "snack",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "nut-free"
+        ],
+        "context": [
+          "lunch",
+          "no-cook",
+          "portable"
+        ],
+        "nutrition": [
+          "high-protein"
+        ],
+        "time": [
+          "time-1"
+        ]
+      }
+    },
+    "ln_white_bean_soup": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "prep_time_bucket": "weeknight_meal",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "gluten-free",
+          "nut-free",
+          "vegetarian"
+        ],
+        "context": [
+          "dinner",
+          "lunch",
+          "meal-prep",
+          "reheats-well"
+        ],
+        "nutrition": [
+          "high-fiber"
+        ],
+        "time": [
+          "time-3"
+        ]
+      }
+    },
+    "sn_almonds_chocolate": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "prep_time_bucket": "snack",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "gluten-free",
+          "vegetarian"
+        ],
+        "context": [
+          "no-cook",
+          "portable",
+          "snack"
+        ],
+        "time": [
+          "time-0"
+        ]
+      }
+    },
+    "sn_banana_pb": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "dairy_free"
+      ],
+      "prep_time_bucket": "snack",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "dairy-free",
+          "gluten-free",
+          "vegan",
+          "vegetarian"
+        ],
+        "context": [
+          "no-cook",
+          "portable",
+          "pre-workout",
+          "snack"
+        ],
+        "time": [
+          "time-0"
+        ]
+      }
+    },
+    "sn_bedtime_cottage": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "prep_time_bucket": "snack",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "gluten-free",
+          "vegetarian"
+        ],
+        "context": [
+          "no-cook",
+          "snack"
+        ],
+        "nutrition": [
+          "high-protein"
+        ],
+        "time": [
+          "time-0"
+        ]
+      }
+    },
+    "sn_carrots_almond_butter": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "dairy_free"
+      ],
+      "prep_time_bucket": "snack",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "dairy-free",
+          "gluten-free",
+          "vegan",
+          "vegetarian"
+        ],
+        "context": [
+          "no-cook",
+          "portable",
+          "snack"
+        ],
+        "time": [
+          "time-0"
+        ]
+      }
+    },
+    "sn_chia_seed_water": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "dairy_free"
+      ],
+      "prep_time_bucket": "snack",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "dairy-free",
+          "gluten-free",
+          "nut-free",
+          "vegan",
+          "vegetarian"
+        ],
+        "context": [
+          "no-cook",
+          "portable",
+          "snack"
+        ],
+        "nutrition": [
+          "high-fiber"
+        ],
+        "time": [
+          "time-0"
+        ]
+      }
+    },
+    "sn_cottage_blueberry": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "prep_time_bucket": "snack",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "gluten-free",
+          "nut-free",
+          "vegetarian"
+        ],
+        "context": [
+          "no-cook",
+          "snack"
+        ],
+        "nutrition": [
+          "high-protein",
+          "low-fat"
+        ],
+        "time": [
+          "time-0"
+        ]
+      }
+    },
+    "sn_edamame_cup": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "dairy_free"
+      ],
+      "prep_time_bucket": "snack",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "dairy-free",
+          "gluten-free",
+          "nut-free",
+          "vegan",
+          "vegetarian"
+        ],
+        "context": [
+          "portable",
+          "snack"
+        ],
+        "nutrition": [
+          "high-protein"
+        ],
+        "time": [
+          "time-1"
+        ]
+      }
+    },
+    "sn_krispie_banana": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian"
+      ],
+      "prep_time_bucket": "snack",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "nut-free",
+          "vegetarian"
+        ],
+        "context": [
+          "no-cook",
+          "portable",
+          "pre-workout",
+          "snack"
+        ],
+        "nutrition": [
+          "low-fat"
+        ],
+        "time": [
+          "time-0"
+        ]
+      }
+    },
+    "sn_papaya_yogurt": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "prep_time_bucket": "snack",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "gluten-free",
+          "nut-free",
+          "vegetarian"
+        ],
+        "context": [
+          "breakfast",
+          "no-cook",
+          "snack"
+        ],
+        "nutrition": [
+          "low-fat"
+        ],
+        "time": [
+          "time-0"
+        ]
+      }
+    },
+    "sn_protein_shake": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "prep_time_bucket": "snack",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "gluten-free",
+          "nut-free",
+          "vegetarian"
+        ],
+        "context": [
+          "no-cook",
+          "portable",
+          "post-workout",
+          "snack"
+        ],
+        "nutrition": [
+          "high-protein"
+        ],
+        "time": [
+          "time-0"
+        ]
+      }
+    },
+    "sn_trail_mix": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "prep_time_bucket": "snack",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "gluten-free",
+          "vegetarian"
+        ],
+        "context": [
+          "no-cook",
+          "portable",
+          "snack"
+        ],
+        "time": [
+          "time-0"
+        ]
+      }
+    },
+    "sn_turkey_rollups": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "gluten_free"
+      ],
+      "prep_time_bucket": "snack",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "gluten-free",
+          "nut-free"
+        ],
+        "context": [
+          "no-cook",
+          "portable",
+          "snack"
+        ],
+        "nutrition": [
+          "high-protein",
+          "low-carb"
+        ],
+        "time": [
+          "time-0"
+        ]
+      }
+    },
+    "sn_whey_water": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "prep_time_bucket": "snack",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "gluten-free",
+          "nut-free",
+          "vegetarian"
+        ],
+        "context": [
+          "no-cook",
+          "portable",
+          "post-workout",
+          "snack"
+        ],
+        "nutrition": [
+          "high-protein",
+          "low-fat"
+        ],
+        "time": [
+          "time-0"
+        ]
+      }
+    },
+    "sn_yogurt_honey": {
+      "cost_level": "standard",
+      "cuisine": "shared",
+      "dietary_flags": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "prep_time_bucket": "snack",
+      "tag_slugs_by_type": {
+        "constraint": [
+          "gluten-free",
+          "nut-free",
+          "vegetarian"
+        ],
+        "context": [
+          "breakfast",
+          "no-cook",
+          "snack"
+        ],
+        "nutrition": [
+          "high-protein"
+        ],
+        "time": [
+          "time-0"
+        ]
+      }
+    }
+  }
+}

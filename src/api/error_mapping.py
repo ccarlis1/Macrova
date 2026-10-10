@@ -1,3 +1,20 @@
+"""Map internal exceptions to deterministic API error payloads.
+
+``INVALID_REQUEST`` (HTTP 400) is used for pre-planning input rejection.
+When raised from :class:`~src.data_layer.macro_targets.MacroTargetsError`,
+the payload includes ``details.reason`` with one of:
+
+- ``NON_POSITIVE_CALORIES`` — ``daily_calories`` must be > 0
+- ``NEGATIVE_PROTEIN`` — ``daily_protein_g`` must not be negative
+- ``NEGATIVE_FAT_MIN`` — ``daily_fat_g.min`` must not be negative
+- ``FAT_RANGE_INVERTED`` — ``daily_fat_g.min`` exceeds ``daily_fat_g.max``
+- ``NEGATIVE_CARBS_DERIVED`` — derived carbs still negative at the fat minimum
+
+Other ``INVALID_REQUEST`` responses (schema / FastAPI validation) may omit
+``details.reason``. See also ``docs/planner/mealplan-specification-v3.md``
+§2.1 / §4.2.
+"""
+
 from __future__ import annotations
 
 from typing import Any, Dict, Tuple
@@ -15,12 +32,37 @@ from src.llm.recipe_generator import RecipeGenerationError
 from src.llm.recipe_validator import RecipeValidationError
 from src.llm.usda_contract import USDAProviderRequiredError
 from src.llm.constraint_parser import PlannerConfigParsingError
+from src.data_layer.macro_targets import MacroTargetsError
 from src.data_layer.user_profile import PlannerConfigMappingError
 from src.llm.feedback_cache import DeterministicCacheMissError
 from src.planning.orchestrator import LLMFeedbackOrchestratorError, LLMPlanningModeError
 from src.llm.tag_repository import TagRepositoryError
 
+
 API_ERROR = "error"
+TAG_NOT_FOUND = "TAG_NOT_FOUND"
+TAG_CONFLICT = "TAG_CONFLICT"
+TAG_INVALID = "TAG_INVALID"
+RECIPE_NOT_FOUND = "RECIPE_NOT_FOUND"
+RECIPE_NOT_BATCHABLE = "RECIPE_NOT_BATCHABLE"
+BATCH_CONFLICT = "BATCH_CONFLICT"
+BATCH_INVALID = "BATCH_INVALID"
+PROFILE_PIN_INVALID = "PROFILE_PIN_INVALID"
+FM_TAG_EMPTY = "FM-TAG-EMPTY"
+FM_BATCH_CONFLICT = "FM-BATCH-CONFLICT"
+FM_MACRO_INFEASIBLE = "FM-MACRO-INFEASIBLE"
+FM_1 = "FM-1"
+FM_3 = "FM-3"
+FM_4 = "FM-4"
+FM_5 = "FM-5"
+
+
+class ApiContractError(Exception):
+    """Typed API-layer contract error with deterministic code mapping."""
+
+    def __init__(self, code: str, message: str):
+        super().__init__(message)
+        self.code = code
 
 
 def _payload(code: str, message: str) -> Dict[str, Any]:
@@ -51,6 +93,16 @@ def map_exception_to_api_error(exc: Exception) -> Tuple[int, Dict[str, Any]]:
     if isinstance(exc, (LLMInternalError, LLMClientError)):
         # Covers remaining client-side transport/server errors.
         return 502, _payload("LLM_API_ERROR", str(exc))
+
+    # Macro target validity (§2.1 / §4.2): reject before planning.
+    if isinstance(exc, MacroTargetsError):
+        return 400, {
+            API_ERROR: {
+                "code": "INVALID_REQUEST",
+                "message": exc.message,
+                "details": {"reason": exc.reason, **exc.details},
+            }
+        }
 
     # NL planner: include structured details so clients can show field-level errors.
     if isinstance(exc, PlannerConfigParsingError):
@@ -85,12 +137,48 @@ def map_exception_to_api_error(exc: Exception) -> Tuple[int, Dict[str, Any]]:
     if isinstance(exc, LLMPlanningModeError):
         return 422, _payload(exc.error_code, str(exc))
 
-    if isinstance(exc, TagRepositoryError):
-        return exc.status_code, _payload(exc.error_code, str(exc))
-
     # Validation failures that are specifically about input/provider correctness.
     if isinstance(exc, USDAProviderRequiredError):
         return 422, _payload("INGREDIENT_VALIDATION_ERROR", str(exc))
 
+    if isinstance(exc, TagRepositoryError):
+        if exc.code == TAG_NOT_FOUND:
+            return 404, _payload(TAG_NOT_FOUND, str(exc))
+        if exc.code == TAG_CONFLICT:
+            return 409, _payload(TAG_CONFLICT, str(exc))
+        if exc.code == TAG_INVALID:
+            return 400, _payload(TAG_INVALID, str(exc))
+        return 400, _payload(exc.code, str(exc))
+
+    if isinstance(exc, ApiContractError):
+        if exc.code in {
+            FM_TAG_EMPTY,
+            FM_BATCH_CONFLICT,
+            FM_MACRO_INFEASIBLE,
+            FM_1,
+            FM_3,
+            FM_4,
+            FM_5,
+        }:
+            return 422, _payload(exc.code, str(exc))
+        if exc.code == RECIPE_NOT_FOUND:
+            return 404, _payload(RECIPE_NOT_FOUND, str(exc))
+        if exc.code == RECIPE_NOT_BATCHABLE:
+            return 422, _payload(RECIPE_NOT_BATCHABLE, str(exc))
+        if exc.code == BATCH_CONFLICT:
+            return 409, _payload(BATCH_CONFLICT, str(exc))
+        if exc.code == BATCH_INVALID:
+            return 400, _payload(BATCH_INVALID, str(exc))
+        return 400, _payload(exc.code, str(exc))
+
+    # Profile pin validation errors currently surface as ValueError prefixed with
+    # PROFILE_PIN_INVALID in user_profile pin helpers.
+    if isinstance(exc, ValueError):
+        text = str(exc)
+        if text.startswith(f"{PROFILE_PIN_INVALID}:"):
+            message = text.split(":", 1)[1].strip() or "Invalid profile pin."
+            return 400, _payload(PROFILE_PIN_INVALID, message)
+
     # Unknown/unexpected failures
     return 500, _payload("PIPELINE_EXECUTION_ERROR", str(exc))
+

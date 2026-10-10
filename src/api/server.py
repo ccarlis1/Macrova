@@ -1,6 +1,7 @@
 """FastAPI server for the Nutrition Agent meal planning pipeline."""
 
 import json
+import logging
 import os
 import sys
 from pathlib import Path
@@ -18,17 +19,18 @@ if _env_file.exists():
             os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import FastAPI, HTTPException, Path as FastApiPath, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field, constr, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, constr, model_validator
 from dataclasses import fields as dc_fields
 
 from src.ingestion.nutrient_mapper import MappedNutrition, NutrientMapper
 from src.ingestion.ingredient_cache import CachedIngredientLookup
 from src.ingestion.usda_client import DataType, USDAClient, USDALookupError
 
+from src.data_layer.macro_targets import MacroTargetsError, validate_macro_targets
 from src.data_layer.models import (
     UserProfile,
     Recipe as DataRecipe,
@@ -37,23 +39,31 @@ from src.data_layer.models import (
 )
 from src.data_layer.recipe_db import RecipeDB
 from src.data_layer.nutrition_db import NutritionDB
+from src.data_layer.meal_prep import MealPrepBatchRepository
 from src.providers.local_provider import LocalIngredientProvider
 from src.providers.summary_hybrid_provider import SummaryHybridIngredientProvider
 from src.nutrition.calculator import NutritionCalculator
 from src.planning.converters import convert_recipes, convert_profile, extract_ingredient_names
 from src.planning.planner import plan_meals
-from src.planning.orchestrator import LLMPlanningModeError, plan_with_llm_feedback
+from src.planning.orchestrator import (
+    LLMPlanningModeError,
+    apply_persisted_pins_to_profile,
+    build_plan_request_from_profile,
+    build_planned_meal_metadata_index,
+    hydrate_parity_plan_context,
+    plan_with_llm_feedback,
+)
 from src.output.formatters import format_result_json
 from src.providers.api_provider import APIIngredientProvider
 from src.config.llm_settings import load_llm_settings
 from src.api.error_mapping import map_exception_to_api_error
+from src.api.error_mapping import ApiContractError, RECIPE_NOT_FOUND
 from src.api.recipe_sync import (
     RecipeSyncItem,
     RecipeSyncRequest,
     RecipeSyncResponse,
     atomic_upsert_recipes_by_id,
 )
-from src.api.tag_routes import configure_tag_routes, router as tag_router
 from src.llm.client import LLMClient
 from src.llm.constraint_parser import PlannerConfigParsingError, parse_nl_config
 from src.llm.pipeline import generate_validate_persist_recipes
@@ -63,7 +73,16 @@ from src.llm.ingredient_matcher import (
     validate_matches,
 )
 from src.llm.schemas import BudgetLevel, DietaryFlag, PrepTimeBucket, PlannerConfigJson
-from src.data_layer.user_profile import user_profile_from_planner_config
+from src.data_layer.user_profile import (
+    clear_all_profile_pins,
+    clear_profile_pin,
+    load_normalized_profile_schedule_days,
+    load_profile_pins,
+    persist_profile_schedule_days,
+    upsert_profile_pin,
+    planner_config_interpretation_report,
+    user_profile_from_planner_config,
+)
 from src.models.legacy_schedule_migration import (
     canonical_day_to_meal_only_legacy_dict,
     legacy_schedule_dict_to_schedule_days,
@@ -74,19 +93,23 @@ from src.models.schedule import DaySchedule, validate_day_schedule
 from src.llm.tag_filtering_service import apply_tag_filtering
 from src.llm.recipe_tagger import tag_recipes
 from src.llm.tag_repository import load_recipe_tags
+from src.llm.tag_repository import load_canonical_recipe_tag_slugs
+from src.llm.tag_repository import load_hard_eligible_recipe_tag_slugs
 from src.llm.tag_repository import upsert_recipe_tags
+from src.api.tag_routes import router as tag_router
+from src.api.meal_prep_routes import router as meal_prep_router
 
 
 recipes_path = "data/recipes/recipes.json"
-ingredients_path = "data/ingredients/custom_ingredients.json"
+# Q2(d): committed ingredient table (draft, pending review) is the default local nutrition source (§4.4).
+ingredients_path = "data/reference/ingredient_nutrition.json"
+DEFAULT_INGREDIENTS_PATH = ingredients_path
 DEFAULT_TAG_PATH = "data/recipes/recipe_tags.json"
 
 app = FastAPI(title="Nutrition Agent API")
-configure_tag_routes(
-    tag_path_getter=lambda: DEFAULT_TAG_PATH,
-    recipes_path_getter=lambda: recipes_path,
-)
 app.include_router(tag_router, prefix="/api/v1")
+app.include_router(meal_prep_router, prefix="/api/v1")
+logger = logging.getLogger(__name__)
 
 app.add_middleware(
     CORSMiddleware,
@@ -108,6 +131,18 @@ async def _request_validation_exception_handler(
     )
 
 
+class ApiErrorBody(BaseModel):
+    """Structured API error payload (``{"error": {...}}``)."""
+
+    code: str
+    message: str
+    details: Optional[Dict[str, Any]] = None
+
+
+class ApiErrorResponse(BaseModel):
+    error: ApiErrorBody
+
+
 class PlanRequest(BaseModel):
     daily_calories: int
     daily_protein_g: float
@@ -126,6 +161,8 @@ class PlanRequest(BaseModel):
     ingredient_source: str = Field(default="local", pattern="^(local|api)$")
     micronutrient_goals: Optional[Dict[str, float]] = None
     micronutrient_weekly_min_fraction: float = Field(default=1.0, gt=0.0, le=1.0)
+    # HC-5 hard daily ceiling. May be below daily_calories; the planner reports FM-2.
+    max_daily_calories: Optional[int] = Field(default=None, gt=0)
 
     # Optional tag-based recipe pool filtering (deterministic).
     cuisine: Optional[List[str]] = None
@@ -199,6 +236,115 @@ class PlanFromTextRequest(BaseModel):
     ] = None
 
 
+class ProfileScheduleWriteResponse(BaseModel):
+    schedule_days: List[Dict[str, Any]]
+
+
+class ProfilePinUpsertRequest(BaseModel):
+    recipe_id: constr(strip_whitespace=True, min_length=1)  # type: ignore[valid-type]
+
+
+class ProfilePinDto(BaseModel):
+    day_index: int = Field(..., ge=0)
+    slot_index: int = Field(..., ge=0)
+    recipe_id: str
+
+
+class ProfilePinListResponse(BaseModel):
+    pins: List[ProfilePinDto]
+
+
+class ProfilePinUpsertResponse(BaseModel):
+    pin: ProfilePinDto
+
+
+class ProfilePinDeleteResponse(BaseModel):
+    deleted: bool
+    pin: Optional[ProfilePinDto] = None
+
+
+class ProfilePinsClearResponse(BaseModel):
+    cleared_count: int
+
+
+class PlannedMeal(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    recipe_id: Optional[str] = None
+    name: Optional[str] = None
+    meal_type: Optional[str] = None
+    meal_type_match: Optional[bool] = None
+    slot_index: Optional[int] = None
+    source: Optional[
+        Literal["meal_prep_batch", "pinned_assignment", "planner"]
+    ] = None
+    batch_id: Optional[str] = None
+    servings: Optional[float] = None
+
+
+class DailyPlan(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    day: int
+    meals: List[PlannedMeal] = Field(default_factory=list)
+    totals: Optional[Dict[str, Any]] = None
+
+
+class RecipeDetailResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    id: str
+    name: str
+    servings: int
+    default_servings: int
+    cooking_time_minutes: int
+    instructions: List[str]
+    ingredients: List[Dict[str, Any]]
+    tag_slugs_by_type: Dict[str, List[str]] = Field(default_factory=dict)
+    is_meal_prep_capable: bool
+
+
+class PlanFailure(BaseModel):
+    code: Literal[
+        "FM-1",
+        "FM-2",
+        "FM-3",
+        "FM-4",
+        "FM-5",
+        "FM-TAG-EMPTY",
+        "FM-BATCH-CONFLICT",
+        "FM-MACRO-INFEASIBLE",
+    ]
+    message: str
+    day_index: Optional[int] = None
+    slot_index: Optional[int] = None
+    slot_id: Optional[str] = None
+    date: Optional[str] = None
+    details: Dict[str, Any] = Field(default_factory=dict)
+    fix_hint: Optional[str] = None
+
+
+class PlanReport(BaseModel):
+    model_config = {"extra": "allow"}
+
+    failures: List[PlanFailure] = Field(default_factory=list)
+
+
+class PlanResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    success: bool
+    termination_code: str
+    days: int
+    daily_plans: List[DailyPlan]
+    warnings: Dict[str, Any]
+    report: PlanReport
+    goals: Dict[str, Any]
+    weekly_totals: Optional[Dict[str, Any]] = None
+    plan_status: Literal["success", "partial", "failed"]
+    plan_status_message: Optional[str] = None
+
+
 def _normalize_tag_pref_value(value: Any) -> Any:
     """Normalize incoming tag preference values to plain JSON types.
 
@@ -270,6 +416,7 @@ def _apply_recipe_tag_filter_pre_convert(
     recipes: List[Any],
     request_like: Any,
     tag_path: str,
+    protected_recipe_ids: Optional[List[str]] = None,
 ) -> tuple[List[Any], Dict[str, Any]]:
     """Optionally filter recipes deterministically based on strict tag metadata."""
 
@@ -286,7 +433,16 @@ def _apply_recipe_tag_filter_pre_convert(
 
     preferences = _extract_tag_preferences(request_like)
     filter_applied = bool(preferences)
+    protected_ids = {str(rid) for rid in (protected_recipe_ids or []) if str(rid).strip()}
     tags_by_id = load_recipe_tags(tag_path) if filter_applied else {}
+    guardrail_warnings: List[str] = []
+    if filter_applied and not tags_by_id:
+        msg = (
+            "Tag filters were requested but canonical recipe tags are missing or empty; "
+            "filtered recipe pool may be empty."
+        )
+        guardrail_warnings.append(msg)
+        logger.warning("%s path=%s preferences=%s", msg, tag_path, preferences)
 
     filtered_recipes = apply_tag_filtering(
         recipes=list(recipes),
@@ -294,12 +450,121 @@ def _apply_recipe_tag_filter_pre_convert(
         preferences=preferences,
     )
 
+    if protected_ids and filter_applied:
+        filtered_ids = {str(getattr(recipe, "id", "")) for recipe in filtered_recipes}
+        protected_recipes = [
+            recipe
+            for recipe in recipes
+            if str(getattr(recipe, "id", "")) in protected_ids
+            and str(getattr(recipe, "id", "")) not in filtered_ids
+        ]
+        filtered_recipes = list(filtered_recipes) + protected_recipes
+
     log_payload = {
         "filter_applied": filter_applied,
         "input_recipe_count": input_recipe_count,
         "output_recipe_count": len(filtered_recipes),
     }
+    if protected_ids:
+        log_payload["protected_recipe_count"] = len(protected_ids)
+    if guardrail_warnings:
+        log_payload["guardrail_warnings"] = guardrail_warnings
     return filtered_recipes, log_payload
+
+
+def _merge_filter_warnings(
+    out: Dict[str, Any],
+    filter_log: Dict[str, Any],
+) -> None:
+    warnings = filter_log.get("guardrail_warnings")
+    if not isinstance(warnings, list) or not warnings:
+        return
+    existing = out.get("warnings")
+    if not isinstance(existing, dict):
+        existing = {}
+    existing_filter_warnings = list(existing.get("tag_filtering", []))
+    for warning in warnings:
+        text = str(warning).strip()
+        if text and text not in existing_filter_warnings:
+            existing_filter_warnings.append(text)
+    if existing_filter_warnings:
+        existing["tag_filtering"] = existing_filter_warnings
+    out["warnings"] = existing
+
+
+def _merge_exclusion_warnings(
+    out: Dict[str, Any],
+    user_profile: UserProfile,
+    recipe_pool: List[Any],
+) -> None:
+    """Surface unmatched exclusion terms and unclassified pool ingredients."""
+    from src.planning.allergens import exclusion_warning_messages
+
+    pool_names: List[str] = []
+    for recipe in recipe_pool:
+        for ing in getattr(recipe, "ingredients", []) or []:
+            name = getattr(ing, "name", None)
+            if name:
+                pool_names.append(str(name))
+    messages = exclusion_warning_messages(
+        user_profile.allergies,
+        user_profile.disliked_foods,
+        pool_names,
+    )
+    if not messages:
+        return
+    existing = out.get("warnings")
+    if not isinstance(existing, dict):
+        existing = {}
+    prior = list(existing.get("exclusions", []))
+    for msg in messages:
+        if msg not in prior:
+            prior.append(msg)
+    existing["exclusions"] = prior
+    out["warnings"] = existing
+
+
+def _merge_nutrition_warnings(
+    out: Dict[str, Any],
+    unresolved_log: List[Dict[str, Any]],
+) -> None:
+    """Surface recipes dropped because ingredients could not be resolved (§4.4)."""
+    if not unresolved_log:
+        return
+    existing = out.get("warnings")
+    if not isinstance(existing, dict):
+        existing = {}
+    prior = list(existing.get("nutrition", []))
+    for row in unresolved_log:
+        recipe_id = row.get("recipe_id")
+        names = row.get("unresolved_ingredients") or []
+        msg = (
+            f"Recipe {recipe_id!r} removed from the pool: unresolved ingredients "
+            f"{list(names)}."
+        )
+        if msg not in prior:
+            prior.append(msg)
+    existing["nutrition"] = prior
+    out["warnings"] = existing
+
+
+def _attach_canonical_recipe_tags(
+    recipe_pool: List[Any],
+    canonical_tag_slugs_by_id: Dict[str, set[str]],
+    hard_eligible_tag_slugs_by_id: Optional[Dict[str, set[str]]] = None,
+) -> None:
+    """Hydrate planner recipe objects with canonical tag slugs for BE-8."""
+    for recipe in recipe_pool:
+        recipe_id = getattr(recipe, "id", None)
+        if recipe_id is None:
+            continue
+        setattr(recipe, "canonical_tag_slugs", set(canonical_tag_slugs_by_id.get(recipe_id, set())))
+        if hard_eligible_tag_slugs_by_id is not None:
+            setattr(
+                recipe,
+                "hard_eligible_tag_slugs",
+                set(hard_eligible_tag_slugs_by_id.get(recipe_id, set())),
+            )
 
 
 def _filter_recipes_by_ids(
@@ -466,12 +731,19 @@ def _local_ingredient_to_resolve_payload(data: Dict[str, Any]) -> Dict[str, Any]
     }
 
 
-def _build_user_profile(request: PlanRequest) -> tuple[UserProfile, List[str]]:
+def _build_user_profile(
+    request: PlanRequest,
+    *,
+    persisted_pins: Optional[List[Any]] = None,
+) -> tuple[UserProfile, List[str]]:
     daily_fat_g = (request.daily_fat_g_min, request.daily_fat_g_max)
-    median_fat_g = (daily_fat_g[0] + daily_fat_g[1]) / 2
-    daily_carbs_g = (
-        request.daily_calories - request.daily_protein_g * 4 - median_fat_g * 9
-    ) / 4
+    # Derived carbs + validity (§2.1 / §4.2); raises MacroTargetsError.
+    daily_carbs_g = validate_macro_targets(
+        request.daily_calories,
+        request.daily_protein_g,
+        daily_fat_g[0],
+        daily_fat_g[1],
+    )
 
     warnings: List[str] = []
     schedule_days: Optional[List[DaySchedule]] = None
@@ -502,11 +774,32 @@ def _build_user_profile(request: PlanRequest) -> tuple[UserProfile, List[str]]:
         liked_foods=[str(food) for food in request.liked_foods],
         disliked_foods=[str(food) for food in request.disliked_foods],
         allergies=[str(allergen) for allergen in request.allergies],
+        dietary_flags=(
+            [str(getattr(f, "value", f)) for f in request.dietary_flags]
+            if request.dietary_flags is not None
+            else None
+        ),
         daily_micronutrient_targets=request.micronutrient_goals,
         micronutrient_weekly_min_fraction=request.micronutrient_weekly_min_fraction,
+        max_daily_calories=request.max_daily_calories,
         schedule_days=schedule_days,
+        pins=list(persisted_pins or []),
     )
     return profile, warnings
+
+
+def _profile_pin_to_dict(pin: Any) -> Dict[str, Any]:
+    return {
+        "day_index": int(pin.day_index),
+        "slot_index": int(pin.slot_index),
+        "recipe_id": str(pin.recipe_id),
+    }
+
+
+def _validate_recipe_exists(recipe_id: str) -> None:
+    recipe = RecipeDB(recipes_path).get_recipe_by_id(recipe_id)
+    if recipe is None:
+        raise ApiContractError(RECIPE_NOT_FOUND, f"No recipe with id {recipe_id!r}")
 
 
 def build_llm_client() -> LLMClient:
@@ -537,8 +830,6 @@ class RecipeGenerationResponse(BaseModel):
     rejected_count: int
     recipe_ids: List[str]
     failures: List[RecipeGenerationFailure]
-    duplicate_ids: List[str] = Field(default_factory=list)
-    warnings: List[str] = Field(default_factory=list)
 
 
 class IngredientMatchRequest(BaseModel):
@@ -604,6 +895,119 @@ class NutritionSummaryRequest(BaseModel):
     ingredients: List[NutritionIngredientLine] = Field(..., min_length=1)
 
 
+def _field_path_from_loc(loc: tuple[Any, ...]) -> str:
+    return ".".join(str(part) for part in loc if part != "body")
+
+
+def _profile_schedule_validation_error(
+    field_errors: List[Dict[str, str]],
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=400,
+        content={
+            "error": {
+                "code": "PROFILE_SCHEDULE_INVALID",
+                "message": "Invalid profile schedule.",
+                "details": {"field_errors": field_errors},
+            }
+        },
+    )
+
+
+def _validate_schedule_days_payload(payload: Any) -> tuple[List[DaySchedule], List[Dict[str, str]]]:
+    field_errors: List[Dict[str, str]] = []
+    if not isinstance(payload, dict):
+        field_errors.append(
+            {
+                "code": "INVALID_FIELD",
+                "field_path": "",
+                "message": "Request body must be a JSON object.",
+            }
+        )
+        return [], field_errors
+
+    allowed_keys = {"schedule_days"}
+    for key in sorted(payload.keys()):
+        if key not in allowed_keys:
+            field_errors.append(
+                {
+                    "code": "INVALID_FIELD",
+                    "field_path": str(key),
+                    "message": "Extra inputs are not permitted",
+                }
+            )
+    if "schedule_days" not in payload:
+        field_errors.append(
+            {
+                "code": "INVALID_FIELD",
+                "field_path": "schedule_days",
+                "message": "Field required",
+            }
+        )
+        return [], field_errors
+
+    raw_schedule_days = payload.get("schedule_days")
+    if not isinstance(raw_schedule_days, list):
+        field_errors.append(
+            {
+                "code": "INVALID_FIELD",
+                "field_path": "schedule_days",
+                "message": "Input should be a valid list",
+            }
+        )
+        return [], field_errors
+    if not raw_schedule_days:
+        field_errors.append(
+            {
+                "code": "INVALID_FIELD",
+                "field_path": "schedule_days",
+                "message": "schedule_days must contain at least one day.",
+            }
+        )
+        return [], field_errors
+
+    parsed_days: List[DaySchedule] = []
+    for i, day_payload in enumerate(raw_schedule_days):
+        try:
+            day = DaySchedule.model_validate(day_payload)
+        except ValidationError as exc:
+            for err in exc.errors():
+                field_path = _field_path_from_loc(("schedule_days", i, *err.get("loc", ())))
+                field_errors.append(
+                    {
+                        "code": "INVALID_FIELD",
+                        "field_path": field_path,
+                        "message": str(err.get("msg", "Invalid value")),
+                    }
+                )
+            continue
+        except ValueError as exc:
+            field_errors.append(
+                {
+                    "code": "INVALID_FIELD",
+                    "field_path": f"schedule_days.{i}",
+                    "message": str(exc),
+                }
+            )
+            continue
+        parsed_days.append(day)
+
+    for idx, day in enumerate(sorted(parsed_days, key=lambda d: d.day_index)):
+        expected = idx + 1
+        if day.day_index != expected:
+            field_errors.append(
+                {
+                    "code": "INVALID_FIELD",
+                    "field_path": f"schedule_days.{idx}.day_index",
+                    "message": f"day_index must be {expected}, got {day.day_index}",
+                }
+            )
+
+    return parsed_days, sorted(
+        field_errors, key=lambda item: (item["field_path"], item["message"])
+    )
+
+
 def _nutrition_line_to_data_ingredient(line: NutritionIngredientLine) -> DataIngredient:
     unit = line.unit.strip()
     lowered = unit.lower()
@@ -628,28 +1032,71 @@ def llm_status_endpoint() -> Dict[str, Any]:
     return {"enabled": bool(settings.enabled)}
 
 
-@app.post("/api/v1/plan")
-@app.post("/api/plan")
-def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
+@app.post(
+    "/api/v1/plan",
+    response_model=PlanResponse,
+    response_model_exclude_none=True,
+    responses={400: {"model": ApiErrorResponse}},
+)
+@app.post(
+    "/api/plan",
+    response_model=PlanResponse,
+    response_model_exclude_none=True,
+    responses={400: {"model": ApiErrorResponse}},
+)
+async def plan_meals_endpoint(
+    request: Request,
+    plan_request: PlanRequest,
+) -> Dict[str, Any]:
     try:
-        user_profile, sched_warnings = _build_user_profile(request)
+        raw_payload = await request.json()
+        if isinstance(raw_payload, dict) and "active_batches" in raw_payload:
+            logger.warning(
+                "Ignoring client-supplied active_batches in /api/v1/plan payload."
+            )
+
+        parity_ctx = hydrate_parity_plan_context(seed=None)
+        try:
+            user_profile, sched_warnings = _build_user_profile(
+                plan_request,
+                persisted_pins=parity_ctx.persisted_pins,
+            )
+        except MacroTargetsError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "error": {
+                        "code": "INVALID_REQUEST",
+                        "message": exc.message,
+                        "details": {"reason": exc.reason, **exc.details},
+                    }
+                },
+            )
+        apply_persisted_pins_to_profile(user_profile, parity_ctx.persisted_pins)
 
         recipe_db = RecipeDB(recipes_path)
         all_recipes = recipe_db.get_all_recipes()
-        all_recipes = _filter_recipes_by_ids(all_recipes, request.recipe_ids)
+        all_recipes = _filter_recipes_by_ids(all_recipes, plan_request.recipe_ids)
+        active_batches = parity_ctx.active_batches
+        protected_recipe_ids = [
+            str(getattr(batch, "recipe_id"))
+            for batch in active_batches
+            if getattr(batch, "recipe_id", None)
+        ]
 
-        tag_path = getattr(request, "recipe_tags_path", None) or DEFAULT_TAG_PATH
+        tag_path = getattr(plan_request, "recipe_tags_path", None) or DEFAULT_TAG_PATH
         all_recipes, filter_log = _apply_recipe_tag_filter_pre_convert(
             recipes=all_recipes,
-            request_like=request,
+            request_like=plan_request,
             tag_path=tag_path,
+            protected_recipe_ids=protected_recipe_ids,
         )
         print(
             json.dumps(filter_log, sort_keys=True, ensure_ascii=True),
             file=sys.stderr,
         )
 
-        if request.ingredient_source == "api":
+        if plan_request.ingredient_source == "api":
             usda_client = USDAClient.from_env()
             cached_lookup = CachedIngredientLookup(usda_client=usda_client)
             provider = APIIngredientProvider(cached_lookup)
@@ -661,19 +1108,43 @@ def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
         provider.resolve_all(all_ingredient_names)
 
         calculator = NutritionCalculator(provider)
-        recipe_pool = convert_recipes(all_recipes, calculator)
+        canonical_tag_slugs_by_id = load_canonical_recipe_tag_slugs(tag_path)
+        hard_eligible_tag_slugs_by_id = load_hard_eligible_recipe_tag_slugs(tag_path)
+        nutrition_unresolved_log: List[Dict[str, Any]] = []
+        recipe_pool = convert_recipes(
+            all_recipes,
+            calculator,
+            unresolved_log=nutrition_unresolved_log,
+        )
+        _attach_canonical_recipe_tags(
+            recipe_pool,
+            canonical_tag_slugs_by_id,
+            hard_eligible_tag_slugs_by_id,
+        )
         recipe_by_id = {r.id: r for r in recipe_pool}
-        planning_profile = convert_profile(user_profile, request.days)
+        planning_profile = convert_profile(user_profile, plan_request.days)
+        effective_plan_request = build_plan_request_from_profile(
+            user_profile,
+            all_recipes,
+            active_batches,
+            parity_ctx.seed,
+        )
+        logger.debug(
+            "Built effective plan request for /api/v1/plan with keys=%s seed=%s",
+            sorted(effective_plan_request.keys()),
+            parity_ctx.seed,
+        )
+        planning_profile.batch_locks = parity_ctx.batch_locks
 
         llm_settings = load_llm_settings()
-        planning_mode_provided = request.planning_mode is not None
-        effective_mode = request.planning_mode
+        planning_mode_provided = plan_request.planning_mode is not None
+        effective_mode = plan_request.planning_mode
         if effective_mode is None:
             # Omitted => deterministic regardless of LLM env (assisted modes are explicit-only).
             effective_mode = "deterministic"
 
         if effective_mode == "deterministic":
-            result = plan_meals(planning_profile, recipe_pool, request.days)
+            result = plan_meals(planning_profile, recipe_pool, plan_request.days)
         else:
             if not llm_settings.enabled:
                 raise LLMPlanningModeError(
@@ -710,7 +1181,7 @@ def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
             result = plan_with_llm_feedback(
                 planning_profile,
                 recipe_pool,
-                request.days,
+                plan_request.days,
                 max_feedback_retries=3,
                 recipes_path=recipes_path,
                 client=llm_client,
@@ -726,15 +1197,35 @@ def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
             ingredient_names_updated = extract_ingredient_names(all_recipes_updated)
             validation_provider.resolve_all(ingredient_names_updated)
             calculator_updated = NutritionCalculator(validation_provider)
+            canonical_tag_slugs_by_id = load_canonical_recipe_tag_slugs(tag_path)
+            hard_eligible_tag_slugs_by_id = load_hard_eligible_recipe_tag_slugs(tag_path)
             recipe_pool_updated = convert_recipes(all_recipes_updated, calculator_updated)
+            _attach_canonical_recipe_tags(
+                recipe_pool_updated,
+                canonical_tag_slugs_by_id,
+                hard_eligible_tag_slugs_by_id,
+            )
             recipe_by_id = {r.id: r for r in recipe_pool_updated}
 
-        out = format_result_json(result, recipe_by_id, planning_profile, request.days)
+        meal_metadata_by_slot = build_planned_meal_metadata_index(
+            active_batches,
+            parity_ctx.persisted_pins,
+        )
+        out = format_result_json(
+            result,
+            recipe_by_id,
+            planning_profile,
+            plan_request.days,
+            meal_metadata_by_slot,
+        )
         merge_schedule_warnings_into_result(
             out,
             sched_warnings,
-            deprecated_legacy=request.schedule_days is None and request.schedule is not None,
+            deprecated_legacy=plan_request.schedule_days is None and plan_request.schedule is not None,
         )
+        _merge_filter_warnings(out, filter_log)
+        _merge_exclusion_warnings(out, user_profile, list(recipe_by_id.values()))
+        _merge_nutrition_warnings(out, nutrition_unresolved_log)
         return out
     except HTTPException:
         raise
@@ -744,8 +1235,8 @@ def plan_meals_endpoint(request: PlanRequest) -> Dict[str, Any]:
         return JSONResponse(status_code=status_code, content=payload)
 
 
-@app.post("/api/v1/plan-from-text")
-@app.post("/api/plan-from-text")
+@app.post("/api/v1/plan-from-text", response_model=PlanResponse, response_model_exclude_none=True)
+@app.post("/api/plan-from-text", response_model=PlanResponse, response_model_exclude_none=True)
 def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
     try:
         llm_settings = load_llm_settings()
@@ -782,6 +1273,8 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
             # never infer cuisine/cost from the prompt.
             parsed_cost_level = None
             parsed_cuisines = None
+            parsed_dietary_flags = None
+            nl_interpretation = planner_config_interpretation_report(cfg)
         else:
             if not llm_settings.enabled:
                 raise LLMPlanningModeError(
@@ -796,9 +1289,16 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
             user_profile = user_profile_from_planner_config(cfg)
             days = int(cfg.days)
 
-            # Assisted modes allow baseline cuisine + cost_level inferred from prompt cfg.
-            parsed_cost_level = getattr(cfg.preferences, "budget", None)
-            parsed_cuisines = getattr(cfg.preferences, "cuisine", None)
+            # LLM overhaul Stage 8: cuisine/budget inferred from the prompt are soft preferences
+            # (liked_foods / fat-range default) and are NEVER turned into hard pool filters.
+            # Explicit diet statements (vegan, gluten-free, ...) are hard and travel through the
+            # typed constraints block into the canonical dietary_flags tag filter.
+            parsed_cost_level = None
+            parsed_cuisines = None
+            parsed_dietary_flags = (
+                list(cfg.constraints.dietary_flags) if cfg.constraints and cfg.constraints.dietary_flags else None
+            )
+            nl_interpretation = planner_config_interpretation_report(cfg)
 
         recipe_db = RecipeDB(recipes_path)
         all_recipes = recipe_db.get_all_recipes()
@@ -813,6 +1313,9 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
         final_cost_level = (
             request.cost_level if request.cost_level is not None else parsed_cost_level
         )
+        final_dietary_flags = (
+            request.dietary_flags if request.dietary_flags is not None else parsed_dietary_flags
+        )
 
         tag_path = getattr(request, "recipe_tags_path", None) or DEFAULT_TAG_PATH
         shim = type(
@@ -822,7 +1325,7 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
                 "cuisine": final_cuisines,
                 "cost_level": final_cost_level,
                 "prep_time_bucket": request.prep_time_bucket,
-                "dietary_flags": request.dietary_flags,
+                "dietary_flags": final_dietary_flags,
             },
         )()
         all_recipes, filter_log = _apply_recipe_tag_filter_pre_convert(
@@ -845,9 +1348,25 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
         provider.resolve_all(all_ingredient_names)
 
         calculator = NutritionCalculator(provider)
-        recipe_pool = convert_recipes(all_recipes, calculator)
+        canonical_tag_slugs_by_id = load_canonical_recipe_tag_slugs(tag_path)
+        hard_eligible_tag_slugs_by_id = load_hard_eligible_recipe_tag_slugs(tag_path)
+        nutrition_unresolved_log: List[Dict[str, Any]] = []
+        recipe_pool = convert_recipes(
+            all_recipes,
+            calculator,
+            unresolved_log=nutrition_unresolved_log,
+        )
+        _attach_canonical_recipe_tags(
+            recipe_pool,
+            canonical_tag_slugs_by_id,
+            hard_eligible_tag_slugs_by_id,
+        )
         recipe_by_id = {r.id: r for r in recipe_pool}
+        parity_ctx = hydrate_parity_plan_context(seed=None)
+        apply_persisted_pins_to_profile(user_profile, parity_ctx.persisted_pins)
         planning_profile = convert_profile(user_profile, days)
+        planning_profile.batch_locks = parity_ctx.batch_locks
+        active_batches = parity_ctx.active_batches
 
         if effective_mode == "deterministic":
             result = plan_meals(planning_profile, recipe_pool, days)
@@ -894,12 +1413,34 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
             ingredient_names_updated = extract_ingredient_names(all_recipes_updated)
             validation_provider.resolve_all(ingredient_names_updated)
             calculator_updated = NutritionCalculator(validation_provider)
-            recipe_pool_updated = convert_recipes(
-                all_recipes_updated, calculator_updated
+            canonical_tag_slugs_by_id = load_canonical_recipe_tag_slugs(tag_path)
+            hard_eligible_tag_slugs_by_id = load_hard_eligible_recipe_tag_slugs(tag_path)
+            recipe_pool_updated = convert_recipes(all_recipes_updated, calculator_updated)
+            _attach_canonical_recipe_tags(
+                recipe_pool_updated,
+                canonical_tag_slugs_by_id,
+                hard_eligible_tag_slugs_by_id,
             )
             recipe_by_id = {r.id: r for r in recipe_pool_updated}
 
-        return format_result_json(result, recipe_by_id, planning_profile, days)
+        meal_metadata_by_slot = build_planned_meal_metadata_index(
+            active_batches,
+            parity_ctx.persisted_pins,
+        )
+        out = format_result_json(
+            result,
+            recipe_by_id,
+            planning_profile,
+            days,
+            meal_metadata_by_slot,
+        )
+        _merge_filter_warnings(out, filter_log)
+        _merge_exclusion_warnings(out, user_profile, list(recipe_by_id.values()))
+        _merge_nutrition_warnings(out, nutrition_unresolved_log)
+        warnings_out = out.get("warnings") if isinstance(out.get("warnings"), dict) else {}
+        warnings_out["nl_interpretation"] = nl_interpretation
+        out["warnings"] = warnings_out
+        return out
     except HTTPException:
         raise
     except Exception as exc:
@@ -976,14 +1517,12 @@ def generate_validated_recipes_endpoint(
                 )
             )
 
-        recipe_ids = summary.get("recipe_ids", summary.get("persisted_ids", []))
+        recipe_ids = summary.get("persisted_ids", [])
         return RecipeGenerationResponse(
             accepted_count=len(recipe_ids),
             rejected_count=len(rejected),
             recipe_ids=list(recipe_ids),
             failures=failures,
-            duplicate_ids=list(summary.get("duplicate_ids", [])),
-            warnings=list(summary.get("warnings", [])),
         )
     except HTTPException:
         raise
@@ -1183,6 +1722,7 @@ def sync_recipes_endpoint(body: RecipeSyncRequest) -> Any:
         synced_ids = atomic_upsert_recipes_by_id(
             path=recipes_path,
             items=body.recipes,
+            tag_path=DEFAULT_TAG_PATH,
         )
         return RecipeSyncResponse(synced_ids=synced_ids)
     except HTTPException:
@@ -1200,6 +1740,7 @@ def create_recipe_endpoint(item: RecipeSyncItem) -> Any:
         synced_ids = atomic_upsert_recipes_by_id(
             path=recipes_path,
             items=[item],
+            tag_path=DEFAULT_TAG_PATH,
         )
         return RecipeSyncResponse(synced_ids=synced_ids)
     except HTTPException:
@@ -1227,6 +1768,7 @@ def put_recipe_endpoint(recipe_id: str, item: RecipeSyncItem) -> Any:
         synced_ids = atomic_upsert_recipes_by_id(
             path=recipes_path,
             items=[item],
+            tag_path=DEFAULT_TAG_PATH,
         )
         return RecipeSyncResponse(synced_ids=synced_ids)
     except HTTPException:
@@ -1247,7 +1789,7 @@ def list_recipes() -> List[Dict[str, str]]:
         return JSONResponse(status_code=status_code, content=payload)
 
 
-@app.get("/api/v1/recipes/{recipe_id}")
+@app.get("/api/v1/recipes/{recipe_id}", response_model=RecipeDetailResponse)
 def get_recipe_detail(recipe_id: str) -> Any:
     """Full recipe with ingredient lines enriched for the Flutter client."""
     try:
@@ -1266,13 +1808,59 @@ def get_recipe_detail(recipe_id: str) -> Any:
         nutrition_db = NutritionDB(ingredients_path)
         calculator = NutritionCalculator(LocalIngredientProvider(nutrition_db))
         ingredients_json = _flutter_ingredient_entries(recipe, calculator)
+        canonical_tags = load_recipe_tags(DEFAULT_TAG_PATH)
+        recipe_tags = canonical_tags.get(recipe_id)
+        tag_slugs_by_type = dict((recipe_tags.tag_slugs_by_type or {}) if recipe_tags else {})
+        hard_eligible_by_id = load_hard_eligible_recipe_tag_slugs(DEFAULT_TAG_PATH)
+        context_slugs = set(tag_slugs_by_type.get("context", []))
+        hard_eligible = hard_eligible_by_id.get(recipe_id, set())
+        is_meal_prep_capable = (
+            int(recipe.default_servings) >= 2
+            and "meal-prep" in context_slugs
+            and "meal-prep" in hard_eligible
+        )
         return {
             "id": recipe.id,
             "name": recipe.name,
-            "servings": 1,
+            "servings": int(recipe.default_servings),
+            "default_servings": int(recipe.default_servings),
             "cooking_time_minutes": recipe.cooking_time_minutes,
             "instructions": recipe.instructions,
             "ingredients": ingredients_json,
+            "tag_slugs_by_type": tag_slugs_by_type,
+            "is_meal_prep_capable": is_meal_prep_capable,
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        status_code, payload = map_exception_to_api_error(exc)
+        return JSONResponse(status_code=status_code, content=payload)
+
+
+@app.delete("/api/v1/recipes/{recipe_id}")
+@app.delete("/api/recipes/{recipe_id}")
+def delete_recipe_endpoint(recipe_id: str) -> Any:
+    try:
+        recipe_db = RecipeDB(recipes_path)
+        recipe = recipe_db.get_recipe_by_id(recipe_id)
+        if recipe is None:
+            return JSONResponse(
+                status_code=404,
+                content={
+                    "error": {
+                        "code": "RECIPE_NOT_FOUND",
+                        "message": f"No recipe with id {recipe_id!r}",
+                    }
+                },
+            )
+
+        recipe_db._recipes = [r for r in recipe_db._recipes if r.id != recipe_id]  # noqa: SLF001
+        recipe_db.save()
+
+        orphaned_count = MealPrepBatchRepository().mark_orphaned_for_recipe(recipe_id)
+        return {
+            "deleted_id": recipe_id,
+            "orphaned_batches": orphaned_count,
         }
     except HTTPException:
         raise
@@ -1320,6 +1908,94 @@ def nutrition_summary_endpoint(request: NutritionSummaryRequest) -> Any:
         }
     except HTTPException:
         raise
+    except Exception as exc:
+        status_code, payload = map_exception_to_api_error(exc)
+        return JSONResponse(status_code=status_code, content=payload)
+
+
+@app.get("/api/v1/profile/schedule", response_model=ProfileScheduleWriteResponse)
+def get_profile_schedule_endpoint() -> Any:
+    """Return the authoritative persisted schedule in the same shape as PUT writes."""
+    try:
+        normalized_days = load_normalized_profile_schedule_days()
+        return {"schedule_days": normalized_days}
+    except Exception as exc:
+        status_code, payload = map_exception_to_api_error(exc)
+        return JSONResponse(status_code=status_code, content=payload)
+
+
+@app.put("/api/v1/profile/schedule", response_model=ProfileScheduleWriteResponse)
+async def put_profile_schedule_endpoint(request: Request) -> Any:
+    """Persist canonical schedule_days into the existing profile YAML path."""
+    try:
+        payload = await request.json()
+    except Exception:
+        return JSONResponse(
+            status_code=400,
+            content={"error": {"code": "INVALID_REQUEST", "message": "Invalid request schema."}},
+        )
+
+    schedule_days, field_errors = _validate_schedule_days_payload(payload)
+    if field_errors:
+        return _profile_schedule_validation_error(field_errors)
+
+    normalized_days = persist_profile_schedule_days(schedule_days)
+    return {"schedule_days": normalized_days}
+
+
+@app.put(
+    "/api/v1/profile/pins/{day_index}/{slot_index}",
+    response_model=ProfilePinUpsertResponse,
+)
+def put_profile_pin_endpoint(
+    day_index: int = FastApiPath(..., ge=0),
+    slot_index: int = FastApiPath(..., ge=0),
+    body: ProfilePinUpsertRequest = ...,
+) -> Any:
+    try:
+        recipe_id = body.recipe_id.strip()
+        _validate_recipe_exists(recipe_id)
+        pin = upsert_profile_pin(day_index=day_index, slot_index=slot_index, recipe_id=recipe_id)
+        return {"pin": _profile_pin_to_dict(pin)}
+    except Exception as exc:
+        status_code, payload = map_exception_to_api_error(exc)
+        return JSONResponse(status_code=status_code, content=payload)
+
+
+@app.get("/api/v1/profile/pins", response_model=ProfilePinListResponse)
+def list_profile_pins_endpoint() -> Any:
+    try:
+        pins = load_profile_pins()
+        return {"pins": [_profile_pin_to_dict(pin) for pin in pins]}
+    except Exception as exc:
+        status_code, payload = map_exception_to_api_error(exc)
+        return JSONResponse(status_code=status_code, content=payload)
+
+
+@app.delete(
+    "/api/v1/profile/pins/{day_index}/{slot_index}",
+    response_model=ProfilePinDeleteResponse,
+)
+def delete_profile_pin_endpoint(
+    day_index: int = FastApiPath(..., ge=0),
+    slot_index: int = FastApiPath(..., ge=0),
+) -> Any:
+    try:
+        deleted, pin = clear_profile_pin(day_index=day_index, slot_index=slot_index)
+        return {
+            "deleted": bool(deleted),
+            "pin": _profile_pin_to_dict(pin) if pin is not None else None,
+        }
+    except Exception as exc:
+        status_code, payload = map_exception_to_api_error(exc)
+        return JSONResponse(status_code=status_code, content=payload)
+
+
+@app.delete("/api/v1/profile/pins", response_model=ProfilePinsClearResponse)
+def clear_profile_pins_endpoint() -> Any:
+    try:
+        cleared_count = clear_all_profile_pins()
+        return {"cleared_count": int(cleared_count)}
     except Exception as exc:
         status_code, payload = map_exception_to_api_error(exc)
         return JSONResponse(status_code=status_code, content=payload)

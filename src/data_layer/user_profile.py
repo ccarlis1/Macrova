@@ -1,12 +1,15 @@
 """User profile loader and helpers for planning input mapping."""
+import os
 import sys
+import tempfile
 import yaml
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List, Optional, Tuple
 
 from src.llm.schemas import BudgetLevel, PlannerConfigJson
 
-from src.data_layer.models import MicronutrientProfile, UserProfile
+from src.data_layer.macro_targets import MacroTargetsError, validate_macro_targets
+from src.data_layer.models import MicronutrientProfile, ProfilePin, UserProfile
 from src.models.legacy_schedule_migration import (
     canonical_day_to_meal_only_legacy_dict,
     legacy_schedule_dict_to_day_schedule,
@@ -14,8 +17,201 @@ from src.models.legacy_schedule_migration import (
     schedule_days_to_meal_only_legacy_dict,
 )
 from src.models.schedule import DaySchedule
-from src.planning.converters import _expand_schedule_days
+from src.planning.converters import _expand_schedule_days, normalize_schedule_days_for_api
 from src.planning.micronutrient_policy import validate_micronutrient_weekly_min_fraction
+
+DEFAULT_USER_PROFILE_PATH = Path("config/user_profile.yaml")
+
+
+def _resolve_profile_path(yaml_path: str | Path | None = None) -> Path:
+    if yaml_path is not None:
+        return Path(yaml_path)
+    return Path(os.environ.get("NUTRITION_USER_PROFILE_PATH", str(DEFAULT_USER_PROFILE_PATH)))
+
+
+def _read_profile_yaml(target_path: Path) -> Dict[str, Any]:
+    if not target_path.exists():
+        return {}
+    with open(target_path, "r", encoding="utf-8") as f:
+        loaded = yaml.safe_load(f) or {}
+    if not isinstance(loaded, dict):
+        raise ValueError("User profile YAML root must be a mapping object.")
+    return dict(loaded)
+
+
+def _atomic_write_profile_yaml(target_path: Path, payload: Dict[str, Any]) -> None:
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        suffix=".yaml",
+        prefix="user_profile.",
+        dir=str(target_path.parent),
+        delete=False,
+        encoding="utf-8",
+    ) as tmp:
+        yaml.safe_dump(payload, tmp, sort_keys=False)
+        temp_path = Path(tmp.name)
+    temp_path.replace(target_path)
+
+
+def _validate_persisted_pin_row(row: Any, index: int) -> ProfilePin:
+    if not isinstance(row, dict):
+        raise ValueError(f"PROFILE_PIN_INVALID: pins[{index}] must be an object")
+    for key in row.keys():
+        if key not in {"day_index", "slot_index", "recipe_id"}:
+            raise ValueError(f"PROFILE_PIN_INVALID: pins[{index}].{key} is not allowed")
+    if "day_index" not in row or "slot_index" not in row or "recipe_id" not in row:
+        raise ValueError(f"PROFILE_PIN_INVALID: pins[{index}] missing required fields")
+    day_index = row["day_index"]
+    slot_index = row["slot_index"]
+    recipe_id = str(row["recipe_id"]).strip()
+    if not isinstance(day_index, int) or day_index < 0:
+        raise ValueError(f"PROFILE_PIN_INVALID: pins[{index}].day_index must be int >= 0")
+    if not isinstance(slot_index, int) or slot_index < 0:
+        raise ValueError(f"PROFILE_PIN_INVALID: pins[{index}].slot_index must be int >= 0")
+    if not recipe_id:
+        raise ValueError(f"PROFILE_PIN_INVALID: pins[{index}].recipe_id must be non-empty")
+    return ProfilePin(day_index=day_index, slot_index=slot_index, recipe_id=recipe_id)
+
+
+def _normalize_profile_pins(pins: List[ProfilePin]) -> List[ProfilePin]:
+    # Last write wins for equivalent canonical address.
+    by_key: Dict[Tuple[int, int], ProfilePin] = {}
+    for pin in pins:
+        by_key[(int(pin.day_index), int(pin.slot_index))] = ProfilePin(
+            day_index=int(pin.day_index),
+            slot_index=int(pin.slot_index),
+            recipe_id=str(pin.recipe_id).strip(),
+        )
+    return [by_key[key] for key in sorted(by_key.keys())]
+
+
+def _pins_to_storage_rows(pins: List[ProfilePin]) -> List[Dict[str, Any]]:
+    return [
+        {
+            "day_index": int(pin.day_index),
+            "slot_index": int(pin.slot_index),
+            "recipe_id": str(pin.recipe_id),
+        }
+        for pin in _normalize_profile_pins(pins)
+    ]
+
+
+def _validate_pin_against_schedule(pin: ProfilePin, profile_doc: Dict[str, Any]) -> None:
+    raw_days = profile_doc.get("schedule_days")
+    if raw_days is None:
+        return
+    if not isinstance(raw_days, list):
+        raise ValueError("PROFILE_PIN_INVALID: profile schedule_days must be a list")
+    if pin.day_index >= len(raw_days):
+        raise ValueError("PROFILE_PIN_INVALID: day_index outside persisted schedule")
+    day_payload = raw_days[pin.day_index]
+    if not isinstance(day_payload, dict):
+        raise ValueError("PROFILE_PIN_INVALID: persisted schedule_days row must be an object")
+    raw_meals = day_payload.get("meals", [])
+    if not isinstance(raw_meals, list):
+        raise ValueError("PROFILE_PIN_INVALID: persisted meals must be a list")
+    if pin.slot_index >= len(raw_meals):
+        raise ValueError("PROFILE_PIN_INVALID: slot_index outside persisted schedule day")
+
+
+def load_profile_pins(*, yaml_path: str | Path | None = None) -> List[ProfilePin]:
+    target_path = _resolve_profile_path(yaml_path)
+    profile_doc = _read_profile_yaml(target_path)
+    raw_pins = profile_doc.get("pins", [])
+    if raw_pins is None:
+        return []
+    if not isinstance(raw_pins, list):
+        raise ValueError("PROFILE_PIN_INVALID: pins must be a list")
+    parsed = [_validate_persisted_pin_row(row, idx) for idx, row in enumerate(raw_pins)]
+    return _normalize_profile_pins(parsed)
+
+
+def upsert_profile_pin(
+    *,
+    day_index: int,
+    slot_index: int,
+    recipe_id: str,
+    yaml_path: str | Path | None = None,
+) -> ProfilePin:
+    target_path = _resolve_profile_path(yaml_path)
+    profile_doc = _read_profile_yaml(target_path)
+    existing_pins = load_profile_pins(yaml_path=target_path)
+    updated_pin = ProfilePin(day_index=int(day_index), slot_index=int(slot_index), recipe_id=str(recipe_id).strip())
+    _validate_pin_against_schedule(updated_pin, profile_doc)
+    normalized = _normalize_profile_pins(existing_pins + [updated_pin])
+    profile_doc["pins"] = _pins_to_storage_rows(normalized)
+    _atomic_write_profile_yaml(target_path, profile_doc)
+    return next(
+        pin for pin in normalized if pin.day_index == updated_pin.day_index and pin.slot_index == updated_pin.slot_index
+    )
+
+
+def clear_profile_pin(
+    *,
+    day_index: int,
+    slot_index: int,
+    yaml_path: str | Path | None = None,
+) -> Tuple[bool, Optional[ProfilePin]]:
+    target_path = _resolve_profile_path(yaml_path)
+    profile_doc = _read_profile_yaml(target_path)
+    existing_pins = load_profile_pins(yaml_path=target_path)
+    removed: Optional[ProfilePin] = None
+    kept: List[ProfilePin] = []
+    for pin in existing_pins:
+        if pin.day_index == day_index and pin.slot_index == slot_index:
+            removed = pin
+            continue
+        kept.append(pin)
+    profile_doc["pins"] = _pins_to_storage_rows(kept)
+    _atomic_write_profile_yaml(target_path, profile_doc)
+    return removed is not None, removed
+
+
+def clear_all_profile_pins(*, yaml_path: str | Path | None = None) -> int:
+    target_path = _resolve_profile_path(yaml_path)
+    profile_doc = _read_profile_yaml(target_path)
+    existing = load_profile_pins(yaml_path=target_path)
+    count = len(existing)
+    profile_doc["pins"] = []
+    _atomic_write_profile_yaml(target_path, profile_doc)
+    return count
+
+
+def persist_profile_schedule_days(
+    schedule_days: List[DaySchedule],
+    *,
+    yaml_path: str | Path | None = None,
+) -> List[Dict[str, Any]]:
+    """Persist canonical schedule_days into the existing profile YAML document."""
+    target_path = _resolve_profile_path(yaml_path)
+    existing = _read_profile_yaml(target_path)
+
+    normalized_days = normalize_schedule_days_for_api(schedule_days)
+    existing["schedule_days"] = normalized_days
+    # Remove legacy schedule to avoid conflicting representations.
+    existing.pop("schedule", None)
+
+    _atomic_write_profile_yaml(target_path, existing)
+    return normalized_days
+
+
+def load_normalized_profile_schedule_days(
+    *, yaml_path: str | Path | None = None
+) -> List[Dict[str, Any]]:
+    """Load persisted schedule_days and return the same canonical shape as PUT writes."""
+
+    target_path = _resolve_profile_path(yaml_path)
+    profile_doc = _read_profile_yaml(target_path)
+    raw_days = profile_doc.get("schedule_days")
+    if raw_days is None:
+        return []
+    if not isinstance(raw_days, list):
+        raise ValueError("User profile schedule_days must be a list when present.")
+    if not raw_days:
+        return []
+    schedule_days = [DaySchedule.model_validate(d) for d in raw_days]
+    return normalize_schedule_days_for_api(schedule_days)
 
 
 class UserProfileLoader:
@@ -51,11 +247,10 @@ class UserProfileLoader:
         fat_range = nutrition_goals["daily_fat_g"]
         daily_fat_g = (float(fat_range["min"]), float(fat_range["max"]))
 
-        # Calculate carbs from remaining calories
-        # Use median fat (average of min and max) for calculation
-        median_fat_g = (daily_fat_g[0] + daily_fat_g[1]) / 2
-        # Carbs = (calories - protein*4 - fat*9) / 4
-        daily_carbs_g = (daily_calories - daily_protein_g * 4 - median_fat_g * 9) / 4
+        # Derived carbs + validity (§2.1 / §4.2); raises MacroTargetsError.
+        daily_carbs_g = validate_macro_targets(
+            daily_calories, daily_protein_g, daily_fat_g[0], daily_fat_g[1]
+        )
 
         schedule_days: list[DaySchedule] | None = None
         schedule_dict: dict[str, int]
@@ -123,6 +318,7 @@ class UserProfileLoader:
             daily_micronutrient_targets=daily_micro or None,
             micronutrient_weekly_min_fraction=micronutrient_weekly_min_fraction,
             schedule_days=schedule_days,
+            pins=load_profile_pins(yaml_path=self.yaml_path),
         )
 
 
@@ -210,32 +406,56 @@ def user_profile_from_planner_config(cfg: PlannerConfigJson) -> UserProfile:
     fat_g_min = fat_cal_min / 9.0
     fat_g_max = fat_cal_max / 9.0
 
-    median_fat_g = (fat_g_min + fat_g_max) / 2.0
-    daily_carbs_g = (
-        daily_calories - daily_protein_g * 4.0 - median_fat_g * 9.0
-    ) / 4.0
-    if daily_carbs_g < 0:
-        raise PlannerConfigMappingError(
-            error_code="NEGATIVE_CARBS_DERIVED",
-            message="Derived carbs was negative; mapping is impossible with these targets.",
-            details={
-                "daily_calories": float(daily_calories),
-                "daily_protein_g": daily_protein_g,
-                "fat_g_min": fat_g_min,
-                "fat_g_max": fat_g_max,
-                "median_fat_g": median_fat_g,
-                "daily_carbs_g": daily_carbs_g,
-            },
+    try:
+        daily_carbs_g = validate_macro_targets(
+            daily_calories, daily_protein_g, fat_g_min, fat_g_max
         )
+    except MacroTargetsError as exc:
+        raise PlannerConfigMappingError(
+            error_code=exc.reason,
+            message=exc.message,
+            details=dict(exc.details),
+        ) from exc
 
     cuisine = [str(c).strip() for c in cfg.preferences.cuisine or [] if str(c).strip()]
+    constraints = cfg.constraints
 
-    if cfg.schedule_days is not None:
-        expanded = _expand_schedule_days(list(cfg.schedule_days), cfg.days)
+    # Explicit fat range wins over the budget-derived one (the budget is an economic
+    # preference; it only stands in for fat when the user said nothing about fat).
+    if constraints is not None and (constraints.fat_g_min is not None or constraints.fat_g_max is not None):
+        lo = float(constraints.fat_g_min if constraints.fat_g_min is not None else 0.0)
+        hi = float(constraints.fat_g_max if constraints.fat_g_max is not None else max(lo, fat_g_max))
+        fat_g_min, fat_g_max = lo, hi
+        try:
+            daily_carbs_g = validate_macro_targets(
+                daily_calories, daily_protein_g, fat_g_min, fat_g_max
+            )
+        except MacroTargetsError as exc:
+            raise PlannerConfigMappingError(
+                error_code=exc.reason,
+                message=exc.message,
+                details=dict(exc.details),
+            ) from exc
+
+    # An invented schedule is a hard constraint the user never stated: drop it when the model
+    # told us what was stated and schedule_days was not among it.
+    schedule_days_in = cfg.schedule_days
+    if schedule_days_in is not None and cfg.stated_fields and "schedule_days" not in cfg.stated_fields:
+        schedule_days_in = None
+
+    if schedule_days_in is not None:
+        expanded = _expand_schedule_days(list(schedule_days_in), cfg.days)
         schedule_dict, _ = schedule_days_to_meal_only_legacy_dict(expanded)
     else:
         expanded = None
         schedule_dict = _schedule_dict_from_meals_per_day(cfg.meals_per_day)
+
+    allergies = [str(a).strip() for a in (constraints.allergies if constraints else []) if str(a).strip()]
+    disliked = [str(d).strip() for d in (constraints.disliked_foods if constraints else []) if str(d).strip()]
+    liked = cuisine + [str(l).strip() for l in (constraints.liked_foods if constraints else []) if str(l).strip()]
+    micro = dict(constraints.micronutrient_goals) if constraints and constraints.micronutrient_goals else None
+    tau = float(constraints.micronutrient_weekly_min_fraction) if constraints and constraints.micronutrient_weekly_min_fraction is not None else 1.0
+    ceiling = int(constraints.max_daily_calories) if constraints and constraints.max_daily_calories is not None else None
 
     return UserProfile(
         daily_calories=daily_calories,
@@ -243,12 +463,32 @@ def user_profile_from_planner_config(cfg: PlannerConfigJson) -> UserProfile:
         daily_fat_g=(float(fat_g_min), float(fat_g_max)),
         daily_carbs_g=float(daily_carbs_g),
         schedule={str(k): int(v) for k, v in schedule_dict.items()},
-        liked_foods=cuisine,
-        disliked_foods=[],
-        allergies=[],
-        max_daily_calories=None,
-        daily_micronutrient_targets=None,
-        micronutrient_weekly_min_fraction=1.0,
+        liked_foods=liked,
+        disliked_foods=disliked,
+        allergies=allergies,
+        max_daily_calories=ceiling,
+        daily_micronutrient_targets=micro,
+        micronutrient_weekly_min_fraction=tau,
         schedule_days=expanded,
+        pins=None,
     )
+
+
+def planner_config_interpretation_report(cfg: PlannerConfigJson) -> Dict[str, object]:
+    """Machine-readable account of what the NL interpretation stated, defaulted, derived or dropped."""
+    constraints = cfg.constraints
+    derived: List[str] = []
+    if not (constraints is not None and (constraints.fat_g_min is not None or constraints.fat_g_max is not None)):
+        derived.append("fat_range_from_budget")
+    derived.append("carbs_from_remaining_calories")
+    dropped: List[str] = []
+    if cfg.schedule_days is not None and cfg.stated_fields and "schedule_days" not in cfg.stated_fields:
+        dropped.append("schedule_days_not_stated")
+    return {
+        "stated_fields": list(cfg.stated_fields),
+        "defaulted_fields": cfg.defaulted_fields(),
+        "derived_fields": derived,
+        "dropped_fields": dropped,
+        "stated_fields_reported_by_model": bool(cfg.stated_fields),
+    }
 

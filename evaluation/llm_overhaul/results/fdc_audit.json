@@ -1,0 +1,1544 @@
+{
+ "n_entries": 83,
+ "data_types": {
+  "SR Legacy": 71,
+  "Survey (FNDDS)": 3,
+  "Foundation": 5,
+  "Branded": 4
+ },
+ "flag_counts": {
+  "compound_keyword": 6,
+  "vitamin_d_outlier": 11,
+  "first_token_missing_in_description": 4,
+  "zero_kcal_with_macros": 5,
+  "branded": 4
+ },
+ "flagged": [
+  {
+   "query": "bell pepper",
+   "file": "bell_pepper.json",
+   "description": "TACO BELL, Nachos",
+   "data_type": "SR Legacy",
+   "kcal": 350.0,
+   "fat": 21.5,
+   "protein": 4.32,
+   "carbs": 34.91,
+   "vitd": 0.0,
+   "flags": [
+    "compound_keyword"
+   ]
+  },
+  {
+   "query": "cheese pecorino style",
+   "file": "cheese_pecorino_style.json",
+   "description": "Cheese, romano",
+   "data_type": "SR Legacy",
+   "kcal": 387.0,
+   "fat": 26.94,
+   "protein": 31.8,
+   "carbs": 3.63,
+   "vitd": 800.5,
+   "flags": [
+    "vitamin_d_outlier"
+   ]
+  },
+  {
+   "query": "cherry tomatoes",
+   "file": "cherry_tomatoes.json",
+   "description": "Cherries, raw",
+   "data_type": "Survey (FNDDS)",
+   "kcal": 71.0,
+   "fat": 0.19,
+   "protein": 1.04,
+   "carbs": 16.2,
+   "vitd": 0.0,
+   "flags": [
+    "first_token_missing_in_description"
+   ]
+  },
+  {
+   "query": "egg yolk",
+   "file": "egg_yolk.json",
+   "description": "Egg, yolk, raw, fresh",
+   "data_type": "SR Legacy",
+   "kcal": 322.0,
+   "fat": 26.54,
+   "protein": 15.86,
+   "carbs": 3.59,
+   "vitd": 8725.4,
+   "flags": [
+    "vitamin_d_outlier"
+   ]
+  },
+  {
+   "query": "eggs",
+   "file": "eggs.json",
+   "description": "Bread, egg",
+   "data_type": "SR Legacy",
+   "kcal": 287.0,
+   "fat": 6.0,
+   "protein": 9.5,
+   "carbs": 47.8,
+   "vitd": 640.4,
+   "flags": [
+    "vitamin_d_outlier"
+   ]
+  },
+  {
+   "query": "feta cheese reduced fat",
+   "file": "feta_cheese_reduced_fat.json",
+   "description": "Cheese, feta",
+   "data_type": "SR Legacy",
+   "kcal": 265.0,
+   "fat": 21.49,
+   "protein": 14.21,
+   "carbs": 3.88,
+   "vitd": 640.4,
+   "flags": [
+    "vitamin_d_outlier"
+   ]
+  },
+  {
+   "query": "hamburger or beef 90%",
+   "file": "hamburger_or_beef_90.json",
+   "description": "Beef, ground, 90% lean meat / 10% fat, raw",
+   "data_type": "SR Legacy",
+   "kcal": 176.0,
+   "fat": 10.0,
+   "protein": 20.0,
+   "carbs": 0.0,
+   "vitd": 120.1,
+   "flags": [
+    "first_token_missing_in_description"
+   ]
+  },
+  {
+   "query": "hamburger or beef 95%",
+   "file": "hamburger_or_beef_95.json",
+   "description": "Beef, ground, 93% lean meat / 7% fat, raw",
+   "data_type": "SR Legacy",
+   "kcal": 152.0,
+   "fat": 7.0,
+   "protein": 20.85,
+   "carbs": 0.0,
+   "vitd": 120.1,
+   "flags": [
+    "first_token_missing_in_description"
+   ]
+  },
+  {
+   "query": "jasmine rice in unsalted water",
+   "file": "jasmine_rice_in_unsalted_water.json",
+   "description": "Rice, white, short-grain, cooked, unenriched",
+   "data_type": "SR Legacy",
+   "kcal": 130.0,
+   "fat": 0.19,
+   "protein": 2.36,
+   "carbs": 28.73,
+   "vitd": 0.0,
+   "flags": [
+    "first_token_missing_in_description"
+   ]
+  },
+  {
+   "query": "kellogg's rice krispies treats original",
+   "file": "kellogg_s_rice_krispies_treats_original.json",
+   "description": "Snacks, KELLOGG, KELLOGG'S RICE KRISPIES TREATS Squares",
+   "data_type": "SR Legacy",
+   "kcal": 417.0,
+   "fat": 9.0,
+   "protein": 3.4,
+   "carbs": 80.5,
+   "vitd": 0.0,
+   "flags": [
+    "compound_keyword"
+   ]
+  },
+  {
+   "query": "kiwi fruit green",
+   "file": "kiwi_fruit_green.json",
+   "description": "Kiwifruit (kiwi), green, peeled, raw",
+   "data_type": "Foundation",
+   "kcal": 0.0,
+   "fat": 0.64,
+   "protein": 1.008125,
+   "carbs": 13.818075,
+   "vitd": 0.0,
+   "flags": [
+    "zero_kcal_with_macros"
+   ]
+  },
+  {
+   "query": "milk",
+   "file": "milk.json",
+   "description": "MILK",
+   "data_type": "Branded",
+   "kcal": 55.0,
+   "fat": 2.12,
+   "protein": 3.39,
+   "carbs": 5.08,
+   "vitd": 1680.0,
+   "flags": [
+    "vitamin_d_outlier",
+    "branded"
+   ]
+  },
+  {
+   "query": "mushrooms",
+   "file": "mushrooms.json",
+   "description": "Mushrooms, shiitake",
+   "data_type": "Foundation",
+   "kcal": 0.0,
+   "fat": 0.195,
+   "protein": 2.414375,
+   "carbs": 8.170625,
+   "vitd": 90.0562,
+   "flags": [
+    "zero_kcal_with_macros"
+   ]
+  },
+  {
+   "query": "olive oil",
+   "file": "olive_oil.json",
+   "description": "Oil, olive, salad or cooking",
+   "data_type": "SR Legacy",
+   "kcal": 884.0,
+   "fat": 100.0,
+   "protein": 0.0,
+   "carbs": 0.0,
+   "vitd": 0.0,
+   "flags": [
+    "compound_keyword"
+   ]
+  },
+  {
+   "query": "parmesan cheese hard",
+   "file": "parmesan_cheese_hard.json",
+   "description": "Cheese, parmesan, hard",
+   "data_type": "SR Legacy",
+   "kcal": 392.0,
+   "fat": 25.0,
+   "protein": 35.75,
+   "carbs": 3.22,
+   "vitd": 760.5,
+   "flags": [
+    "vitamin_d_outlier"
+   ]
+  },
+  {
+   "query": "parmesan grated",
+   "file": "parmesan_grated.json",
+   "description": "Cheese, parmesan, grated",
+   "data_type": "SR Legacy",
+   "kcal": 420.0,
+   "fat": 27.84,
+   "protein": 28.42,
+   "carbs": 13.91,
+   "vitd": 840.5,
+   "flags": [
+    "vitamin_d_outlier"
+   ]
+  },
+  {
+   "query": "quinoa",
+   "file": "quinoa.json",
+   "description": "QUINOA",
+   "data_type": "Branded",
+   "kcal": 357.0,
+   "fat": 7.14,
+   "protein": 14.29,
+   "carbs": 64.29,
+   "vitd": 0.0,
+   "flags": [
+    "branded"
+   ]
+  },
+  {
+   "query": "rolled oats",
+   "file": "rolled_oats.json",
+   "description": "ROLLED OATS",
+   "data_type": "Branded",
+   "kcal": 375.0,
+   "fat": 7.5,
+   "protein": 12.5,
+   "carbs": 67.5,
+   "vitd": 0.0,
+   "flags": [
+    "branded"
+   ]
+  },
+  {
+   "query": "salami genoa",
+   "file": "salami_genoa.json",
+   "description": "GENOA SALAMI",
+   "data_type": "Branded",
+   "kcal": 393.0,
+   "fat": 33.93,
+   "protein": 17.86,
+   "carbs": 3.57,
+   "vitd": 0.0,
+   "flags": [
+    "branded"
+   ]
+  },
+  {
+   "query": "salmon canned",
+   "file": "salmon_canned.json",
+   "description": "Salmon, sockeye, canned, total can contents",
+   "data_type": "SR Legacy",
+   "kcal": 153.0,
+   "fat": 7.17,
+   "protein": 20.63,
+   "carbs": 0.0,
+   "vitd": 761.0,
+   "flags": [
+    "vitamin_d_outlier"
+   ]
+  },
+  {
+   "query": "salsa ready-to-serve",
+   "file": "salsa_ready-to-serve.json",
+   "description": "Sauce, salsa, ready-to-serve",
+   "data_type": "SR Legacy",
+   "kcal": 29.0,
+   "fat": 0.17,
+   "protein": 1.52,
+   "carbs": 6.64,
+   "vitd": 0.0,
+   "flags": [
+    "compound_keyword"
+   ]
+  },
+  {
+   "query": "sesame oil",
+   "file": "sesame_oil.json",
+   "description": "Oil, sesame, salad or cooking",
+   "data_type": "SR Legacy",
+   "kcal": 884.0,
+   "fat": 100.0,
+   "protein": 0.0,
+   "carbs": 0.0,
+   "vitd": 0.0,
+   "flags": [
+    "compound_keyword"
+   ]
+  },
+  {
+   "query": "sharp cheddar cheese",
+   "file": "sharp_cheddar_cheese.json",
+   "description": "Cheese, cheddar, sharp, sliced",
+   "data_type": "SR Legacy",
+   "kcal": 410.0,
+   "fat": 33.82,
+   "protein": 24.25,
+   "carbs": 2.13,
+   "vitd": 1641.0,
+   "flags": [
+    "vitamin_d_outlier"
+   ]
+  },
+  {
+   "query": "soy sauce",
+   "file": "soy_sauce.json",
+   "description": "Soy sauce made from soy (tamari)",
+   "data_type": "SR Legacy",
+   "kcal": 60.0,
+   "fat": 0.1,
+   "protein": 10.51,
+   "carbs": 5.57,
+   "vitd": 0.0,
+   "flags": [
+    "compound_keyword"
+   ]
+  },
+  {
+   "query": "spaghetti squash",
+   "file": "spaghetti_squash.json",
+   "description": "Squash, spaghetti, peeled, seeded, raw",
+   "data_type": "Foundation",
+   "kcal": 0.0,
+   "fat": 0.0,
+   "protein": 0.791875,
+   "carbs": 0.0,
+   "vitd": 0.0,
+   "flags": [
+    "zero_kcal_with_macros"
+   ]
+  },
+  {
+   "query": "sweet potato",
+   "file": "sweet_potato.json",
+   "description": "Sweet potatoes, orange flesh, without skin, raw",
+   "data_type": "Foundation",
+   "kcal": 0.0,
+   "fat": 0.375,
+   "protein": 1.578125,
+   "carbs": 17.327875,
+   "vitd": 0.0,
+   "flags": [
+    "zero_kcal_with_macros"
+   ]
+  },
+  {
+   "query": "tilapia",
+   "file": "tilapia.json",
+   "description": "Fish, tilapia, raw",
+   "data_type": "SR Legacy",
+   "kcal": 96.0,
+   "fat": 1.7,
+   "protein": 20.08,
+   "carbs": 0.0,
+   "vitd": 4963.1,
+   "flags": [
+    "vitamin_d_outlier"
+   ]
+  },
+  {
+   "query": "tomato",
+   "file": "tomato.json",
+   "description": "Tomatoes, crushed, canned",
+   "data_type": "Foundation",
+   "kcal": 0.0,
+   "fat": 0.3975,
+   "protein": 1.4375,
+   "carbs": 7.137,
+   "vitd": 0.0,
+   "flags": [
+    "zero_kcal_with_macros"
+   ]
+  },
+  {
+   "query": "tuna sashimi",
+   "file": "tuna_sashimi.json",
+   "description": "Fish, tuna, fresh, yellowfin, raw",
+   "data_type": "SR Legacy",
+   "kcal": 109.0,
+   "fat": 0.49,
+   "protein": 24.4,
+   "carbs": 0.0,
+   "vitd": 2761.7,
+   "flags": [
+    "vitamin_d_outlier"
+   ]
+  }
+ ],
+ "duplicate_identities": {
+  "banana": 2,
+  "black bean": 2,
+  "greek yogurt": 2,
+  "milk": 2
+ },
+ "provider_dict_keys": [
+  "name",
+  "per_100g"
+ ],
+ "fdc_id_visible_past_provider": false,
+ "volume_unit_lines_in_recipes": 27,
+ "volume_unit_examples": [
+  [
+   "recipe_007",
+   "low fat greek yogurt",
+   2.0,
+   "tbsp"
+  ],
+  [
+   "recipe_014",
+   "chocolate dark 70-85% cacao solids",
+   1.0,
+   "tsp"
+  ],
+  [
+   "recipe_014",
+   "greek yogurt plain nonfat",
+   2.0,
+   "tbsp"
+  ],
+  [
+   "recipe_004",
+   "tomato",
+   1.0,
+   "cup"
+  ],
+  [
+   "recipe_004",
+   "carrots",
+   4.0,
+   "tbsp"
+  ],
+  [
+   "llm_0415c122c1511957",
+   "olive oil",
+   29.58,
+   "ml"
+  ],
+  [
+   "llm_0415c122c1511957",
+   "lemon juice",
+   14.79,
+   "ml"
+  ],
+  [
+   "llm_26427200aaed5fee",
+   "olive oil",
+   14.79,
+   "ml"
+  ]
+ ],
+ "rows": [
+  {
+   "query": "acai berry",
+   "file": "acai_berry.json",
+   "description": "Beverages, Acai berry drink, fortified",
+   "data_type": "SR Legacy",
+   "kcal": 62.0,
+   "fat": 0.83,
+   "protein": 0.83,
+   "carbs": 12.83,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "almond butter unsalted",
+   "file": "almond_butter_unsalted.json",
+   "description": "Nuts, almond butter, plain, without salt added",
+   "data_type": "SR Legacy",
+   "kcal": 614.0,
+   "fat": 55.5,
+   "protein": 20.96,
+   "carbs": 18.82,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "almonds",
+   "file": "almonds.json",
+   "description": "Nuts, almonds",
+   "data_type": "SR Legacy",
+   "kcal": 579.0,
+   "fat": 49.93,
+   "protein": 21.15,
+   "carbs": 21.55,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "asparagus",
+   "file": "asparagus.json",
+   "description": "Asparagus, raw",
+   "data_type": "SR Legacy",
+   "kcal": 20.0,
+   "fat": 0.12,
+   "protein": 2.2,
+   "carbs": 3.88,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "avocado black skin",
+   "file": "avocado_black_skin.json",
+   "description": "Avocados, raw, all commercial varieties",
+   "data_type": "SR Legacy",
+   "kcal": 160.0,
+   "fat": 14.66,
+   "protein": 2.0,
+   "carbs": 8.53,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "avocado oil",
+   "file": "avocado_oil.json",
+   "description": "Oil, avocado",
+   "data_type": "SR Legacy",
+   "kcal": 884.0,
+   "fat": 100.0,
+   "protein": 0.0,
+   "carbs": 0.0,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "Avocados, raw, all commercial varieties",
+   "file": "avocados_raw_all_commercial_varieties.json",
+   "description": "Avocados, raw, all commercial varieties",
+   "data_type": "SR Legacy",
+   "kcal": 160.0,
+   "fat": 14.66,
+   "protein": 2.0,
+   "carbs": 8.53,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "banana",
+   "file": "banana.json",
+   "description": "Bananas, dehydrated, or banana powder",
+   "data_type": "SR Legacy",
+   "kcal": 346.0,
+   "fat": 1.81,
+   "protein": 3.89,
+   "carbs": 88.28,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "bananas",
+   "file": "bananas.json",
+   "description": "Bananas, raw",
+   "data_type": "SR Legacy",
+   "kcal": 89.0,
+   "fat": 0.33,
+   "protein": 1.09,
+   "carbs": 22.84,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "beans white mature seeds",
+   "file": "beans_white_mature_seeds.json",
+   "description": "Beans, white, mature seeds, canned",
+   "data_type": "SR Legacy",
+   "kcal": 114.0,
+   "fat": 0.29,
+   "protein": 7.26,
+   "carbs": 21.2,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "bell pepper",
+   "file": "bell_pepper.json",
+   "description": "TACO BELL, Nachos",
+   "data_type": "SR Legacy",
+   "kcal": 350.0,
+   "fat": 21.5,
+   "protein": 4.32,
+   "carbs": 34.91,
+   "vitd": 0.0,
+   "flags": [
+    "compound_keyword"
+   ]
+  },
+  {
+   "query": "black beans",
+   "file": "black_beans.json",
+   "description": "Beans, black, mature seeds, raw",
+   "data_type": "SR Legacy",
+   "kcal": 341.0,
+   "fat": 1.42,
+   "protein": 21.6,
+   "carbs": 62.36,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "black beans drained",
+   "file": "black_beans_drained.json",
+   "description": "Beans, black, mature seeds, canned, low sodium",
+   "data_type": "SR Legacy",
+   "kcal": 91.0,
+   "fat": 0.29,
+   "protein": 6.03,
+   "carbs": 16.55,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "blackberries unsweetened",
+   "file": "blackberries_unsweetened.json",
+   "description": "Blackberries, frozen, unsweetened",
+   "data_type": "SR Legacy",
+   "kcal": 64.0,
+   "fat": 0.43,
+   "protein": 1.18,
+   "carbs": 15.67,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "blueberries",
+   "file": "blueberries.json",
+   "description": "Blueberries, raw",
+   "data_type": "SR Legacy",
+   "kcal": 57.0,
+   "fat": 0.33,
+   "protein": 0.74,
+   "carbs": 14.49,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "butter",
+   "file": "butter.json",
+   "description": "Butter, salted",
+   "data_type": "SR Legacy",
+   "kcal": 717.0,
+   "fat": 81.11,
+   "protein": 0.85,
+   "carbs": 0.06,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "carrots",
+   "file": "carrots.json",
+   "description": "Carrots, raw",
+   "data_type": "SR Legacy",
+   "kcal": 41.0,
+   "fat": 0.24,
+   "protein": 0.93,
+   "carbs": 9.58,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "cauliflower",
+   "file": "cauliflower.json",
+   "description": "Cauliflower, raw",
+   "data_type": "SR Legacy",
+   "kcal": 25.0,
+   "fat": 0.28,
+   "protein": 1.92,
+   "carbs": 4.97,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "cheddar cheese natural 50% reduced fat",
+   "file": "cheddar_cheese_natural_50_reduced_fat.json",
+   "description": "Cheese, low fat, cheddar or colby",
+   "data_type": "SR Legacy",
+   "kcal": 173.0,
+   "fat": 7.0,
+   "protein": 24.35,
+   "carbs": 1.91,
+   "vitd": 200.1,
+   "flags": []
+  },
+  {
+   "query": "cheese pecorino style",
+   "file": "cheese_pecorino_style.json",
+   "description": "Cheese, romano",
+   "data_type": "SR Legacy",
+   "kcal": 387.0,
+   "fat": 26.94,
+   "protein": 31.8,
+   "carbs": 3.63,
+   "vitd": 800.5,
+   "flags": [
+    "vitamin_d_outlier"
+   ]
+  },
+  {
+   "query": "cherry tomatoes",
+   "file": "cherry_tomatoes.json",
+   "description": "Cherries, raw",
+   "data_type": "Survey (FNDDS)",
+   "kcal": 71.0,
+   "fat": 0.19,
+   "protein": 1.04,
+   "carbs": 16.2,
+   "vitd": 0.0,
+   "flags": [
+    "first_token_missing_in_description"
+   ]
+  },
+  {
+   "query": "chia seeds",
+   "file": "chia_seeds.json",
+   "description": "Seeds, chia seeds, dried",
+   "data_type": "SR Legacy",
+   "kcal": 486.0,
+   "fat": 30.74,
+   "protein": 16.54,
+   "carbs": 42.12,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "chicken breast",
+   "file": "chicken_breast.json",
+   "description": "Chicken breast, roll, oven-roasted",
+   "data_type": "SR Legacy",
+   "kcal": 134.0,
+   "fat": 7.65,
+   "protein": 14.59,
+   "carbs": 1.79,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "chicken thigh skin removed",
+   "file": "chicken_thigh_skin_removed.json",
+   "description": "Chicken, broilers or fryers, dark meat, thigh, meat only, raw",
+   "data_type": "SR Legacy",
+   "kcal": 121.0,
+   "fat": 4.12,
+   "protein": 19.66,
+   "carbs": 0.0,
+   "vitd": 40.0,
+   "flags": []
+  },
+  {
+   "query": "chickpeas drained",
+   "file": "chickpeas_drained.json",
+   "description": "Chickpeas (garbanzo beans, bengal gram), mature seeds, canned, drained solids",
+   "data_type": "SR Legacy",
+   "kcal": 139.0,
+   "fat": 2.77,
+   "protein": 7.05,
+   "carbs": 22.53,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "chocolate dark 70-85% cacao solids",
+   "file": "chocolate_dark_70-85_cacao_solids.json",
+   "description": "Chocolate, dark, 70-85% cacao solids",
+   "data_type": "SR Legacy",
+   "kcal": 598.0,
+   "fat": 42.63,
+   "protein": 7.79,
+   "carbs": 45.9,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "cottage cheese 1% fat",
+   "file": "cottage_cheese_1_fat.json",
+   "description": "Cheese, cottage, lowfat, 1% milkfat",
+   "data_type": "SR Legacy",
+   "kcal": 72.0,
+   "fat": 1.02,
+   "protein": 12.39,
+   "carbs": 2.72,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "cream of rice dry",
+   "file": "cream_of_rice_dry.json",
+   "description": "Cereals, CREAM OF RICE, dry",
+   "data_type": "SR Legacy",
+   "kcal": 370.0,
+   "fat": 0.5,
+   "protein": 6.3,
+   "carbs": 82.4,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "cucumber",
+   "file": "cucumber.json",
+   "description": "Cucumber, peeled, raw",
+   "data_type": "SR Legacy",
+   "kcal": 10.0,
+   "fat": 0.16,
+   "protein": 0.59,
+   "carbs": 2.16,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "edamame beans",
+   "file": "edamame_beans.json",
+   "description": "Edamame, frozen, prepared",
+   "data_type": "SR Legacy",
+   "kcal": 121.0,
+   "fat": 5.2,
+   "protein": 11.91,
+   "carbs": 8.91,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "egg yolk",
+   "file": "egg_yolk.json",
+   "description": "Egg, yolk, raw, fresh",
+   "data_type": "SR Legacy",
+   "kcal": 322.0,
+   "fat": 26.54,
+   "protein": 15.86,
+   "carbs": 3.59,
+   "vitd": 8725.4,
+   "flags": [
+    "vitamin_d_outlier"
+   ]
+  },
+  {
+   "query": "eggs",
+   "file": "eggs.json",
+   "description": "Bread, egg",
+   "data_type": "SR Legacy",
+   "kcal": 287.0,
+   "fat": 6.0,
+   "protein": 9.5,
+   "carbs": 47.8,
+   "vitd": 640.4,
+   "flags": [
+    "vitamin_d_outlier"
+   ]
+  },
+  {
+   "query": "feta cheese reduced fat",
+   "file": "feta_cheese_reduced_fat.json",
+   "description": "Cheese, feta",
+   "data_type": "SR Legacy",
+   "kcal": 265.0,
+   "fat": 21.49,
+   "protein": 14.21,
+   "carbs": 3.88,
+   "vitd": 640.4,
+   "flags": [
+    "vitamin_d_outlier"
+   ]
+  },
+  {
+   "query": "garlic",
+   "file": "garlic.json",
+   "description": "Garlic, raw",
+   "data_type": "SR Legacy",
+   "kcal": 149.0,
+   "fat": 0.5,
+   "protein": 6.36,
+   "carbs": 33.06,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "greek yogurt plain nonfat",
+   "file": "greek_yogurt_plain_nonfat.json",
+   "description": "Yogurt, Greek, plain, nonfat (Includes foods for USDA's Food Distribution Program)",
+   "data_type": "SR Legacy",
+   "kcal": 59.0,
+   "fat": 0.39,
+   "protein": 10.19,
+   "carbs": 3.6,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "hamburger or beef 90%",
+   "file": "hamburger_or_beef_90.json",
+   "description": "Beef, ground, 90% lean meat / 10% fat, raw",
+   "data_type": "SR Legacy",
+   "kcal": 176.0,
+   "fat": 10.0,
+   "protein": 20.0,
+   "carbs": 0.0,
+   "vitd": 120.1,
+   "flags": [
+    "first_token_missing_in_description"
+   ]
+  },
+  {
+   "query": "hamburger or beef 95%",
+   "file": "hamburger_or_beef_95.json",
+   "description": "Beef, ground, 93% lean meat / 7% fat, raw",
+   "data_type": "SR Legacy",
+   "kcal": 152.0,
+   "fat": 7.0,
+   "protein": 20.85,
+   "carbs": 0.0,
+   "vitd": 120.1,
+   "flags": [
+    "first_token_missing_in_description"
+   ]
+  },
+  {
+   "query": "honey",
+   "file": "honey.json",
+   "description": "Honey",
+   "data_type": "SR Legacy",
+   "kcal": 304.0,
+   "fat": 0.0,
+   "protein": 0.3,
+   "carbs": 82.4,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "jasmine rice in unsalted water",
+   "file": "jasmine_rice_in_unsalted_water.json",
+   "description": "Rice, white, short-grain, cooked, unenriched",
+   "data_type": "SR Legacy",
+   "kcal": 130.0,
+   "fat": 0.19,
+   "protein": 2.36,
+   "carbs": 28.73,
+   "vitd": 0.0,
+   "flags": [
+    "first_token_missing_in_description"
+   ]
+  },
+  {
+   "query": "kellogg's rice krispies treats original",
+   "file": "kellogg_s_rice_krispies_treats_original.json",
+   "description": "Snacks, KELLOGG, KELLOGG'S RICE KRISPIES TREATS Squares",
+   "data_type": "SR Legacy",
+   "kcal": 417.0,
+   "fat": 9.0,
+   "protein": 3.4,
+   "carbs": 80.5,
+   "vitd": 0.0,
+   "flags": [
+    "compound_keyword"
+   ]
+  },
+  {
+   "query": "kiwi fruit green",
+   "file": "kiwi_fruit_green.json",
+   "description": "Kiwifruit (kiwi), green, peeled, raw",
+   "data_type": "Foundation",
+   "kcal": 0.0,
+   "fat": 0.64,
+   "protein": 1.008125,
+   "carbs": 13.818075,
+   "vitd": 0.0,
+   "flags": [
+    "zero_kcal_with_macros"
+   ]
+  },
+  {
+   "query": "lemon juice",
+   "file": "lemon_juice.json",
+   "description": "Lemon juice, raw",
+   "data_type": "SR Legacy",
+   "kcal": 22.0,
+   "fat": 0.24,
+   "protein": 0.35,
+   "carbs": 6.9,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "lemon juice bottled or boxed",
+   "file": "lemon_juice_bottled_or_boxed.json",
+   "description": "Lemon juice, raw",
+   "data_type": "SR Legacy",
+   "kcal": 22.0,
+   "fat": 0.24,
+   "protein": 0.35,
+   "carbs": 6.9,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "lettuce",
+   "file": "lettuce.json",
+   "description": "Lettuce, red leaf, raw",
+   "data_type": "SR Legacy",
+   "kcal": 13.0,
+   "fat": 0.22,
+   "protein": 1.33,
+   "carbs": 2.26,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "low fat greek yogurt",
+   "file": "low_fat_greek_yogurt.json",
+   "description": "Yogurt, Greek, plain, lowfat",
+   "data_type": "SR Legacy",
+   "kcal": 73.0,
+   "fat": 1.92,
+   "protein": 9.95,
+   "carbs": 3.94,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "milk",
+   "file": "milk.json",
+   "description": "MILK",
+   "data_type": "Branded",
+   "kcal": 55.0,
+   "fat": 2.12,
+   "protein": 3.39,
+   "carbs": 5.08,
+   "vitd": 1680.0,
+   "flags": [
+    "vitamin_d_outlier",
+    "branded"
+   ]
+  },
+  {
+   "query": "milk 1% fat lowfat",
+   "file": "milk_1_fat_lowfat.json",
+   "description": "Cheese, cottage, lowfat, 1% milkfat",
+   "data_type": "SR Legacy",
+   "kcal": 72.0,
+   "fat": 1.02,
+   "protein": 12.39,
+   "carbs": 2.72,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "mushrooms",
+   "file": "mushrooms.json",
+   "description": "Mushrooms, shiitake",
+   "data_type": "Foundation",
+   "kcal": 0.0,
+   "fat": 0.195,
+   "protein": 2.414375,
+   "carbs": 8.170625,
+   "vitd": 90.0562,
+   "flags": [
+    "zero_kcal_with_macros"
+   ]
+  },
+  {
+   "query": "oats",
+   "file": "oats.json",
+   "description": "Oil, oat",
+   "data_type": "SR Legacy",
+   "kcal": 884.0,
+   "fat": 100.0,
+   "protein": 0.0,
+   "carbs": 0.0,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "olive oil",
+   "file": "olive_oil.json",
+   "description": "Oil, olive, salad or cooking",
+   "data_type": "SR Legacy",
+   "kcal": 884.0,
+   "fat": 100.0,
+   "protein": 0.0,
+   "carbs": 0.0,
+   "vitd": 0.0,
+   "flags": [
+    "compound_keyword"
+   ]
+  },
+  {
+   "query": "papaya",
+   "file": "papaya.json",
+   "description": "Papayas, raw",
+   "data_type": "SR Legacy",
+   "kcal": 43.0,
+   "fat": 0.26,
+   "protein": 0.47,
+   "carbs": 10.82,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "parmesan cheese hard",
+   "file": "parmesan_cheese_hard.json",
+   "description": "Cheese, parmesan, hard",
+   "data_type": "SR Legacy",
+   "kcal": 392.0,
+   "fat": 25.0,
+   "protein": 35.75,
+   "carbs": 3.22,
+   "vitd": 760.5,
+   "flags": [
+    "vitamin_d_outlier"
+   ]
+  },
+  {
+   "query": "parmesan grated",
+   "file": "parmesan_grated.json",
+   "description": "Cheese, parmesan, grated",
+   "data_type": "SR Legacy",
+   "kcal": 420.0,
+   "fat": 27.84,
+   "protein": 28.42,
+   "carbs": 13.91,
+   "vitd": 840.5,
+   "flags": [
+    "vitamin_d_outlier"
+   ]
+  },
+  {
+   "query": "parsley",
+   "file": "parsley.json",
+   "description": "Parsley, fresh",
+   "data_type": "SR Legacy",
+   "kcal": 36.0,
+   "fat": 0.79,
+   "protein": 2.97,
+   "carbs": 6.33,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "pasta",
+   "file": "pasta.json",
+   "description": "Pasta, dry, enriched",
+   "data_type": "SR Legacy",
+   "kcal": 371.0,
+   "fat": 1.51,
+   "protein": 13.04,
+   "carbs": 74.67,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "peanut butter",
+   "file": "peanut_butter.json",
+   "description": "Peanut butter",
+   "data_type": "Survey (FNDDS)",
+   "kcal": 598,
+   "fat": 51.4,
+   "protein": 22.2,
+   "carbs": 22.3,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "potatoes flesh",
+   "file": "potatoes_flesh.json",
+   "description": "Potatoes, flesh and skin, raw",
+   "data_type": "SR Legacy",
+   "kcal": 77.0,
+   "fat": 0.09,
+   "protein": 2.05,
+   "carbs": 17.49,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "quinoa",
+   "file": "quinoa.json",
+   "description": "QUINOA",
+   "data_type": "Branded",
+   "kcal": 357.0,
+   "fat": 7.14,
+   "protein": 14.29,
+   "carbs": 64.29,
+   "vitd": 0.0,
+   "flags": [
+    "branded"
+   ]
+  },
+  {
+   "query": "red peppers",
+   "file": "red_peppers.json",
+   "description": "Peppers, sweet, red, raw",
+   "data_type": "SR Legacy",
+   "kcal": 26.0,
+   "fat": 0.3,
+   "protein": 0.99,
+   "carbs": 6.03,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "roast beef lunchmeat",
+   "file": "roast_beef_lunchmeat.json",
+   "description": "Roast beef, deli style, prepackaged, sliced",
+   "data_type": "SR Legacy",
+   "kcal": 115.0,
+   "fat": 3.69,
+   "protein": 18.62,
+   "carbs": 0.64,
+   "vitd": 40.0,
+   "flags": []
+  },
+  {
+   "query": "rolled oats",
+   "file": "rolled_oats.json",
+   "description": "ROLLED OATS",
+   "data_type": "Branded",
+   "kcal": 375.0,
+   "fat": 7.5,
+   "protein": 12.5,
+   "carbs": 67.5,
+   "vitd": 0.0,
+   "flags": [
+    "branded"
+   ]
+  },
+  {
+   "query": "salami genoa",
+   "file": "salami_genoa.json",
+   "description": "GENOA SALAMI",
+   "data_type": "Branded",
+   "kcal": 393.0,
+   "fat": 33.93,
+   "protein": 17.86,
+   "carbs": 3.57,
+   "vitd": 0.0,
+   "flags": [
+    "branded"
+   ]
+  },
+  {
+   "query": "salmon canned",
+   "file": "salmon_canned.json",
+   "description": "Salmon, sockeye, canned, total can contents",
+   "data_type": "SR Legacy",
+   "kcal": 153.0,
+   "fat": 7.17,
+   "protein": 20.63,
+   "carbs": 0.0,
+   "vitd": 761.0,
+   "flags": [
+    "vitamin_d_outlier"
+   ]
+  },
+  {
+   "query": "salsa ready-to-serve",
+   "file": "salsa_ready-to-serve.json",
+   "description": "Sauce, salsa, ready-to-serve",
+   "data_type": "SR Legacy",
+   "kcal": 29.0,
+   "fat": 0.17,
+   "protein": 1.52,
+   "carbs": 6.64,
+   "vitd": 0.0,
+   "flags": [
+    "compound_keyword"
+   ]
+  },
+  {
+   "query": "sauerkraut",
+   "file": "sauerkraut.json",
+   "description": "Sauerkraut, canned, solids and liquids",
+   "data_type": "SR Legacy",
+   "kcal": 19.0,
+   "fat": 0.14,
+   "protein": 0.91,
+   "carbs": 4.28,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "sesame oil",
+   "file": "sesame_oil.json",
+   "description": "Oil, sesame, salad or cooking",
+   "data_type": "SR Legacy",
+   "kcal": 884.0,
+   "fat": 100.0,
+   "protein": 0.0,
+   "carbs": 0.0,
+   "vitd": 0.0,
+   "flags": [
+    "compound_keyword"
+   ]
+  },
+  {
+   "query": "sharp cheddar cheese",
+   "file": "sharp_cheddar_cheese.json",
+   "description": "Cheese, cheddar, sharp, sliced",
+   "data_type": "SR Legacy",
+   "kcal": 410.0,
+   "fat": 33.82,
+   "protein": 24.25,
+   "carbs": 2.13,
+   "vitd": 1641.0,
+   "flags": [
+    "vitamin_d_outlier"
+   ]
+  },
+  {
+   "query": "sourdough bread",
+   "file": "sourdough_bread.json",
+   "description": "Bread, french or vienna (includes sourdough)",
+   "data_type": "SR Legacy",
+   "kcal": 272.0,
+   "fat": 2.42,
+   "protein": 10.75,
+   "carbs": 51.88,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "soy sauce",
+   "file": "soy_sauce.json",
+   "description": "Soy sauce made from soy (tamari)",
+   "data_type": "SR Legacy",
+   "kcal": 60.0,
+   "fat": 0.1,
+   "protein": 10.51,
+   "carbs": 5.57,
+   "vitd": 0.0,
+   "flags": [
+    "compound_keyword"
+   ]
+  },
+  {
+   "query": "spaghetti squash",
+   "file": "spaghetti_squash.json",
+   "description": "Squash, spaghetti, peeled, seeded, raw",
+   "data_type": "Foundation",
+   "kcal": 0.0,
+   "fat": 0.0,
+   "protein": 0.791875,
+   "carbs": 0.0,
+   "vitd": 0.0,
+   "flags": [
+    "zero_kcal_with_macros"
+   ]
+  },
+  {
+   "query": "spinach",
+   "file": "spinach.json",
+   "description": "Spinach, raw",
+   "data_type": "SR Legacy",
+   "kcal": 23.0,
+   "fat": 0.39,
+   "protein": 2.86,
+   "carbs": 3.63,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "sugar",
+   "file": "sugar.json",
+   "description": "Sugars, brown",
+   "data_type": "SR Legacy",
+   "kcal": 380.0,
+   "fat": 0.0,
+   "protein": 0.12,
+   "carbs": 98.09,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "sweet potato",
+   "file": "sweet_potato.json",
+   "description": "Sweet potatoes, orange flesh, without skin, raw",
+   "data_type": "Foundation",
+   "kcal": 0.0,
+   "fat": 0.375,
+   "protein": 1.578125,
+   "carbs": 17.327875,
+   "vitd": 0.0,
+   "flags": [
+    "zero_kcal_with_macros"
+   ]
+  },
+  {
+   "query": "tilapia",
+   "file": "tilapia.json",
+   "description": "Fish, tilapia, raw",
+   "data_type": "SR Legacy",
+   "kcal": 96.0,
+   "fat": 1.7,
+   "protein": 20.08,
+   "carbs": 0.0,
+   "vitd": 4963.1,
+   "flags": [
+    "vitamin_d_outlier"
+   ]
+  },
+  {
+   "query": "tofu not silken firm",
+   "file": "tofu_not_silken_firm.json",
+   "description": "Tofu, raw, firm, prepared with calcium sulfate",
+   "data_type": "SR Legacy",
+   "kcal": 144.0,
+   "fat": 8.72,
+   "protein": 17.27,
+   "carbs": 2.78,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "tomato",
+   "file": "tomato.json",
+   "description": "Tomatoes, crushed, canned",
+   "data_type": "Foundation",
+   "kcal": 0.0,
+   "fat": 0.3975,
+   "protein": 1.4375,
+   "carbs": 7.137,
+   "vitd": 0.0,
+   "flags": [
+    "zero_kcal_with_macros"
+   ]
+  },
+  {
+   "query": "tortillas corn",
+   "file": "tortillas_corn.json",
+   "description": "Tortillas, ready-to-bake or -fry, flour, shelf stable",
+   "data_type": "SR Legacy",
+   "kcal": 297.0,
+   "fat": 7.58,
+   "protein": 8.01,
+   "carbs": 49.27,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "tuna sashimi",
+   "file": "tuna_sashimi.json",
+   "description": "Fish, tuna, fresh, yellowfin, raw",
+   "data_type": "SR Legacy",
+   "kcal": 109.0,
+   "fat": 0.49,
+   "protein": 24.4,
+   "carbs": 0.0,
+   "vitd": 2761.7,
+   "flags": [
+    "vitamin_d_outlier"
+   ]
+  },
+  {
+   "query": "turkey breast lunchmeat reduced fat",
+   "file": "turkey_breast_lunchmeat_reduced_fat.json",
+   "description": "Turkey breast, sliced, prepackaged",
+   "data_type": "SR Legacy",
+   "kcal": 106.0,
+   "fat": 3.77,
+   "protein": 14.81,
+   "carbs": 2.2,
+   "vitd": 240.2,
+   "flags": []
+  },
+  {
+   "query": "water",
+   "file": "water.json",
+   "description": "Water, tap",
+   "data_type": "Survey (FNDDS)",
+   "kcal": 0.0,
+   "fat": 0.0,
+   "protein": 0.0,
+   "carbs": 0.0,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "whey protein powder",
+   "file": "whey_protein_powder.json",
+   "description": "Beverages, Whey protein powder isolate",
+   "data_type": "SR Legacy",
+   "kcal": 359.0,
+   "fat": 1.16,
+   "protein": 58.14,
+   "carbs": 29.07,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "whey protein powder 24 grams of protein per scoop",
+   "file": "whey_protein_powder_24_grams_of_protein_per_scoop.json",
+   "description": "Beverages, Whey protein powder isolate",
+   "data_type": "SR Legacy",
+   "kcal": 359.0,
+   "fat": 1.16,
+   "protein": 58.14,
+   "carbs": 29.07,
+   "vitd": 0.0,
+   "flags": []
+  },
+  {
+   "query": "zucchini",
+   "file": "zucchini.json",
+   "description": "Squash, zucchini, baby, raw",
+   "data_type": "SR Legacy",
+   "kcal": 21.0,
+   "fat": 0.4,
+   "protein": 2.71,
+   "carbs": 3.11,
+   "vitd": 0.0,
+   "flags": []
+  }
+ ]
+}

@@ -5,7 +5,7 @@ No search, constraint, or scoring logic — data structures and validation only.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Tuple, NamedTuple
+from typing import Any, Dict, List, Optional, Set, Tuple, NamedTuple
 
 from src.data_layer.models import NutritionProfile, MicronutrientProfile, Ingredient
 
@@ -25,6 +25,9 @@ class MealSlot:
     time: str  # HH:MM
     busyness_level: int  # 1-4
     meal_type: str  # e.g. "breakfast", "lunch", "snack", "dinner"
+    # Canonical slot-level tag constraints (DM-4/BE-8 inputs).
+    required_tag_slugs: Optional[List[str]] = None
+    preferred_tag_slugs: Optional[List[str]] = None
 
 
 def validate_schedule_structure(
@@ -98,6 +101,23 @@ class PlanningUserProfile:
     enable_primary_carb_downscaling: bool = False
     max_scaling_steps: int = 4
     scaling_step_fraction: float = 0.10
+    # Canonical meal-prep locks addressed as (day_index, slot_index).
+    # Planner resolves these into pinned_assignments before search.
+    batch_locks: List["PlanningBatchLock"] = field(default_factory=list)
+    # Provenance for effective pins after batch merge: (day_1based, slot_index) ->
+    # {"source": "pin"|"batch", "batch_id": ...} (batch_id only when source is batch).
+    pin_provenance: Dict[Tuple[int, int], Dict[str, Any]] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class PlanningBatchLock:
+    """Planner-facing meal-prep lock addressed by canonical slot coordinates."""
+
+    batch_id: str
+    recipe_id: str
+    day_index: int
+    slot_index: int
+    servings: float = 1.0
 
 
 # --- Section 2.2 Recipe Pool ---
@@ -119,6 +139,13 @@ class PlanningRecipe:
     nutrition: NutritionProfile
     primary_carb_contribution: Optional[NutritionProfile] = None
     primary_carb_source: Optional[str] = None
+    # Canonical decisioning tags loaded from recipe_tags.json/tags_by_id.
+    # BE-8 slot-level required/preferred matching should use this field.
+    canonical_tag_slugs: Set[str] = field(default_factory=set)
+    # Optional hard-constraint eligible tag set.
+    # When present, BE-8 required-tag matching uses this set to exclude
+    # quarantined/proposed tags from hard decisioning.
+    hard_eligible_tag_slugs: Optional[Set[str]] = None
 
 
 # --- Section 3.1 Assignment Sequence ---

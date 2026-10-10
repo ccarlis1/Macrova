@@ -44,9 +44,13 @@ must not be interpreted as meals after migration.
 
 from __future__ import annotations
 
+import os
 from typing import List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic_core.core_schema import ValidationInfo
+
+_DEFAULT_TAG_REPO_PATH = "data/recipes/recipe_tags.json"
 
 
 class MealSlot(BaseModel):
@@ -69,6 +73,14 @@ class MealSlot(BaseModel):
         default=None,
         description='Optional "HH:MM" clock hint for that meal.',
     )
+    required_tag_slugs: Optional[List[str]] = Field(
+        default=None,
+        description="Required tag slugs that candidate recipes must satisfy.",
+    )
+    preferred_tag_slugs: Optional[List[str]] = Field(
+        default=None,
+        description="Preferred tag slugs used as soft ranking hints.",
+    )
 
     @field_validator("preferred_time")
     @classmethod
@@ -79,6 +91,29 @@ class MealSlot(BaseModel):
         if len(s) == 5 and s[2] == ":" and s[:2].isdigit() and s[3:].isdigit():
             return s
         raise ValueError(f'preferred_time must be "HH:MM", got {v!r}')
+
+    @field_validator("required_tag_slugs", "preferred_tag_slugs")
+    @classmethod
+    def _validate_tag_slugs(
+        cls, v: Optional[List[str]], info: ValidationInfo
+    ) -> Optional[List[str]]:
+        if v is None:
+            return None
+        # Local import avoids src.models <-> src.llm import cycle.
+        from src.llm import tag_repository
+
+        tag_repo_path = os.environ.get("NUTRITION_TAG_REPO_PATH", _DEFAULT_TAG_REPO_PATH)
+        resolved: List[str] = []
+        for slug in v:
+            token = str(slug).strip()
+            try:
+                meta = tag_repository.resolve(token, tag_repo_path)
+            except ValueError as exc:
+                raise ValueError(
+                    f"{info.field_name} contains unknown tag slug {token!r}"
+                ) from exc
+            resolved.append(meta.slug)
+        return resolved
 
 
 class WorkoutSlot(BaseModel):

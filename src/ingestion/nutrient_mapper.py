@@ -43,6 +43,9 @@ from src.data_layer.models import NutritionProfile, MicronutrientProfile
 # - "micro": Maps to MicronutrientProfile field
 # ============================================================================
 
+# Bump when USDA_NUTRIENT_MAP semantics change so cache entries can be attributed to a mapper.
+MAPPER_VERSION = "1"
+
 USDA_NUTRIENT_MAP: Dict[int, Dict[str, Any]] = {
     # === MACRONUTRIENTS ===
     1008: {

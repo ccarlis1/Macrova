@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/models.dart';
+import '../models/user_profile.dart';
 import '../services/api_service.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
@@ -79,9 +80,17 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
     final fatMin = double.parse(_dailyFatMinController.text.trim());
     final fatMax = double.parse(_dailyFatMaxController.text.trim());
-    if (fatMax < fatMin) {
+    final calories = int.parse(_dailyCaloriesController.text.trim());
+    final proteinG = double.parse(_dailyProteinController.text.trim());
+    final macroErr = UserProfile.macroTargetsErrorFor(
+      calories.toDouble(),
+      proteinG,
+      fatMin,
+      fatMax,
+    );
+    if (macroErr != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Fat max must be greater than or equal to fat min.')),
+        SnackBar(content: Text(macroErr)),
       );
       return;
     }
@@ -94,8 +103,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     };
 
     final request = PlanRequest(
-      dailyCalories: int.parse(_dailyCaloriesController.text.trim()),
-      dailyProteinG: double.parse(_dailyProteinController.text.trim()),
+      dailyCalories: calories,
+      dailyProteinG: proteinG,
       dailyFatGMin: fatMin,
       dailyFatGMax: fatMax,
       schedule: schedule,

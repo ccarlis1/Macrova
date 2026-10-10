@@ -428,7 +428,7 @@
     {
       "id": "recipe_011",
       "name": "Greek Yogurt Balance",
-      "description": "Balanced parfait with nonfat Greek yogurt, blackberries, almond butter, honey, chia seeds, and acai.",
+      "description": "Balanced parfait with nonfat Greek yogurt, blackberries, almond butter, honey, chia seeds.",
       "ingredients": [
         {
           "quantity": 1,
@@ -454,16 +454,11 @@
           "quantity": 1,
           "unit": "tbsp, whole pieces",
           "name": "chia seeds"
-        },
-        {
-          "quantity": 70,
-          "unit": "g",
-          "name": "acai berry"
         }
       ],
       "cooking_time_minutes": 5,
       "instructions": [
-        "Layer Greek yogurt with blackberries, almond butter, honey, chia seeds, and acai. Serve immediately."
+        "Layer Greek yogurt with blackberries, almond butter, honey, and chia seeds. Serve immediately."
       ]
     },
     {

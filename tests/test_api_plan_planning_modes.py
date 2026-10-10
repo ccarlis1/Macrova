@@ -79,7 +79,21 @@ def test_api_plan_planning_mode_deterministic_overrides_llm_enabled(monkeypatch)
     monkeypatch.setattr("src.api.server.plan_meals", _fake_plan_meals)
     monkeypatch.setattr("src.api.server.plan_with_llm_feedback", _fake_orchestrator)
 
-    monkeypatch.setattr("src.api.server.format_result_json", lambda *args, **kwargs: {"ok": True})
+    monkeypatch.setattr(
+        "src.api.server.format_result_json",
+        lambda *_a, **_k: {
+            "success": True,
+            "termination_code": "TC-1",
+            "days": 1,
+            "daily_plans": [],
+            "warnings": {},
+            "report": {"failures": []},
+            "goals": {},
+            "weekly_totals": None,
+            "plan_status": "success",
+            "plan_status_message": None,
+        },
+    )
 
     client = TestClient(app)
     resp = client.post(
@@ -89,6 +103,18 @@ def test_api_plan_planning_mode_deterministic_overrides_llm_enabled(monkeypatch)
     assert resp.status_code == 200
     assert called["plan_meals"] == 1
     assert called["orchestrator"] == 0
+
+
+def _fake_pool():
+    """Non-empty, non-fitting pool so the recovery loop diagnoses a gap (empty pools are refused before any cache lookup)."""
+    from src.data_layer.models import Ingredient, MicronutrientProfile, NutritionProfile
+    from src.planning.phase0_models import PlanningRecipe
+
+    def r(rid):
+        return PlanningRecipe(id=rid, name=rid, ingredients=[Ingredient("x", 100, "g")], cooking_time_minutes=5,
+                              nutrition=NutritionProfile(100.0, 5.0, 2.0, 10.0, MicronutrientProfile()))
+
+    return [r("a"), r("b"), r("c")]
 
 
 def test_api_plan_planning_mode_assisted_cached_abort_on_cache_miss(
@@ -119,6 +145,7 @@ def test_api_plan_planning_mode_assisted_cached_abort_on_cache_miss(
 
     monkeypatch.setattr("src.api.server.build_llm_client", lambda: object())
     monkeypatch.setattr("src.api.server.build_usda_provider", lambda: DummyProvider())
+    monkeypatch.setattr("src.api.server.convert_recipes", lambda *_a, **_k: _fake_pool())
 
     failure = MealPlanResult(
         success=False,

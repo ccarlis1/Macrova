@@ -1,6 +1,6 @@
 """Abstract base class for ingredient data providers.
 
-All consumers of ingredient data (NutritionCalculator, RecipeScorer, etc.)
+All consumers of ingredient data (NutritionCalculator, etc.)
 must depend ONLY on this interface. Concrete implementations supply data
 from local JSON files or external APIs without changing downstream logic.
 """

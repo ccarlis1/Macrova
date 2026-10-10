@@ -30,7 +30,6 @@ ENV/
 # IDE
 .vscode/
 .idea/
-.cursor/
 *.swp
 *.swo
 *~
@@ -54,7 +53,6 @@ config/nutrition_goals.yaml
 config/model_config.yaml
 
 # Data files (keep examples, ignore actual data)
-docs/rules/*.md
 docs/wireframes/
 
 # Ingredients
@@ -64,8 +62,7 @@ data/ingredients/custom_ingredients.json
 # Cached Ingredients
 .cache/
 
-# Recipes
-data/recipes/recipes.json
+# Recipes — recipes.json is committed (§4.4 / Q2: coverage over real pool).
 data/recipes/recipe_embeddings.pkl
 
 # Nutrition
@@ -87,10 +84,6 @@ Thumbs.db
 
 # Local planner debug exports (see scripts/export_planner_debug_artifacts.py)
 debug_artifacts/
-
-# Claude Code hook scratch state (see .claude/hooks/_common.py::state_dir)
-.claude/.hook-state/
-
-# Flutter tool state, recreated by every `flutter analyze` / `flutter test` run
-frontend/.config/
-frontend/.flutter
+# §4.4 data track: regenerable outputs (see evaluation/data_track/README.md)
+evaluation/data_track/raw/
+evaluation/data_track/results/*.json

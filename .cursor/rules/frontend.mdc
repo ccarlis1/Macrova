@@ -1,0 +1,13 @@
+---
+description: Flutter frontend rules for Macrova
+globs: frontend/**
+alwaysApply: false
+---
+
+# Frontend
+
+- Reuse existing providers and DTOs — no duplicate models or parallel state patterns.
+- Keep UI state, API DTOs, and backend contracts aligned.
+- Surface honest placeholder/loading/empty/error states; avoid mock data when endpoints exist.
+- Do not wire incomplete backend features as production-ready.
+- Preserve existing functionality before visual polish.

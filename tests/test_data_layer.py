@@ -15,7 +15,9 @@ from src.data_layer.models import (
 from src.data_layer.recipe_db import RecipeDB
 from src.data_layer.ingredient_db import IngredientDB
 from src.data_layer.nutrition_db import NutritionDB
-from src.data_layer.user_profile import UserProfileLoader
+from src.data_layer.macro_targets import MacroTargetsError
+from src.data_layer.user_profile import UserProfileLoader, persist_profile_schedule_days
+from src.models.schedule import DaySchedule
 
 
 class TestRecipeDB:
@@ -121,6 +123,175 @@ class TestRecipeDB:
             assert recipe.name == "Recipe 2"
         finally:
             Path(temp_path).unlink()
+
+    def test_load_recipe_defaults_when_dm2_fields_missing(self):
+        """Missing DM-2 fields should load with backward-compatible defaults."""
+        recipe_data = {
+            "recipes": [
+                {
+                    "id": "legacy_001",
+                    "name": "Legacy Recipe",
+                    "ingredients": [],
+                    "cooking_time_minutes": 5,
+                    "instructions": [],
+                }
+            ]
+        }
+        with NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(recipe_data, f)
+            temp_path = f.name
+
+        try:
+            recipe = RecipeDB(temp_path).get_all_recipes()[0]
+            assert recipe.default_servings == 1
+            assert recipe.tags == []
+        finally:
+            Path(temp_path).unlink()
+
+    def test_save_load_roundtrip_derived_tags_from_canonical(self):
+        """Recipe.tags should be derived from canonical tags on save/load round trip."""
+        recipe_data = {
+            "recipes": [
+                {
+                    "id": "recipe_001",
+                    "name": "Tagged Recipe",
+                    "ingredients": [],
+                    "cooking_time_minutes": 10,
+                    "instructions": [],
+                    "default_servings": 4,
+                }
+            ]
+        }
+        tag_repo_data = {
+            "tags_by_id": {
+                "recipe_001": {
+                    "cuisine": "mexican",
+                    "cost_level": "cheap",
+                    "prep_time_bucket": "quick_meal",
+                    "dietary_flags": [],
+                    "tag_slugs_by_type": {"nutrition": ["high-fiber"]},
+                }
+            },
+            "tag_registry": {
+                "high-fiber": {
+                    "slug": "high-fiber",
+                    "display": "High Fiber",
+                    "tag_type": "nutrition",
+                    "source": "system",
+                    "created_at": "1970-01-01T00:00:00Z",
+                    "aliases": [],
+                }
+            },
+            "tag_aliases": {},
+        }
+        with NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(recipe_data, f)
+            temp_path = f.name
+        with NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(tag_repo_data, f)
+            tag_path = f.name
+
+        try:
+            db = RecipeDB(temp_path, tag_repo_path=tag_path)
+            db.save()
+            reloaded = RecipeDB(temp_path, tag_repo_path=tag_path).get_all_recipes()[0]
+            assert reloaded.default_servings == 4
+            assert reloaded.tags == [{"slug": "high-fiber", "type": "nutrition"}]
+        finally:
+            Path(temp_path).unlink()
+            Path(tag_path).unlink()
+
+    def test_derived_tags_use_canonical_tag_repository_path(self, monkeypatch):
+        """Derived tags should come from canonical tags_by_id and repository path."""
+        recipe_data = {
+            "recipes": [
+                {
+                    "id": "recipe_001",
+                    "name": "Tagged Recipe",
+                    "ingredients": [],
+                    "cooking_time_minutes": 10,
+                    "instructions": [],
+                }
+            ]
+        }
+        tag_repo_data = {
+            "tags_by_id": {
+                "recipe_001": {
+                    "cuisine": "mexican",
+                    "cost_level": "cheap",
+                    "prep_time_bucket": "quick_meal",
+                    "dietary_flags": [],
+                    "tag_slugs_by_type": {"nutrition": ["high-fiber"]},
+                }
+            },
+            "tag_registry": {},
+            "tag_aliases": {},
+        }
+        with NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(recipe_data, f)
+            temp_path = f.name
+        with NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(tag_repo_data, f)
+            tag_path = f.name
+
+        expected_tag_path = tag_path
+        calls = []
+
+        class _ResolvedTag:
+            slug = "high-fiber"
+            tag_type = "nutrition"
+
+        def _fake_resolve(slug, path):
+            calls.append((slug, path))
+            return _ResolvedTag()
+
+        monkeypatch.setattr("src.data_layer.recipe_db.tag_repository.resolve", _fake_resolve)
+        try:
+            recipe = RecipeDB(temp_path, tag_repo_path=expected_tag_path).get_all_recipes()[0]
+            assert recipe.tags == [{"slug": "high-fiber", "type": "nutrition"}]
+            assert calls == [("high-fiber", expected_tag_path)]
+        finally:
+            Path(temp_path).unlink()
+            Path(tag_path).unlink()
+
+    def test_is_meal_prep_capable_property(self):
+        """Derived meal-prep capability should be computed dynamically."""
+        recipe = Recipe(
+            id="r_mealprep",
+            name="Meal Prep Bowl",
+            ingredients=[],
+            cooking_time_minutes=20,
+            instructions=[],
+            default_servings=2,
+            tags=[{"slug": "meal-prep", "type": "context"}],
+        )
+        assert recipe.is_meal_prep_capable is True
+
+    def test_is_meal_prep_capable_false_when_servings_below_two(self):
+        """Meal-prep tag alone is insufficient when default servings < 2."""
+        recipe = Recipe(
+            id="r_not_enough_servings",
+            name="Single Serve Prep",
+            ingredients=[],
+            cooking_time_minutes=15,
+            instructions=[],
+            default_servings=1,
+            tags=[{"slug": "meal-prep", "type": "context"}],
+        )
+        assert recipe.is_meal_prep_capable is False
+
+    def test_is_meal_prep_capable_false_without_meal_prep_tag(self):
+        """Sufficient servings alone is insufficient without context meal-prep tag."""
+        recipe = Recipe(
+            id="r_no_meal_prep_tag",
+            name="Batch Bowl",
+            ingredients=[],
+            cooking_time_minutes=15,
+            instructions=[],
+            default_servings=2,
+            tags=[{"slug": "high-fiber", "type": "nutrition"}],
+        )
+        assert recipe.is_meal_prep_capable is False
 
 
 class TestIngredientDB:
@@ -367,6 +538,28 @@ class TestUserProfileLoader:
         finally:
             Path(temp_path).unlink()
 
+    def test_load_rejects_negative_derived_carbs(self):
+        """Carbs still negative at the fat min → MacroTargetsError(NEGATIVE_CARBS_DERIVED)."""
+        profile_data = {
+            "nutrition_goals": {
+                "daily_calories": 2000,
+                "daily_protein_g": 150,
+                "daily_fat_g": {"min": 160, "max": 180},
+            },
+            "schedule": {"07:00": 2, "12:00": 3, "18:00": 3},
+            "preferences": {"liked_foods": [], "disliked_foods": [], "allergies": []},
+        }
+        with NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+            yaml.dump(profile_data, f)
+            temp_path = f.name
+        try:
+            with pytest.raises(MacroTargetsError) as exc:
+                UserProfileLoader(temp_path).load()
+            assert exc.value.reason == "NEGATIVE_CARBS_DERIVED"
+            assert exc.value.details["daily_carbs_g"] == pytest.approx(-10.0)
+        finally:
+            Path(temp_path).unlink()
+
     def test_load_profile_without_max_daily_calories(self):
         """Test loading user profile without max_daily_calories (feature disabled)."""
         profile_data = {
@@ -393,4 +586,99 @@ class TestUserProfileLoader:
             assert profile.max_daily_calories is None
         finally:
             Path(temp_path).unlink()
+
+    def test_load_profile_schedule_days_unknown_meal_tag_slug_raises_clear_error(self):
+        profile_data = {
+            "nutrition_goals": {
+                "daily_calories": 2400,
+                "daily_protein_g": 150,
+                "daily_fat_g": {"min": 50, "max": 100},
+            },
+            "schedule_days": [
+                {
+                    "day_index": 1,
+                    "meals": [
+                        {
+                            "index": 1,
+                            "busyness_level": 2,
+                            "preferred_time": "07:00",
+                            "required_tag_slugs": ["unknown-dm4-slug"],
+                        }
+                    ],
+                    "workouts": [],
+                }
+            ],
+            "preferences": {"liked_foods": [], "disliked_foods": [], "allergies": []},
+        }
+        with NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+            yaml.dump(profile_data, f)
+            temp_path = f.name
+
+        try:
+            with pytest.raises(ValueError, match="required_tag_slugs contains unknown tag slug"):
+                UserProfileLoader(temp_path).load()
+        finally:
+            Path(temp_path).unlink()
+
+
+def test_persist_profile_schedule_days_replaces_legacy_schedule_and_preserves_other_sections(monkeypatch):
+    profile_data = {
+        "nutrition_goals": {
+            "daily_calories": 2400,
+            "daily_protein_g": 150,
+            "daily_fat_g": {"min": 50, "max": 100},
+        },
+        "schedule": {"07:00": 2, "12:00": 3},
+        "preferences": {
+            "liked_foods": ["eggs"],
+            "disliked_foods": [],
+            "allergies": [],
+        },
+    }
+    class _ResolvedTag:
+        def __init__(self, slug: str) -> None:
+            self.slug = slug
+
+    monkeypatch.setattr(
+        "src.llm.tag_repository.resolve",
+        lambda slug, path: _ResolvedTag(str(slug)),
+    )
+
+    day = DaySchedule.model_validate(
+        {
+            "day_index": 1,
+            "meals": [
+                {
+                    "index": 1,
+                    "busyness_level": 2,
+                    "preferred_time": "07:30",
+                    "required_tag_slugs": ["high-protein"],
+                    "preferred_tag_slugs": ["quick-meal"],
+                },
+                {"index": 2, "busyness_level": 3},
+            ],
+            "workouts": [{"after_meal_index": 1, "type": "PM", "intensity": "moderate"}],
+        }
+    )
+
+    with NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        yaml.dump(profile_data, f)
+        temp_path = f.name
+
+    try:
+        persisted = persist_profile_schedule_days([day], yaml_path=temp_path)
+        assert persisted[0]["meals"][0]["preferred_time"] == "07:30"
+        assert persisted[0]["meals"][0]["required_tag_slugs"] == ["high-protein"]
+        assert persisted[0]["meals"][0]["preferred_tag_slugs"] == ["quick-meal"]
+        assert persisted[0]["workouts"] == [
+            {"after_meal_index": 1, "type": "PM", "intensity": "moderate"}
+        ]
+
+        with open(temp_path, "r", encoding="utf-8") as f:
+            saved = yaml.safe_load(f)
+        assert "schedule" not in saved
+        assert saved["preferences"] == profile_data["preferences"]
+        assert saved["schedule_days"] == persisted
+    finally:
+        Path(temp_path).unlink()
 

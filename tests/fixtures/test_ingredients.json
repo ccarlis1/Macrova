@@ -9,7 +9,14 @@
         "carbs_g": 0.4
       },
       "unit_size_g": 50,
-      "aliases": ["eggs", "large egg"]
+      "aliases": [
+        "eggs",
+        "large egg"
+      ],
+      "large_size_g": 50,
+      "grams_per_unit": {
+        "large": 50.0
+      }
     },
     {
       "name": "salt",
@@ -19,7 +26,14 @@
         "fat_g": 0.0,
         "carbs_g": 0.0
       },
-      "aliases": ["table salt", "sea salt"]
+      "aliases": [
+        "table salt",
+        "sea salt"
+      ],
+      "grams_per_unit": {
+        "g": 1.0,
+        "pinch": 0.3
+      }
     },
     {
       "name": "salmon",
@@ -29,7 +43,13 @@
         "fat_g": 12.4,
         "carbs_g": 0.0
       },
-      "aliases": ["salmon fillet", "atlantic salmon"]
+      "aliases": [
+        "salmon fillet",
+        "atlantic salmon"
+      ],
+      "grams_per_unit": {
+        "g": 1.0
+      }
     },
     {
       "name": "cream of rice",
@@ -39,7 +59,13 @@
         "fat_g": 0.5,
         "carbs_g": 82.0
       },
-      "aliases": ["cream of rice cereal", "rice cereal"]
+      "aliases": [
+        "cream of rice cereal",
+        "rice cereal"
+      ],
+      "grams_per_unit": {
+        "g": 1.0
+      }
     },
     {
       "name": "chicken breast",
@@ -49,7 +75,13 @@
         "fat_g": 3.6,
         "carbs_g": 0.0
       },
-      "aliases": ["chicken", "boneless chicken breast"]
+      "aliases": [
+        "chicken",
+        "boneless chicken breast"
+      ],
+      "grams_per_unit": {
+        "g": 1.0
+      }
     },
     {
       "name": "white rice",
@@ -59,7 +91,15 @@
         "fat_g": 0.3,
         "carbs_g": 28.0
       },
-      "aliases": ["rice", "jasmine rice", "cooked rice", "cooked white rice"]
+      "aliases": [
+        "rice",
+        "jasmine rice",
+        "cooked rice",
+        "cooked white rice"
+      ],
+      "grams_per_unit": {
+        "g": 1.0
+      }
     },
     {
       "name": "olive oil",
@@ -69,7 +109,15 @@
         "fat_g": 100.0,
         "carbs_g": 0.0
       },
-      "aliases": ["evoo", "extra virgin olive oil"]
+      "aliases": [
+        "evoo",
+        "extra virgin olive oil"
+      ],
+      "grams_per_unit": {
+        "g": 1.0,
+        "tbsp": 13.5,
+        "tsp": 4.5
+      }
     },
     {
       "name": "broccoli",
@@ -79,7 +127,13 @@
         "fat_g": 0.4,
         "carbs_g": 7.0
       },
-      "aliases": ["broccoli florets", "steamed broccoli"]
+      "aliases": [
+        "broccoli florets",
+        "steamed broccoli"
+      ],
+      "grams_per_unit": {
+        "g": 1.0
+      }
     },
     {
       "name": "almonds",
@@ -89,7 +143,13 @@
         "fat_g": 50.0,
         "carbs_g": 22.0
       },
-      "aliases": ["almond", "raw almonds"]
+      "aliases": [
+        "almond",
+        "raw almonds"
+      ],
+      "grams_per_unit": {
+        "g": 1.0
+      }
     },
     {
       "name": "banana",
@@ -99,7 +159,13 @@
         "fat_g": 0.3,
         "carbs_g": 23.0
       },
-      "aliases": ["bananas"]
+      "aliases": [
+        "bananas"
+      ],
+      "grams_per_unit": {
+        "g": 1.0,
+        "medium": 105.0
+      }
     },
     {
       "name": "oatmeal",
@@ -109,7 +175,13 @@
         "fat_g": 6.9,
         "carbs_g": 66.0
       },
-      "aliases": ["oats", "rolled oats"]
+      "aliases": [
+        "oats",
+        "rolled oats"
+      ],
+      "grams_per_unit": {
+        "g": 1.0
+      }
     },
     {
       "name": "whey protein powder",
@@ -120,7 +192,15 @@
         "carbs_g": 3.0
       },
       "scoop_size_g": 30,
-      "aliases": ["protein powder", "whey", "whey protein", "protein"]
+      "aliases": [
+        "protein powder",
+        "whey",
+        "whey protein",
+        "protein"
+      ],
+      "grams_per_unit": {
+        "scoop": 30.0
+      }
     },
     {
       "name": "peanut butter",
@@ -130,7 +210,13 @@
         "fat_g": 50.0,
         "carbs_g": 20.0
       },
-      "aliases": ["pb", "natural peanut butter"]
+      "aliases": [
+        "pb",
+        "natural peanut butter"
+      ],
+      "grams_per_unit": {
+        "g": 1.0
+      }
     },
     {
       "name": "pasta",
@@ -140,7 +226,14 @@
         "fat_g": 1.1,
         "carbs_g": 25.0
       },
-      "aliases": ["spaghetti", "noodles", "whole wheat pasta"]
+      "aliases": [
+        "spaghetti",
+        "noodles",
+        "whole wheat pasta"
+      ],
+      "grams_per_unit": {
+        "g": 1.0
+      }
     },
     {
       "name": "ground beef",
@@ -150,7 +243,13 @@
         "fat_g": 17.0,
         "carbs_g": 0.0
       },
-      "aliases": ["beef", "lean ground beef"]
+      "aliases": [
+        "beef",
+        "lean ground beef"
+      ],
+      "grams_per_unit": {
+        "g": 1.0
+      }
     },
     {
       "name": "potato",
@@ -160,7 +259,14 @@
         "fat_g": 0.1,
         "carbs_g": 17.0
       },
-      "aliases": ["potatoes", "russet potato", "white potato"]
+      "aliases": [
+        "potatoes",
+        "russet potato",
+        "white potato"
+      ],
+      "grams_per_unit": {
+        "g": 1.0
+      }
     },
     {
       "name": "cheese",
@@ -170,7 +276,13 @@
         "fat_g": 33.0,
         "carbs_g": 1.3
       },
-      "aliases": ["cheddar cheese", "sharp cheddar"]
+      "aliases": [
+        "cheddar cheese",
+        "sharp cheddar"
+      ],
+      "grams_per_unit": {
+        "g": 1.0
+      }
     },
     {
       "name": "avocado",
@@ -180,7 +292,12 @@
         "fat_g": 15.0,
         "carbs_g": 9.0
       },
-      "aliases": ["avocados"]
+      "aliases": [
+        "avocados"
+      ],
+      "grams_per_unit": {
+        "g": 1.0
+      }
     },
     {
       "name": "spinach",
@@ -190,7 +307,13 @@
         "fat_g": 0.4,
         "carbs_g": 3.6
       },
-      "aliases": ["raw spinach", "fresh spinach"]
+      "aliases": [
+        "raw spinach",
+        "fresh spinach"
+      ],
+      "grams_per_unit": {
+        "g": 1.0
+      }
     },
     {
       "name": "greek yogurt",
@@ -200,7 +323,13 @@
         "fat_g": 0.4,
         "carbs_g": 3.6
       },
-      "aliases": ["plain greek yogurt", "yogurt"]
+      "aliases": [
+        "plain greek yogurt",
+        "yogurt"
+      ],
+      "grams_per_unit": {
+        "g": 1.0
+      }
     },
     {
       "name": "blueberries",
@@ -210,7 +339,13 @@
         "fat_g": 0.3,
         "carbs_g": 14.5
       },
-      "aliases": ["blueberry", "fresh blueberries"]
+      "aliases": [
+        "blueberry",
+        "fresh blueberries"
+      ],
+      "grams_per_unit": {
+        "g": 1.0
+      }
     },
     {
       "name": "quinoa",
@@ -220,7 +355,12 @@
         "fat_g": 1.9,
         "carbs_g": 22.0
       },
-      "aliases": ["cooked quinoa"]
+      "aliases": [
+        "cooked quinoa"
+      ],
+      "grams_per_unit": {
+        "g": 1.0
+      }
     },
     {
       "name": "tuna",
@@ -230,7 +370,13 @@
         "fat_g": 1.0,
         "carbs_g": 0.0
       },
-      "aliases": ["canned tuna", "tuna fish"]
+      "aliases": [
+        "canned tuna",
+        "tuna fish"
+      ],
+      "grams_per_unit": {
+        "g": 1.0
+      }
     },
     {
       "name": "sweet potato",
@@ -240,7 +386,13 @@
         "fat_g": 0.1,
         "carbs_g": 20.0
       },
-      "aliases": ["sweet potatoes", "yam"]
+      "aliases": [
+        "sweet potatoes",
+        "yam"
+      ],
+      "grams_per_unit": {
+        "g": 1.0
+      }
     },
     {
       "name": "cottage cheese",
@@ -250,7 +402,12 @@
         "fat_g": 4.3,
         "carbs_g": 3.4
       },
-      "aliases": ["low fat cottage cheese"]
+      "aliases": [
+        "low fat cottage cheese"
+      ],
+      "grams_per_unit": {
+        "g": 1.0
+      }
     },
     {
       "name": "almond butter",
@@ -260,7 +417,12 @@
         "fat_g": 55.0,
         "carbs_g": 19.0
       },
-      "aliases": ["almond spread"]
+      "aliases": [
+        "almond spread"
+      ],
+      "grams_per_unit": {
+        "g": 1.0
+      }
     },
     {
       "name": "brown rice",
@@ -270,7 +432,12 @@
         "fat_g": 0.9,
         "carbs_g": 23.0
       },
-      "aliases": ["cooked brown rice"]
+      "aliases": [
+        "cooked brown rice"
+      ],
+      "grams_per_unit": {
+        "g": 1.0
+      }
     },
     {
       "name": "tilapia",
@@ -280,7 +447,13 @@
         "fat_g": 2.7,
         "carbs_g": 0.0
       },
-      "aliases": ["tilapia fillet", "fish"]
+      "aliases": [
+        "tilapia fillet",
+        "fish"
+      ],
+      "grams_per_unit": {
+        "g": 1.0
+      }
     },
     {
       "name": "black beans",
@@ -290,7 +463,13 @@
         "fat_g": 0.5,
         "carbs_g": 24.0
       },
-      "aliases": ["black bean", "cooked black beans"]
+      "aliases": [
+        "black bean",
+        "cooked black beans"
+      ],
+      "grams_per_unit": {
+        "g": 1.0
+      }
     },
     {
       "name": "honey",
@@ -300,7 +479,13 @@
         "fat_g": 0.0,
         "carbs_g": 82.0
       },
-      "aliases": ["raw honey"]
+      "aliases": [
+        "raw honey"
+      ],
+      "grams_per_unit": {
+        "g": 1.0,
+        "tsp": 7.0
+      }
     },
     {
       "name": "strawberries",
@@ -310,7 +495,13 @@
         "fat_g": 0.3,
         "carbs_g": 7.7
       },
-      "aliases": ["strawberry", "fresh strawberries"]
+      "aliases": [
+        "strawberry",
+        "fresh strawberries"
+      ],
+      "grams_per_unit": {
+        "g": 1.0
+      }
     },
     {
       "name": "teriyaki sauce",
@@ -320,7 +511,13 @@
         "fat_g": 0.0,
         "carbs_g": 16.0
       },
-      "aliases": ["teriyaki", "teriyaki glaze"]
+      "aliases": [
+        "teriyaki",
+        "teriyaki glaze"
+      ],
+      "grams_per_unit": {
+        "g": 1.0
+      }
     },
     {
       "name": "water",
@@ -330,7 +527,14 @@
         "fat_g": 0.0,
         "carbs_g": 0.0
       },
-      "aliases": ["tap water", "filtered water"]
+      "aliases": [
+        "tap water",
+        "filtered water"
+      ],
+      "grams_per_unit": {
+        "g": 1.0,
+        "ml": 1.0
+      }
     },
     {
       "name": "mushroom",
@@ -340,7 +544,14 @@
         "fat_g": 0.3,
         "carbs_g": 3.3
       },
-      "aliases": ["mushrooms", "white mushroom", "button mushroom"]
+      "aliases": [
+        "mushrooms",
+        "white mushroom",
+        "button mushroom"
+      ],
+      "grams_per_unit": {
+        "g": 1.0
+      }
     },
     {
       "name": "bread",
@@ -350,7 +561,15 @@
         "fat_g": 4.2,
         "carbs_g": 41.0
       },
-      "aliases": ["whole wheat bread", "whole grain bread", "toast"]
+      "aliases": [
+        "whole wheat bread",
+        "whole grain bread",
+        "toast"
+      ],
+      "grams_per_unit": {
+        "g": 1.0,
+        "slices": 28.0
+      }
     }
   ]
 }

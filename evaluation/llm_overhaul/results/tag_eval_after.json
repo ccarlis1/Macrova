@@ -1,0 +1,230 @@
+{
+ "offline": {
+  "T-01_unknown_slug_rejected": true,
+  "T-02_proposed_tags_in_fixture": 4,
+  "T-02_proposed_leaked_into_hard": [],
+  "T-03_alias_batch_cook": "meal-prep",
+  "T-04_entries_before_after": [
+   64,
+   65
+  ],
+  "T-04_curated_entries_lost": 0,
+  "T-07_free_cuisine_schema_accepts": "martian fusion 2000"
+ },
+ "live": {
+  "tagged_count": [
+   6,
+   6
+  ],
+  "per_recipe": {
+   "bk_tofu_scramble": {
+    "cook_min": 15,
+    "bucket": "quick_meal",
+    "deterministic_bucket": "quick_meal",
+    "bucket_ok": true,
+    "cuisine": "mexican",
+    "cost": "standard",
+    "flags": [
+     "vegan",
+     "gluten_free"
+    ],
+    "contradictions": [],
+    "run2_same": true,
+    "run2_cuisine": "mexican",
+    "slugs_by_type": {
+     "context": [
+      "lunch",
+      "snack"
+     ],
+     "constraint": [
+      "vegan",
+      "gluten-free"
+     ],
+     "time": [
+      "time-2"
+     ]
+    },
+    "proposed_metadata": {
+     "lunch": [
+      "llm",
+      "proposed"
+     ],
+     "snack": [
+      "llm",
+      "proposed"
+     ],
+     "vegan": [
+      "llm",
+      "proposed"
+     ],
+     "gluten-free": [
+      "llm",
+      "proposed"
+     ]
+    }
+   },
+   "ln_turkey_sandwich": {
+    "cook_min": 5,
+    "bucket": "snack",
+    "deterministic_bucket": "snack",
+    "bucket_ok": true,
+    "cuisine": "american",
+    "cost": "standard",
+    "flags": [],
+    "contradictions": [],
+    "run2_same": true,
+    "run2_cuisine": "american",
+    "slugs_by_type": {
+     "context": [
+      "lunch"
+     ],
+     "time": [
+      "time-1"
+     ]
+    },
+    "proposed_metadata": {
+     "lunch": [
+      "llm",
+      "proposed"
+     ]
+    }
+   },
+   "dn_salmon_potatoes": {
+    "cook_min": 35,
+    "bucket": "meal_prep",
+    "deterministic_bucket": "meal_prep",
+    "bucket_ok": true,
+    "cuisine": "unknown",
+    "cost": "standard",
+    "flags": [],
+    "contradictions": [],
+    "run2_same": true,
+    "run2_cuisine": "unknown",
+    "slugs_by_type": {
+     "context": [
+      "dinner"
+     ],
+     "nutrition": [
+      "high-protein"
+     ],
+     "constraint": [
+      "pescatarian"
+     ],
+     "time": [
+      "time-4"
+     ]
+    },
+    "proposed_metadata": {
+     "dinner": [
+      "llm",
+      "proposed"
+     ],
+     "high-protein": [
+      "llm",
+      "proposed"
+     ],
+     "pescatarian": [
+      "llm",
+      "proposed"
+     ]
+    }
+   },
+   "sn_yogurt_honey": {
+    "cook_min": 1,
+    "bucket": "snack",
+    "deterministic_bucket": "snack",
+    "bucket_ok": true,
+    "cuisine": "greek",
+    "cost": "standard",
+    "flags": [],
+    "contradictions": [],
+    "run2_same": true,
+    "run2_cuisine": "greek",
+    "slugs_by_type": {
+     "context": [
+      "snack"
+     ],
+     "time": [
+      "time-1"
+     ]
+    },
+    "proposed_metadata": {
+     "snack": [
+      "llm",
+      "proposed"
+     ]
+    }
+   },
+   "dn_bean_quesadilla": {
+    "cook_min": 15,
+    "bucket": "quick_meal",
+    "deterministic_bucket": "quick_meal",
+    "bucket_ok": true,
+    "cuisine": "mexican",
+    "cost": "standard",
+    "flags": [],
+    "contradictions": [],
+    "run2_same": true,
+    "run2_cuisine": "mexican",
+    "slugs_by_type": {
+     "context": [
+      "dinner"
+     ],
+     "time": [
+      "time-2"
+     ]
+    },
+    "proposed_metadata": {
+     "dinner": [
+      "llm",
+      "proposed"
+     ]
+    }
+   },
+   "hc_mass_gainer": {
+    "cook_min": 3,
+    "bucket": "snack",
+    "deterministic_bucket": "snack",
+    "bucket_ok": true,
+    "cuisine": "unknown",
+    "cost": "standard",
+    "flags": [],
+    "contradictions": [],
+    "run2_same": true,
+    "run2_cuisine": "unknown",
+    "slugs_by_type": {
+     "context": [
+      "snack"
+     ],
+     "nutrition": [
+      "high-protein"
+     ],
+     "time": [
+      "time-1"
+     ]
+    },
+    "proposed_metadata": {
+     "snack": [
+      "llm",
+      "proposed"
+     ],
+     "high-protein": [
+      "llm",
+      "proposed"
+     ]
+    }
+   }
+  },
+  "T05_bucket_agreement": "6/6",
+  "T06_contradictions": 0,
+  "T07_distinct_cuisine_strings": [
+   "american",
+   "greek",
+   "mexican",
+   "unknown"
+  ],
+  "T07_all_in_vocabulary": true,
+  "T08_determinism": "6/6",
+  "proposed_slugs_all_quarantined": true
+ }
+}

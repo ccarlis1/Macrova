@@ -1,0 +1,143 @@
+{
+  "_comment": "Pre-existing determinism findings in src/planning/, allowlisted so check_determinism.py reports only NEW sites. 'order' entries are order-independent dict/set accumulation; 'input' entries are time.perf_counter() calls that only populate stats.day_runtimes. Regenerate deliberately, never to silence a real finding.",
+  "allowed": [
+    {
+      "file": "src/planning/phase0_models.py",
+      "scope": "micronutrient_profile_to_dict",
+      "category": "order",
+      "label": "MicronutrientProfile.__dataclass_fields__.values()"
+    },
+    {
+      "file": "src/planning/phase10_reporting.py",
+      "scope": "_deficient_nutrients_list",
+      "category": "order",
+      "label": "tracked.items()"
+    },
+    {
+      "file": "src/planning/phase10_reporting.py",
+      "scope": "build_micronutrient_soft_deficit_warning",
+      "category": "order",
+      "label": "tracked.items()"
+    },
+    {
+      "file": "src/planning/phase1_state.py",
+      "scope": "validate_pinned_assignments",
+      "category": "order",
+      "label": "by_day.items()"
+    },
+    {
+      "file": "src/planning/phase1_state.py",
+      "scope": "validate_pinned_assignments",
+      "category": "order",
+      "label": "pinned.items()"
+    },
+    {
+      "file": "src/planning/phase2_constraints.py",
+      "scope": "_ul_violation",
+      "category": "order",
+      "label": "resolved_ul.__dataclass_fields__.items()"
+    },
+    {
+      "file": "src/planning/phase3_feasibility.py",
+      "scope": "check_fc4_cross_day_rdi",
+      "category": "order",
+      "label": "tracked.items()"
+    },
+    {
+      "file": "src/planning/phase3_feasibility.py",
+      "scope": "check_structural_feasibility",
+      "category": "order",
+      "label": "tracked.items()"
+    },
+    {
+      "file": "src/planning/phase4_scoring.py",
+      "scope": "balance",
+      "category": "order",
+      "label": "recipe_micro.items()"
+    },
+    {
+      "file": "src/planning/phase4_scoring.py",
+      "scope": "micronutrient_match",
+      "category": "order",
+      "label": "nutrients_still_needed.items()"
+    },
+    {
+      "file": "src/planning/phase4_scoring.py",
+      "scope": "micronutrient_match",
+      "category": "order",
+      "label": "tracked.items()"
+    },
+    {
+      "file": "src/planning/phase5_ordering.py",
+      "scope": "_nutrients_still_needed",
+      "category": "order",
+      "label": "tracked.items()"
+    },
+    {
+      "file": "src/planning/phase5_ordering.py",
+      "scope": "deficit_reduction",
+      "category": "order",
+      "label": "gaps.items()"
+    },
+    {
+      "file": "src/planning/phase7_search.py",
+      "scope": "_apply_assignment",
+      "category": "order",
+      "label": "micro.items()"
+    },
+    {
+      "file": "src/planning/phase7_search.py",
+      "scope": "_recompute_carryover",
+      "category": "order",
+      "label": "tracked.items()"
+    },
+    {
+      "file": "src/planning/phase7_search.py",
+      "scope": "_remove_assignment",
+      "category": "order",
+      "label": "set(tracker.micronutrients_consumed) | set(micro)"
+    },
+    {
+      "file": "src/planning/phase7_search.py",
+      "scope": "_unwind_to",
+      "category": "order",
+      "label": "cache.items()"
+    },
+    {
+      "file": "src/planning/phase7_search.py",
+      "scope": "_update_best",
+      "category": "order",
+      "label": "daily_trackers.items()"
+    },
+    {
+      "file": "src/planning/phase7_search.py",
+      "scope": "_validate_planner_state",
+      "category": "order",
+      "label": "micro.items()"
+    },
+    {
+      "file": "src/planning/phase7_search.py",
+      "scope": "_weekly_validation",
+      "category": "order",
+      "label": "tracked.items()"
+    },
+    {
+      "file": "src/planning/phase7_search.py",
+      "scope": "run_meal_plan_search",
+      "category": "input",
+      "label": ".perf_counter() -- wall-clock time"
+    },
+    {
+      "file": "src/planning/phase7_search.py",
+      "scope": "run_meal_plan_search",
+      "category": "order",
+      "label": "initial.daily_trackers.items()"
+    },
+    {
+      "file": "src/planning/phase9_carb_scaling.py",
+      "scope": "compute_variant_nutrition",
+      "category": "order",
+      "label": "MicronutrientProfile.__dataclass_fields__.keys()"
+    }
+  ]
+}

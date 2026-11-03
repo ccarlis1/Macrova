@@ -645,6 +645,17 @@
       },
       "PlanFailure": {
         "properties": {
+          "cause": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cause"
+          },
           "code": {
             "enum": [
               "FM-1",
@@ -685,6 +696,28 @@
             "additionalProperties": true,
             "title": "Details",
             "type": "object"
+          },
+          "explanation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Explanation"
+          },
+          "fix": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fix"
           },
           "fix_hint": {
             "anyOf": [
@@ -729,6 +762,40 @@
           "message"
         ],
         "title": "PlanFailure",
+        "type": "object"
+      },
+      "PlanFailureCause": {
+        "properties": {
+          "cause": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cause"
+          },
+          "recipe_could_help": {
+            "title": "Recipe Could Help",
+            "type": "boolean"
+          },
+          "recipe_gap": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlanRecipeGap"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "recipe_could_help"
+        ],
+        "title": "PlanFailureCause",
         "type": "object"
       },
       "PlanFromTextRequest": {
@@ -827,9 +894,111 @@
         "title": "PlanFromTextRequest",
         "type": "object"
       },
+      "PlanRecipeGap": {
+        "properties": {
+          "cook_time_cap_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cook Time Cap Minutes"
+          },
+          "excluded_ingredients": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Excluded Ingredients",
+            "type": "array"
+          },
+          "meal_types": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Meal Types",
+            "type": "array"
+          },
+          "nutrient_min_per_recipe": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Nutrient Min Per Recipe",
+            "type": "object"
+          },
+          "per_meal_calories": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Per Meal Calories"
+          },
+          "per_meal_carbs_g": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Per Meal Carbs G"
+          },
+          "per_meal_fat_g_max": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Per Meal Fat G Max"
+          },
+          "per_meal_protein_g": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Per Meal Protein G"
+          },
+          "slots": {
+            "items": {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "title": "Slots",
+            "type": "array"
+          }
+        },
+        "title": "PlanRecipeGap",
+        "type": "object"
+      },
       "PlanReport": {
         "additionalProperties": true,
         "properties": {
+          "failure_cause": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlanFailureCause"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "failures": {
             "items": {
               "$ref": "#/components/schemas/PlanFailure"

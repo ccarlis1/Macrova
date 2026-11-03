@@ -54,6 +54,7 @@ from src.planning.orchestrator import (
     plan_with_llm_feedback,
 )
 from src.output.formatters import format_result_json
+from src.api.failure_explanations import attach_failure_explanations
 from src.providers.api_provider import APIIngredientProvider
 from src.config.llm_settings import load_llm_settings
 from src.api.error_mapping import map_exception_to_api_error
@@ -322,12 +323,35 @@ class PlanFailure(BaseModel):
     date: Optional[str] = None
     details: Dict[str, Any] = Field(default_factory=dict)
     fix_hint: Optional[str] = None
+    # Plain-language text from src/api/failure_explanations.py.
+    explanation: Optional[str] = None
+    fix: Optional[str] = None
+    cause: Optional[str] = None
+
+
+class PlanRecipeGap(BaseModel):
+    per_meal_calories: Optional[float] = None
+    per_meal_protein_g: Optional[float] = None
+    per_meal_fat_g_max: Optional[float] = None
+    per_meal_carbs_g: Optional[float] = None
+    cook_time_cap_minutes: Optional[int] = None
+    excluded_ingredients: List[str] = Field(default_factory=list)
+    nutrient_min_per_recipe: Dict[str, float] = Field(default_factory=dict)
+    meal_types: List[str] = Field(default_factory=list)
+    slots: List[List[int]] = Field(default_factory=list)
+
+
+class PlanFailureCause(BaseModel):
+    cause: Optional[str] = None
+    recipe_could_help: bool
+    recipe_gap: Optional[PlanRecipeGap] = None
 
 
 class PlanReport(BaseModel):
     model_config = {"extra": "allow"}
 
     failures: List[PlanFailure] = Field(default_factory=list)
+    failure_cause: Optional[PlanFailureCause] = None
 
 
 class PlanResponse(BaseModel):
@@ -1218,6 +1242,9 @@ async def plan_meals_endpoint(
             plan_request.days,
             meal_metadata_by_slot,
         )
+        attach_failure_explanations(
+            out, result, planning_profile, list(recipe_by_id.values()), plan_request.days
+        )
         merge_schedule_warnings_into_result(
             out,
             sched_warnings,
@@ -1433,6 +1460,9 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
             planning_profile,
             days,
             meal_metadata_by_slot,
+        )
+        attach_failure_explanations(
+            out, result, planning_profile, list(recipe_by_id.values()), days
         )
         _merge_filter_warnings(out, filter_log)
         _merge_exclusion_warnings(out, user_profile, list(recipe_by_id.values()))

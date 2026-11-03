@@ -24,7 +24,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, constr, model_validator
-from dataclasses import fields as dc_fields
+from dataclasses import dataclass, fields as dc_fields
 
 from src.ingestion.nutrient_mapper import MappedNutrition, NutrientMapper
 from src.ingestion.ingredient_cache import CachedIngredientLookup
@@ -52,7 +52,9 @@ from src.planning.orchestrator import (
     build_planned_meal_metadata_index,
     hydrate_parity_plan_context,
     plan_with_llm_feedback,
+    planning_batch_locks_from_batches,
 )
+from src.planning.phase0_models import PlanningRecipe, PlanningUserProfile
 from src.output.formatters import format_result_json
 from src.api.failure_explanations import attach_failure_explanations
 from src.providers.api_provider import APIIngredientProvider
@@ -73,7 +75,7 @@ from src.llm.ingredient_matcher import (
     match_ingredient_queries,
     validate_matches,
 )
-from src.llm.schemas import BudgetLevel, DietaryFlag, PrepTimeBucket, PlannerConfigJson
+from src.llm.schemas import BudgetLevel, DietaryFlag, PrepTimeBucket, PlannerConfigJson, RecipeTagsJson
 from src.data_layer.user_profile import (
     clear_all_profile_pins,
     clear_profile_pin,
@@ -439,10 +441,14 @@ def _apply_recipe_tag_filter_pre_convert(
     *,
     recipes: List[Any],
     request_like: Any,
-    tag_path: str,
+    tag_path: Optional[str],
     protected_recipe_ids: Optional[List[str]] = None,
+    tags_by_id: Optional[Dict[str, RecipeTagsJson]] = None,
 ) -> tuple[List[Any], Dict[str, Any]]:
-    """Optionally filter recipes deterministically based on strict tag metadata."""
+    """Optionally filter recipes deterministically based on strict tag metadata.
+
+    ``tags_by_id`` comes from the caller when given; otherwise it is loaded from ``tag_path``.
+    """
 
     input_recipe_count = len(recipes)
     if input_recipe_count == 0:
@@ -458,7 +464,8 @@ def _apply_recipe_tag_filter_pre_convert(
     preferences = _extract_tag_preferences(request_like)
     filter_applied = bool(preferences)
     protected_ids = {str(rid) for rid in (protected_recipe_ids or []) if str(rid).strip()}
-    tags_by_id = load_recipe_tags(tag_path) if filter_applied else {}
+    if tags_by_id is None:
+        tags_by_id = load_recipe_tags(tag_path) if filter_applied else {}
     guardrail_warnings: List[str] = []
     if filter_applied and not tags_by_id:
         msg = (
@@ -603,6 +610,133 @@ def _filter_recipes_by_ids(
         r = by_id.get(rid)
         if r is not None:
             out.append(r)
+    return out
+
+
+@dataclass
+class PlanTagData:
+    """The three views of ``recipe_tags.json`` that planning needs.
+
+    The HTTP routes load it from disk (:func:`load_plan_tag_data`); a caller with
+    its own recipes (the MCP server) builds it in memory.
+    """
+
+    tags_by_id: Dict[str, RecipeTagsJson]  # validated records, for the pool filter
+    canonical_slugs_by_id: Dict[str, set[str]]  # all slugs, for scoring
+    hard_eligible_slugs_by_id: Dict[str, set[str]]  # slugs allowed as required tags
+
+
+def load_plan_tag_data(tag_path: str) -> PlanTagData:
+    return PlanTagData(
+        tags_by_id=load_recipe_tags(tag_path),
+        canonical_slugs_by_id=load_canonical_recipe_tag_slugs(tag_path),
+        hard_eligible_slugs_by_id=load_hard_eligible_recipe_tag_slugs(tag_path),
+    )
+
+
+@dataclass
+class PlanInputs:
+    """Everything the planner and the response formatter need for one request."""
+
+    recipes: List[DataRecipe]  # after the tag filter
+    recipe_pool: List[PlanningRecipe]
+    recipe_by_id: Dict[str, PlanningRecipe]
+    planning_profile: PlanningUserProfile
+    filter_log: Dict[str, Any]
+    nutrition_unresolved_log: List[Dict[str, Any]]
+
+
+def build_plan_inputs(
+    *,
+    user_profile: UserProfile,
+    days: int,
+    recipes: List[DataRecipe],
+    tag_data: PlanTagData,
+    tag_preferences: Any,
+    provider: Any,
+    pins: List[Any],
+    batches: List[Any],
+    keep_batch_recipes: bool,
+    tag_path: Optional[str] = None,
+) -> PlanInputs:
+    """Build the recipe pool and planning profile from in-memory inputs. Reads no user files.
+
+    ``tag_preferences`` is any object with the request's tag-filter fields
+    (``cuisine``, ``cost_level``, ``prep_time_bucket``, ``dietary_flags``).
+    ``keep_batch_recipes`` keeps batch recipes in the pool even when the tag
+    filter would drop them. ``tag_path`` is only used in log messages.
+    """
+    apply_persisted_pins_to_profile(user_profile, pins)
+    protected_recipe_ids = (
+        [str(b.recipe_id) for b in batches if getattr(b, "recipe_id", None)]
+        if keep_batch_recipes
+        else None
+    )
+    filtered, filter_log = _apply_recipe_tag_filter_pre_convert(
+        recipes=recipes,
+        request_like=tag_preferences,
+        tag_path=tag_path,
+        protected_recipe_ids=protected_recipe_ids,
+        tags_by_id=tag_data.tags_by_id,
+    )
+    print(
+        json.dumps(filter_log, sort_keys=True, ensure_ascii=True),
+        file=sys.stderr,
+    )
+
+    provider.resolve_all(extract_ingredient_names(filtered))
+    calculator = NutritionCalculator(provider)
+    nutrition_unresolved_log: List[Dict[str, Any]] = []
+    recipe_pool = convert_recipes(
+        filtered,
+        calculator,
+        unresolved_log=nutrition_unresolved_log,
+    )
+    _attach_canonical_recipe_tags(
+        recipe_pool,
+        tag_data.canonical_slugs_by_id,
+        tag_data.hard_eligible_slugs_by_id,
+    )
+    planning_profile = convert_profile(user_profile, days)
+    planning_profile.batch_locks = planning_batch_locks_from_batches(batches)
+    return PlanInputs(
+        recipes=filtered,
+        recipe_pool=recipe_pool,
+        recipe_by_id={r.id: r for r in recipe_pool},
+        planning_profile=planning_profile,
+        filter_log=filter_log,
+        nutrition_unresolved_log=nutrition_unresolved_log,
+    )
+
+
+def format_plan_response(
+    result: Any,
+    inputs: PlanInputs,
+    *,
+    user_profile: UserProfile,
+    days: int,
+    pins: List[Any],
+    batches: List[Any],
+    recipe_by_id: Optional[Dict[str, PlanningRecipe]] = None,
+) -> Dict[str, Any]:
+    """Format a planner result as the plan response, with failure explanations and warnings.
+
+    ``recipe_by_id`` overrides the input pool when planning added recipes (LLM-assisted modes).
+    """
+    recipe_by_id = recipe_by_id if recipe_by_id is not None else inputs.recipe_by_id
+    out = format_result_json(
+        result,
+        recipe_by_id,
+        inputs.planning_profile,
+        days,
+        build_planned_meal_metadata_index(batches, pins),
+    )
+    attach_failure_explanations(
+        out, result, inputs.planning_profile, list(recipe_by_id.values()), days
+    )
+    _merge_filter_warnings(out, inputs.filter_log)
+    _merge_exclusion_warnings(out, user_profile, list(recipe_by_id.values()))
+    _merge_nutrition_warnings(out, inputs.nutrition_unresolved_log)
     return out
 
 
@@ -1096,30 +1230,12 @@ async def plan_meals_endpoint(
                     }
                 },
             )
-        apply_persisted_pins_to_profile(user_profile, parity_ctx.persisted_pins)
-
         recipe_db = RecipeDB(recipes_path)
         all_recipes = recipe_db.get_all_recipes()
         all_recipes = _filter_recipes_by_ids(all_recipes, plan_request.recipe_ids)
         active_batches = parity_ctx.active_batches
-        protected_recipe_ids = [
-            str(getattr(batch, "recipe_id"))
-            for batch in active_batches
-            if getattr(batch, "recipe_id", None)
-        ]
 
         tag_path = getattr(plan_request, "recipe_tags_path", None) or DEFAULT_TAG_PATH
-        all_recipes, filter_log = _apply_recipe_tag_filter_pre_convert(
-            recipes=all_recipes,
-            request_like=plan_request,
-            tag_path=tag_path,
-            protected_recipe_ids=protected_recipe_ids,
-        )
-        print(
-            json.dumps(filter_log, sort_keys=True, ensure_ascii=True),
-            file=sys.stderr,
-        )
-
         if plan_request.ingredient_source == "api":
             usda_client = USDAClient.from_env()
             cached_lookup = CachedIngredientLookup(usda_client=usda_client)
@@ -1128,28 +1244,24 @@ async def plan_meals_endpoint(
             nutrition_db = NutritionDB(ingredients_path)
             provider = LocalIngredientProvider(nutrition_db)
 
-        all_ingredient_names = extract_ingredient_names(all_recipes)
-        provider.resolve_all(all_ingredient_names)
-
-        calculator = NutritionCalculator(provider)
-        canonical_tag_slugs_by_id = load_canonical_recipe_tag_slugs(tag_path)
-        hard_eligible_tag_slugs_by_id = load_hard_eligible_recipe_tag_slugs(tag_path)
-        nutrition_unresolved_log: List[Dict[str, Any]] = []
-        recipe_pool = convert_recipes(
-            all_recipes,
-            calculator,
-            unresolved_log=nutrition_unresolved_log,
+        inputs = build_plan_inputs(
+            user_profile=user_profile,
+            days=plan_request.days,
+            recipes=all_recipes,
+            tag_data=load_plan_tag_data(tag_path),
+            tag_preferences=plan_request,
+            provider=provider,
+            pins=parity_ctx.persisted_pins,
+            batches=active_batches,
+            keep_batch_recipes=True,
+            tag_path=tag_path,
         )
-        _attach_canonical_recipe_tags(
-            recipe_pool,
-            canonical_tag_slugs_by_id,
-            hard_eligible_tag_slugs_by_id,
-        )
-        recipe_by_id = {r.id: r for r in recipe_pool}
-        planning_profile = convert_profile(user_profile, plan_request.days)
+        recipe_pool = inputs.recipe_pool
+        recipe_by_id = inputs.recipe_by_id
+        planning_profile = inputs.planning_profile
         effective_plan_request = build_plan_request_from_profile(
             user_profile,
-            all_recipes,
+            inputs.recipes,
             active_batches,
             parity_ctx.seed,
         )
@@ -1158,7 +1270,6 @@ async def plan_meals_endpoint(
             sorted(effective_plan_request.keys()),
             parity_ctx.seed,
         )
-        planning_profile.batch_locks = parity_ctx.batch_locks
 
         llm_settings = load_llm_settings()
         planning_mode_provided = plan_request.planning_mode is not None
@@ -1231,28 +1342,20 @@ async def plan_meals_endpoint(
             )
             recipe_by_id = {r.id: r for r in recipe_pool_updated}
 
-        meal_metadata_by_slot = build_planned_meal_metadata_index(
-            active_batches,
-            parity_ctx.persisted_pins,
-        )
-        out = format_result_json(
+        out = format_plan_response(
             result,
-            recipe_by_id,
-            planning_profile,
-            plan_request.days,
-            meal_metadata_by_slot,
-        )
-        attach_failure_explanations(
-            out, result, planning_profile, list(recipe_by_id.values()), plan_request.days
+            inputs,
+            user_profile=user_profile,
+            days=plan_request.days,
+            pins=parity_ctx.persisted_pins,
+            batches=active_batches,
+            recipe_by_id=recipe_by_id,
         )
         merge_schedule_warnings_into_result(
             out,
             sched_warnings,
             deprecated_legacy=plan_request.schedule_days is None and plan_request.schedule is not None,
         )
-        _merge_filter_warnings(out, filter_log)
-        _merge_exclusion_warnings(out, user_profile, list(recipe_by_id.values()))
-        _merge_nutrition_warnings(out, nutrition_unresolved_log)
         return out
     except HTTPException:
         raise
@@ -1355,45 +1458,29 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
                 "dietary_flags": final_dietary_flags,
             },
         )()
-        all_recipes, filter_log = _apply_recipe_tag_filter_pre_convert(
-            recipes=all_recipes,
-            request_like=shim,
-            tag_path=tag_path,
-        )
-        print(
-            json.dumps(filter_log, sort_keys=True, ensure_ascii=True),
-            file=sys.stderr,
-        )
-
         if request.ingredient_source == "api":
             provider = build_usda_provider()
         else:
             nutrition_db = NutritionDB(ingredients_path)
             provider = LocalIngredientProvider(nutrition_db)
 
-        all_ingredient_names = extract_ingredient_names(all_recipes)
-        provider.resolve_all(all_ingredient_names)
-
-        calculator = NutritionCalculator(provider)
-        canonical_tag_slugs_by_id = load_canonical_recipe_tag_slugs(tag_path)
-        hard_eligible_tag_slugs_by_id = load_hard_eligible_recipe_tag_slugs(tag_path)
-        nutrition_unresolved_log: List[Dict[str, Any]] = []
-        recipe_pool = convert_recipes(
-            all_recipes,
-            calculator,
-            unresolved_log=nutrition_unresolved_log,
-        )
-        _attach_canonical_recipe_tags(
-            recipe_pool,
-            canonical_tag_slugs_by_id,
-            hard_eligible_tag_slugs_by_id,
-        )
-        recipe_by_id = {r.id: r for r in recipe_pool}
         parity_ctx = hydrate_parity_plan_context(seed=None)
-        apply_persisted_pins_to_profile(user_profile, parity_ctx.persisted_pins)
-        planning_profile = convert_profile(user_profile, days)
-        planning_profile.batch_locks = parity_ctx.batch_locks
         active_batches = parity_ctx.active_batches
+        inputs = build_plan_inputs(
+            user_profile=user_profile,
+            days=days,
+            recipes=all_recipes,
+            tag_data=load_plan_tag_data(tag_path),
+            tag_preferences=shim,
+            provider=provider,
+            pins=parity_ctx.persisted_pins,
+            batches=active_batches,
+            keep_batch_recipes=False,
+            tag_path=tag_path,
+        )
+        recipe_pool = inputs.recipe_pool
+        recipe_by_id = inputs.recipe_by_id
+        planning_profile = inputs.planning_profile
 
         if effective_mode == "deterministic":
             result = plan_meals(planning_profile, recipe_pool, days)
@@ -1450,23 +1537,15 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
             )
             recipe_by_id = {r.id: r for r in recipe_pool_updated}
 
-        meal_metadata_by_slot = build_planned_meal_metadata_index(
-            active_batches,
-            parity_ctx.persisted_pins,
-        )
-        out = format_result_json(
+        out = format_plan_response(
             result,
-            recipe_by_id,
-            planning_profile,
-            days,
-            meal_metadata_by_slot,
+            inputs,
+            user_profile=user_profile,
+            days=days,
+            pins=parity_ctx.persisted_pins,
+            batches=active_batches,
+            recipe_by_id=recipe_by_id,
         )
-        attach_failure_explanations(
-            out, result, planning_profile, list(recipe_by_id.values()), days
-        )
-        _merge_filter_warnings(out, filter_log)
-        _merge_exclusion_warnings(out, user_profile, list(recipe_by_id.values()))
-        _merge_nutrition_warnings(out, nutrition_unresolved_log)
         warnings_out = out.get("warnings") if isinstance(out.get("warnings"), dict) else {}
         warnings_out["nl_interpretation"] = nl_interpretation
         out["warnings"] = warnings_out

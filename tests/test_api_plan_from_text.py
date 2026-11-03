@@ -338,7 +338,7 @@ def test_plan_from_text_assisted_never_turns_nl_cuisine_into_a_hard_filter(monke
 
     captured = {}
 
-    def _capture_filter(*, recipes, request_like, tag_path, protected_recipe_ids=None):
+    def _capture_filter(*, recipes, request_like, tag_path, protected_recipe_ids=None, tags_by_id=None):
         captured["cuisine"] = getattr(request_like, "cuisine", None)
         captured["cost_level"] = getattr(request_like, "cost_level", None)
         captured["dietary_flags"] = getattr(request_like, "dietary_flags", None)

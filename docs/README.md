@@ -9,7 +9,7 @@ Navigation hub for the Macrova (`nutrition-agent`) repository. For quick setup, 
 - [Flutter setup](usage/flutter-setup.md)
 - [Architecture overview](architecture/overview.md)
 - [Meal planner testing guide](testing/meal-planner-testing-guide.md)
-- [Current roadmap](roadmap/next-steps.md)
+- [Current roadmap](roadmap/future-plans.md)
 
 ## For Developers
 
@@ -54,9 +54,10 @@ Navigation hub for the Macrova (`nutrition-agent`) repository. For quick setup, 
 - [Nutrition knowledge](product/nutrition-knowledge.md) — product-level nutrition reasoning
 - [Product vision](product/product-vision.md)
 - [Tinyfish use case](product/tinyfish-usecase.md)
-- [Next steps](roadmap/next-steps.md)
+- [Next steps](roadmap/future-plans.md)
 - [Backlog](roadmap/backlog.md)
 - [Open questions](roadmap/open-questions.md)
+- [Research alignment audit & long-term roadmap](roadmap/research-alignment-roadmap.md) — implementation audited against the adaptive meal-planning research formulation, with a horizon-based evolution plan
 
 ## Sprints
 

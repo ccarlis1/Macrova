@@ -305,11 +305,13 @@ class Oracle:
                 return out
             by_day[d].append(rid)
         wslots = [self._workout_slots(day) for day in days]
+        # HC-8: batch-locked slots aren't checked against the previous day, but still count.
+        lock_slots = [{s for (d2, s) in locks if d2 == d} for d in range(D)]
         for (d, s), rid in pins.items():
             if s in wslots[d]:
                 continue
             for (d2, s2), rid2 in pins.items():
-                if d2 == d + 1 and rid2 == rid and s2 not in wslots[d2]:
+                if d2 == d + 1 and rid2 == rid and s2 not in wslots[d2] and s2 not in lock_slots[d2]:
                     out.update(stage="pre_search", failure_code="FM-3",
                                details={"pins": [[d, s], [d2, s2]], "recipe": rid, "violation": "HC-8"})
                     return out
@@ -353,7 +355,7 @@ class Oracle:
         # ---- 4. multi-day search: HC-8 + horizon micronutrient floors ----
         tracked = dict(prof.get("micronutrient_targets") or {})
         tau = float(prof.get("micronutrient_weekly_min_fraction", 1.0))
-        found, nodes, inconclusive, best_micro = self._multiday(days, day_results, wslots, tracked, tau)
+        found, nodes, inconclusive, best_micro = self._multiday(days, day_results, wslots, tracked, tau, lock_slots)
         out["details"]["multiday_nodes"] = nodes
         if found is not None:
             out.update(stage="complete", failure_code=None)
@@ -370,7 +372,7 @@ class Oracle:
             out["details"]["reason"] = "HC-8 consecutive-day repetition leaves no valid day sequence"
         return out
 
-    def _multiday(self, days, day_results, wslots, tracked, tau):
+    def _multiday(self, days, day_results, wslots, tracked, tau, lock_slots=None):
         D = len(days)
         nut = list(tracked)
         floors = [tau * tracked[k] * D for k in nut]
@@ -406,8 +408,11 @@ class Oracle:
         plan: List[Tuple[str, ...]] = []
         capped_any = any(r.capped for r in day_results)
 
-        def nonworkout(d, sol):
-            return {rid for s, rid in enumerate(sol) if s not in wslots[d]}
+        lock_slots = lock_slots or [set() for _ in range(D)]
+
+        def nonworkout(d, sol, skip_locks=False):
+            skip = wslots[d] | lock_slots[d] if skip_locks else wslots[d]
+            return {rid for s, rid in enumerate(sol) if s not in skip}
 
         def rec(d, acc):
             nonlocal nodes
@@ -418,7 +423,7 @@ class Oracle:
                 nodes += 1
                 if nodes > MULTIDAY_NODE_CAP:
                     return False
-                if prev_nw and (nonworkout(d, sol) & prev_nw):
+                if prev_nw and (nonworkout(d, sol, skip_locks=True) & prev_nw):
                     continue
                 a = add(acc, m)
                 if nut and any(x + y < f - 1e-9 for x, y, f in zip(a, suffix_max[d + 1], floors)):

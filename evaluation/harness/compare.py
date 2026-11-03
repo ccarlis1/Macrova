@@ -27,9 +27,11 @@ def verify(sc, plan):
     ex |= set(dietary_flag_exclusions(p.get("dietary_flags")))
     iex = {e.strip().lower() for e in p.get("intent_excluded_ingredients") or []}
     pins = {(x["day_index"], x["slot_index"]): x["recipe_id"] for x in sc.get("pins") or []}
+    locked = set()
     for b in sc.get("meal_prep_batches") or []:
         for a in b["assignments"]:
             pins[(a["day_index"], a["slot_index"])] = b["recipe_id"]
+            locked.add((a["day_index"], a["slot_index"]))
     ks = sorted(plan, key=int)
     if len(ks) != D: v.append(f"plan has {len(ks)} days, expected {D}")
     tot = {}
@@ -67,7 +69,8 @@ def verify(sc, plan):
         if p.get("max_daily_calories") and k4[0] > p["max_daily_calories"] + 1e-6: v.append(f"d{di}: HC-5 {k4[0]:.0f}>{p['max_daily_calories']}")
     for di in range(1, len(ks)):
         a = {r for s, r in enumerate(plan[ks[di-1]]) if s not in ws[di-1]}
-        b = {r for s, r in enumerate(plan[ks[di]]) if s not in ws[di]}
+        # Batch-locked slots aren't checked against the previous day (HC-8).
+        b = {r for s, r in enumerate(plan[ks[di]]) if s not in ws[di] and (di, s) not in locked}
         if a & b: v.append(f"d{di-1}->d{di}: HC-8 repeat {sorted(a&b)}")
     tau = p.get("micronutrient_weekly_min_fraction", 1.0)
     for m, rdi in (p.get("micronutrient_targets") or {}).items():

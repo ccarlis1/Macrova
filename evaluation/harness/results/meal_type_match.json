@@ -1,21 +1,21 @@
 {
- "planner_slots_known": 646,
- "planner_slots_mismatched": 128,
- "planner_mismatch_rate": 0.19814241486068113,
+ "planner_slots_known": 656,
+ "planner_slots_mismatched": 129,
+ "planner_mismatch_rate": 0.19664634146341464,
  "lunch_mismatches": 63,
  "avoidable_lunch_mismatches": 20,
  "avoidable_lunch_slot_rate": 0.09950248756218906,
  "avoidable_share_of_lunch_mismatches": 0.31746031746031744,
  "by_meal_type": {
   "breakfast": {
-   "known": 204,
+   "known": 209,
    "mismatched": 17,
-   "mismatch_rate": 0.08333333333333333
+   "mismatch_rate": 0.08133971291866028
   },
   "dinner": {
-   "known": 190,
-   "mismatched": 44,
-   "mismatch_rate": 0.23157894736842105
+   "known": 195,
+   "mismatched": 45,
+   "mismatch_rate": 0.23076923076923078
   },
   "lunch": {
    "known": 201,

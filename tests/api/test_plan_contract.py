@@ -192,6 +192,13 @@ def test_plan_fm_tag_empty_failure_shape_on_schedule_days(tmp_path, monkeypatch)
     assert hit["message"]
     assert isinstance(hit["details"], dict)
     assert hit["details"].get("missing_tag") == "high-fiber"
+    assert '"high-fiber" tag' in hit["explanation"]
+    assert hit["fix"]
+    assert hit["cause"] == "REQUIRED_TAG_UNHELD"
+    assert body["report"]["failure_cause"] == {
+        "cause": "REQUIRED_TAG_UNHELD",
+        "recipe_could_help": False,
+    }
 
 
 class _RecipeObjBatchable:
@@ -581,6 +588,9 @@ def test_plan_fm3_for_fully_assigned_batch_violating_rule(tmp_path, monkeypatch)
     assert hit["details"]["recipe_id"] == "known-recipe"
     assert hit["details"]["violation_type"] == "direct"
     assert hit["fix_hint"]
+    assert hit["explanation"] == "A meal-prep batch on day 1, meal 1 doesn't fit that day's targets or rules."
+    assert hit["cause"] == "PIN_OR_BATCH_CONFLICT"
+    assert body["report"]["failure_cause"]["recipe_could_help"] is False
 
 
 def test_plan_fm_batch_conflict_two_active_batches_same_slot(tmp_path, monkeypatch):
@@ -660,6 +670,8 @@ def test_plan_fm_batch_conflict_two_active_batches_same_slot(tmp_path, monkeypat
     assert failure["day_index"] == 0
     assert failure["slot_index"] == 0
     assert set(failure["details"]["batch_ids"]) == {"batch-a", "batch-b"}
+    assert failure["explanation"] == "More than one meal-prep batch is assigned to day 1, meal 1."
+    assert failure["cause"] == "PIN_OR_BATCH_CONFLICT"
 
 
 def test_plan_response_meal_metadata_slot_index_matches_batch_assignment(tmp_path, monkeypatch):

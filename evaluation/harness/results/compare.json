@@ -5239,7 +5239,7 @@
    "slot_cap": 15
   },
   "spec_notes": [
-   "Q9: the lock's recipe (60 min) is checked against the reheating slot's busyness cap (15 min) -> FM-3 (HC-3). Also violates HC-8. This is the feature's core use case."
+   "Q9: the lock's recipe (60 min) is checked against the reheating slot's busyness cap (15 min) -> FM-3 (HC-3). Batch slots are exempt from HC-8 (spec App. C #20). This is the feature's core use case."
   ],
   "n_days": 3,
   "micro": false,
@@ -5254,38 +5254,41 @@
    "meal-prep-conflict",
    "multi-day-conflict"
   ],
-  "cls": "infeasible",
-  "expected": "FM-3",
+  "cls": "feasible",
+  "expected": "OK",
   "acceptable": [
-   "FM-3"
+   "OK"
   ],
-  "got": "FM-3",
+  "got": "OK",
   "status": "MATCH",
   "viol": [],
-  "tc": "TC-2",
+  "tc": "TC-1",
   "incomplete": null,
-  "report_codes": [
-   "FM-3"
-  ],
-  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 1, \"slot_index\": 0, \"slot_id\": \"day-2-slot-0\", \"date\": \"day-2\", \"details\": {\"recipe_id\": \"dn_beef_chili\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "report_codes": [],
+  "report_first": "[]",
   "detail": null,
-  "stage_exp": "pre_search",
+  "stage_exp": "complete",
   "oracle": {
-   "pins": [
-    [
-     0,
-     1
-    ],
-    [
-     1,
-     1
-    ]
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    39,
+    39,
+    39
    ],
-   "recipe": "dn_beef_chili",
-   "violation": "HC-8"
+   "distinct_meal_sets_per_day": [
+    26,
+    26,
+    26
+   ],
+   "day_enumeration_capped": [
+    false,
+    false,
+    false
+   ],
+   "multiday_nodes": 4
   },
   "spec_notes": [
-   "HC-3 now passes; HC-8 (same non-workout recipe on consecutive days) still rejects -> FM-3."
+   "HC-3 now passes. Batch-locked slots are exempt from HC-8 (spec App. C #20), so the chili repeats on consecutive days."
   ],
   "n_days": 3,
   "micro": false,
@@ -5300,37 +5303,39 @@
    "meal-prep-conflict",
    "multi-day-conflict"
   ],
-  "cls": "infeasible",
-  "expected": "FM-3",
+  "cls": "borderline",
+  "expected": "OK",
   "acceptable": [
-   "FM-3"
+   "OK"
   ],
-  "got": "FM-3",
+  "got": "OK",
   "status": "MATCH",
   "viol": [],
-  "tc": "TC-2",
+  "tc": "TC-1",
   "incomplete": null,
-  "report_codes": [
-   "FM-3"
-  ],
-  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 1, \"slot_index\": 0, \"slot_id\": \"day-2-slot-0\", \"date\": \"day-2\", \"details\": {\"recipe_id\": \"ln_chickpea_salad\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "report_codes": [],
+  "report_first": "[]",
   "detail": null,
-  "stage_exp": "pre_search",
+  "stage_exp": "complete",
   "oracle": {
-   "pins": [
-    [
-     0,
-     1
-    ],
-    [
-     1,
-     1
-    ]
+   "pins_overridden_by_locks": [],
+   "valid_assignments_per_day": [
+    19,
+    19
    ],
-   "recipe": "ln_chickpea_salad",
-   "violation": "HC-8"
+   "distinct_meal_sets_per_day": [
+    12,
+    12
+   ],
+   "day_enumeration_capped": [
+    false,
+    false
+   ],
+   "multiday_nodes": 3
   },
-  "spec_notes": [],
+  "spec_notes": [
+   "Batch-locked slots are exempt from HC-8 (spec App. C #20), so the salad repeats on consecutive days. Borderline: the tightest day has exactly 12 recipe sets."
+  ],
   "n_days": 2,
   "micro": false,
   "pins": 0,
@@ -6186,7 +6191,7 @@
   "report_codes": [
    "FM-3"
   ],
-  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 1, \"slot_index\": 0, \"slot_id\": \"day-2-slot-0\", \"date\": \"day-2\", \"details\": {\"recipe_id\": \"dn_bolognese\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
+  "report_first": "[{\"code\": \"FM-3\", \"message\": \"Pinned assignment conflicts with planner constraints.\", \"day_index\": 1, \"slot_index\": 2, \"slot_id\": \"day-2-slot-2\", \"date\": \"day-2\", \"details\": {\"recipe_id\": \"dn_bolognese\", \"violation_type\": \"direct\", \"remaining_budget\": {}}, \"fix_hint\": \"A pinned meal conflicts with planning rules. Change the pin, pick a compatible recipe, or relax constraints.\"}]",
   "detail": null,
   "stage_exp": "pre_search",
   "oracle": {

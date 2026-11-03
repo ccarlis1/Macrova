@@ -940,20 +940,21 @@ S("Sunday chili for weekday lunches (busy)",
   cats=["meal-prep-conflict", "cook-time", "multi-day"], intended="infeasible",
   profile=P(2100, 150, 50, 80), days=rep(day(std3(b=(2, 2, 3))), 3), pool_ids=CORE, pool_note=FULL,
   batches=[B("batch_chili", "dn_beef_chili", 3, [(0, 1), (1, 1), (2, 1)])],
-  spec_notes=["Q9: the lock's recipe (60 min) is checked against the reheating slot's busyness cap (15 min) -> FM-3 (HC-3). Also violates HC-8. This is the feature's core use case."])
+  spec_notes=["Q9: the lock's recipe (60 min) is checked against the reheating slot's busyness cap (15 min) -> FM-3 (HC-3). Batch slots are exempt from HC-8 (spec App. C #20). This is the feature's core use case."])
 
 S("Sunday chili, lunch slot relaxed",
   "Same chili plan, I set lunch to 'flexible' so the time limit doesn't block it.",
-  cats=["meal-prep-conflict", "multi-day-conflict"], intended="infeasible",
+  cats=["meal-prep-conflict", "multi-day-conflict"], intended="feasible",
   profile=P(2100, 150, 50, 80), days=rep(day(std3(b=(2, 4, 3))), 3), pool_ids=CORE, pool_note=FULL,
   batches=[B("batch_chili", "dn_beef_chili", 3, [(0, 1), (1, 1), (2, 1)])],
-  spec_notes=["HC-3 now passes; HC-8 (same non-workout recipe on consecutive days) still rejects -> FM-3."])
+  spec_notes=["HC-3 now passes. Batch-locked slots are exempt from HC-8 (spec App. C #20), so the chili repeats on consecutive days."])
 
 S("Prepped chickpea salad two days in a row",
   "Chickpea salad prepped for Monday and Tuesday lunch. 2,100 kcal, 130 g protein, 55-80 g fat.",
-  cats=["meal-prep-conflict", "multi-day-conflict"], intended="infeasible",
+  cats=["meal-prep-conflict", "multi-day-conflict"], intended="borderline",
   profile=P(2100, 130, 55, 80), days=rep(day(std3(b=(2, 2, 3))), 2), pool_ids=CORE, pool_note=FULL,
-  batches=[B("batch_chickpea", "ln_chickpea_salad", 2, [(0, 1), (1, 1)])])
+  batches=[B("batch_chickpea", "ln_chickpea_salad", 2, [(0, 1), (1, 1)])],
+  spec_notes=["Batch-locked slots are exempt from HC-8 (spec App. C #20), so the salad repeats on consecutive days. Borderline: the tightest day has exactly 12 recipe sets."])
 
 S("Prepped meal in post-workout slots",
   "I train at lunchtime and eat my prepped thigh-quinoa bowl right after, Monday and Tuesday. 2,300 kcal, 160 g protein, 55-85 g fat.",

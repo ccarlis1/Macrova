@@ -21784,7 +21784,7 @@
       },
       "preferences_note": "",
       "spec_notes": [
-        "Q9: the lock's recipe (60 min) is checked against the reheating slot's busyness cap (15 min) -> FM-3 (HC-3). Also violates HC-8. This is the feature's core use case."
+        "Q9: the lock's recipe (60 min) is checked against the reheating slot's busyness cap (15 min) -> FM-3 (HC-3). Batch slots are exempt from HC-8 (spec App. C #20). This is the feature's core use case."
       ],
       "safety_expectation": null,
       "expected": {
@@ -21816,7 +21816,7 @@
         "meal-prep-conflict",
         "multi-day-conflict"
       ],
-      "intended_class": "infeasible",
+      "intended_class": "feasible",
       "profile": {
         "daily_calories": 2100,
         "daily_protein_g": 150,
@@ -22016,31 +22016,53 @@
       },
       "preferences_note": "",
       "spec_notes": [
-        "HC-3 now passes; HC-8 (same non-workout recipe on consecutive days) still rejects -> FM-3."
+        "HC-3 now passes. Batch-locked slots are exempt from HC-8 (spec App. C #20), so the chili repeats on consecutive days."
       ],
       "safety_expectation": null,
       "expected": {
-        "class": "infeasible",
-        "outcome": "failure",
-        "primary_failure_code": "FM-3",
+        "class": "feasible",
+        "outcome": "success",
+        "primary_failure_code": null,
         "acceptable_failure_codes": [
-          "FM-3"
+          "OK"
         ],
-        "failure_stage": "pre_search",
+        "failure_stage": "complete",
         "derived_daily_carbs_g": 228.8,
         "oracle": {
-          "pins": [
+          "pins_overridden_by_locks": [],
+          "valid_assignments_per_day": [
+            39,
+            39,
+            39
+          ],
+          "distinct_meal_sets_per_day": [
+            26,
+            26,
+            26
+          ],
+          "day_enumeration_capped": [
+            false,
+            false,
+            false
+          ],
+          "multiday_nodes": 4,
+          "witness_plan": [
             [
-              0,
-              1
+              "bk_yogurt_berry_bowl",
+              "dn_beef_chili",
+              "hc_mass_gainer"
             ],
             [
-              1,
-              1
+              "bk_overnight_oats",
+              "dn_beef_chili",
+              "hc_big_beef_rice"
+            ],
+            [
+              "bk_yogurt_berry_bowl",
+              "dn_beef_chili",
+              "hc_mass_gainer"
             ]
-          ],
-          "recipe": "dn_beef_chili",
-          "violation": "HC-8"
+          ]
         }
       }
     },
@@ -22052,7 +22074,7 @@
         "meal-prep-conflict",
         "multi-day-conflict"
       ],
-      "intended_class": "infeasible",
+      "intended_class": "borderline",
       "profile": {
         "daily_calories": 2100,
         "daily_protein_g": 130,
@@ -22216,30 +22238,46 @@
         "description": "full local library (core recipes, no duplicates)"
       },
       "preferences_note": "",
-      "spec_notes": [],
+      "spec_notes": [
+        "Batch-locked slots are exempt from HC-8 (spec App. C #20), so the salad repeats on consecutive days. Borderline: the tightest day has exactly 12 recipe sets."
+      ],
       "safety_expectation": null,
       "expected": {
-        "class": "infeasible",
-        "outcome": "failure",
-        "primary_failure_code": "FM-3",
+        "class": "borderline",
+        "outcome": "success",
+        "primary_failure_code": null,
         "acceptable_failure_codes": [
-          "FM-3"
+          "OK"
         ],
-        "failure_stage": "pre_search",
+        "failure_stage": "complete",
         "derived_daily_carbs_g": 243.1,
         "oracle": {
-          "pins": [
+          "pins_overridden_by_locks": [],
+          "valid_assignments_per_day": [
+            19,
+            19
+          ],
+          "distinct_meal_sets_per_day": [
+            12,
+            12
+          ],
+          "day_enumeration_capped": [
+            false,
+            false
+          ],
+          "multiday_nodes": 3,
+          "witness_plan": [
             [
-              0,
-              1
+              "bk_yogurt_berry_bowl",
+              "ln_chickpea_salad",
+              "hc_mass_gainer"
             ],
             [
-              1,
-              1
+              "bk_protein_oats",
+              "ln_chickpea_salad",
+              "hc_big_beef_rice"
             ]
-          ],
-          "recipe": "ln_chickpea_salad",
-          "violation": "HC-8"
+          ]
         }
       }
     },

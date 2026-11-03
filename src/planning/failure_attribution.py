@@ -135,6 +135,16 @@ def _workout_slots_for_day(
     return out
 
 
+def _batch_slots_for_day(profile: PlanningUserProfile, day_index: int) -> Set[int]:
+    """Slot indices on this day held by a meal-prep batch lock (exempt from the HC-8 check)."""
+    provenance = getattr(profile, "pin_provenance", None) or {}
+    return {
+        s
+        for (d, s), prov in provenance.items()
+        if d == day_index + 1 and (prov or {}).get("source") == "batch"
+    }
+
+
 def _slot_options(
     recipe_pool: List[PlanningRecipe],
     profile: PlanningUserProfile,
@@ -416,6 +426,11 @@ def _across_days(
         if short:
             return "floor_blocked", {"micronutrient_shortfall": short, "best_micro": suffix_max[0]}, 0, False
 
+    # Batch slots aren't checked against the previous day, but still count for the next.
+    unchecked_slots_by_day = [
+        set(workout_slots_by_day[d]) | _batch_slots_for_day(profile, d) for d in range(D)
+    ]
+
     nodes = nodes_so_far
     plan: List[Tuple[str, ...]] = []
     found_plan: List[Tuple[str, ...]] = []
@@ -444,7 +459,7 @@ def _across_days(
             nodes += 1
             if nodes > node_limit:
                 return None
-            if prev_nw and (_nonworkout_ids(sol, workout_slots_by_day[d]) & prev_nw):
+            if prev_nw and (_nonworkout_ids(sol, unchecked_slots_by_day[d]) & prev_nw):
                 continue
             a = tuple(x + y for x, y in zip(acc, m)) if nut_keys else acc
             if nut_keys and any(

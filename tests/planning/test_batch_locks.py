@@ -60,7 +60,7 @@ def test_batch_lock_spread_across_3_days():
     schedule = [[_slot(), _slot()], [_slot(), _slot()], [_slot(), _slot()]]
     profile = _profile(
         schedule=schedule,
-        # Mark each single-slot day as pre-workout so HC-8 does not reject repeated recipe ids.
+        # Workout-slot variant; the non-workout case is test_batch_lock_on_consecutive_non_workout_days_is_allowed.
         batch_locks=[
             PlanningBatchLock(batch_id="batch-a", recipe_id="r_batch", day_index=0, slot_index=0),
             PlanningBatchLock(batch_id="batch-a", recipe_id="r_batch", day_index=1, slot_index=0),
@@ -212,3 +212,95 @@ def test_fully_batch_locked_day_that_misses_macros_returns_fm3():
     from src.planning.phase10_reporting import FM3_BATCH_FIX_HINT
 
     assert failures[0]["fix_hint"] == FM3_BATCH_FIX_HINT
+
+
+# --- HC-8 and batch locks: batch slots are exempt from the check but still count ---
+
+
+def _two_slot_days(n: int) -> list[list[MealSlot]]:
+    return [[_slot(), _slot()] for _ in range(n)]
+
+
+def test_batch_lock_on_consecutive_non_workout_days_is_allowed():
+    profile = _profile(
+        schedule=_two_slot_days(3),
+        batch_locks=[
+            PlanningBatchLock(batch_id="batch-a", recipe_id="r_batch", day_index=d, slot_index=0)
+            for d in range(3)
+        ],
+    )
+
+    result = plan_meals(
+        profile,
+        [_recipe("r_batch"), _recipe("r_day_1"), _recipe("r_day_2"), _recipe("r_day_3")],
+        days=3,
+    )
+
+    assert result.success is True, result.report
+    got = {(a.day_index, a.slot_index): a.recipe_id for a in result.plan}
+    assert [got[(d, 0)] for d in range(3)] == ["r_batch"] * 3
+
+
+def test_batch_recipe_still_blocks_free_slots_next_day():
+    # r_batch sorts first, so free search would reach for it on day 2 if HC-8 allowed it.
+    profile = _profile(
+        schedule=_two_slot_days(2),
+        batch_locks=[PlanningBatchLock(batch_id="batch-a", recipe_id="r_batch", day_index=0, slot_index=0)],
+    )
+
+    result = plan_meals(
+        profile,
+        [_recipe("r_batch"), _recipe("r_x"), _recipe("r_y"), _recipe("r_z")],
+        days=2,
+    )
+
+    assert result.success is True, result.report
+    day_2 = {a.recipe_id for a in result.plan if a.day_index == 1}
+    assert "r_batch" not in day_2
+
+
+def test_explicit_pins_on_consecutive_days_still_fail_hc8_at_their_slot():
+    profile = _profile(
+        schedule=_two_slot_days(2),
+        batch_locks=[],
+        pinned_assignments={(1, 1): "r1", (2, 1): "r1"},
+    )
+
+    result = plan_meals(profile, [_recipe("r1"), _recipe("r2"), _recipe("r3")], days=2)
+
+    assert result.failure_mode == "FM-3"
+    failure = result.report["failures"][0]
+    assert (failure["day_index"], failure["slot_index"]) == (1, 1)
+    assert failure["details"]["recipe_id"] == "r1"
+
+
+def test_pin_repeating_previous_days_batch_recipe_fails_hc8():
+    profile = _profile(
+        schedule=_two_slot_days(2),
+        batch_locks=[PlanningBatchLock(batch_id="batch-a", recipe_id="r1", day_index=0, slot_index=0)],
+        pinned_assignments={(2, 1): "r1"},
+    )
+
+    result = plan_meals(profile, [_recipe("r1"), _recipe("r2"), _recipe("r3")], days=2)
+
+    assert result.failure_mode == "FM-3"
+    failure = result.report["failures"][0]
+    assert (failure["day_index"], failure["slot_index"]) == (1, 1)
+
+
+def test_attribution_sequence_check_exempts_batch_slots():
+    from src.planning.failure_attribution import _across_days
+
+    profile = _profile(schedule=_two_slot_days(2), batch_locks=[])
+    recipes = {rid: _recipe(rid) for rid in ("r_batch", "r_x", "r_y")}
+    # The only solution per day repeats r_batch in slot 0.
+    day_solutions = [[("r_batch", "r_x")], [("r_batch", "r_y")]]
+    kwargs = dict(check_floors=False, node_limit=1000, nodes_so_far=0)
+
+    outcome, *_ = _across_days(day_solutions, [set(), set()], recipes, profile, 2, **kwargs)
+    assert outcome == "hc8_blocked"
+
+    profile.pin_provenance = {(1, 0): {"source": "batch"}, (2, 0): {"source": "batch"}}
+    outcome, details, *_ = _across_days(day_solutions, [set(), set()], recipes, profile, 2, **kwargs)
+    assert outcome == "found"
+    assert details["plan"] == [("r_batch", "r_x"), ("r_batch", "r_y")]

@@ -412,7 +412,7 @@ The initial state S₀ is constructed as follows:
 
   
 
-**Pinned assignment pre-validation:** Before the search begins, all pinned assignments shall be validated against hard constraints. If any pinned recipe violates HC-1 (excluded ingredient), HC-2 (two pinned assignments on the same day use the same recipe ID), HC-3 (cooking time), HC-5 (would single-handedly exceed calorie ceiling), or HC-8 (consecutive-day non-workout repetition with another pinned assignment), the algorithm shall reject immediately with failure mode FM-3 (Section 11) without entering the search. If every slot of a day is pinned (or locked into an effective pin) and that day's totals fail daily validation (Section 6.5), the algorithm shall likewise reject immediately with FM-3 without entering the search.
+**Pinned assignment pre-validation:** Before the search begins, all pinned assignments shall be validated against hard constraints. If any pinned recipe violates HC-1 (excluded ingredient), HC-2 (two pinned assignments on the same day use the same recipe ID), HC-3 (cooking time), HC-5 (would single-handedly exceed calorie ceiling), or HC-8 (consecutive-day non-workout repetition with another pinned assignment; batch-locked slots are not checked, see HC-8), the algorithm shall reject immediately with failure mode FM-3 (Section 11) without entering the search. If every slot of a day is pinned (or locked into an effective pin) and that day's totals fail daily validation (Section 6.5), the algorithm shall likewise reject immediately with FM-3 without entering the search.
 
 **Precedence:** Slot resolution is deterministic and shall follow this order: batch lock > explicit pin > required tags > preferred tags/scoring. Required tags participate only in non-pinned candidate generation. Preferred tags are soft-only and may influence scoring or tie-breaking but shall not reject a candidate.
 
@@ -627,6 +627,8 @@ Formally: for all d ∈ {1, ..., D−1}, if `r ∈ T_d.non_workout_recipe_ids`, 
 - A recipe assigned to a workout slot on day d does not restrict that recipe on day d+1 in any slot type.
 
 - A recipe assigned to a non-workout slot on day d is restricted on day d+1 only for non-workout slots — it may still appear in a workout slot on day d+1.
+
+**Batch-locked slots:** A slot held by a meal-prep batch lock (Section 3.5) is not checked against day d−1, so one batch may fill the same meal on consecutive days. Its recipe still counts in `T_d.non_workout_recipe_ids` when the slot is non-workout, so the planner and explicit pins cannot add that recipe to other non-workout slots on day d+1.
 
   
 
@@ -1646,7 +1648,7 @@ When the search ends without a plan and without hitting the attempt budget (TC-3
 
 - Two pinned assignments on the same day use the same recipe ID (violates HC-2).
 
-- Two pinned non-workout recipes on consecutive days use the same recipe (violates HC-8).
+- Two pinned non-workout recipes on consecutive days use the same recipe (violates HC-8), unless the later one is batch-locked. The failure reports the later pin's slot.
 
 - A fully pinned day whose totals fail daily calorie, macro, ceiling, or UL validation.
 
@@ -1840,3 +1842,5 @@ All open items have been resolved. See Appendix C for the full resolution histor
 | 18 | 3.5 / 4 / 6.2 | Precedence among meal-prep locks, explicit pins, required tags, and scoring. | **Resolved: batch lock > explicit pin > required tags > preferred/scoring.** Batch locks are normalized into effective pins before search; required tags apply only to non-pinned candidate generation. |
 
 | 19 | 3.3 / 8.1 | Whether a slot's `meal_type` is a hard constraint, soft preference, or label-only. | **Resolved: soft by default; strict on request.** Matching meal-role tags add a bounded `MealTypeBonus` (`w_meal_type`, tuned to keep breakfast mismatch under 10%). Mismatch never rejects a candidate. Strict slots use `required_tag_slugs`. No lunch/dinner equivalence in code — dual-role recipes carry both tags. |
+
+| 20 | 3.5 / 4 (HC-8) | Whether HC-8 applies to meal-prep batch locks on consecutive days. | **Resolved (2026-11-02): batch-locked slots are exempt from the check.** A batch exists to repeat a meal, so the same batch may fill a slot on consecutive days. The batch recipe still counts toward HC-8 for the next day's other non-workout slots. |

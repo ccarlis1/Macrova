@@ -108,14 +108,18 @@ def validate_pinned_assignments(
             rid = slots[0][1]
             return PinnedValidationResult(success=False, failed_hc="HC-2", failed_pin_day_1based=day_1based, failed_pin_slot_index=slot_idx, failed_pin_recipe_id=rid)
 
-    # HC-8: consecutive-day non-workout repetition among pinned
-    # For each consecutive day pair, collect non-workout pinned recipe_ids per day
+    # HC-8: consecutive-day non-workout repetition among pinned.
+    # Batch-locked slots are exempt from the check (a batch is cooked once for several
+    # days), but their recipes still count against the next day's other slots.
+    provenance = getattr(profile, "pin_provenance", None) or {}
     non_workout_pinned_by_day: Dict[int, set] = {}
+    checked_pins_by_day: Dict[int, List[Tuple[int, str]]] = {}
     for day_1based in range(1, D + 1):
         day_index = day_1based - 1
         day_slots = schedule[day_index]
         next_first = schedule[day_index + 1][0] if day_index + 1 < len(schedule) else None
         ids_this_day = set()
+        checked: List[Tuple[int, str]] = []
         for (d, s), recipe_id in pinned.items():
             if d != day_1based:
                 continue
@@ -125,12 +129,15 @@ def validate_pinned_assignments(
             )
             if not is_workout_slot(ctx):
                 ids_this_day.add(recipe_id)
+                if (provenance.get((d, s)) or {}).get("source") != "batch":
+                    checked.append((s, recipe_id))
         non_workout_pinned_by_day[day_1based] = ids_this_day
+        checked_pins_by_day[day_1based] = sorted(checked)
 
     for d in range(1, D):
-        for rid in non_workout_pinned_by_day.get(d, set()):
-            if rid in non_workout_pinned_by_day.get(d + 1, set()):
-                return PinnedValidationResult(success=False, failed_hc="HC-8", failed_pin_day_1based=d + 1, failed_pin_slot_index=0, failed_pin_recipe_id=rid)
+        for s, rid in checked_pins_by_day.get(d + 1, []):
+            if rid in non_workout_pinned_by_day.get(d, set()):
+                return PinnedValidationResult(success=False, failed_hc="HC-8", failed_pin_day_1based=d + 1, failed_pin_slot_index=s, failed_pin_recipe_id=rid)
 
     return PinnedValidationResult(success=True)
 

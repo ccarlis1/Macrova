@@ -122,7 +122,7 @@ def _join(items: Sequence[str]) -> str:
     return ", ".join(items[:-1]) + " and " + items[-1]
 
 
-def _day_number(failure: Dict[str, Any]) -> Optional[int]:
+def day_number(failure: Dict[str, Any]) -> Optional[int]:
     """1-based day from day_index, or from a ``day-N`` date (FM-MACRO-INFEASIBLE sets only the date)."""
     day_index = failure.get("day_index")
     if isinstance(day_index, int):
@@ -135,7 +135,7 @@ def _day_number(failure: Dict[str, Any]) -> Optional[int]:
 
 
 def _where(failure: Dict[str, Any]) -> str:
-    day = _day_number(failure)
+    day = day_number(failure)
     slot_index = failure.get("slot_index")
     if day is None:
         return "the plan"

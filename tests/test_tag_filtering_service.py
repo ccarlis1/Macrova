@@ -53,20 +53,21 @@ def test_multi_cuisine_or_union():
     assert [r.id for r in out] == ["r1", "r2"]
 
 
-def test_empty_filter_result_falls_back_to_full_pool():
+# Tag filters are hard constraints (ec97fea): no full-pool fallback when nothing matches.
+def test_empty_filter_result_returns_empty_pool():
     out = apply_tag_filtering(
         recipes=RECIPES, tags_by_id=TAGS, preferences={"cuisine": "klingon"}
     )
-    assert [r.id for r in out] == ["r1", "r2", "r3"]
+    assert out == []
 
 
-def test_all_tags_missing_falls_back_to_full_pool():
+def test_all_tags_missing_returns_empty_pool():
     out = apply_tag_filtering(
         recipes=RECIPES,
         tags_by_id={"r1": None, "r2": None, "r3": None},
         preferences={"cuisine": "mexican"},
     )
-    assert [r.id for r in out] == ["r1", "r2", "r3"]
+    assert out == []
 
 
 def test_filtering_is_deterministic_across_repeated_calls():

@@ -196,10 +196,10 @@
       "fdc_id": 171705,
       "grams_per_unit": {
         "g": 1.0,
-        "each": 201.0
+        "each": 136.0
       },
       "name": "avocado black skin",
-      "notes": "grams_per_unit each 201.0 g = FDC 171705 foodPortions '1 avocado, NS as to Florida or California'.",
+      "notes": "grams_per_unit each 136.0 g = FDC 171706 (Avocados, raw, California) foodPortions '1 fruit, without skin and seed'; black-skin avocado is Hass, so the California portion is used rather than this entry's all-varieties FDC 171705 (201 g).",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.067,

@@ -56,10 +56,11 @@
       "description": "Nuts, almond butter, plain, without salt added",
       "fdc_id": 168588,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "tbsp": 16.0
       },
       "name": "almond butter unsalted",
-      "notes": "",
+      "notes": "grams_per_unit tbsp 16.0 g = FDC 168588 foodPortions '1 tbsp'.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.041,
@@ -194,10 +195,11 @@
       "description": "Avocados, raw, all commercial varieties",
       "fdc_id": 171705,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "each": 201.0
       },
       "name": "avocado black skin",
-      "notes": "",
+      "notes": "grams_per_unit each 201.0 g = FDC 171705 foodPortions '1 avocado, NS as to Florida or California'.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.067,
@@ -240,10 +242,11 @@
       "description": "Oil, avocado",
       "fdc_id": 173573,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "tsp": 4.5
       },
       "name": "avocado oil",
-      "notes": "",
+      "notes": "grams_per_unit tsp 4.5 g = FDC 173573 foodPortions '1 tsp'.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.0,
@@ -378,10 +381,11 @@
       "description": "Beans, white, mature seeds, canned",
       "fdc_id": 175204,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "cup": 262.0
       },
       "name": "beans white mature seeds",
-      "notes": "",
+      "notes": "grams_per_unit cup 262.0 g = FDC 175204 foodPortions '1 cup'.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.096,
@@ -470,10 +474,11 @@
       "description": "Beans, black, mature seeds, canned, low sodium",
       "fdc_id": 175238,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "cup, whole pieces": 240.0
       },
       "name": "black beans drained",
-      "notes": "",
+      "notes": "grams_per_unit 'cup, whole pieces' 240.0 g = FDC 175238 foodPortions '1 cup'.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.14,
@@ -516,10 +521,11 @@
       "description": "Blackberries, frozen, unsweetened",
       "fdc_id": 171710,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "cup, whole pieces": 151.0
       },
       "name": "blackberries unsweetened",
-      "notes": "",
+      "notes": "grams_per_unit 'cup, whole pieces' 151.0 g = FDC 171710 foodPortions '1 cup, unthawed'.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.029,
@@ -562,10 +568,11 @@
       "description": "Blueberries, raw",
       "fdc_id": 171711,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "cup": 148.0
       },
       "name": "blueberries",
-      "notes": "",
+      "notes": "grams_per_unit cup 148.0 g = FDC 171711 foodPortions '1 cup'.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.037,
@@ -608,10 +615,11 @@
       "description": "Butter, salted",
       "fdc_id": 173410,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "tsp": 4.733
       },
       "name": "butter",
-      "notes": "",
+      "notes": "grams_per_unit tsp 4.733 g = FDC 173410 foodPortions '1 tbsp' 14.2 g / 3 (exact tbsp:tsp volume ratio).",
       "per_100g": {
         "b12_cobalamin_ug": 0.17,
         "b1_thiamine_mg": 0.005,
@@ -748,10 +756,11 @@
       "fdc_id": 173439,
       "grams_per_unit": {
         "g": 1.0,
-        "oz": 28.35
+        "oz": 28.35,
+        "slice": 28.0
       },
       "name": "cheddar cheese natural 50% reduced fat",
-      "notes": "",
+      "notes": "grams_per_unit slice 28.0 g = FDC 173439 foodPortions '1 slice (1 oz)'.",
       "per_100g": {
         "b12_cobalamin_ug": 0.49,
         "b1_thiamine_mg": 0.012,
@@ -1212,10 +1221,11 @@
       "description": "Edamame, frozen, prepared",
       "fdc_id": 168411,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "cup, whole pieces": 155.0
       },
       "name": "edamame beans",
-      "notes": "",
+      "notes": "grams_per_unit 'cup, whole pieces' 155.0 g = FDC 168411 foodPortions '1 cup'.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.2,
@@ -1258,10 +1268,11 @@
       "description": "Egg, yolk, raw, fresh",
       "fdc_id": 172184,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "large": 17.0
       },
       "name": "egg yolk",
-      "notes": "SR Legacy egg yolk raw (matches cache fdc); mapping channel compares remap vs cache values.",
+      "notes": "SR Legacy egg yolk raw (matches cache fdc); mapping channel compares remap vs cache values. grams_per_unit large 17.0 g = FDC 172184 foodPortions '1 large'.",
       "per_100g": {
         "b12_cobalamin_ug": 1.95,
         "b1_thiamine_mg": 0.176,
@@ -1584,10 +1595,11 @@
       "fdc_id": 169640,
       "grams_per_unit": {
         "g": 1.0,
-        "ml": 1.42
+        "ml": 1.42,
+        "tbsp": 21.0
       },
       "name": "honey",
-      "notes": "",
+      "notes": "grams_per_unit tbsp 21.0 g = FDC 169640 foodPortions '1 tbsp'.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.0,
@@ -1630,10 +1642,11 @@
       "description": "Rice, white, short-grain, cooked, unenriched",
       "fdc_id": 168932,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "cup": 205.0
       },
       "name": "jasmine rice in unsalted water",
-      "notes": "",
+      "notes": "grams_per_unit cup 205.0 g = FDC 168932 foodPortions '1 cup'.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.02,
@@ -1676,10 +1689,11 @@
       "description": "Snacks, KELLOGG, KELLOGG'S RICE KRISPIES TREATS Squares",
       "fdc_id": 169687,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "bar": 22.0
       },
       "name": "kellogg's rice krispies treats original",
-      "notes": "",
+      "notes": "grams_per_unit bar 22.0 g = FDC 169687 foodPortions '1 serving' (one square).",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.7,
@@ -1722,10 +1736,11 @@
       "description": "Kiwifruit, green, raw",
       "fdc_id": 168153,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "each": 69.0
       },
       "name": "kiwi fruit green",
-      "notes": "SR Legacy green kiwifruit (has energy); replace Foundation 0-kcal entry.",
+      "notes": "SR Legacy green kiwifruit (has energy); replace Foundation 0-kcal entry. grams_per_unit each 69.0 g = FDC 168153 foodPortions '1 fruit (2\" dia)'.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.027,
@@ -2048,10 +2063,12 @@
       "fdc_id": 171413,
       "grams_per_unit": {
         "g": 1.0,
-        "ml": 0.91
+        "ml": 0.91,
+        "tbsp": 13.5,
+        "tsp": 4.5
       },
       "name": "olive oil",
-      "notes": "",
+      "notes": "grams_per_unit tbsp 13.5 g = FDC 171413 foodPortions '1 tablespoon'. grams_per_unit tsp 4.5 g = FDC 171413 foodPortions '1 tsp'.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.0,
@@ -2186,10 +2203,11 @@
       "description": "Cheese, parmesan, grated",
       "fdc_id": 171247,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "tbsp, grated": 5.0
       },
       "name": "parmesan grated",
-      "notes": "",
+      "notes": "grams_per_unit 'tbsp, grated' 5.0 g = FDC 171247 foodPortions '1 tbsp'.",
       "per_100g": {
         "b12_cobalamin_ug": 1.4,
         "b1_thiamine_mg": 0.026,
@@ -2370,10 +2388,11 @@
       "description": "Potatoes, flesh and skin, raw",
       "fdc_id": 170026,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "medium": 213.0
       },
       "name": "potatoes flesh",
-      "notes": "",
+      "notes": "grams_per_unit medium 213.0 g = FDC 170026 foodPortions '1 Potato medium (2-1/4\" to 3-1/4\" dia)'.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.081,
@@ -2462,10 +2481,11 @@
       "description": "Peppers, sweet, green, raw",
       "fdc_id": 170427,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "small": 74.0
       },
       "name": "red peppers",
-      "notes": "Same food as bell pepper (sweet red pepper).",
+      "notes": "Same food as bell pepper (sweet red pepper). grams_per_unit small 74.0 g = FDC 170427 foodPortions '1 small'.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.057,
@@ -2692,10 +2712,11 @@
       "description": "Sauce, salsa, ready-to-serve",
       "fdc_id": 174524,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "tbsp": 18.0
       },
       "name": "salsa ready-to-serve",
-      "notes": "",
+      "notes": "grams_per_unit tbsp 18.0 g = FDC 174524 foodPortions '2 tbsp' 36.0 g / 2.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.033,
@@ -2784,10 +2805,11 @@
       "description": "Oil, sesame, salad or cooking",
       "fdc_id": 171016,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "tsp": 4.5
       },
       "name": "sesame oil",
-      "notes": "",
+      "notes": "grams_per_unit tsp 4.5 g = FDC 171016 foodPortions '1 tsp'.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.0,
@@ -2922,10 +2944,11 @@
       "description": "Soy sauce (regular, typically brewed with wheat)",
       "fdc_id": 174278,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "tbsp": 18.0
       },
       "name": "soy sauce",
-      "notes": "Regular soy sauce (brewed with wheat); also in wheat_gluten.",
+      "notes": "Regular soy sauce (brewed with wheat); also in wheat_gluten. grams_per_unit tbsp 18.0 g = FDC 174278 foodPortions '1 tbsp'.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.059,
@@ -3386,10 +3409,11 @@
       "description": "Turkey breast, sliced, prepackaged",
       "fdc_id": 172941,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "slice": 16.0
       },
       "name": "turkey breast lunchmeat reduced fat",
-      "notes": "",
+      "notes": "grams_per_unit slice 16.0 g = FDC 172941 foodPortions '1 slice'.",
       "per_100g": {
         "b12_cobalamin_ug": 0.37,
         "b1_thiamine_mg": 0.038,

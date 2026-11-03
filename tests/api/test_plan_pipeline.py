@@ -52,7 +52,7 @@ BATCH = MealPrepBatch(
     recipe_id="recipe_006",
     total_servings=2,
     cook_date="2026-11-02",
-    # One day only: HC-8 rejects a batch on consecutive non-workout days (FM-3).
+    # One day only, so parity doesn't depend on how HC-8 treats batches (spec App. C #20).
     assignments=[BatchAssignment(day_index=0, slot_index=2)],
     status="active",
 )

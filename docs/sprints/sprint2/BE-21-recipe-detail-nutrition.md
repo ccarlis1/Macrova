@@ -1,6 +1,6 @@
 # BE-21 — Recipe detail returns real per-100 g nutrition and unit conversions
 
-**Status:** todo  ·  **Complexity:** S  ·  **Depends on:** —
+**Status:** done  ·  **Complexity:** S  ·  **Depends on:** —
 
 ## Summary
 
@@ -21,12 +21,12 @@ Unblocks: BE-19 (unit conversions on save) and FE-13 (Flutter `toGrams` needs re
 
 ## Acceptance criteria
 
-- [ ] For a committed recipe whose ingredients all resolve, every non-`to taste` line in `GET /api/v1/recipes/{id}` has `calories_per_100g` equal to the ingredient record's `per_100g.calories` (within 1e-6), and the same for protein, carbs and fat. Test in `tests/api/test_recipe_routes.py` against the local provider; fails today (0.0).
-- [ ] `unit_conversions` on each line is the record's `grams_per_unit` (including `g: 1.0` and any explicit size fields `to_grams` uses). Same test module; fails today (`{}`).
-- [ ] A line whose ingredient doesn't resolve, or whose unit has no conversion, is still returned. Add an explicit `resolved: false` (optional field, additive) rather than silent zeros. Test included.
-- [ ] No `except Exception` remains around the conversion: catch only the calculator's documented unresolved/unit errors. A test that monkeypatches the calculator to raise `AttributeError` expects a 500 with the standard envelope, not zeros.
-- [ ] API shape is additive (`resolved` only). Regenerate OpenAPI, update `tests/test_api_v1_and_openapi.py`, and have the Flutter `RecipeIngredientEntry.fromJson` read `resolved` (default `true`). `REQUIRES_VERIFICATION`: the DTO class name in `frontend/lib/models/recipe.dart`. If touching Flutter here before P0 lands is a problem, ship the backend first and do the DTO line in FE-13.
-- [ ] `benchmark-audit` not required: no planner or nutrition calculation changes, read path only. If the fix ends up changing `calculator.py`, run it (153/153, 0 regressions).
+- [x] For a committed recipe whose ingredients all resolve, every non-`to taste` line in `GET /api/v1/recipes/{id}` has `calories_per_100g` equal to the ingredient record's `per_100g.calories` (within 1e-6), and the same for protein, carbs and fat. Test in `tests/api/test_recipe_routes.py` against the local provider; fails today (0.0).
+- [x] `unit_conversions` on each line is the record's `grams_per_unit` (including `g: 1.0` and any explicit size fields `to_grams` uses). Same test module; fails today (`{}`).
+- [x] A line whose ingredient doesn't resolve, or whose unit has no conversion, is still returned. Add an explicit `resolved: false` (optional field, additive) rather than silent zeros. Test included.
+- [x] No `except Exception` remains around the conversion: catch only the calculator's documented unresolved/unit errors. A test that monkeypatches the calculator to raise `AttributeError` expects a 500 with the standard envelope, not zeros.
+- [x] API shape is additive (`resolved` only). Regenerate OpenAPI, update `tests/test_api_v1_and_openapi.py`, and have the Flutter `RecipeIngredientEntry.fromJson` read `resolved` (default `true`). `REQUIRES_VERIFICATION`: the DTO class name in `frontend/lib/models/recipe.dart`. If touching Flutter here before P0 lands is a problem, ship the backend first and do the DTO line in FE-13.
+- [x] `benchmark-audit` not required: no planner or nutrition calculation changes, read path only. If the fix ends up changing `calculator.py`, run it (153/153, 0 regressions).
 
 ## Implementation notes
 
@@ -50,3 +50,12 @@ Unblocks: BE-19 (unit conversions on save) and FE-13 (Flutter `toGrams` needs re
 - Accepting client-sent conversions (BE-19).
 - Flutter UI changes (FE-13).
 - The list endpoint `GET /api/v1/recipes` (returns `id`/`name` only).
+
+## Close-out (2026-11-14)
+
+- `NutritionCalculator.unit_conversions(info)` (public, static) returns the record's `g: 1.0`, `grams_per_unit` and `scoop_size_g`/`large_size_g`. `to_grams` now calls it, so the size-field rule lives in one place (keys stay verbatim, so lookups are unchanged).
+- `_flutter_ingredient_entries` calls `to_grams` + `calculate_ingredient_nutrition` and catches only `IngredientNotFoundError`; unknown ingredient or unit → `resolved: false` with zeros. Anything else reaches the endpoint's error envelope (500).
+- `_convert_quantity_to_grams` was removed from the calculator in a1690ad ("Fix unit conversions…", 2026-10-05) without updating this caller; the bare `except` hid it.
+- Probe on the 32 committed recipes: 167 measurable lines, 0 unresolved, 1 with 0 kcal/100 g (water, which is correct). Before: 0 of 167 non-zero.
+- OpenAPI: no snapshot change (`ingredients` is `List[Dict[str, Any]]`); `--check` exits 0. Contract test: `tests/test_api_v1_and_openapi.py::test_recipe_detail_ingredient_line_contract`.
+- Flutter: `RecipeIngredientEntry.resolved` (default `true`), `frontend/test/recipe_ingredient_entry_resolved_test.dart`. `flutter analyze` clean, 105 tests pass.

@@ -45,7 +45,7 @@ Waves follow roadmap Part 3, which allows at most 5 tasks in flight. FE-11 moved
 | [BE-16](./BE-16-profile-request-keeps-workouts.md) | Profile → PlanRequest keeps workout slots (CLI/API parity) | S | — | 1 | todo |
 | [BE-18](./BE-18-to-taste-policy.md) | `to taste` only for seasonings; drop recipes that hide nutrients | M | — | 1 | todo |
 | [DATA-1](./DATA-1-sample-recipe-portions.md) | FDC portion weights so all 18 sample recipes are plannable | M | — | 1 | todo |
-| [BE-21](./BE-21-recipe-detail-nutrition.md) | Recipe detail returns real per-100 g nutrition and unit conversions (bug) | S | — | 1 | todo |
+| [BE-21](./BE-21-recipe-detail-nutrition.md) | Recipe detail returns real per-100 g nutrition and unit conversions (bug) | S | — | 1 | done |
 | [BE-22](./BE-22-user-data-folder-starter-pack.md) | User data folder, empty starting pool, starter-pack import (W6) | M | — | 1 | todo |
 | [FE-11](./FE-11-plain-language-failures.md) | Plain-language failure panel per failing slot | M | P0 | 2 | todo |
 | [BE-17](./BE-17-plan-request-demographic-uls.md) | Optional `demographic` on PlanRequest enforces daily ULs | M | P0 | 2 | todo |

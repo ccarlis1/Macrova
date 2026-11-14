@@ -220,6 +220,23 @@ class NutritionCalculator:
             return float(ingredient.normalized_quantity)
         return self.to_grams(ingredient, ingredient_info)
 
+    @staticmethod
+    def unit_conversions(ingredient_info: Dict[str, Any]) -> Dict[str, float]:
+        """Grams per unit from the record: ``g: 1.0``, ``grams_per_unit`` and explicit size fields.
+
+        These are the record-level weights ``to_grams`` uses (it also accepts
+        ``oz`` and named ``BASE_SERVING_WEIGHTS``, which aren't per-record).
+        """
+        gpu: Dict[str, float] = {"g": 1.0}
+        for unit, grams in (ingredient_info.get("grams_per_unit") or {}).items():
+            gpu[unit] = float(grams)
+        # Explicit size fields on the record are the same kind of data as grams_per_unit.
+        if "scoop" not in gpu and ingredient_info.get("scoop_size_g") is not None:
+            gpu["scoop"] = float(ingredient_info["scoop_size_g"])
+        if "large" not in gpu and ingredient_info.get("large_size_g") is not None:
+            gpu["large"] = float(ingredient_info["large_size_g"])
+        return gpu
+
     def to_grams(
         self, ingredient: Ingredient, ingredient_info: Dict[str, Any]
     ) -> float:
@@ -240,12 +257,7 @@ class NutritionCalculator:
         if unit == "g":
             return quantity
 
-        gpu = dict(ingredient_info.get("grams_per_unit") or {})
-        # Explicit size fields on the record are the same kind of data as grams_per_unit.
-        if "scoop" not in gpu and ingredient_info.get("scoop_size_g") is not None:
-            gpu["scoop"] = float(ingredient_info["scoop_size_g"])
-        if "large" not in gpu and ingredient_info.get("large_size_g") is not None:
-            gpu["large"] = float(ingredient_info["large_size_g"])
+        gpu = self.unit_conversions(ingredient_info)
         if unit in gpu:
             return quantity * float(gpu[unit])
 

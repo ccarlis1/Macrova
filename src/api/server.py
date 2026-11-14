@@ -30,6 +30,7 @@ from src.ingestion.nutrient_mapper import MappedNutrition, NutrientMapper
 from src.ingestion.ingredient_cache import CachedIngredientLookup
 from src.ingestion.usda_client import DataType, USDAClient, USDALookupError
 
+from src.data_layer.exceptions import IngredientNotFoundError
 from src.data_layer.macro_targets import MacroTargetsError, validate_macro_targets
 from src.data_layer.models import (
     UserProfile,
@@ -775,68 +776,63 @@ def _flutter_ingredient_entries(
     recipe: DataRecipe,
     calculator: NutritionCalculator,
 ) -> List[Dict[str, Any]]:
-    """Map data-layer recipe lines to Flutter `RecipeIngredientEntry` JSON."""
+    """Map data-layer recipe lines to Flutter `RecipeIngredientEntry` JSON.
+
+    Each measurable line carries the record's per-100 g nutrition and its
+    ``unit_conversions`` (``NutritionCalculator.unit_conversions``). A line whose
+    ingredient or unit doesn't resolve is still returned, with zeros and
+    ``resolved: false`` -- never silent zeros on a resolved line. Any other error
+    propagates to the endpoint's error envelope.
+    """
     out: List[Dict[str, Any]] = []
     for idx, ing in enumerate(recipe.ingredients):
-        iid = f"{recipe.id}:line:{idx}"
+        entry: Dict[str, Any] = {
+            "ingredient_id": f"{recipe.id}:line:{idx}",
+            "ingredient_name": ing.name,
+            "quantity": float(ing.quantity),
+            "unit": ing.unit,
+            "calories_per_100g": 0.0,
+            "protein_per_100g": 0.0,
+            "carbs_per_100g": 0.0,
+            "fat_per_100g": 0.0,
+            "micronutrients_per_100g": {},
+            "unit_conversions": {},
+            "resolved": True,
+        }
+        out.append(entry)
         if ing.is_to_taste:
-            out.append(
-                {
-                    "ingredient_id": iid,
-                    "ingredient_name": ing.name,
-                    "quantity": float(ing.quantity),
-                    "unit": ing.unit,
-                    "calories_per_100g": 0.0,
-                    "protein_per_100g": 0.0,
-                    "carbs_per_100g": 0.0,
-                    "fat_per_100g": 0.0,
-                    "micronutrients_per_100g": {},
-                    "unit_conversions": {},
-                }
-            )
             continue
+        info = calculator.provider.get_ingredient_info(ing.name)
+        if info is None:
+            entry["resolved"] = False
+            continue
+        entry["unit_conversions"] = NutritionCalculator.unit_conversions(info)
         try:
+            grams = calculator.to_grams(ing, info)
             prof = calculator.calculate_ingredient_nutrition(ing)
-            grams = calculator._convert_quantity_to_grams(ing)  # noqa: SLF001
-            if grams <= 0:
-                raise ValueError("nonpositive grams")
-            factor = 100.0 / grams
-            micro_per_100g: Dict[str, float] = {}
-            if prof.micronutrients is not None:
-                for field in NutritionCalculator.MICRONUTRIENT_FIELDS:
-                    total = float(getattr(prof.micronutrients, field, 0.0))
-                    scaled = total * factor
-                    if scaled != 0.0:
-                        micro_per_100g[field] = scaled
-            out.append(
-                {
-                    "ingredient_id": iid,
-                    "ingredient_name": ing.name,
-                    "quantity": float(ing.quantity),
-                    "unit": ing.unit,
-                    "calories_per_100g": float(prof.calories) * factor,
-                    "protein_per_100g": float(prof.protein_g) * factor,
-                    "carbs_per_100g": float(prof.carbs_g) * factor,
-                    "fat_per_100g": float(prof.fat_g) * factor,
-                    "micronutrients_per_100g": micro_per_100g,
-                    "unit_conversions": {},
-                }
-            )
-        except Exception:
-            out.append(
-                {
-                    "ingredient_id": iid,
-                    "ingredient_name": ing.name,
-                    "quantity": float(ing.quantity),
-                    "unit": ing.unit,
-                    "calories_per_100g": 0.0,
-                    "protein_per_100g": 0.0,
-                    "carbs_per_100g": 0.0,
-                    "fat_per_100g": 0.0,
-                    "micronutrients_per_100g": {},
-                    "unit_conversions": {},
-                }
-            )
+        except IngredientNotFoundError:
+            # Unknown unit or no nutrition block: the planner drops this recipe too.
+            entry["resolved"] = False
+            continue
+        if grams <= 0:
+            entry["resolved"] = False
+            continue
+        factor = 100.0 / grams
+        micro_per_100g: Dict[str, float] = {}
+        if prof.micronutrients is not None:
+            for field in NutritionCalculator.MICRONUTRIENT_FIELDS:
+                scaled = float(getattr(prof.micronutrients, field, 0.0)) * factor
+                if scaled != 0.0:
+                    micro_per_100g[field] = scaled
+        entry.update(
+            {
+                "calories_per_100g": float(prof.calories) * factor,
+                "protein_per_100g": float(prof.protein_g) * factor,
+                "carbs_per_100g": float(prof.carbs_g) * factor,
+                "fat_per_100g": float(prof.fat_g) * factor,
+                "micronutrients_per_100g": micro_per_100g,
+            }
+        )
     return out
 
 

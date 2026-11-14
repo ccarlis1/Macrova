@@ -434,3 +434,44 @@ def test_llm_status_endpoint_reports_enabled(monkeypatch):
     res_on = client.get("/api/v1/llm/status")
     assert res_on.status_code == 200
     assert res_on.json() == {"enabled": True}
+
+
+def test_recipe_detail_ingredient_line_contract(tmp_path, monkeypatch):
+    """Sprint 2 BE-21: detail lines carry real nutrition, conversions and an additive ``resolved``."""
+    recipes_file = tmp_path / "recipes.json"
+    recipes_file.write_text('{"recipes": []}', encoding="utf-8")
+    monkeypatch.setattr("src.api.server.recipes_path", str(recipes_file))
+    monkeypatch.setattr("src.api.server.DEFAULT_TAG_PATH", str(tmp_path / "recipe_tags.json"))
+
+    client = TestClient(app)
+    rid = "00000000-0000-4000-8000-0000000000b2"
+    sync_body = {
+        "recipes": [
+            {
+                "id": rid,
+                "name": "Detail Contract Bowl",
+                "ingredients": [{"name": "cream of rice", "quantity": 100, "unit": "g"}],
+            }
+        ]
+    }
+    assert client.post("/api/v1/recipes/sync", json=sync_body).status_code == 200
+
+    detail = client.get(f"/api/v1/recipes/{rid}")
+    assert detail.status_code == 200
+    (line,) = detail.json()["ingredients"]
+    assert set(line) == {
+        "ingredient_id",
+        "ingredient_name",
+        "quantity",
+        "unit",
+        "calories_per_100g",
+        "protein_per_100g",
+        "carbs_per_100g",
+        "fat_per_100g",
+        "micronutrients_per_100g",
+        "unit_conversions",
+        "resolved",
+    }
+    assert line["resolved"] is True
+    assert line["calories_per_100g"] > 0
+    assert line["unit_conversions"]["g"] == 1.0

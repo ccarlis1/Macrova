@@ -220,7 +220,15 @@ class PlannerConfigScreen extends StatelessWidget {
               const SizedBox(height: MacrovaSpacing.xlAlt),
 
               // Recipe pool filters (pool-level PlanRequest tag fields)
-              TagPoolFilterSection(planProvider: planProvider),
+              TagPoolFilterSection(
+                planProvider: planProvider,
+                poolRecipes: planProvider.selectedRecipeIds.isEmpty
+                    ? recipes
+                    : [
+                        for (final r in recipes)
+                          if (planProvider.selectedRecipeIds.contains(r.id)) r,
+                      ],
+              ),
               const SizedBox(height: MacrovaSpacing.xlAlt),
 
               // Nutrition Targets

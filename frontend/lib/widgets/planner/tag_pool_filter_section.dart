@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../models/recipe.dart';
+import '../../models/tag.dart';
 import '../../providers/meal_plan_provider.dart';
 import '../../theme/tokens.dart';
 import '../advisory_card.dart';
@@ -38,7 +40,33 @@ const kDietaryFlagChips = [
 class TagPoolFilterSection extends StatelessWidget {
   final MealPlanProvider planProvider;
 
-  const TagPoolFilterSection({super.key, required this.planProvider});
+  /// Recipes the plan will draw from (the selected ones, or the whole library
+  /// when none is selected); used for the missing-value warnings.
+  final List<Recipe> poolRecipes;
+
+  const TagPoolFilterSection({
+    super.key,
+    required this.planProvider,
+    this.poolRecipes = const [],
+  });
+
+  static const cuisineGapKey = Key('pool_filter_cuisine_gap');
+  static const costGapKey = Key('pool_filter_cost_gap');
+
+  /// Pool recipes with no cuisine the app knows of (never set in the Recipe
+  /// Builder, or set to `unknown`). The recipe detail doesn't return the stored
+  /// cuisine, so this is the app's own record, not the server's.
+  static int countMissingCuisine(Iterable<Recipe> pool) => pool
+      .where((r) => r.cuisine == null || r.cuisine == kCuisineUnknown)
+      .length;
+
+  /// Pool recipes with no cost the app knows of (the server stores them as
+  /// `standard`). Same caveat as [countMissingCuisine].
+  static int countMissingCost(Iterable<Recipe> pool) =>
+      pool.where((r) => r.costLevel == null).length;
+
+  static String _recipesHave(int n) =>
+      n == 1 ? '1 recipe has' : '$n recipes have';
 
   @override
   Widget build(BuildContext context) {
@@ -126,6 +154,7 @@ class TagPoolFilterSection extends StatelessWidget {
               ),
           ],
         ),
+        ..._gapWarnings(),
         if (planProvider.hasActivePoolFilters) ...[
           const SizedBox(height: MacrovaSpacing.md),
           const AdvisoryCard(
@@ -138,6 +167,51 @@ class TagPoolFilterSection extends StatelessWidget {
         ],
       ],
     );
+  }
+
+  List<Widget> _gapWarnings() {
+    final out = <Widget>[];
+    if (planProvider.cuisine.isNotEmpty) {
+      final n = countMissingCuisine(poolRecipes);
+      if (n > 0) {
+        out.add(
+          AdvisoryCard(
+            key: cuisineGapKey,
+            variant: AdvisoryVariant.warn,
+            title: '${_recipesHave(n)} no cuisine set and will be left out.',
+            description:
+                'A cuisine filter drops recipes without a cuisine. Set one in '
+                'the Recipe Builder to keep them. Counted from cuisines set in '
+                'this app; the server doesn\'t report stored cuisines yet.',
+          ),
+        );
+      }
+    }
+    final cost = planProvider.costLevel;
+    if (cost != null && cost != kCostLevelDefault) {
+      final n = countMissingCost(poolRecipes);
+      if (n > 0) {
+        out.add(
+          AdvisoryCard(
+            key: costGapKey,
+            variant: AdvisoryVariant.warn,
+            title: '${_recipesHave(n)} no cost set and will be left out.',
+            description:
+                'Recipes without a cost are stored as Standard, so the '
+                '${tagValueLabel(cost)} filter drops them. Set a cost in the '
+                'Recipe Builder to keep them. Counted from costs set in this '
+                'app; the server doesn\'t report stored costs yet.',
+          ),
+        );
+      }
+    }
+    if (out.isEmpty) return out;
+    return [
+      for (final w in out) ...[
+        const SizedBox(height: MacrovaSpacing.md),
+        w,
+      ],
+    ];
   }
 
   static String _titleCase(String value) {

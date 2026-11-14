@@ -20,19 +20,25 @@ The sync contract already accepts `tag_slugs_by_type` (`RecipeSyncItem`, BE-11) 
 
 ## Acceptance criteria
 
-- [ ] `Recipe` gains `tagSlugsByType: Map<String, List<String>>` and `isMealPrepCapable: bool` (read-only, from the server). `fromJson` reads `tag_slugs_by_type` / `is_meal_prep_capable` when present. `toSyncPayload` sends `tag_slugs_by_type` when non-empty. Tests: extend `test/recipe_sync_payload_test.dart`, and add a detail-JSON fixture test.
-- [ ] Recipe Builder has a Tags section built from `MacrovaChip`:
+- [x] `Recipe` gains `tagSlugsByType: Map<String, List<String>>` and `isMealPrepCapable: bool` (read-only, from the server). `fromJson` reads `tag_slugs_by_type` / `is_meal_prep_capable` when present. `toSyncPayload` sends `tag_slugs_by_type` when non-empty. Tests: extend `test/recipe_sync_payload_test.dart`, and add a detail-JSON fixture test.
+  - Done: `toSyncPayload` leaves out the server-derived `time` type (the server always overwrites it) and sends back every other type it read, since sync replaces the stored non-`time` types. `Recipe` also gains `cuisine` / `costLevel` (null when the app doesn't know them), sent only when set. Fixture `test/fixtures/recipe_detail_meal_prep.json` is a captured detail response.
+- [x] Recipe Builder has a Tags section built from `MacrovaChip`:
   - **Meal role:** multi-select from the registry's `context` tags with `semantic_class == meal_role`, at least one required to save (inline error otherwise).
   - **Cuisine:** single-select, optional, closed vocabulary. Sent as the sync field `cuisine` (BE-19).
   - **Cost:** single-select, optional. Sent as `cost_level` (BE-19).
 
   Meal-role options come from `GET /api/v1/tags` (cached per session), not a hard-coded list. Widget tests: save blocked without a meal role; meal roles land in `tagSlugsByType`; cuisine/cost land in the sync payload's top-level fields.
-- [ ] "Meal-prep capable" switch: ON adds `meal-prep` to `context` and enforces `servings >= 2` (bumps to 2 with a note); OFF removes it. Widget test for both directions.
-- [ ] Opening an existing server recipe pre-selects its tags (from the detail payload). Widget test with a fixture.
+  - Done: `test/widgets/recipe_builder_tags_test.dart`. Cuisine options are `kCuisineVocabulary` (`lib/models/tag.dart`), mirrored from the OpenAPI enum on `RecipeSyncItem.cuisine` (no endpoint lists it; `test/tag_registry_dto_test.dart` checks it against `openapi/openapi.json`). `unknown` isn't offered; clearing a cuisine the recipe had sends `unknown`, clearing a cost sends `standard` (the server defaults). If the registry can't load, the section shows the error with Retry and save stays blocked.
+- [x] "Meal-prep capable" switch: ON adds `meal-prep` to `context` and enforces `servings >= 2` (bumps to 2 with a note); OFF removes it. Widget test for both directions.
+  - Done: saving with the switch ON and servings below 2 is blocked with an inline message.
+- [x] Opening an existing server recipe pre-selects its tags (from the detail payload). Widget test with a fixture.
+  - Done for meal roles and the meal-prep switch. Cuisine and cost can't be pre-selected for server recipes: `GET /api/v1/recipes/{id}` doesn't return them (only values set in this app are pre-selected). A server recipe stored locally with lines but no loaded tags gets its tags from the detail before editing (`RecipeProvider.refreshServerTags`).
 - [ ] Planner Config: when a cuisine or cost filter is selected and some recipes in the selected pool have no value for it, show an `AdvisoryCard`: "N recipes have no cuisine set and will be left out." The count comes from the loaded `tagSlugsByType`/detail data, not from guessing. Widget test.
-- [ ] `ApiService` gains `listTags()` for `GET /api/v1/tags`, with a typed DTO from the actual response shape (`tag_routes.py::_to_payload`: slug, display, tag_type, eligibility, ...). Only `approved` and system/user tags are offered. Test with a fixture response.
-- [ ] No new chip widget and no new provider. Tags live on `Recipe` / `RecipeProvider`.
-- [ ] `cd frontend && flutter analyze && flutter test` green.
+  - Not fully met (backend gap): the warning and its widget tests exist (`test/screens/planner_config_screen_test.dart`), but the detail returns no `cuisine`/`cost_level`, so the count is pool recipes with no cuisine (or cost, for a Cheap/Premium filter) **set in this app**, and the card says so. Recipes tagged elsewhere (starter pack, LLM) may be over-counted. Needs the detail (or list) to return `cuisine`/`cost_level`; no detail calls are made for the count.
+- [x] `ApiService` gains `listTags()` for `GET /api/v1/tags`, with a typed DTO from the actual response shape (`tag_routes.py::_to_payload`: slug, display, tag_type, eligibility, ...). Only `approved` and system/user tags are offered. Test with a fixture response.
+  - Done: DTO `TagMeta` (`lib/models/tag.dart`); the JSON key is `type`, not `tag_type`. `RecipeProvider.loadTagRegistry()` caches it per session; `mealRoleTags` offers `approved` tags, or user/system tags not `proposed`/`rejected`. Fixture `test/fixtures/tags_list_response.json` is a captured response.
+- [x] No new chip widget and no new provider. Tags live on `Recipe` / `RecipeProvider`.
+- [x] `cd frontend && flutter analyze && flutter test` green.
 
 ## Implementation notes
 

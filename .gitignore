@@ -87,3 +87,6 @@ debug_artifacts/
 # §4.4 data track: regenerable outputs (see evaluation/data_track/README.md)
 evaluation/data_track/raw/
 evaluation/data_track/results/*.json
+
+# Personal Claude Code settings
+.claude/settings.local.json

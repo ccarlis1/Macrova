@@ -26,19 +26,21 @@ Design choice: client conversions are stored **on the recipe's ingredient line**
 
 ## Acceptance criteria
 
-- [ ] `RecipeSyncIngredientLine` gains an optional `grams_per_unit: Optional[float] = Field(None, gt=0)`, the weight of one `unit` of this line. It is persisted in `recipes.json` only when set (additive). Test: sync round-trip stores it and `GET /api/v1/recipes/{id}` returns it in that line's `unit_conversions`.
-- [ ] Calculator gram conversion order: unit `g` (and other mass units) → the ingredient record's `grams_per_unit[unit]` → the line's `grams_per_unit` → unresolved. The record wins when both exist. Tests in `tests/test_nutrition_calculator.py` (or the existing module): line-only conversion resolves; record + line uses the record; neither is unresolved.
-- [ ] Save-time validation on sync/create/PUT: a line whose unit converts by none of the above, or whose ingredient doesn't resolve with the local provider, is rejected.
+- [x] `RecipeSyncIngredientLine` gains an optional `grams_per_unit: Optional[float] = Field(None, gt=0)`, the weight of one `unit` of this line. It is persisted in `recipes.json` only when set (additive). Test: sync round-trip stores it and `GET /api/v1/recipes/{id}` returns it in that line's `unit_conversions`.
+- [x] Calculator gram conversion order: unit `g` (and other mass units) → the ingredient record's `grams_per_unit[unit]` → the line's `grams_per_unit` → unresolved. The record wins when both exist. Tests in `tests/test_nutrition_calculator.py` (or the existing module): line-only conversion resolves; record + line uses the record; neither is unresolved.
+- [x] Save-time validation on sync/create/PUT: a line whose unit converts by none of the above, or whose ingredient doesn't resolve with the local provider, is rejected.
   - Single create/PUT: 400 with a new registered code (proposed `UNIT_NOT_CONVERTIBLE`, `details: {ingredient, unit}`; reuse the existing unresolved-ingredient code for unknown names if one exists).
   - Sync: the item is **not** stored, its id is not in `synced_ids`, and `errors` gets one message naming recipe id, ingredient and unit. Other items still sync.
   - Tests in `tests/api/test_recipe_routes.py` for each; they fail today (stored and synced).
-- [ ] Every synced/created recipe gets a `tags_by_id` entry. `prep_time_bucket` and the `time-*` slug are derived from `cooking_time_minutes` using the tagger's existing derivation function. Client `tag_slugs_by_type` are merged in (canonicalized as today). Test: syncing an untagged 10-minute recipe yields `prep_time_bucket` for ≤15 min and `time-2`, and `filter_recipe_ids_by_preferences(..., {"prep_time_bucket": <that bucket>})` includes it. Fails today (no entry).
-- [ ] `RecipeSyncItem` gains optional `cuisine` (the tagger's closed vocabulary), `cost_level` (`BudgetLevel`) and `dietary_flags` (`List[DietaryFlag]`), all additive. When sent, they're written to the recipe's `RecipeTagsJson`. When omitted, a prior value is kept, else the current defaults (`"unknown"`, `"standard"`, `[]`). Checked 2026-11-14: these are required fields on `RecipeTagsJson`, not slugs, so sync can't set them today. FE-12's cuisine/cost pickers need this. Tests: round-trip each field; an out-of-vocabulary cuisine → 400 `INVALID_REQUEST`.
-- [ ] The hard-coded `prep_time_bucket: "weeknight_meal"` for new tagged recipes is replaced by the derived value. Test.
-- [ ] `upsert_recipe_tags` is still called in merge mode (not `replace=True`). Test that an unrelated recipe's tags survive a sync.
-- [ ] OpenAPI regenerated; `tests/test_api_v1_and_openapi.py` covers the new line field and error code.
+  - Done: no unresolved-ingredient API code existed, so `INGREDIENT_UNRESOLVED` (the recipe validator's internal code) is now registered; both codes are HTTP 400 with `details: {ingredient, unit}`. Sync `errors` entries read `"<recipe id>: <CODE>: <message>"`.
+- [x] Every synced/created recipe gets a `tags_by_id` entry. `prep_time_bucket` and the `time-*` slug are derived from `cooking_time_minutes` using the tagger's existing derivation function. Client `tag_slugs_by_type` are merged in (canonicalized as today). Test: syncing an untagged 10-minute recipe yields `prep_time_bucket` for ≤15 min and `time-2`, and `filter_recipe_ids_by_preferences(..., {"prep_time_bucket": <that bucket>})` includes it. Fails today (no entry).
+- [x] `RecipeSyncItem` gains optional `cuisine` (the tagger's closed vocabulary), `cost_level` (`BudgetLevel`) and `dietary_flags` (`List[DietaryFlag]`), all additive. When sent, they're written to the recipe's `RecipeTagsJson`. When omitted, a prior value is kept, else the current defaults (`"unknown"`, `"standard"`, `[]`). Checked 2026-11-14: these are required fields on `RecipeTagsJson`, not slugs, so sync can't set them today. FE-12's cuisine/cost pickers need this. Tests: round-trip each field; an out-of-vocabulary cuisine → 400 `INVALID_REQUEST`.
+- [x] The hard-coded `prep_time_bucket: "weeknight_meal"` for new tagged recipes is replaced by the derived value. Test.
+- [x] `upsert_recipe_tags` is still called in merge mode (not `replace=True`). Test that an unrelated recipe's tags survive a sync.
+- [x] OpenAPI regenerated; `tests/test_api_v1_and_openapi.py` covers the new line field and error code.
 - [ ] Flutter DTO (after P0): `Recipe.toSyncPayload` sends `grams_per_unit` for each line whose unit isn't `g` and whose ingredient has a conversion in `Ingredient.unitConversions`. Test in `test/recipe_sync_payload_test.dart`. If FE-12 has already changed `toSyncPayload`, rebase on it.
-- [ ] `benchmark-audit`: 153/153, 0 regressions (calculator change).
+  - Not done here: owned by frontend track.
+- [x] `benchmark-audit`: 153/153, 0 regressions (calculator change).
 
 ## Implementation notes
 

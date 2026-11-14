@@ -21,6 +21,7 @@ from src.llm.recipe_tagger import CUISINE_VOCABULARY
 from src.llm.schemas import BudgetLevel, DietaryFlag, PrepTimeBucket, RecipeTagsJson
 from src.llm.time_bucket import deterministic_prep_time_bucket, time_bucket_slug
 from src.nutrition.calculator import NutritionCalculator, is_to_taste_allowed
+from src.planning.allergens import dietary_flag_violations
 from src.llm.tag_repository import (
     TagRepositoryError,
     load_recipe_tags,
@@ -156,10 +157,17 @@ def _load_recipe_json(path: Path) -> Dict[str, Any]:
     return {"recipes": recipes}
 
 
+#: Code for a sent dietary flag that an ingredient line contradicts (HTTP 400).
+INVALID_REQUEST = "INVALID_REQUEST"
+
 #: Per-item save rejections. Sync reports them in ``errors`` and stores the other items;
-#: single create/PUT returns them as a 400. (``INGREDIENT_QUANTITY_REQUIRED`` stays a
-#: whole-request 422, as in BE-18.)
-PER_ITEM_REJECTION_CODES = frozenset({UNIT_NOT_CONVERTIBLE, INGREDIENT_UNRESOLVED})
+#: single create/PUT returns them as a 400. ``INVALID_REQUEST`` here is only the
+#: dietary-flag consistency check (schema errors such as an out-of-vocabulary cuisine
+#: still reject the whole request). ``INGREDIENT_QUANTITY_REQUIRED`` stays a
+#: whole-request 422, as in BE-18.
+PER_ITEM_REJECTION_CODES = frozenset(
+    {UNIT_NOT_CONVERTIBLE, INGREDIENT_UNRESOLVED, INVALID_REQUEST}
+)
 
 
 def _check_line_is_plannable(
@@ -238,15 +246,42 @@ def _normalize_ingredient_for_storage(
     return row
 
 
+def _check_dietary_flags_consistent(
+    item: RecipeSyncItem, ingredient_names: List[str]
+) -> None:
+    """Reject sent ``dietary_flags`` that an ingredient line contradicts.
+
+    Same gate as the LLM tagger (``dietary_flag_violations``), which drops such flags;
+    a client-sent flag is rejected instead, so the user sees why.
+    """
+    if not item.dietary_flags:
+        return
+    conflicts: List[str] = []
+    for flag in item.dietary_flags:
+        hits = dietary_flag_violations(flag.value, ingredient_names)
+        if hits:
+            conflicts.append(
+                f"dietary flag {flag.value!r} is contradicted by ingredient(s) "
+                + ", ".join(repr(h) for h in hits)
+            )
+    if conflicts:
+        raise ApiContractError(
+            INVALID_REQUEST,
+            "; ".join(conflicts) + ": remove the flag or the ingredient.",
+        )
+
+
 def _item_to_stored_dict(
     item: RecipeSyncItem, calculator: Optional[NutritionCalculator] = None
 ) -> Dict[str, Any]:
+    ingredients = [
+        _normalize_ingredient_for_storage(i, calculator) for i in item.ingredients
+    ]
+    _check_dietary_flags_consistent(item, [row["name"] for row in ingredients])
     return {
         "id": item.id,
         "name": item.name,
-        "ingredients": [
-            _normalize_ingredient_for_storage(i, calculator) for i in item.ingredients
-        ],
+        "ingredients": ingredients,
         "cooking_time_minutes": int(item.cooking_time_minutes),
         "instructions": list(item.instructions),
         "default_servings": int(item.default_servings),
@@ -343,7 +378,8 @@ def atomic_upsert_recipes_by_id(
 
     - ``calculator``: when given, each line must resolve and convert to grams with it
       (BE-19); otherwise the item is rejected with ``UNIT_NOT_CONVERTIBLE`` /
-      ``INGREDIENT_UNRESOLVED``.
+      ``INGREDIENT_UNRESOLVED``. Sent ``dietary_flags`` an ingredient contradicts
+      reject the item with ``INVALID_REQUEST`` (calculator or not).
     - ``errors``: when given, a rejected item is skipped (not stored, not in the returned
       ids) and ``"<recipe id>: <CODE>: <message>"`` is appended; when omitted the
       rejection is raised. Any other error rejects the whole request before any write.

@@ -160,7 +160,10 @@ RECIPE_SAVE_ERROR_RESPONSES: Dict[Any, Dict[str, Any]] = {
             "INGREDIENT_UNRESOLVED (create/update): a line's ingredient isn't in the local "
             "ingredient table. Both carry details {ingredient, unit}; sync instead skips "
             "the item and reports '<recipe id>: <CODE>: <message>' in errors. "
-            "INVALID_REQUEST: schema validation (e.g. cuisine outside the vocabulary)."
+            "INVALID_REQUEST: schema validation (e.g. cuisine outside the vocabulary; "
+            "whole request, sync too), or (create/update) a sent dietary flag an "
+            "ingredient line contradicts, e.g. 'vegan' with honey; sync instead skips "
+            "that item and reports '<recipe id>: INVALID_REQUEST: <message>' in errors."
         ),
     },
     422: {

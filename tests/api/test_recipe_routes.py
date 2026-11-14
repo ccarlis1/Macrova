@@ -536,3 +536,51 @@ def test_line_grams_per_unit_survives_recipe_db_save(monkeypatch, tmp_path):
     assert client.delete("/api/v1/recipes/r-be19-gone").status_code == 200
     (row,) = _stored(tmp_path)
     assert row["ingredients"][0]["grams_per_unit"] == 143.0
+
+
+# --- BE-19 follow-up: sent dietary_flags pass the tagger's ingredient-consistency gate ---
+
+
+def _vegan_honey_item(rid: str) -> dict:
+    return _be19_item(
+        rid,
+        {"name": "almonds", "quantity": 30, "unit": "g"},
+        {"name": "honey", "quantity": 1, "unit": "tbsp"},
+        dietary_flags=["vegetarian", "vegan"],
+    )
+
+
+@pytest.mark.parametrize("route", ["create", "put"])
+def test_single_save_rejects_dietary_flag_contradicted_by_ingredient(route, monkeypatch, tmp_path):
+    _configure_paths(monkeypatch, tmp_path)
+    client = TestClient(app)
+    item = _vegan_honey_item("r-be19-vegan")
+    if route == "create":
+        res = client.post("/api/v1/recipes", json=item)
+    else:
+        res = client.put("/api/v1/recipes/r-be19-vegan", json=item)
+    assert res.status_code == 400, res.text
+    err = res.json()["error"]
+    assert err["code"] == "INVALID_REQUEST"
+    assert "'vegan'" in err["message"] and "'honey'" in err["message"]
+    # vegetarian is consistent with honey and is not named.
+    assert "vegetarian" not in err["message"]
+    assert _stored(tmp_path) == []
+    assert "r-be19-vegan" not in _tags(tmp_path)
+
+
+def test_sync_skips_item_whose_dietary_flag_is_contradicted(monkeypatch, tmp_path):
+    _configure_paths(monkeypatch, tmp_path)
+    good = _be19_item("r-be19-flag-ok", dietary_flags=["vegan", "gluten_free"])
+    bad = _vegan_honey_item("r-be19-flag-bad")
+    res = TestClient(app).post("/api/v1/recipes/sync", json={"recipes": [bad, good]})
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body["synced_ids"] == ["r-be19-flag-ok"]
+    (msg,) = body["errors"]
+    assert msg.startswith("r-be19-flag-bad: INVALID_REQUEST: ")
+    assert "'vegan'" in msg and "'honey'" in msg
+    assert [r["id"] for r in _stored(tmp_path)] == ["r-be19-flag-ok"]
+    tags = _tags(tmp_path)
+    assert set(tags) == {"r-be19-flag-ok"}
+    assert [f.value for f in tags["r-be19-flag-ok"].dietary_flags] == ["vegan", "gluten_free"]

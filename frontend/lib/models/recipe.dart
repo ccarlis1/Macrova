@@ -281,16 +281,24 @@ class Recipe {
         'cooking_time_minutes': cookingTimeMinutes,
         'instructions': instructions,
         'default_servings': servings,
-        'ingredients': ingredients
-            .map(
-              (e) => {
-                'name': e.ingredientName,
-                'quantity': e.quantity,
-                'unit': e.unit,
-              },
-            )
-            .toList(),
+        'ingredients': ingredients.map(_syncLine).toList(),
       };
+
+  /// One `RecipeSyncIngredientLine`. `grams_per_unit` (BE-19) is the weight of
+  /// one [RecipeIngredientEntry.unit], sent when the unit isn't `g` and the
+  /// line carries a conversion for it (copied from `Ingredient.unitConversions`
+  /// or the detail's `unit_conversions`). The server uses it only when its own
+  /// ingredient record has no conversion for that unit.
+  static Map<String, dynamic> _syncLine(RecipeIngredientEntry e) {
+    final gramsPerUnit = e.unit == 'g' ? null : e.unitConversions[e.unit];
+    return {
+      'name': e.ingredientName,
+      'quantity': e.quantity,
+      'unit': e.unit,
+      if (gramsPerUnit != null && gramsPerUnit > 0)
+        'grams_per_unit': gramsPerUnit,
+    };
+  }
 
   factory Recipe.fromJson(Map<String, dynamic> json) {
     return Recipe(

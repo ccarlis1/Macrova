@@ -38,8 +38,8 @@ Design choice: client conversions are stored **on the recipe's ingredient line**
 - [x] The hard-coded `prep_time_bucket: "weeknight_meal"` for new tagged recipes is replaced by the derived value. Test.
 - [x] `upsert_recipe_tags` is still called in merge mode (not `replace=True`). Test that an unrelated recipe's tags survive a sync.
 - [x] OpenAPI regenerated; `tests/test_api_v1_and_openapi.py` covers the new line field and error code.
-- [ ] Flutter DTO (after P0): `Recipe.toSyncPayload` sends `grams_per_unit` for each line whose unit isn't `g` and whose ingredient has a conversion in `Ingredient.unitConversions`. Test in `test/recipe_sync_payload_test.dart`. If FE-12 has already changed `toSyncPayload`, rebase on it.
-  - Not done here: owned by frontend track.
+- [x] Flutter DTO (after P0): `Recipe.toSyncPayload` sends `grams_per_unit` for each line whose unit isn't `g` and whose ingredient has a conversion in `Ingredient.unitConversions`. Test in `test/recipe_sync_payload_test.dart`. If FE-12 has already changed `toSyncPayload`, rebase on it.
+  - Done: the conversion is read from the line's `RecipeIngredientEntry.unitConversions` (copied from `Ingredient.unitConversions` when the line is added, or from the detail's `unit_conversions`); only values > 0 are sent.
 - [x] `benchmark-audit`: 153/153, 0 regressions (calculator change).
 
 ## Implementation notes

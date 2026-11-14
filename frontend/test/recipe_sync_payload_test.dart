@@ -34,6 +34,54 @@ void main() {
     expect(r.toSyncPayload()['default_servings'], r.servings);
   });
 
+  group('BE-19 grams_per_unit', () {
+    const recipe = Recipe(
+      id: 'rid',
+      name: 'Porridge',
+      ingredients: [
+        RecipeIngredientEntry(
+          ingredientId: 'oats',
+          ingredientName: 'oats',
+          quantity: 1,
+          unit: 'cup',
+          unitConversions: {'cup': 80, 'tbsp': 5},
+        ),
+        RecipeIngredientEntry(
+          ingredientId: 'milk',
+          ingredientName: 'milk',
+          quantity: 200,
+          unit: 'g',
+          unitConversions: {'cup': 240},
+        ),
+        RecipeIngredientEntry(
+          ingredientId: 'honey',
+          ingredientName: 'honey',
+          quantity: 1,
+          unit: 'tbsp',
+        ),
+      ],
+    );
+
+    List<Map<String, dynamic>> lines() =>
+        (recipe.toSyncPayload()['ingredients'] as List)
+            .cast<Map<String, dynamic>>();
+
+    test('Given a non-g unit with a conversion, Then its grams_per_unit is sent',
+        () {
+      expect(lines()[0]['grams_per_unit'], 80);
+    });
+
+    test('Given a g line, Then no grams_per_unit is sent', () {
+      expect(lines()[1].containsKey('grams_per_unit'), isFalse);
+    });
+
+    test('Given a non-g unit with no conversion, Then no grams_per_unit is sent',
+        () {
+      expect(lines()[2].containsKey('grams_per_unit'), isFalse);
+      expect(lines()[2]['unit'], 'tbsp');
+    });
+  });
+
   test('fromServerRecipeMap reads cooking_time_minutes and instructions', () {
     final r = Recipe.fromServerRecipeMap({
       'id': 'x',

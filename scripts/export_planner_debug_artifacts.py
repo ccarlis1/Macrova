@@ -103,8 +103,8 @@ def _user_profile_to_plan_request(
         all_recipes,
         parity_ctx.active_batches,
         parity_ctx.seed,
+        days=days,
     )
-    body["days"] = days
     body["ingredient_source"] = ingredient_source
     if user.daily_micronutrient_targets:
         body["micronutrient_goals"] = dict(user.daily_micronutrient_targets)

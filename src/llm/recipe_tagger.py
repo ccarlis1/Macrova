@@ -5,12 +5,12 @@ import os
 from typing import Any, Dict, List, Optional
 
 from src.data_layer.models import Recipe
+from src.data_layer import user_data
 from src.llm import tag_repository
 from src.llm.client import LLMClient
 from src.llm.schemas import PrepTimeBucket, RecipeTagsJson, TagMetaJson, ValidationFailure, parse_llm_json
 from src.llm.time_bucket import time_bucket
 
-_DEFAULT_TAG_REPO_PATH = "data/recipes/recipe_tags.json"
 
 # Closed cuisine vocabulary for the legacy `cuisine` field (identity_hint; display/soft only).
 CUISINE_VOCABULARY: List[str] = [
@@ -128,7 +128,7 @@ def tag_recipes(
     - `time-*` effort slugs are derived, not proposed;
     - a recipe whose output fails the schema is omitted (never written).
     """
-    repo_path = tag_repo_path or os.environ.get("NUTRITION_TAG_REPO_PATH", _DEFAULT_TAG_REPO_PATH)
+    repo_path = tag_repo_path or os.environ.get("NUTRITION_TAG_REPO_PATH") or user_data.recipe_tags_path()
     allowed = _registry_slugs_by_type(repo_path)
 
     system_prompt = (

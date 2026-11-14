@@ -4,8 +4,8 @@ from __future__ import annotations
 import os
 
 from src.llm import tag_repository
+from src.data_layer import user_data
 
-_DEFAULT_TAG_REPO_PATH = "data/recipes/recipe_tags.json"
 
 
 class TagRegistry:
@@ -13,7 +13,7 @@ class TagRegistry:
 
     @staticmethod
     def resolve(slug: str) -> str:
-        tag_repo_path = os.environ.get("NUTRITION_TAG_REPO_PATH", _DEFAULT_TAG_REPO_PATH)
+        tag_repo_path = os.environ.get("NUTRITION_TAG_REPO_PATH") or user_data.recipe_tags_path()
         meta = tag_repository.resolve(slug, tag_repo_path)
         return meta.slug
 

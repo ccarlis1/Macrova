@@ -14,6 +14,10 @@ Each task file contains:
 - **Implementation notes** — files to touch, hints
 - **Out of scope** — explicit non-goals
 
+### Status vocabulary
+
+`implemented` and `done` both mean finished (Sprint 1 used `implemented`). `superseded`, `merged`, `deferred` and `parked` are the Sprint 2 close-out states applied by [Sprint 2 DOC-1](../sprint2/DOC-1-sprint1-closeout.md); each such stub names where the work went or why it stopped, per the dispositions in [the Sprint 2 README](../sprint2/README.md).
+
 ## Critical path (Week 1)
 
 ```

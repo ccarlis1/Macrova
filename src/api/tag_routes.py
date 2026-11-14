@@ -9,10 +9,11 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from src.api.error_mapping import map_exception_to_api_error
+from src.data_layer import user_data
 from src.llm import tag_repository
 from src.llm.tag_repository import TagRepositoryError
 
-DEFAULT_TAG_PATH = "data/recipes/recipe_tags.json"
+DEFAULT_TAG_PATH = user_data.recipe_tags_path()
 
 router = APIRouter(prefix="/tags", tags=["tags"])
 

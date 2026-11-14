@@ -232,6 +232,7 @@ There is one canonical tag source of truth. Do not create another.
 - Upper-limit reference data lives under `data/reference/` and is enforced per-day.
 - Do not persist generated recipes unless nutrition validation and ingredient resolution pass.
 - Treat the recipe/tag/meal-prep file stores as backed by their repositories (`recipe_db.py`, `tag_repository.py`, `meal_prep.py`); do not add duplicate write paths around them.
+- User-writable stores (recipes, the tag store, meal-prep batches) resolve through `src/data_layer/user_data.py` and `MACROVA_DATA_DIR`. Unset, they are today's repo paths (dev and tests). Set, they live in that folder, which starts with an **empty** pool (`scripts/setup_user_data.py`); users import from the starter pack (`recipes.json.example`) via `/api/v1/starter_recipes`. Never hard-code a user-data path; reference data and the MCP sample path are not user data.
 - Environment: none required for local mode. For USDA API mode, copy `.env.example` to `.env` and set `USDA_API_KEY`. The CLI and `server.py` both load repo-root `.env`.
 
 ---

@@ -849,10 +849,11 @@
       "description": "Seeds, chia seeds, dried",
       "fdc_id": 170554,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "tbsp, whole pieces": 10.0
       },
       "name": "chia seeds",
-      "notes": "",
+      "notes": "tbsp, whole pieces: 10 g, Cronometer NCCDB serving, user-supplied 2026-11-14; FDC 170554 has only oz.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.62,
@@ -988,10 +989,11 @@
       "description": "Chickpeas (garbanzo beans, bengal gram), mature seeds, canned, drained solids",
       "fdc_id": 173800,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "cup, whole pieces": 152.0
       },
       "name": "chickpeas drained",
-      "notes": "",
+      "notes": "cup, whole pieces: 152 g, Cronometer NCCDB serving, user-supplied 2026-11-14; cup of drained chickpeas; FDC 173800 has only a 253 g drained can.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.027,
@@ -1454,10 +1456,11 @@
       "fdc_id": 170894,
       "grams_per_unit": {
         "g": 1.0,
-        "tbsp": 15.0
+        "tbsp": 15.0,
+        "cup": 245.0
       },
       "name": "greek yogurt plain nonfat",
-      "notes": "",
+      "notes": "cup: 245 g, Cronometer NCCDB serving, user-supplied 2026-11-14; FDC 170894 has only a 170 g container.",
       "per_100g": {
         "b12_cobalamin_ug": 0.75,
         "b1_thiamine_mg": 0.023,
@@ -1877,10 +1880,11 @@
       "fdc_id": 170903,
       "grams_per_unit": {
         "g": 1.0,
-        "tbsp": 15.0
+        "tbsp": 15.0,
+        "cup": 245.0
       },
       "name": "low fat greek yogurt",
-      "notes": "",
+      "notes": "cup: 245 g, Cronometer NCCDB serving, user-supplied 2026-11-14; FDC 170903 has only a 200 g container.",
       "per_100g": {
         "b12_cobalamin_ug": 0.52,
         "b1_thiamine_mg": 0.044,
@@ -2157,10 +2161,11 @@
       "description": "Cheese, parmesan, hard",
       "fdc_id": 170848,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "tbsp, grated": 6.0
       },
       "name": "parmesan cheese hard",
-      "notes": "",
+      "notes": "tbsp, grated: 6 g, Cronometer NCCDB serving, user-supplied 2026-11-14; FDC 170848 has only cubic inch, oz, package.",
       "per_100g": {
         "b12_cobalamin_ug": 1.2,
         "b1_thiamine_mg": 0.039,
@@ -2528,10 +2533,11 @@
       "description": "Roast beef, deli style, prepackaged, sliced",
       "fdc_id": 174570,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "medium slice": 13.8
       },
       "name": "roast beef lunchmeat",
-      "notes": "",
+      "notes": "medium slice: 13.8 g, FDC 174570 foodPortions id 94596 (undetermined slice rectangle); near match: FDC has slice rectangle 13.8 g and slice oval 9.3 g, the rectangle is used for medium slice.",
       "per_100g": {
         "b12_cobalamin_ug": 2.04,
         "b1_thiamine_mg": 0.043,
@@ -2620,10 +2626,11 @@
       "description": "GENOA SALAMI",
       "fdc_id": 2126122,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "slice": 10.0
       },
       "name": "salami genoa",
-      "notes": "",
+      "notes": "slice: 10 g, Cronometer NCCDB serving, user-supplied 2026-11-14; FDC 2126122 (Branded) has no portions.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.0,
@@ -2666,10 +2673,11 @@
       "description": "Salmon, sockeye, canned, total can contents",
       "fdc_id": 175174,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "small can": 92.0
       },
       "name": "salmon canned",
-      "notes": "SR Legacy sockeye canned (matches cache fdc); mapping channel compares remap vs cache values.",
+      "notes": "SR Legacy sockeye canned (matches cache fdc); mapping channel compares remap vs cache values. small can: 92 g, Cronometer NCCDB serving, user-supplied 2026-11-14; FDC 175174 has only the 417 g whole can.",
       "per_100g": {
         "b12_cobalamin_ug": 0.4,
         "b1_thiamine_mg": 0.02,
@@ -2759,10 +2767,11 @@
       "description": "Sauerkraut, canned, solids and liquids",
       "fdc_id": 169279,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "tbsp": 8.88
       },
       "name": "sauerkraut",
-      "notes": "",
+      "notes": "tbsp: 8.88 g, FDC 169279 foodPortions id 84590 (undetermined cup); derived: cup 142.0 g / 16 tbsp = 8.875 g.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.021,
@@ -2898,10 +2907,11 @@
       "description": "Bread, french or vienna (includes sourdough)",
       "fdc_id": 172675,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "large slice": 43.0
       },
       "name": "sourdough bread",
-      "notes": "",
+      "notes": "large slice: 43 g, Cronometer NCCDB serving, user-supplied 2026-11-14; FDC 172675 slice is 139 g.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.71,
@@ -3083,10 +3093,11 @@
       "description": "Sweet potato, raw, unprepared (Includes foods for USDA's Food Distribution Program)",
       "fdc_id": 168482,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "medium": 130.0
       },
       "name": "sweet potato",
-      "notes": "SR Legacy sweet potato raw; replace 0-kcal Foundation.",
+      "notes": "SR Legacy sweet potato raw; replace 0-kcal Foundation. medium: 130 g, FDC 168482 foodPortions id 83167 (undetermined sweetpotato, 5\" long); near match: FDC has no size names, the 5\" sweet potato is used as medium.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.078,
@@ -3316,10 +3327,11 @@
       "description": "Tortillas, ready-to-bake or -fry, corn",
       "fdc_id": 175036,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "large": 24.0
       },
       "name": "tortillas corn",
-      "notes": "SR Legacy Tortillas, ready-to-bake or -fry, corn; not flour tortillas (167535).",
+      "notes": "SR Legacy Tortillas, ready-to-bake or -fry, corn; not flour tortillas (167535). large: 24 g, FDC 175036 foodPortions id 95472 (undetermined tortilla); near match: FDC has one tortilla size (enchilada-size is 19 g), used for large.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.094,
@@ -3549,10 +3561,11 @@
       "description": "Beverages, Whey protein powder isolate",
       "fdc_id": 173177,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "scoop": 28.67
       },
       "name": "whey protein powder 24 grams of protein per scoop",
-      "notes": "",
+      "notes": "scoop: 28.67 g, FDC 173177 foodPortions id 92053 (undetermined scoop); the portion is amount 3 = 86.0 g, so 86.0 / 3 per scoop.",
       "per_100g": {
         "b12_cobalamin_ug": 3.49,
         "b1_thiamine_mg": 0.872,

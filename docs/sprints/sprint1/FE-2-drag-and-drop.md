@@ -1,6 +1,8 @@
 # FE-2 — Drag-and-drop between slots
 
-**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** FE-1, FE-3
+**Status:** deferred  ·  **Complexity:** M  ·  **Depends on:** FE-1, FE-3
+
+Sprint 2 close-out (DOC-1, 2026-11-14): Deferred: Sprint 3+. Polish for zero weekly users (roadmap Stop 2), and it needs a move/swap endpoint that doesn't exist.
 
 ## Summary
 

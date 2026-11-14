@@ -205,3 +205,23 @@ def test_vegan_draft_with_honey_rejected():
     assert ok is False and res.error_code == "DIETARY_FLAG_INCONSISTENT"
     ok2, _ = validate_recipe_draft(d, Provider(table))
     assert ok2 is True
+
+
+# --- Sprint 2 BE-18: `to taste` only for seasonings ---
+
+
+def test_to_taste_non_seasoning_is_rejected():
+    ok, res = validate_recipe_draft(
+        draft(ings=(("chicken breast", 200.0, "g"), ("rice", 0.0, "to taste"))), Provider(TABLE)
+    )
+    assert not ok
+    assert res.error_code == "INGREDIENT_QUANTITY_REQUIRED"
+    assert "ingredient=rice" in res.field_errors
+
+
+def test_to_taste_seasoning_is_still_allowed():
+    ok, res = validate_recipe_draft(
+        draft(ings=(("chicken breast", 200.0, "g"), ("rice", 150.0, "g"), ("salt", 0.0, "to taste"))),
+        Provider(TABLE),
+    )
+    assert ok, res

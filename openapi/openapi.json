@@ -1872,6 +1872,155 @@
         "title": "RecipeTagGenerationResponse",
         "type": "object"
       },
+      "StarterImportRequest": {
+        "properties": {
+          "recipe_ids": {
+            "description": "Starter recipe ids to copy into the user's pool.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Recipe Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "recipe_ids"
+        ],
+        "title": "StarterImportRequest",
+        "type": "object"
+      },
+      "StarterImportResponse": {
+        "properties": {
+          "imported": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Imported",
+            "type": "array"
+          },
+          "skipped": {
+            "items": {
+              "$ref": "#/components/schemas/StarterImportSkipped"
+            },
+            "title": "Skipped",
+            "type": "array"
+          }
+        },
+        "required": [
+          "imported",
+          "skipped"
+        ],
+        "title": "StarterImportResponse",
+        "type": "object"
+      },
+      "StarterImportSkipped": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "reason": {
+            "enum": [
+              "already_in_pool",
+              "not_a_starter_recipe"
+            ],
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "reason"
+        ],
+        "title": "StarterImportSkipped",
+        "type": "object"
+      },
+      "StarterRecipe": {
+        "description": "One recipe of the optional starter pack (Sprint 2 BE-22).",
+        "properties": {
+          "calories_per_serving": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null when an ingredient doesn't resolve (see unresolved).",
+            "title": "Calories Per Serving"
+          },
+          "cooking_time_minutes": {
+            "title": "Cooking Time Minutes",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "protein_g_per_serving": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protein G Per Serving"
+          },
+          "ready_for_planning": {
+            "description": "False when an ingredient or unit doesn't resolve; the planner would drop it.",
+            "title": "Ready For Planning",
+            "type": "boolean"
+          },
+          "tag_slugs_by_type": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "title": "Tag Slugs By Type",
+            "type": "object"
+          },
+          "unresolved": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Unresolved",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "cooking_time_minutes",
+          "ready_for_planning"
+        ],
+        "title": "StarterRecipe",
+        "type": "object"
+      },
+      "StarterRecipesResponse": {
+        "properties": {
+          "recipes": {
+            "items": {
+              "$ref": "#/components/schemas/StarterRecipe"
+            },
+            "title": "Recipes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "recipes"
+        ],
+        "title": "StarterRecipesResponse",
+        "type": "object"
+      },
       "TagAliasRequest": {
         "properties": {
           "alias_slug": {
@@ -2223,11 +2372,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ApiErrorResponse"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "INGREDIENT_QUANTITY_REQUIRED: a nutrient-bearing ingredient was sent as 'to taste'; details.ingredient names it. Only seasonings (salt, water, spices, herbs) may be 'to taste'."
           }
         },
         "summary": "Create Recipe Endpoint"
@@ -2300,11 +2449,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ApiErrorResponse"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "INGREDIENT_QUANTITY_REQUIRED: a nutrient-bearing ingredient was sent as 'to taste'; details.ingredient names it. Only seasonings (salt, water, spices, herbs) may be 'to taste'."
           }
         },
         "summary": "Sync Recipes Endpoint"
@@ -2425,11 +2574,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ApiErrorResponse"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "INGREDIENT_QUANTITY_REQUIRED: a nutrient-bearing ingredient was sent as 'to taste'; details.ingredient names it. Only seasonings (salt, water, spices, herbs) may be 'to taste'."
           }
         },
         "summary": "Put Recipe Endpoint"
@@ -3136,11 +3285,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ApiErrorResponse"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "INGREDIENT_QUANTITY_REQUIRED: a nutrient-bearing ingredient was sent as 'to taste'; details.ingredient names it. Only seasonings (salt, water, spices, herbs) may be 'to taste'."
           }
         },
         "summary": "Create Recipe Endpoint"
@@ -3213,11 +3362,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ApiErrorResponse"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "INGREDIENT_QUANTITY_REQUIRED: a nutrient-bearing ingredient was sent as 'to taste'; details.ingredient names it. Only seasonings (salt, water, spices, herbs) may be 'to taste'."
           }
         },
         "summary": "Sync Recipes Endpoint"
@@ -3376,6 +3525,64 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "INGREDIENT_QUANTITY_REQUIRED: a nutrient-bearing ingredient was sent as 'to taste'; details.ingredient names it. Only seasonings (salt, water, spices, herbs) may be 'to taste'."
+          }
+        },
+        "summary": "Put Recipe Endpoint"
+      }
+    },
+    "/api/v1/starter_recipes": {
+      "get": {
+        "description": "The optional starter pack (the bundled sample recipes) a new user can import from.",
+        "operationId": "list_starter_recipes_api_v1_starter_recipes_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StarterRecipesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Starter Recipes"
+      }
+    },
+    "/api/v1/starter_recipes/import": {
+      "post": {
+        "description": "Copy chosen starter recipes, and their shipped tags, into the user's pool.\n\nIdempotent: an id already in the pool is ``skipped: already_in_pool``; an id that\nisn't in the starter pack is ``skipped: not_a_starter_recipe`` (never a 4xx for the\nwhole request). An import is an upsert from a fixed source, so it reuses the sync\nand tag-store writers.",
+        "operationId": "import_starter_recipes_api_v1_starter_recipes_import_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StarterImportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StarterImportResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
@@ -3383,7 +3590,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Put Recipe Endpoint"
+        "summary": "Import Starter Recipes"
       }
     },
     "/api/v1/tags": {

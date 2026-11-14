@@ -13,7 +13,6 @@ from the bundled table first, then the USDA cache, then the USDA API when
 
 from __future__ import annotations
 
-import json
 import os
 from functools import lru_cache
 from pathlib import Path
@@ -43,13 +42,15 @@ from src.mcp_server.indexing import (
 )
 from src.mcp_server.nutrients import daily_rdis, plain_name, plain_names, upper_limits
 from src.models.legacy_schedule_migration import merge_schedule_warnings_into_result
+from src.data_layer import user_data
 from src.nutrition.calculator import NutritionCalculator
 from src.planning.planner import plan_meals as run_planner
 from src.providers.summary_hybrid_provider import SummaryHybridIngredientProvider
 
 ROOT = Path(__file__).resolve().parents[2]
-SAMPLE_RECIPES_PATH = ROOT / "data" / "recipes" / "recipes.json.example"
-TAG_PATH = ROOT / api.DEFAULT_TAG_PATH
+# Shipped, read-only data: MCP never reads or writes a user data folder (MACROVA_DATA_DIR).
+SAMPLE_RECIPES_PATH = ROOT / user_data.STARTER_RECIPES_PATH
+TAG_PATH = ROOT / user_data.SHIPPED_RECIPE_TAGS_PATH
 INGREDIENTS_PATH = ROOT / api.DEFAULT_INGREDIENTS_PATH
 INGREDIENT_CACHE_DIR = ROOT / ".cache" / "ingredients"
 
@@ -138,8 +139,7 @@ def _tag_data(recipes: Sequence[m.Recipe]) -> PlanTagData:
 
 @lru_cache(maxsize=1)
 def _sample_recipes() -> Tuple[m.Recipe, ...]:
-    with open(SAMPLE_RECIPES_PATH, encoding="utf-8") as f:
-        raw = json.load(f)["recipes"]
+    raw = user_data.load_starter_recipes(str(SAMPLE_RECIPES_PATH))
     slugs_by_id = tag_repository.load_canonical_recipe_tag_slugs(str(TAG_PATH))
     approved = _approved_tags()
     return tuple(

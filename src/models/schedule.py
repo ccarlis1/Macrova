@@ -50,7 +50,8 @@ from typing import List, Literal, Optional
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from pydantic_core.core_schema import ValidationInfo
 
-_DEFAULT_TAG_REPO_PATH = "data/recipes/recipe_tags.json"
+from src.data_layer import user_data
+
 
 
 class MealSlot(BaseModel):
@@ -102,7 +103,7 @@ class MealSlot(BaseModel):
         # Local import avoids src.models <-> src.llm import cycle.
         from src.llm import tag_repository
 
-        tag_repo_path = os.environ.get("NUTRITION_TAG_REPO_PATH", _DEFAULT_TAG_REPO_PATH)
+        tag_repo_path = os.environ.get("NUTRITION_TAG_REPO_PATH") or user_data.recipe_tags_path()
         resolved: List[str] = []
         for slug in v:
             token = str(slug).strip()

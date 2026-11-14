@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from src.data_layer.models import Recipe, Ingredient
+from src.data_layer import user_data
 from src.llm import tag_repository
 from src.llm.schemas import RecipeTagsJson
 
@@ -21,11 +22,11 @@ class RecipeDB:
         Args:
             json_path: Path to JSON file containing recipes
             tag_repo_path: Path to canonical tag repository payload used by
-                tag_repository.resolve(). Defaults to data/recipes/recipe_tags.json.
+                tag_repository.resolve(). Defaults to ``user_data.recipe_tags_path()``.
         """
         self.json_path = Path(json_path)
         if tag_repo_path is None:
-            self.tag_repo_path = Path("data/recipes/recipe_tags.json")
+            self.tag_repo_path = Path(user_data.recipe_tags_path())
         else:
             self.tag_repo_path = Path(tag_repo_path)
         self._recipes: List[Recipe] = []

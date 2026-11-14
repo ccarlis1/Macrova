@@ -98,6 +98,18 @@ def _check_data_writes(command: str) -> None:
                 )
 
 
+def _is_checkout_root(path: Path, root: Path) -> bool:
+    """The project root, or the root of a git worktree of this repo.
+
+    A worktree's top level has its own ``.git`` file and ``pytest.ini``, so
+    relative data paths and ``pythonpath = .`` resolve there just as they do
+    at the main checkout's root.
+    """
+    if path == root:
+        return True
+    return (path / ".git").exists() and (path / "pytest.ini").is_file()
+
+
 def _check_cwd(command: str, cwd: str | None) -> None:
     root = common.project_dir()
 
@@ -111,7 +123,7 @@ def _check_cwd(command: str, cwd: str | None) -> None:
             landing = (landing / dest).resolve() if not dest.startswith("/") else Path(dest)
             continue
         for pattern, label in REPO_ROOTED:
-            if pattern.search(segment) and landing != root:
+            if pattern.search(segment) and not _is_checkout_root(landing, root):
                 common.deny(
                     f"BLOCKED: running {label} from {landing}, not the repo root.\n\n"
                     "CLAUDE.md trap 12 (The Wrong-CWD Failure): 'run everything from the "

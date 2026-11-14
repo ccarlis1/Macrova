@@ -57,6 +57,8 @@ def test_openapi_includes_v1_contract_paths():
         "/api/v1/profile/pins/{day_index}/{slot_index}",
         "/api/v1/meal_prep_batches",
         "/api/v1/meal_prep_batches/{batch_id}",
+        "/api/v1/starter_recipes",
+        "/api/v1/starter_recipes/import",
     ]
     missing = [p for p in required if p not in paths]
     assert not missing, f"missing paths: {missing}"

@@ -69,6 +69,20 @@ schedule:
   "19:00": 1  # Optional: workout time
 ```
 
+## 📁 Use Your Own Data Folder
+
+By default the planner reads and writes the repo's own recipes (`data/recipes/`). To keep your
+recipes, tags and meal-prep batches separate, and start with an empty recipe pool:
+
+```bash
+python3 scripts/setup_user_data.py            # creates ./user_data (gitignored)
+export MACROVA_DATA_DIR=$PWD/user_data
+```
+
+Then pick recipes from the optional starter pack (with the API server running):
+`GET /api/v1/starter_recipes` lists them and `POST /api/v1/starter_recipes/import` with
+`{"recipe_ids": [...]}` copies the ones you choose into your pool.
+
 ## 🔍 Understanding Warnings
 
 If you see warnings like:

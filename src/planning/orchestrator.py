@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 from src.config.llm_settings import load_llm_settings
 from src.data_layer.meal_prep import MealPrepBatchRepository
 from src.data_layer.recipe_db import RecipeDB
+from src.data_layer import user_data
 from src.data_layer.user_profile import load_profile_pins
 from src.llm.client import LLMClient
 from src.llm.planner_assistant import build_feedback_context, suggest_targeted_recipe_drafts
@@ -445,7 +446,7 @@ def plan_with_llm_feedback(
     days: int,
     *,
     max_feedback_retries: int = 3,
-    recipes_path: str = "data/recipes/recipes.json",
+    recipes_path: Optional[str] = None,
     client: Optional[LLMClient] = None,
     provider: Optional[IngredientDataProvider] = None,
     recipes_to_generate_per_attempt: Optional[int] = None,
@@ -652,7 +653,11 @@ def plan_with_llm_feedback(
             used_ids = {a.recipe_id for a in (result.plan or [])}
             to_persist = [candidates_by_id[rid] for rid in sorted(used_ids) if rid in candidates_by_id]
             try:
-                persisted_ids = append_validated_recipes(path=recipes_path, recipes=to_persist) if to_persist else []
+                persisted_ids = (
+                    append_validated_recipes(path=recipes_path or user_data.recipes_path(), recipes=to_persist)
+                    if to_persist
+                    else []
+                )
             except Exception as exc:
                 state, info = _classify_exception(exc)
                 record["status"] = "error"

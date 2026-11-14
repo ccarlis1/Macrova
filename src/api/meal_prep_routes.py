@@ -17,8 +17,9 @@ from src.api.error_mapping import (
 )
 from src.data_layer.meal_prep import BatchAssignment, MealPrepBatch, MealPrepBatchRepository
 from src.data_layer.recipe_db import RecipeDB
+from src.data_layer import user_data
 
-DEFAULT_RECIPES_PATH = "data/recipes/recipes.json"
+DEFAULT_RECIPES_PATH = user_data.recipes_path()
 router = APIRouter(prefix="/meal_prep_batches", tags=["meal_prep_batches"])
 
 

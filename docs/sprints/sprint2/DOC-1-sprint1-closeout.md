@@ -1,6 +1,6 @@
 # DOC-1 — Close out Sprint 1 stubs
 
-**Status:** todo  ·  **Complexity:** S  ·  **Depends on:** —
+**Status:** done  ·  **Complexity:** S  ·  **Depends on:** —
 
 ## Summary
 
@@ -14,11 +14,11 @@ Unblocks: the start of Sprint 2 (prerequisite 2).
 
 ## Acceptance criteria
 
-- [ ] Each of FE-1 to FE-10 has a new `Status:` (`superseded`, `merged` or `deferred`) and a line `Superseded by: <Sprint 2 ID>` or `Deferred: <reason>`, matching the README's "Sprint 1 FE stubs: dispositions" table.
-- [ ] AI-1 to AI-5 are `Status: parked` with the one-line reason from the README. AI-5's stub-vs-roadmap disagreement (the roadmap calls it done; the stub says `todo`) is resolved. Check `git log -- src/llm/` for duplicate detection and set `implemented` or `parked` to match the code.
-- [ ] BE-15: each of its 5 bullets is checked against `tests/api/` and `tests/test_api_v1_and_openapi.py`. A bullet gets `[x]` only with a named, passing test. The stub ends `implemented` if all 5 are covered; otherwise `parked`, with the uncovered bullets listed for Sprint 3.
-- [ ] `docs/sprints/sprint1/README.md` gets a short "Status vocabulary" note: `implemented` and `done` both mean finished; `superseded`, `merged`, `deferred` and `parked` are the Sprint 2 close-out states.
-- [ ] Test: `grep -l "Status:\*\* todo" docs/sprints/sprint1/*.md` returns nothing. This is a doc task, so the grep is the check.
+- [x] Each of FE-1 to FE-10 has a new `Status:` (`superseded`, `merged` or `deferred`) and a line `Superseded by: <Sprint 2 ID>` or `Deferred: <reason>`, matching the README's "Sprint 1 FE stubs: dispositions" table.
+- [x] AI-1 to AI-5 are `Status: parked` with the one-line reason from the README. AI-5's stub-vs-roadmap disagreement (the roadmap calls it done; the stub says `todo`) is resolved. Check `git log -- src/llm/` for duplicate detection and set `implemented` or `parked` to match the code.
+- [x] BE-15: each of its 5 bullets is checked against `tests/api/` and `tests/test_api_v1_and_openapi.py`. A bullet gets `[x]` only with a named, passing test. The stub ends `implemented` if all 5 are covered; otherwise `parked`, with the uncovered bullets listed for Sprint 3.
+- [x] `docs/sprints/sprint1/README.md` gets a short "Status vocabulary" note: `implemented` and `done` both mean finished; `superseded`, `merged`, `deferred` and `parked` are the Sprint 2 close-out states.
+- [x] Test: `grep -l "Status:\*\* todo" docs/sprints/sprint1/*.md` returns nothing. This is a doc task, so the grep is the check.
 
 ## Implementation notes
 

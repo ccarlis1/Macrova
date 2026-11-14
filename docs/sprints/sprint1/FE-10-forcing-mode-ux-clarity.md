@@ -1,6 +1,8 @@
 # FE-10 — Forcing mode UX clarity
 
-**Status:** todo  ·  **Complexity:** S  ·  **Depends on:** FE-8, BE-8, BE-9
+**Status:** merged  ·  **Complexity:** S  ·  **Depends on:** FE-8, BE-8, BE-9
+
+Sprint 2 close-out (DOC-1, 2026-11-14): Superseded by: FE-15 (pin control and precedence copy). Deferred: tag-forcing mode, with FE-8.
 
 ## Summary
 

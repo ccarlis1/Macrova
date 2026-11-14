@@ -1,6 +1,8 @@
 # FE-6 — LLM suggest → approve flow
 
-**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** AI-1, AI-2, FE-4
+**Status:** deferred  ·  **Complexity:** M  ·  **Depends on:** AI-1, AI-2, FE-4
+
+Sprint 2 close-out (DOC-1, 2026-11-14): Deferred: depends on AI-1/AI-2 (parked). FE-11 offers the existing `assisted` planning mode instead.
 
 ## Summary
 

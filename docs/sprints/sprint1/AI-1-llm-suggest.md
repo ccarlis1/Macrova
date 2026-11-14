@@ -1,6 +1,8 @@
 # AI-1 — LLM.suggest_recipes(query, k)
 
-**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** —
+**Status:** parked  ·  **Complexity:** M  ·  **Depends on:** —
+
+Sprint 2 close-out (DOC-1, 2026-11-14): Parked: LLM features are optional and not on the demo path.
 
 ## Summary
 

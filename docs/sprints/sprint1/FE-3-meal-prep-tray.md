@@ -1,6 +1,8 @@
 # FE-3 — Meal Prep Tray panel
 
-**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** FE-1, BE-5
+**Status:** superseded  ·  **Complexity:** M  ·  **Depends on:** FE-1, BE-5
+
+Sprint 2 close-out (DOC-1, 2026-11-14): Superseded by: FE-14 (carried and rewritten against the redesigned widgets).
 
 ## Summary
 

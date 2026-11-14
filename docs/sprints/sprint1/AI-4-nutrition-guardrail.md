@@ -1,6 +1,8 @@
 # AI-4 — Nutrition hallucination guardrail
 
-**Status:** todo  ·  **Complexity:** S  ·  **Depends on:** AI-2
+**Status:** parked  ·  **Complexity:** S  ·  **Depends on:** AI-2
+
+Sprint 2 close-out (DOC-1, 2026-11-14): Parked: LLM features are optional and not on the demo path. Before reviving, check whether the plausibility gates in `src/llm/recipe_validator.py` already cover it.
 
 ## Summary
 

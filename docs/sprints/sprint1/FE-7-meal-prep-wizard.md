@@ -1,6 +1,8 @@
 # FE-7 — Meal-prep creation wizard
 
-**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** BE-5, FE-3
+**Status:** merged  ·  **Complexity:** M  ·  **Depends on:** BE-5, FE-3
+
+Sprint 2 close-out (DOC-1, 2026-11-14): Superseded by: FE-14 (reduced to one create-batch sheet).
 
 ## Summary
 

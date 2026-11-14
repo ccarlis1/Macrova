@@ -1,6 +1,8 @@
 # FE-8 — Slot config in Profile
 
-**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** DM-4, BE-1, BE-9, FE-5
+**Status:** deferred  ·  **Complexity:** M  ·  **Depends on:** DM-4, BE-1, BE-9, FE-5
+
+Sprint 2 close-out (DOC-1, 2026-11-14): Deferred: Sprint 3. Needs the schedule-write decision (Sprint 2 follow-up 7c) and slot tag editors; L. Slot tags stay settable via YAML, CLI and MCP.
 
 ## Summary
 

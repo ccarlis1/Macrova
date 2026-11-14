@@ -1,6 +1,8 @@
 # AI-5 — Duplicate detection
 
-**Status:** todo  ·  **Complexity:** S  ·  **Depends on:** AI-2
+**Status:** parked  ·  **Complexity:** S  ·  **Depends on:** AI-2
+
+Sprint 2 close-out (DOC-1, 2026-11-14): Parked: the criteria below are not met as written (no `src/llm/duplicate_check.py`, no name-based `rapidfuzz` match, no AI-2 `generate`). The roadmap counted AI-5 as done because a different check exists: `src/llm/repository.py::find_near_duplicate` (ingredient Jaccard ≥ 0.8), run by `validate_recipe_draft` as gate 8 (`DUPLICATE`), added in 9a9f626. Revive only if name-level matching is still wanted.
 
 ## Summary
 

@@ -596,6 +596,19 @@
       },
       "NutritionIngredientLine": {
         "properties": {
+          "grams_per_unit": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Weight in grams of one `unit` of this line (e.g. the Ingredient Hub's cup weight), as on recipe sync lines. Used only when the ingredient record has no conversion for the unit.",
+            "title": "Grams Per Unit"
+          },
           "name": {
             "minLength": 1,
             "title": "Name",

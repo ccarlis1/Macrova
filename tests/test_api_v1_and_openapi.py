@@ -353,6 +353,48 @@ def test_nutrition_summary_totals_match_local_db():
     assert body["protein_g"] == 6.3
 
 
+def _summary_calories(line: dict) -> float:
+    resp = TestClient(app).post(
+        "/api/v1/nutrition/summary", json={"servings": 1, "ingredients": [line]}
+    )
+    assert resp.status_code == 200, resp.text
+    return resp.json()["calories"]
+
+
+def test_nutrition_summary_counts_line_grams_per_unit():
+    """BE-19 follow-up: a line that converts only via its own weight is counted."""
+    # almonds: 579 kcal/100 g; the record has no ``cup`` conversion.
+    assert _summary_calories({"name": "almonds", "quantity": 1, "unit": "cup"}) == 0.0
+    calories = _summary_calories(
+        {"name": "almonds", "quantity": 1, "unit": "cup", "grams_per_unit": 143}
+    )
+    assert abs(calories - 579.0 * 1.43) < 1e-6
+
+
+def test_nutrition_summary_record_conversion_wins_over_line_weight():
+    # almond butter unsalted: record tbsp = 16 g, 614 kcal/100 g.
+    base = {"name": "almond butter unsalted", "quantity": 2, "unit": "tbsp"}
+    without = _summary_calories(base)
+    with_line = _summary_calories({**base, "grams_per_unit": 999})
+    assert abs(without - 614.0 * 0.32) < 1e-6
+    assert with_line == without
+
+
+def test_nutrition_summary_rejects_non_positive_line_weight():
+    resp = TestClient(app).post(
+        "/api/v1/nutrition/summary",
+        json={"ingredients": [{"name": "almonds", "quantity": 1, "unit": "cup", "grams_per_unit": 0}]},
+    )
+    assert resp.status_code == 400
+    assert resp.json()["error"]["code"] == "INVALID_REQUEST"
+
+
+def test_openapi_nutrition_line_has_grams_per_unit():
+    props = _openapi_components()["NutritionIngredientLine"]["properties"]
+    assert "grams_per_unit" in props
+    assert props["grams_per_unit"].get("description")
+
+
 def test_plan_request_model_accepts_recipe_ids():
     r = PlanRequest(
         daily_calories=2000,

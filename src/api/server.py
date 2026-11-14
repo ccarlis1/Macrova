@@ -1136,6 +1136,15 @@ class NutritionIngredientLine(BaseModel):
     name: constr(strip_whitespace=True, min_length=1)  # type: ignore[valid-type]
     quantity: float = Field(..., ge=0)
     unit: str = Field(..., min_length=1)
+    grams_per_unit: Optional[float] = Field(
+        None,
+        gt=0,
+        description=(
+            "Weight in grams of one `unit` of this line (e.g. the Ingredient Hub's cup "
+            "weight), as on recipe sync lines. Used only when the ingredient record has "
+            "no conversion for the unit."
+        ),
+    )
 
 
 class NutritionSummaryRequest(BaseModel):
@@ -1268,6 +1277,9 @@ def _nutrition_line_to_data_ingredient(line: NutritionIngredientLine) -> DataIng
         is_to_taste=is_tt,
         normalized_unit=unit,
         normalized_quantity=qty,
+        # Line weight (BE-19): the calculator uses it only when the record has no
+        # conversion for the unit.
+        grams_per_unit=None if is_tt else line.grams_per_unit,
     )
 
 

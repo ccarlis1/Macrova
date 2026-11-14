@@ -10,6 +10,7 @@ import '../features/agent/llm_config_provider.dart';
 import '../models/ingredient.dart';
 import '../models/nutrition_summary.dart';
 import '../models/recipe.dart';
+import '../models/tag.dart';
 import '../providers/ingredient_provider.dart';
 import '../providers/profile_provider.dart';
 import '../providers/recipe_builder_coordinator.dart';
@@ -18,7 +19,9 @@ import '../services/api_service.dart';
 import '../theme/tokens.dart';
 import 'recipe_builder_mode.dart';
 import '../widgets/dashed_border.dart';
+import '../widgets/macrova_chip.dart';
 import '../widgets/nutrition_totals_panel.dart';
+import '../widgets/planner/tag_pool_filter_section.dart' show kCostLevelChips;
 import '../widgets/section_header.dart';
 import '../widgets/sticky_cta.dart';
 
@@ -53,6 +56,30 @@ class RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
   bool _hydratingRecipe = false;
   RecipeBuilderCoordinator? _coordinator;
 
+  // Tags (FE-12). Only `context` is edited here; other types from the loaded
+  // recipe are kept and sent back (sync replaces the stored non-`time` types).
+  Map<String, List<String>> _tagSlugsByType = const {};
+  List<String> _contextSlugs = [];
+  String? _cuisine;
+  String? _costLevel;
+  /// Values the loaded recipe had, so clearing a pick sends the server default.
+  String? _initialCuisine;
+  String? _initialCostLevel;
+  bool _initialMealPrepCapable = false;
+  bool _showMealRoleError = false;
+  String? _mealPrepNote;
+  bool _mealPrepServingsError = false;
+
+  static const mealRoleErrorKey = Key('recipe_builder_meal_role_error');
+  static const mealPrepSwitchKey = Key('recipe_builder_meal_prep_switch');
+  static const mealPrepNoteKey = Key('recipe_builder_meal_prep_note');
+  static const tagsRetryKey = Key('recipe_builder_tags_retry');
+  static Key mealRoleChipKey(String slug) =>
+      Key('recipe_builder_meal_role_$slug');
+  static Key cuisineChipKey(String value) =>
+      Key('recipe_builder_cuisine_$value');
+  static Key costChipKey(String value) => Key('recipe_builder_cost_$value');
+
   RecipeBuilderMode get _mode => _editingRecipeId == null
       ? RecipeBuilderMode.create
       : RecipeBuilderMode.edit;
@@ -69,6 +96,15 @@ class RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
     _cookingTimeCtrl.dispose();
     _instructionsCtrl.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(context.read<RecipeProvider>().loadTagRegistry());
+    });
   }
 
   @override
@@ -185,6 +221,7 @@ class RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
       _servingsCtrl.text = recipe.servings.toString();
       _cookingTimeCtrl.text = recipe.cookingTimeMinutes.toString();
       _instructionsCtrl.text = recipe.instructions.join('\n');
+      _loadTags(recipe);
       _lines = recipe.ingredients
           .map(
             (e) => _IngredientLine(lineId: _uuid.v4(), entry: e),
@@ -198,18 +235,36 @@ class RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
     _scheduleNutritionSummary();
   }
 
-  /// Fetches full recipe from the API when [recipe] is id/name-only (no lines).
+  void _loadTags(Recipe recipe) {
+    _tagSlugsByType = Map.of(recipe.tagSlugsByType);
+    _contextSlugs = List.of(recipe.contextSlugs);
+    _initialCuisine = recipe.cuisine;
+    _initialCostLevel = recipe.costLevel;
+    _cuisine = recipe.cuisine == kCuisineUnknown ? null : recipe.cuisine;
+    _costLevel = recipe.costLevel;
+    _initialMealPrepCapable = recipe.isMealPrepCapable;
+    _showMealRoleError = false;
+    _mealPrepNote = null;
+    _mealPrepServingsError = false;
+  }
+
+  /// Fetches full recipe from the API when [recipe] is id/name-only (no lines),
+  /// or only its tags when it is a server recipe whose tags were never loaded.
   Future<void> loadRecipeWithHydration(
     Recipe recipe,
     RecipeProvider recipeProvider,
   ) async {
-    if (recipe.ingredients.isNotEmpty) {
+    final needsTags = recipe.tagSlugsByType.isEmpty &&
+        recipeProvider.remoteRecipeIds.contains(recipe.id);
+    if (recipe.ingredients.isNotEmpty && !needsTags) {
       loadRecipe(recipe);
       return;
     }
     setState(() => _hydratingRecipe = true);
     try {
-      final full = await recipeProvider.fetchRecipeDetail(recipe.id);
+      final full = recipe.ingredients.isNotEmpty
+          ? await recipeProvider.refreshServerTags(recipe)
+          : await recipeProvider.fetchRecipeDetail(recipe.id);
       if (!mounted) return;
       loadRecipe(full);
     } on ApiException catch (e) {
@@ -238,6 +293,7 @@ class RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
       _servingsCtrl.text = '1';
       _cookingTimeCtrl.text = '0';
       _instructionsCtrl.clear();
+      _loadTags(const Recipe(id: '', name: ''));
       _lines = [];
       _serverSummary = null;
       _serverSummaryFingerprint = null;
@@ -322,17 +378,70 @@ class RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
     ];
   }
 
+  int get _servingsValue => int.tryParse(_servingsCtrl.text.trim()) ?? 1;
+
   Recipe _buildRecipe() {
     final parsedCook =
         int.tryParse(_cookingTimeCtrl.text.trim()) ?? 0;
+    final tags = Map.of(_tagSlugsByType)..remove('context');
+    if (_contextSlugs.isNotEmpty) tags['context'] = List.of(_contextSlugs);
     return Recipe(
       id: _editingRecipeId ?? _uuid.v4(),
       name: _nameCtrl.text.trim(),
       ingredients: _ingredients,
-      servings: int.tryParse(_servingsCtrl.text.trim()) ?? 1,
+      servings: _servingsValue,
       cookingTimeMinutes: parsedCook < 0 ? 0 : parsedCook,
       instructions: _instructionLinesFromController(),
+      tagSlugsByType: tags,
+      isMealPrepCapable: _initialMealPrepCapable,
+      // Clearing a value the recipe had sends the server's "none" default;
+      // untouched unknown values stay null and are omitted from sync.
+      cuisine: _cuisine ?? (_initialCuisine != null ? kCuisineUnknown : null),
+      costLevel:
+          _costLevel ?? (_initialCostLevel != null ? kCostLevelDefault : null),
     );
+  }
+
+  void _toggleCuisine(String value) =>
+      setState(() => _cuisine = _cuisine == value ? null : value);
+
+  void _toggleCostLevel(String value) =>
+      setState(() => _costLevel = _costLevel == value ? null : value);
+
+  bool get _hasMealPrep => _contextSlugs.contains(Recipe.mealPrepSlug);
+
+  void _toggleMealRole(String slug) {
+    setState(() {
+      if (_contextSlugs.contains(slug)) {
+        _contextSlugs.remove(slug);
+      } else {
+        _contextSlugs.add(slug);
+      }
+      _showMealRoleError = false;
+    });
+  }
+
+  void _setMealPrep(bool on) {
+    setState(() {
+      _mealPrepServingsError = false;
+      if (on) {
+        if (!_hasMealPrep) _contextSlugs.add(Recipe.mealPrepSlug);
+        if (_servingsValue < 2) {
+          _servingsCtrl.text = '2';
+          _mealPrepNote =
+              'Servings set to 2: a meal-prep recipe makes at least two portions.';
+        }
+      } else {
+        _contextSlugs.remove(Recipe.mealPrepSlug);
+        _mealPrepNote = null;
+      }
+    });
+    _scheduleNutritionSummary();
+  }
+
+  bool _hasMealRole(RecipeProvider recipeProvider) {
+    final roles = {for (final t in recipeProvider.mealRoleTags) t.slug};
+    return _contextSlugs.any(roles.contains);
   }
 
   Future<void> _showLlmGenerateDialog() async {
@@ -465,9 +574,17 @@ class RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
       );
       return;
     }
+    final recipeProvider = context.read<RecipeProvider>();
+    if (!_hasMealRole(recipeProvider)) {
+      setState(() => _showMealRoleError = true);
+      return;
+    }
+    if (_hasMealPrep && _servingsValue < 2) {
+      setState(() => _mealPrepServingsError = true);
+      return;
+    }
 
     final recipe = _buildRecipe();
-    final recipeProvider = context.read<RecipeProvider>();
 
     try {
       if (_editingRecipeId != null) {
@@ -656,7 +773,10 @@ class RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
               ),
               keyboardType: TextInputType.number,
               onChanged: (_) {
-                setState(() {});
+                setState(() {
+                  _mealPrepNote = null;
+                  _mealPrepServingsError = false;
+                });
                 _scheduleNutritionSummary();
               },
             ),
@@ -669,7 +789,9 @@ class RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
               keyboardType: TextInputType.number,
               onChanged: (_) => setState(() {}),
             ),
-            const SizedBox(height: MacrovaSpacing.lg),
+            const SizedBox(height: MacrovaSpacing.xl),
+            _buildTagsSection(tokens, context.watch<RecipeProvider>()),
+            const SizedBox(height: MacrovaSpacing.xl),
             TextField(
               controller: _instructionsCtrl,
               decoration: const InputDecoration(
@@ -823,6 +945,140 @@ class RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
           ],
         );
       },
+    );
+  }
+}
+
+extension on RecipeBuilderScreenState {
+  Widget _tagLabel(MacrovaTokens tokens, String text) => Text(
+        MacrovaTypography.labelCapsText(text),
+        style: MacrovaTypography.labelCaps(tokens.inkTertiary),
+      );
+
+  /// Meal role (required, from the registry), cuisine and cost (optional,
+  /// closed vocabularies sent as top-level sync fields) and the meal-prep switch.
+  Widget _buildTagsSection(MacrovaTokens tokens, RecipeProvider recipeProvider) {
+    final mealRoles = recipeProvider.mealRoleTags;
+    final registryError = recipeProvider.tagRegistryError;
+    final Widget mealRoleBody;
+    if (recipeProvider.tagRegistry == null && registryError != null) {
+      mealRoleBody = Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Meal roles couldn\'t be loaded from the server ($registryError). '
+              'A meal role is needed to save.',
+              style: MacrovaTypography.caption(tokens.accentDeep),
+            ),
+          ),
+          TextButton(
+            key: RecipeBuilderScreenState.tagsRetryKey,
+            onPressed: () => recipeProvider.loadTagRegistry(force: true),
+            child: const Text('Retry'),
+          ),
+        ],
+      );
+    } else if (recipeProvider.tagRegistry == null) {
+      mealRoleBody = Text(
+        'Loading meal roles…',
+        style: MacrovaTypography.caption(tokens.inkTertiary),
+      );
+    } else if (mealRoles.isEmpty) {
+      mealRoleBody = Text(
+        'The tag registry has no meal-role tags, so this recipe can\'t be saved.',
+        style: MacrovaTypography.caption(tokens.accentDeep),
+      );
+    } else {
+      mealRoleBody = Wrap(
+        spacing: MacrovaSpacing.xs,
+        runSpacing: MacrovaSpacing.xs,
+        children: [
+          for (final tag in mealRoles)
+            MacrovaChip(
+              key: RecipeBuilderScreenState.mealRoleChipKey(tag.slug),
+              label: tag.display,
+              selected: _contextSlugs.contains(tag.slug),
+              onTap: () => _toggleMealRole(tag.slug),
+            ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _tagLabel(tokens, 'Meal role (required)'),
+        const SizedBox(height: MacrovaSpacing.xs),
+        mealRoleBody,
+        if (_showMealRoleError)
+          Padding(
+            padding: const EdgeInsets.only(top: MacrovaSpacing.xs),
+            child: Text(
+              'Pick at least one meal role to save.',
+              key: RecipeBuilderScreenState.mealRoleErrorKey,
+              style: MacrovaTypography.caption(tokens.accentDeep),
+            ),
+          ),
+        const SizedBox(height: MacrovaSpacing.lg),
+        _tagLabel(tokens, 'Cuisine (optional)'),
+        const SizedBox(height: MacrovaSpacing.xs),
+        Wrap(
+          spacing: MacrovaSpacing.xs,
+          runSpacing: MacrovaSpacing.xs,
+          children: [
+            for (final value in kCuisineVocabulary)
+              if (value != kCuisineUnknown)
+                MacrovaChip(
+                  key: RecipeBuilderScreenState.cuisineChipKey(value),
+                  label: tagValueLabel(value),
+                  selected: _cuisine == value,
+                  onTap: () => _toggleCuisine(value),
+                ),
+          ],
+        ),
+        const SizedBox(height: MacrovaSpacing.lg),
+        _tagLabel(tokens, 'Cost (optional)'),
+        const SizedBox(height: MacrovaSpacing.xs),
+        Wrap(
+          spacing: MacrovaSpacing.xs,
+          runSpacing: MacrovaSpacing.xs,
+          children: [
+            for (final (value, label) in kCostLevelChips)
+              MacrovaChip(
+                key: RecipeBuilderScreenState.costChipKey(value),
+                label: label,
+                selected: _costLevel == value,
+                onTap: () => _toggleCostLevel(value),
+              ),
+          ],
+        ),
+        const SizedBox(height: MacrovaSpacing.md),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Meal-prep capable',
+                style: MacrovaTypography.bodyMedium(tokens.inkPrimary),
+              ),
+            ),
+            Switch(
+              key: RecipeBuilderScreenState.mealPrepSwitchKey,
+              value: _hasMealPrep,
+              onChanged: _setMealPrep,
+            ),
+          ],
+        ),
+        if (_mealPrepNote != null || _mealPrepServingsError)
+          Text(
+            _mealPrepServingsError
+                ? 'A meal-prep recipe needs at least 2 servings.'
+                : _mealPrepNote!,
+            key: RecipeBuilderScreenState.mealPrepNoteKey,
+            style: MacrovaTypography.caption(
+              _mealPrepServingsError ? tokens.accentDeep : tokens.inkTertiary,
+            ),
+          ),
+      ],
     );
   }
 }

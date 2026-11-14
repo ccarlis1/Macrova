@@ -17,22 +17,25 @@ Follow-ups 8 and 6. AGENTS.md says "Daily upper limits (ULs) are enforced per-da
 
 ## Acceptance criteria
 
-- [ ] `PlanRequest.demographic: Optional[Literal["adult_male","adult_female","pregnancy","lactation"]] = None` (or the MCP `Demographic` type, moved somewhere both can import; see notes). Additive.
-- [ ] When `demographic` is set, `/api/v1/plan` and `/api/v1/plan-from-text` pass `resolved_ul` for it into every `plan_meals` / `plan_with_llm_feedback` call. Test in `tests/api/`: a fixture pool where the only calorie-feasible plan exceeds the sodium UL. With `demographic: "adult_male"` the plan fails (UL failure code); without it, it succeeds. Fails before the change.
-- [ ] When `demographic` is unset, behavior is byte-identical to today: the existing plan contract tests stay green with no fixture changes.
-- [ ] Unknown demographic → 400 `INVALID_REQUEST` (Pydantic literal). Test.
-- [ ] `demographic` does **not** set `micronutrient_goals` in this task. RDIs-from-demographic is D-A/BE-20's call. Test: the request with only `demographic` has no weekly micronutrient floors in the planning profile.
-- [ ] CLI: `UserProfileLoader` reads the YAML `demographic` (optional). The CLI passes `resolved_ul` for it in both deterministic and assisted paths; no demographic means no ULs (today's actual behavior). Remove the hard-coded `adult_male` and the dead variable. Test in `tests/test_cli.py` (or the existing CLI test module), asserting `plan_meals` receives `resolved_ul` when the YAML sets a demographic.
-- [ ] `build_plan_request_from_profile` carries `demographic`, so BE-16's parity test also covers ULs. If BE-16 has merged, extend its parity test with a demographic.
-- [ ] One UL resolution path: the API, CLI and MCP all call one helper. Move `daily_rdis`/`upper_limits` and the reference paths from `src/mcp_server/nutrients.py` to `src/data_layer/upper_limits.py` (or a sibling in `data_layer`), and make `mcp_server/nutrients.py` re-export or import them. Test: the existing `tests/mcp_server` tests still pass unchanged.
-- [ ] OpenAPI regenerated (`python3 scripts/run_export_openapi.py`), `--check` green, `tests/test_api_v1_and_openapi.py` asserts `demographic` is in the `PlanRequest` schema.
-- [ ] Flutter (after P0):
+- [x] `PlanRequest.demographic: Optional[Literal["adult_male","adult_female","pregnancy","lactation"]] = None` (or the MCP `Demographic` type, moved somewhere both can import; see notes). Additive.
+- [x] When `demographic` is set, `/api/v1/plan` and `/api/v1/plan-from-text` pass `resolved_ul` for it into every `plan_meals` / `plan_with_llm_feedback` call. Test in `tests/api/`: a fixture pool where the only calorie-feasible plan exceeds the sodium UL. With `demographic: "adult_male"` the plan fails (UL failure code); without it, it succeeds. Fails before the change.
+  - Done in `tests/api/test_plan_demographic_uls.py`. The adult sodium UL is `null` in `ul_by_demographic.json`, so the inline pool binds on **iron** (UL 45 mg) instead. There is no UL-specific failure code: FC-3 prunes the iron-heavy recipe and the day fails as `FM-MACRO-INFEASIBLE` (`cause: macro_gap`, search exit FM-1). The test asserts that code. "Fails before the change" follows from `PlanRequest` ignoring unknown fields (the plan succeeds); it was not re-run against the old code.
+- [x] When `demographic` is unset, behavior is byte-identical to today: the existing plan contract tests stay green with no fixture changes.
+- [x] Unknown demographic → 400 `INVALID_REQUEST` (Pydantic literal). Test.
+- [x] `demographic` does **not** set `micronutrient_goals` in this task. RDIs-from-demographic is D-A/BE-20's call. Test: the request with only `demographic` has no weekly micronutrient floors in the planning profile.
+- [x] CLI: `UserProfileLoader` reads the YAML `demographic` (optional). The CLI passes `resolved_ul` for it in both deterministic and assisted paths; no demographic means no ULs (today's actual behavior). Remove the hard-coded `adult_male` and the dead variable. Test in `tests/test_cli.py` (or the existing CLI test module), asserting `plan_meals` receives `resolved_ul` when the YAML sets a demographic.
+  - Done in `tests/test_cli_demographic_uls.py` (no `tests/test_cli.py` exists). An unsupported YAML value (e.g. `teen_male`) is a `ValueError` at load, not a silent "no ULs". `/api/v1/plan-from-text` gets its own optional `PlanFromTextRequest.demographic` (same literal), since it has no `PlanRequest`.
+- [x] `build_plan_request_from_profile` carries `demographic`, so BE-16's parity test also covers ULs. If BE-16 has merged, extend its parity test with a demographic.
+- [x] One UL resolution path: the API, CLI and MCP all call one helper. Move `daily_rdis`/`upper_limits` and the reference paths from `src/mcp_server/nutrients.py` to `src/data_layer/upper_limits.py` (or a sibling in `data_layer`), and make `mcp_server/nutrients.py` re-export or import them. Test: the existing `tests/mcp_server` tests still pass unchanged.
+- [x] OpenAPI regenerated (`python3 scripts/run_export_openapi.py`), `--check` green, `tests/test_api_v1_and_openapi.py` asserts `demographic` is in the `PlanRequest` schema.
+- [ ] Flutter (after P0): owned by frontend track
   - `PlanRequest` DTO (`frontend/lib/models/models.dart` ~line 182) gains `demographic` and serializes it only when non-empty.
   - `planner_config_screen.dart` (~line 345) passes `profile.demographicGroup`.
   - The Profile picker offers only the 4 supported values, plus "Not set". A saved unsupported value (`teen_*`, `child`) loads as "Not set" and isn't sent.
   - Tests: `test/plan_request_tag_contract_test.dart` (or a new `plan_request_demographic_test.dart`) for serialization, and `test/screens/profile_screen_test.dart` for the picker options.
-- [ ] `benchmark-audit`: 153/153, 0 regressions. The harness should not set a demographic; if it does, stop and report.
-- [ ] `cd frontend && flutter analyze && flutter test` green.
+- [x] `benchmark-audit`: 153/153, 0 regressions. The harness should not set a demographic; if it does, stop and report.
+  - Run on d0a7968/c384493 (`--base main`): exact 153 -> 153, regressions 0, unmapped 0; probes P1 OK (valid), P2 FM-3, P3 OK (valid). The harness sends no `demographic`.
+- [ ] `cd frontend && flutter analyze && flutter test` green. Owned by frontend track.
 
 ## Implementation notes
 

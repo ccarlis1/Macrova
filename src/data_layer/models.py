@@ -17,6 +17,10 @@ class Ingredient:
     is_to_taste: bool = False  # True if ingredient is "to taste" (excluded from nutrition)
     normalized_unit: str = ""  # Converted to base unit (e.g., "g" for grams)
     normalized_quantity: float = 0.0  # Quantity in base unit
+    # Weight in grams of one ``unit`` of this line, sent by the client (Sprint 2 BE-19).
+    # Used only when the ingredient record has no conversion for the unit; never
+    # written to the reference ingredient table.
+    grams_per_unit: Optional[float] = None
 
 
 @dataclass

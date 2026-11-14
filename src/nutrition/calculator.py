@@ -289,17 +289,17 @@ class NutritionCalculator:
             gpu["large"] = float(ingredient_info["large_size_g"])
         return gpu
 
-    def to_grams(
+    def record_grams(
         self, ingredient: Ingredient, ingredient_info: Dict[str, Any]
-    ) -> float:
-        """Convert an ingredient quantity to grams using explicit weights only.
+    ) -> Optional[float]:
+        """Grams for the line from mass units or the ingredient record alone, or None.
 
         Order:
           1. ``g`` / ``gram`` / ``grams`` → quantity
           2. ``grams_per_unit[unit]`` (plus ``scoop_size_g`` / ``large_size_g`` on the record)
           3. ``oz`` → 28.35 (mass, safe for any ingredient)
           4. ``BASE_SERVING_WEIGHTS`` for count units with a named entry
-          5. otherwise ``IngredientNotFoundError`` (no density guesses)
+        The line's own ``grams_per_unit`` is not consulted here (see ``to_grams``).
         """
         quantity = float(ingredient.quantity)
         raw_unit = (ingredient.unit or "").lower().strip()
@@ -320,6 +320,24 @@ class NutritionCalculator:
         weight_per = weights.get(name_lower) or weights.get(name_lower.rstrip("s"))
         if weight_per is not None:
             return quantity * float(weight_per)
+        return None
+
+    def to_grams(
+        self, ingredient: Ingredient, ingredient_info: Dict[str, Any]
+    ) -> float:
+        """Convert an ingredient quantity to grams using explicit weights only.
+
+        Order: mass units and the ingredient record (``record_grams``), then the
+        recipe line's own ``grams_per_unit`` (Sprint 2 BE-19: the client's weight of
+        one ``unit``; the record wins when both exist), otherwise
+        ``IngredientNotFoundError`` (no density guesses).
+        """
+        grams = self.record_grams(ingredient, ingredient_info)
+        if grams is not None:
+            return grams
+
+        if ingredient.grams_per_unit is not None and float(ingredient.grams_per_unit) > 0:
+            return float(ingredient.quantity) * float(ingredient.grams_per_unit)
 
         raise IngredientNotFoundError(
             f"{ingredient.name} (no gram conversion for '{ingredient.unit}')"

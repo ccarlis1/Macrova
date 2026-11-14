@@ -691,3 +691,53 @@ class TestMicronutrientCalculation:
         import os
         os.unlink(temp_path)
 
+
+
+# --- Sprint 2 BE-19: a recipe line may carry its own grams_per_unit ---
+
+
+class _DictProvider:
+    def __init__(self, records):
+        self._records = records
+
+    def get_ingredient_info(self, name):
+        return self._records.get(name)
+
+    def resolve_all(self, names):
+        return None
+
+
+_BE19_RECORDS = {
+    "oats": {"name": "oats", "per_100g": {"calories": 380, "protein_g": 13.0, "fat_g": 7.0, "carbs_g": 67.0}},
+    "milk": {
+        "name": "milk",
+        "per_100g": {"calories": 60, "protein_g": 3.2, "fat_g": 3.3, "carbs_g": 4.8},
+        "grams_per_unit": {"cup": 244.0},
+    },
+}
+
+
+class TestLineGramsPerUnit:
+    @pytest.fixture
+    def calc(self):
+        return NutritionCalculator(_DictProvider(_BE19_RECORDS))
+
+    def test_line_only_conversion_resolves(self, calc):
+        ing = Ingredient("oats", 2.0, "cup", grams_per_unit=90.0)
+        assert calc.to_grams(ing, _BE19_RECORDS["oats"]) == pytest.approx(180.0)
+        assert calc.calculate_ingredient_nutrition(ing).calories == pytest.approx(380 * 1.8)
+
+    def test_record_wins_over_line(self, calc):
+        ing = Ingredient("milk", 1.0, "cup", grams_per_unit=200.0)
+        assert calc.to_grams(ing, _BE19_RECORDS["milk"]) == pytest.approx(244.0)
+
+    def test_mass_unit_ignores_line(self, calc):
+        ing = Ingredient("oats", 50.0, "g", grams_per_unit=90.0)
+        assert calc.to_grams(ing, _BE19_RECORDS["oats"]) == pytest.approx(50.0)
+
+    def test_neither_is_unresolved(self, calc):
+        ing = Ingredient("oats", 2.0, "cup")
+        with pytest.raises(IngredientNotFoundError):
+            calc.to_grams(ing, _BE19_RECORDS["oats"])
+        recipe = Recipe(id="r", name="r", ingredients=[ing], cooking_time_minutes=5, instructions=[])
+        assert calc.unresolved_ingredient_names(recipe) == ["oats (no gram conversion for 'cup')"]

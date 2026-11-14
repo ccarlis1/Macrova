@@ -147,14 +147,7 @@ class RecipeDB:
             row = {
                 "id": recipe.id,
                 "name": recipe.name,
-                "ingredients": [
-                    {
-                        "name": ing.name,
-                        "quantity": ing.quantity,
-                        "unit": ing.unit,
-                    }
-                    for ing in recipe.ingredients
-                ],
+                "ingredients": [ingredient_to_stored_dict(ing) for ing in recipe.ingredients],
                 "cooking_time_minutes": recipe.cooking_time_minutes,
                 "instructions": list(recipe.instructions),
                 "default_servings": int(recipe.default_servings),
@@ -182,6 +175,13 @@ def parse_ingredient(ing_data: dict) -> Ingredient:
     # For "to taste" ingredients, set quantity to 0
     quantity = 0.0 if is_to_taste else float(ing_data.get("quantity", 0.0))
 
+    raw_gpu = ing_data.get("grams_per_unit")
+    grams_per_unit = (
+        float(raw_gpu)
+        if isinstance(raw_gpu, (int, float)) and not isinstance(raw_gpu, bool) and raw_gpu > 0
+        else None
+    )
+
     return Ingredient(
         name=ing_data["name"],
         quantity=quantity,
@@ -190,4 +190,13 @@ def parse_ingredient(ing_data: dict) -> Ingredient:
         # Not normalized yet: convert_recipes fills grams after provider resolution.
         normalized_unit="",
         normalized_quantity=0.0,
+        grams_per_unit=None if is_to_taste else grams_per_unit,
     )
+
+
+def ingredient_to_stored_dict(ing: Ingredient) -> dict:
+    """The ``recipes.json`` shape of one line; ``grams_per_unit`` only when set (BE-19)."""
+    row = {"name": ing.name, "quantity": ing.quantity, "unit": ing.unit}
+    if ing.grams_per_unit is not None:
+        row["grams_per_unit"] = float(ing.grams_per_unit)
+    return row

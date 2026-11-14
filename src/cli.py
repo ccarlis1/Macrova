@@ -416,6 +416,7 @@ def main():
             all_recipes,
             parity_ctx.active_batches,
             parity_ctx.seed,
+            days=args.days,
         )
         print(
             json.dumps(

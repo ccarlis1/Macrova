@@ -1260,6 +1260,7 @@ async def plan_meals_endpoint(
             inputs.recipes,
             active_batches,
             parity_ctx.seed,
+            days=plan_request.days,
         )
         logger.debug(
             "Built effective plan request for /api/v1/plan with keys=%s seed=%s",

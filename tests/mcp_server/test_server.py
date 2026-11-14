@@ -229,8 +229,8 @@ def test_analyze_recipe_reports_matches_and_gaps():
         "name": "Draft bowl",
         "ingredients": [
             {"name": "chicken breast", "quantity": 400, "unit": "g"},
-            # No USDA portion weight for chia by the tbsp, so this unit stays unconvertible.
-            {"name": "chia seeds", "quantity": 1, "unit": "tbsp, whole pieces"},
+            # No weight for chia by the cup (only g and tbsp), so this unit stays unconvertible.
+            {"name": "chia seeds", "quantity": 1, "unit": "cup"},
             {"name": "everything bagel seasoning", "quantity": 5, "unit": "g"},
             {"name": "salt", "quantity": 1, "unit": "to taste"},
         ],
@@ -259,14 +259,10 @@ def test_sample_recipes_carry_valid_tags():
 
 
 def test_sample_recipes_ready_for_planning():
-    """DATA-1: 11 of 18 samples plan. Each gap is a unit with no close FDC portion (see the stub)."""
+    """DATA-1: all 18 samples plan (FDC portions, plus Cronometer NCCDB servings where FDC has none)."""
     samples = _call("macrova_get_sample_recipes", {}).structured_content["recipes"]
-    not_ready = sorted(r["name"] for r in samples if not r["ready_for_planning"])
-    assert sum(r["ready_for_planning"] for r in samples) == 11
-    assert not_ready == [
-        "Canned Salmon Wrap", "Dense Bean Salad", "Greek Yogurt Balance", "Greek Yogurt Protein Bowl",
-        "Power Shake", "Roast Beef Sandwich", "Shakshuka",
-    ]
+    assert [r["name"] for r in samples if not r["ready_for_planning"]] == []
+    assert len(samples) == 18
 
 
 def test_list_tags_returns_registry_tags_only():

@@ -1,4 +1,8 @@
-"""Sprint 2 DATA-1: every household-unit weight in the ingredient table names its FDC source."""
+"""Sprint 2 DATA-1: every household-unit weight in the ingredient table names its source.
+
+Accepted sources: an FDC foodPortions entry, or a Cronometer NCCDB serving the
+user supplied where FDC has no matching portion (DATA-1 close-out).
+"""
 
 from __future__ import annotations
 
@@ -8,7 +12,8 @@ from pathlib import Path
 TABLE = Path(__file__).resolve().parents[1] / "data/reference/ingredient_nutrition.json"
 
 # Keys that predate DATA-1 and carry no source note yet. Do not add to this list:
-# a new key must have a "<unit>: <grams> g, FDC <fdc_id> foodPortions id <id> (...)" note.
+# a new key must have a "<unit>: <grams> g, FDC <fdc_id> foodPortions id <id> (...)" note,
+# or "<unit>: <grams> g, Cronometer NCCDB serving, user-supplied <date>; ..." when FDC has no portion.
 GRANDFATHERED = {
     ("almond butter unsalted", "tbsp"), ("avocado black skin", "each"), ("avocado oil", "tsp"),
     ("banana", "large"), ("beans white mature seeds", "cup"), ("black beans drained", "cup, whole pieces"),
@@ -38,7 +43,8 @@ def test_every_household_unit_weight_names_its_fdc_source():
         for unit, grams in (rec.get("grams_per_unit") or {}).items():
             if unit == "g" or (rec["name"], unit) in GRANDFATHERED:
                 continue
-            if f"{unit}: {grams:g} g, FDC {rec['fdc_id']} foodPortions id " not in notes:
+            sources = (f"FDC {rec['fdc_id']} foodPortions id ", "Cronometer NCCDB serving, user-supplied ")
+            if not any(f"{unit}: {grams:g} g, {src}" in notes for src in sources):
                 unsourced.append((rec["name"], unit))
     assert unsourced == []
 

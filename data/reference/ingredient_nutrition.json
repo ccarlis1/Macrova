@@ -849,10 +849,11 @@
       "description": "Seeds, chia seeds, dried",
       "fdc_id": 170554,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "tbsp, whole pieces": 10.0
       },
       "name": "chia seeds",
-      "notes": "",
+      "notes": "tbsp, whole pieces: 10 g, Cronometer NCCDB serving, user-supplied 2026-11-14; FDC 170554 has only oz.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.62,
@@ -988,10 +989,11 @@
       "description": "Chickpeas (garbanzo beans, bengal gram), mature seeds, canned, drained solids",
       "fdc_id": 173800,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "cup, whole pieces": 152.0
       },
       "name": "chickpeas drained",
-      "notes": "",
+      "notes": "cup, whole pieces: 152 g, Cronometer NCCDB serving, user-supplied 2026-11-14; cup of drained chickpeas; FDC 173800 has only a 253 g drained can.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.027,
@@ -1454,10 +1456,11 @@
       "fdc_id": 170894,
       "grams_per_unit": {
         "g": 1.0,
-        "tbsp": 15.0
+        "tbsp": 15.0,
+        "cup": 245.0
       },
       "name": "greek yogurt plain nonfat",
-      "notes": "",
+      "notes": "cup: 245 g, Cronometer NCCDB serving, user-supplied 2026-11-14; FDC 170894 has only a 170 g container.",
       "per_100g": {
         "b12_cobalamin_ug": 0.75,
         "b1_thiamine_mg": 0.023,
@@ -1877,10 +1880,11 @@
       "fdc_id": 170903,
       "grams_per_unit": {
         "g": 1.0,
-        "tbsp": 15.0
+        "tbsp": 15.0,
+        "cup": 245.0
       },
       "name": "low fat greek yogurt",
-      "notes": "",
+      "notes": "cup: 245 g, Cronometer NCCDB serving, user-supplied 2026-11-14; FDC 170903 has only a 200 g container.",
       "per_100g": {
         "b12_cobalamin_ug": 0.52,
         "b1_thiamine_mg": 0.044,
@@ -2157,10 +2161,11 @@
       "description": "Cheese, parmesan, hard",
       "fdc_id": 170848,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "tbsp, grated": 6.0
       },
       "name": "parmesan cheese hard",
-      "notes": "",
+      "notes": "tbsp, grated: 6 g, Cronometer NCCDB serving, user-supplied 2026-11-14; FDC 170848 has only cubic inch, oz, package.",
       "per_100g": {
         "b12_cobalamin_ug": 1.2,
         "b1_thiamine_mg": 0.039,
@@ -2621,10 +2626,11 @@
       "description": "GENOA SALAMI",
       "fdc_id": 2126122,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "slice": 10.0
       },
       "name": "salami genoa",
-      "notes": "",
+      "notes": "slice: 10 g, Cronometer NCCDB serving, user-supplied 2026-11-14; FDC 2126122 (Branded) has no portions.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.0,
@@ -2667,10 +2673,11 @@
       "description": "Salmon, sockeye, canned, total can contents",
       "fdc_id": 175174,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "small can": 92.0
       },
       "name": "salmon canned",
-      "notes": "SR Legacy sockeye canned (matches cache fdc); mapping channel compares remap vs cache values.",
+      "notes": "SR Legacy sockeye canned (matches cache fdc); mapping channel compares remap vs cache values. small can: 92 g, Cronometer NCCDB serving, user-supplied 2026-11-14; FDC 175174 has only the 417 g whole can.",
       "per_100g": {
         "b12_cobalamin_ug": 0.4,
         "b1_thiamine_mg": 0.02,
@@ -2900,10 +2907,11 @@
       "description": "Bread, french or vienna (includes sourdough)",
       "fdc_id": 172675,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "large slice": 43.0
       },
       "name": "sourdough bread",
-      "notes": "",
+      "notes": "large slice: 43 g, Cronometer NCCDB serving, user-supplied 2026-11-14; FDC 172675 slice is 139 g.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.71,

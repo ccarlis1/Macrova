@@ -99,6 +99,9 @@ class RecipeProvider extends ChangeNotifier {
   bool _syncLoading = false;
   String? _syncError;
 
+  /// Device-local favorite recipe ids (not a planner tag / not synced).
+  final Set<String> _favoriteRecipeIds = {};
+
   /// In-memory full recipes from [assets/dev/server_recipes.json] (by backend id).
   Map<String, Recipe>? _bundledById;
   bool _bundledAssetHydrateAttempted = false;
@@ -144,10 +147,29 @@ class RecipeProvider extends ChangeNotifier {
   Set<String> get remoteRecipeIds =>
       Set.unmodifiable(_remoteSummaries.map((s) => s.id));
 
+  /// Device-local favorites; not sent to `/tags` or treated as planner constraints.
+  Set<String> get favoriteRecipeIds => Set.unmodifiable(_favoriteRecipeIds);
+
+  bool isFavorite(String recipeId) => _favoriteRecipeIds.contains(recipeId);
+
   Future<void> load() async {
     _localRecipes = await StorageService.loadRecipes();
+    _favoriteRecipeIds
+      ..clear()
+      ..addAll(await StorageService.loadFavoriteRecipeIds());
     _loaded = true;
     notifyListeners();
+  }
+
+  Future<void> toggleFavorite(String recipeId) async {
+    if (recipeId.isEmpty) return;
+    if (_favoriteRecipeIds.contains(recipeId)) {
+      _favoriteRecipeIds.remove(recipeId);
+    } else {
+      _favoriteRecipeIds.add(recipeId);
+    }
+    notifyListeners();
+    await StorageService.saveFavoriteRecipeIds(_favoriteRecipeIds);
   }
 
   /// Loads bundled `server_recipes.json` into [_bundledById] and patches [_localRecipes]

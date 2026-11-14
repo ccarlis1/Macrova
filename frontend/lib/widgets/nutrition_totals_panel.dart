@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/micronutrient_metadata.dart';
+import '../theme/tokens.dart';
 import 'macro_display.dart';
 import 'micronutrient_bar.dart';
 
@@ -36,20 +37,24 @@ class NutritionTotalsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens =
+        Theme.of(context).extension<MacrovaTokens>() ?? MacrovaTokens.light;
+
     return Card(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: Theme.of(context).colorScheme.outlineVariant,
-        ),
+        borderRadius: MacrovaRadius.borderMd,
+        side: BorderSide(color: tokens.lineDefault),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(MacrovaSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 12),
+            Text(
+              title,
+              style: MacrovaTypography.subtitle(tokens.inkPrimary),
+            ),
+            const SizedBox(height: MacrovaSpacing.md),
             MacroDisplay(
               calories: calories,
               proteinG: proteinG,
@@ -57,24 +62,40 @@ class NutritionTotalsPanel extends StatelessWidget {
               fatG: fatG,
             ),
             if (perServingCalories != null && servings != null) ...[
-              const Divider(height: 24),
+              Divider(height: MacrovaSpacing.xlAlt, color: tokens.lineSoft),
               Text(
                 'Per Serving ($servings servings)',
-                style: Theme.of(context).textTheme.titleSmall,
+                style: MacrovaTypography.label(tokens.inkPrimary),
               ),
-              const SizedBox(height: 8),
-              _labeledRow(context, 'Calories:', '${perServingCalories!.round()} kcal'),
-              _labeledRow(context, 'Protein:', '${perServingProteinG!.round()}g'),
-              _labeledRow(context, 'Carbs:', '${perServingCarbsG!.round()}g'),
-              _labeledRow(context, 'Fat:', '${perServingFatG!.round()}g'),
+              const SizedBox(height: MacrovaSpacing.sm),
+              _labeledRow(
+                tokens,
+                'Calories:',
+                '${perServingCalories!.round()} kcal',
+              ),
+              _labeledRow(
+                tokens,
+                'Protein:',
+                '${perServingProteinG!.round()}g',
+              ),
+              _labeledRow(
+                tokens,
+                'Carbs:',
+                '${perServingCarbsG!.round()}g',
+              ),
+              _labeledRow(
+                tokens,
+                'Fat:',
+                '${perServingFatG!.round()}g',
+              ),
             ],
             if (micronutrients.isNotEmpty) ...[
-              const Divider(height: 24),
+              Divider(height: MacrovaSpacing.xlAlt, color: tokens.lineSoft),
               Text(
                 'Micronutrients (Total)',
-                style: Theme.of(context).textTheme.titleSmall,
+                style: MacrovaTypography.label(tokens.inkPrimary),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: MacrovaSpacing.sm),
               ...micronutrients.entries.map((e) {
                 final target = micronutrientTargets[e.key] ?? 0;
                 final unit = micronutrientUnitForKey(e.key);
@@ -95,19 +116,18 @@ class NutritionTotalsPanel extends StatelessWidget {
     );
   }
 
-  Widget _labeledRow(BuildContext context, String label, String value) {
+  Widget _labeledRow(MacrovaTokens tokens, String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.symmetric(vertical: MacrovaSpacing.xs / 2),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: Theme.of(context).textTheme.bodyMedium),
+          Text(label, style: MacrovaTypography.body(tokens.inkSecondary)),
           Text(
             value,
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(fontWeight: FontWeight.w600),
+            style: MacrovaTypography.body(tokens.inkPrimary).copyWith(
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),

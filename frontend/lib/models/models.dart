@@ -399,6 +399,45 @@ class RecipeIngredient {
   }
 }
 
+/// One entry from `PlanResponse.report.failures[]` (OpenAPI `PlanFailure`).
+class PlanFailure {
+  final String code;
+  final String message;
+  final int? dayIndex;
+  final int? slotIndex;
+  final String? slotId;
+  final String? date;
+  final Map<String, dynamic> details;
+  final String? fixHint;
+
+  const PlanFailure({
+    required this.code,
+    required this.message,
+    this.dayIndex,
+    this.slotIndex,
+    this.slotId,
+    this.date,
+    this.details = const {},
+    this.fixHint,
+  });
+
+  factory PlanFailure.fromJson(Map<String, dynamic> json) {
+    final detailsRaw = json['details'];
+    return PlanFailure(
+      code: json['code'] as String? ?? '',
+      message: json['message'] as String? ?? '',
+      dayIndex: (json['day_index'] as num?)?.toInt(),
+      slotIndex: (json['slot_index'] as num?)?.toInt(),
+      slotId: json['slot_id'] as String?,
+      date: json['date'] as String?,
+      details: detailsRaw is Map
+          ? Map<String, dynamic>.from(detailsRaw)
+          : const {},
+      fixHint: json['fix_hint'] as String?,
+    );
+  }
+}
+
 class Meal {
   final String mealType;
   final Map<String, dynamic> recipe;
@@ -406,6 +445,11 @@ class Meal {
   final int busynessLevel;
   /// §4.3: whether the recipe is tagged for [mealType]; null when unknown.
   final bool? mealTypeMatch;
+  final String? recipeId;
+  final int? slotIndex;
+  final String? source;
+  final String? batchId;
+  final double? servings;
 
   const Meal({
     required this.mealType,
@@ -413,6 +457,11 @@ class Meal {
     required this.nutrition,
     required this.busynessLevel,
     this.mealTypeMatch,
+    this.recipeId,
+    this.slotIndex,
+    this.source,
+    this.batchId,
+    this.servings,
   });
 
   factory Meal.fromJson(Map<String, dynamic> json) {
@@ -423,11 +472,22 @@ class Meal {
           NutritionProfile.fromJson(json['nutrition'] as Map<String, dynamic>),
       busynessLevel: json['busyness_level'] as int,
       mealTypeMatch: json['meal_type_match'] as bool?,
+      recipeId: json['recipe_id'] as String?,
+      slotIndex: (json['slot_index'] as num?)?.toInt(),
+      source: json['source'] as String?,
+      batchId: json['batch_id'] as String?,
+      servings: (json['servings'] as num?)?.toDouble(),
     );
   }
 
   /// One meal object from `POST /api/v1/plan` [`daily_plans[].meals`].
   factory Meal.fromPlanApiV1(Map<String, dynamic> m) {
+    final recipeId = m['recipe_id']?.toString();
+    final slotIndex = (m['slot_index'] as num?)?.toInt();
+    final source = m['source'] as String?;
+    final batchId = m['batch_id'] as String?;
+    final servings = (m['servings'] as num?)?.toDouble();
+
     if (m['error'] != null) {
       return Meal(
         mealType: m['meal_type'] as String? ?? 'meal',
@@ -445,6 +505,11 @@ class Meal {
         ),
         busynessLevel: 3,
         mealTypeMatch: m['meal_type_match'] as bool?,
+        recipeId: recipeId,
+        slotIndex: slotIndex,
+        source: source,
+        batchId: batchId,
+        servings: servings,
       );
     }
 
@@ -467,6 +532,11 @@ class Meal {
       nutrition: NutritionProfile.fromJson(nutritionMap),
       busynessLevel: m['busyness_level'] as int? ?? 3,
       mealTypeMatch: m['meal_type_match'] as bool?,
+      recipeId: recipeId,
+      slotIndex: slotIndex,
+      source: source,
+      batchId: batchId,
+      servings: servings,
     );
   }
 }
@@ -535,6 +605,12 @@ class MealPlan {
   final List<String> warnings;
   /// Plan horizon from API `days` (used to scale daily profile targets for multi-day totals).
   final int days;
+  /// UX branch key: `success` | `partial` | `failed` (not [terminationCode]).
+  final String planStatus;
+  final String? planStatusMessage;
+  final List<PlanFailure> failures;
+  /// Telemetry only (`TC-*`); do not use for UI branching.
+  final String? terminationCode;
 
   /// All meals in plan order (flattened). Legacy / simple UIs.
   List<Meal> get meals =>
@@ -550,6 +626,10 @@ class MealPlan {
     required this.targetAdherence,
     required this.warnings,
     this.days = 1,
+    this.planStatus = 'success',
+    this.planStatusMessage,
+    this.failures = const [],
+    this.terminationCode,
   });
 
   factory MealPlan.fromJson(Map<String, dynamic> json) {
@@ -561,8 +641,17 @@ class MealPlan {
     final totalNutrition = NutritionProfile.fromJson(
       Map<String, dynamic>.from(json['total_nutrition'] as Map),
     );
+    final success = json['success'] as bool;
+    final failuresRaw = json['failures'] as List<dynamic>? ?? const [];
+    final failures = [
+      for (final f in failuresRaw)
+        if (f is Map)
+          PlanFailure.fromJson(Map<String, dynamic>.from(f)),
+    ];
+    final planStatus = json['plan_status'] as String? ??
+        (success ? 'success' : 'failed');
     return MealPlan(
-      success: json['success'] as bool,
+      success: success,
       meetsGoals: json['meets_goals'] as bool,
       date: json['date'] as String? ?? '',
       dailyPlans: [
@@ -577,6 +666,10 @@ class MealPlan {
       ),
       warnings: List<String>.from(json['warnings'] ?? const []),
       days: (json['days'] as num?)?.toInt() ?? 1,
+      planStatus: planStatus,
+      planStatusMessage: json['plan_status_message'] as String?,
+      failures: failures,
+      terminationCode: json['termination_code'] as String?,
     );
   }
 
@@ -795,12 +888,33 @@ class MealPlan {
     final warnings = formatPlanApiWarnings(w);
 
     final termination = json['termination_code'] as String?;
-    if (!success &&
-        termination != null &&
-        termination.isNotEmpty &&
-        !warnings.any((s) => s.contains(termination))) {
-      warnings.add('Planner ended with $termination');
+
+    final reportRaw = json['report'];
+    final failures = <PlanFailure>[];
+    if (reportRaw is Map) {
+      final failuresRaw = reportRaw['failures'];
+      if (failuresRaw is List) {
+        for (final f in failuresRaw) {
+          if (f is Map) {
+            failures.add(
+              PlanFailure.fromJson(Map<String, dynamic>.from(f)),
+            );
+          }
+        }
+      }
     }
+
+    final planStatusMessage = json['plan_status_message'] as String?;
+    // Mirror formatters.py when plan_status is absent (old fixtures).
+    String derivedPlanStatus;
+    if (success && failures.isEmpty && planStatusMessage == null) {
+      derivedPlanStatus = 'success';
+    } else if (schedule.isNotEmpty) {
+      derivedPlanStatus = 'partial';
+    } else {
+      derivedPlanStatus = 'failed';
+    }
+    final planStatus = json['plan_status'] as String? ?? derivedPlanStatus;
 
     return MealPlan(
       success: success,
@@ -812,6 +926,10 @@ class MealPlan {
       targetAdherence: _adherence(totalNutrition, goals),
       warnings: warnings,
       days: days,
+      planStatus: planStatus,
+      planStatusMessage: planStatusMessage,
+      failures: failures,
+      terminationCode: termination,
     );
   }
 }

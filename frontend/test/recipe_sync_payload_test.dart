@@ -21,6 +21,17 @@ void main() {
     final p = r.toSyncPayload();
     expect(p['cooking_time_minutes'], 35);
     expect(p['instructions'], ['Boil.', 'Simmer.']);
+    expect(p['default_servings'], 2);
+  });
+
+  test('toSyncPayload default_servings round-trips servings', () {
+    const r = Recipe(
+      id: 'rid',
+      name: 'Soup',
+      ingredients: [],
+      servings: 4,
+    );
+    expect(r.toSyncPayload()['default_servings'], r.servings);
   });
 
   test('fromServerRecipeMap reads cooking_time_minutes and instructions', () {

@@ -104,10 +104,15 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
 
               // Structured planner outcome: keep actionable failures distinct
               // from success-with-warnings advisories. Rendered regardless of
-              // the view toggle so the outcome is never hidden.
+              // the view toggle so the outcome is never hidden. The daily list
+              // shows slot failures on their slot; the calendar has no slot
+              // rows, so there they join the hero panel.
               if (isIncomplete) ...[
                 const SizedBox(height: MacrovaSpacing.sectionTop),
-                FailureViewModel.fromMealPlan(mealPlan).toPanel(),
+                FailureViewModel.fromMealPlan(
+                  mealPlan,
+                  shownInline: _showCalendar ? null : (_) => true,
+                ).toHeroPanel(context),
               ] else if (mealPlan.warnings.isNotEmpty) ...[
                 const SizedBox(height: MacrovaSpacing.sectionTop),
                 const SectionHeader(title: 'Advisories'),
@@ -227,8 +232,19 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
     MealPlan mealPlan,
   ) {
     final planProvider = context.watch<MealPlanProvider>();
-    final days = mealPlan.dailyPlans;
-    if (days.isEmpty || days.every((d) => d.meals.isEmpty)) {
+    // Days with meals, plus days that only carry slot failures (0-based
+    // day_index → 1-based MealPlanDay.day).
+    final mealsByDay = <int, MealPlanDay>{
+      for (final d in mealPlan.dailyPlans)
+        if (d.meals.isNotEmpty) d.day: d,
+    };
+    final dayNumbers = <int>{
+      ...mealsByDay.keys,
+      for (final f in mealPlan.failures)
+        if (f.isSlotFailure) f.dayIndex! + 1,
+    }.toList()
+      ..sort();
+    if (dayNumbers.isEmpty) {
       return Center(
         child: Text(
           'No meals in this plan',
@@ -238,36 +254,46 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
     }
 
     final blocks = <Widget>[];
-    for (final d in days) {
-      if (d.meals.isEmpty) continue;
+    for (final dayNumber in dayNumbers) {
+      final d = mealsByDay[dayNumber];
+      final dayMeals = d?.meals ?? const <Meal>[];
       blocks.add(
         SectionHeader(
-          title: 'Day ${d.day}',
-          action: Text(
-            '${d.dayTotals.calories.round()} kcal \u2022 '
-            '${d.dayTotals.proteinG.round()}g P \u2022 '
-            '${d.dayTotals.carbsG.round()}g C \u2022 '
-            '${d.dayTotals.fatG.round()}g F',
-            style: MacrovaTypography.caption(tokens.inkTertiary).copyWith(
-              fontFeatures: MacrovaTypography.tabularFigures,
-            ),
-          ),
+          title: 'Day $dayNumber',
+          action: d == null
+              ? null
+              : Text(
+                  '${d.dayTotals.calories.round()} kcal \u2022 '
+                  '${d.dayTotals.proteinG.round()}g P \u2022 '
+                  '${d.dayTotals.carbsG.round()}g C \u2022 '
+                  '${d.dayTotals.fatG.round()}g F',
+                  style: MacrovaTypography.caption(tokens.inkTertiary)
+                      .copyWith(
+                    fontFeatures: MacrovaTypography.tabularFigures,
+                  ),
+                ),
         ),
       );
-      for (var i = 0; i < d.meals.length; i++) {
-        final meal = d.meals[i];
-        final recipeName = meal.recipe['name'] as String? ?? 'Unknown Recipe';
-        // Missing/unresolved recipes are surfaced by the model as an error meal
-        // named "Missing recipe …" — the only per-slot warn signal the plan
-        // response carries. Everything else stays in the default ok state
-        // (pinned/empty/workout data is not present in the plan response).
-        final isMissing = recipeName.startsWith('Missing recipe');
-        final day = d.day;
-        final mealIndex = i;
-        blocks.add(
-          Padding(
+      blocks.addAll(
+        FailureViewModel.slotRowsForDay(
+          plan: mealPlan,
+          dayIndex: dayNumber - 1,
+          meals: dayMeals,
+          wrap: (row) => Padding(
             padding: const EdgeInsets.only(bottom: MacrovaSpacing.sm),
-            child: MealCard(
+            child: row,
+          ),
+          mealBuilder: (i) {
+            final meal = dayMeals[i];
+            final recipeName =
+                meal.recipe['name'] as String? ?? 'Unknown Recipe';
+            // Missing/unresolved recipes are surfaced by the model as an
+            // error meal named "Missing recipe …"; structured slot failures
+            // render as inline FailurePanel rows next to the slot.
+            final isMissing = recipeName.startsWith('Missing recipe');
+            final day = dayNumber;
+            final mealIndex = i;
+            return MealCard(
               mealType: meal.mealType,
               recipeName: recipeName,
               calories: meal.nutrition.calories,
@@ -289,10 +315,10 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
                       planProvider.toggleCooked(day, mealIndex),
                 );
               },
-            ),
-          ),
-        );
-      }
+            );
+          },
+        ),
+      );
       blocks.add(const SizedBox(height: MacrovaSpacing.lg));
     }
     if (blocks.isNotEmpty) {

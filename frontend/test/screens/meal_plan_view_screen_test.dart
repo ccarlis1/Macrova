@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:macrova/features/agent/llm_config_provider.dart';
 import 'package:macrova/models/models.dart';
 import 'package:macrova/providers/meal_plan_provider.dart';
 import 'package:macrova/providers/profile_provider.dart';
@@ -199,6 +200,10 @@ Widget _wrap(MealPlanProvider mealPlan) {
       providers: [
         ChangeNotifierProvider<ProfileProvider>(
           create: (_) => ProfileProvider(),
+        ),
+        ChangeNotifierProvider<LlmConfigProvider>(
+          create: (context) =>
+              LlmConfigProvider(context.read<ProfileProvider>()),
         ),
         ChangeNotifierProvider<MealPlanProvider>.value(value: mealPlan),
       ],

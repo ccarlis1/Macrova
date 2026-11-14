@@ -98,6 +98,11 @@ class TodayScreen extends StatelessWidget {
     }
 
     final day1 = _day1(mealPlan);
+    // Today shows the plan's first day; its slot failures render inline there.
+    final todayIndex = (day1?.day ?? 1) - 1;
+    final todayMeals = day1?.meals ?? const <Meal>[];
+    final hasTodaySlots = todayMeals.isNotEmpty ||
+        FailureViewModel.failingSlotsOnDay(mealPlan, todayIndex).isNotEmpty;
     final isIncomplete = mealPlan.planStatus != 'success';
 
     return Column(
@@ -133,7 +138,10 @@ class TodayScreen extends StatelessWidget {
                     ],
 
                     if (isIncomplete) ...[
-                      FailureViewModel.fromMealPlan(mealPlan).toPanel(),
+                      FailureViewModel.fromMealPlan(
+                        mealPlan,
+                        shownInline: (f) => f.dayIndex == todayIndex,
+                      ).toHeroPanel(context),
                       const SizedBox(height: MacrovaSpacing.sectionTop),
                     ] else if (mealPlan.warnings.isNotEmpty) ...[
                       const SectionHeader(title: 'Advisories'),
@@ -169,10 +177,14 @@ class TodayScreen extends StatelessWidget {
                         recipes,
                       ),
                       const SizedBox(height: MacrovaSpacing.sectionTop),
+                    ],
+                    if (hasTodaySlots) ...[
                       _buildTodaysPlan(
                         context,
                         tokens,
-                        day1,
+                        mealPlan,
+                        todayIndex,
+                        todayMeals,
                         planProvider,
                       ),
                       const SizedBox(height: MacrovaSpacing.sectionTop),
@@ -421,56 +433,60 @@ class TodayScreen extends StatelessWidget {
   Widget _buildTodaysPlan(
     BuildContext context,
     MacrovaTokens tokens,
-    MealPlanDay day1,
+    MealPlan mealPlan,
+    int dayIndex,
+    List<Meal> meals,
     MealPlanProvider planProvider,
   ) {
+    final day = dayIndex + 1;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionHeader(
-          title: 'Day 1',
-          subtitle: '${day1.meals.length} meal${day1.meals.length == 1 ? '' : 's'}',
+          title: 'Day $day',
+          subtitle: '${meals.length} meal${meals.length == 1 ? '' : 's'}',
           linkLabel: 'Edit',
           onLink: () => _go(context, _navPlanner),
         ),
-        for (var i = 0; i < day1.meals.length; i++) ...[
-          Builder(
-            builder: (context) {
-              final meal = day1.meals[i];
-              final recipeName =
-                  meal.recipe['name'] as String? ?? 'Unknown Recipe';
-              final isMissing = recipeName.startsWith('Missing recipe');
-              final mealIndex = i;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: MacrovaSpacing.sm),
-                child: MealCard(
-                  mealType: meal.mealType,
-                  recipeName: recipeName,
-                  calories: meal.nutrition.calories,
-                  proteinG: meal.nutrition.proteinG,
-                  carbsG: meal.nutrition.carbsG,
-                  fatG: meal.nutrition.fatG,
-                  timeLabel: _preferredTimeForMeal(planProvider, i),
-                  slotState:
-                      isMissing ? MealSlotState.warn : MealSlotState.ok,
-                  warningText: isMissing ? 'Recipe unavailable' : null,
-                  isCooked: planProvider.isCooked(1, mealIndex),
-                  onTap: () {
-                    MealDetailSheet.show(
-                      context: context,
-                      meal: meal,
-                      day: 1,
-                      mealIndex: mealIndex,
-                      isCooked: planProvider.isCooked(1, mealIndex),
-                      onToggleCooked: () =>
-                          planProvider.toggleCooked(1, mealIndex),
-                    );
-                  },
-                ),
-              );
-            },
+        ...FailureViewModel.slotRowsForDay(
+          plan: mealPlan,
+          dayIndex: dayIndex,
+          meals: meals,
+          wrap: (row) => Padding(
+            padding: const EdgeInsets.only(bottom: MacrovaSpacing.sm),
+            child: row,
           ),
-        ],
+          mealBuilder: (i) {
+            final meal = meals[i];
+            final recipeName =
+                meal.recipe['name'] as String? ?? 'Unknown Recipe';
+            final isMissing = recipeName.startsWith('Missing recipe');
+            final mealIndex = i;
+            return MealCard(
+              mealType: meal.mealType,
+              recipeName: recipeName,
+              calories: meal.nutrition.calories,
+              proteinG: meal.nutrition.proteinG,
+              carbsG: meal.nutrition.carbsG,
+              fatG: meal.nutrition.fatG,
+              timeLabel: _preferredTimeForMeal(planProvider, i),
+              slotState: isMissing ? MealSlotState.warn : MealSlotState.ok,
+              warningText: isMissing ? 'Recipe unavailable' : null,
+              isCooked: planProvider.isCooked(day, mealIndex),
+              onTap: () {
+                MealDetailSheet.show(
+                  context: context,
+                  meal: meal,
+                  day: day,
+                  mealIndex: mealIndex,
+                  isCooked: planProvider.isCooked(day, mealIndex),
+                  onToggleCooked: () =>
+                      planProvider.toggleCooked(day, mealIndex),
+                );
+              },
+            );
+          },
+        ),
       ],
     );
   }

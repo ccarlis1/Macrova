@@ -309,7 +309,7 @@ preferences:
 **Output**: `List[ULViolation]` (empty = passed)
 
 **Validation Logic**:
-1. Load reference ULs from `data/reference/ul_by_demographic.json` for user's demographic
+1. Load reference ULs from `data/reference/ul_by_demographic.json` for user's demographic (`upper_limits(demographic)` / `upper_limits_for(optional)` in `src/data_layer/upper_limits.py`; the API, CLI and MCP server all use it, and pass the result only when a demographic is set)
 2. Merge with user overrides from `upper_limits` (overrides replace reference values)
 3. For each micronutrient field:
    - If UL is `None`: skip (no limit established)

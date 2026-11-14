@@ -57,6 +57,15 @@ On both `/plan` (`PlanRequest`) and `/plan-from-text` (`PlanFromTextRequest`):
 - `dietary_flags` (optional)
 - `recipe_tags_path` (optional)
 
+## Daily upper limits: `demographic` (request)
+
+Sprint 2 BE-17. On both `/plan` (`PlanRequest`) and `/plan-from-text` (`PlanFromTextRequest`), optional `demographic` is one of `adult_male`, `adult_female`, `pregnancy`, `lactation` (the demographics `data/reference/ul_by_demographic.json` and `rdi_by_demographic.json` carry). Any other value is 400 `INVALID_REQUEST`.
+
+- **Set:** the planner enforces that demographic's daily ULs, per day, in deterministic and assisted modes (`plan_meals(..., resolved_ul=...)`, threaded through `plan_with_llm_feedback`). It does **not** set `micronutrient_goals`.
+- **Omitted:** no ULs; the request plans exactly as before the field existed.
+- **Failure code:** there is no UL-specific code. A UL prunes candidates during search (FC-3); when that leaves a day unable to meet its targets the plan fails like any other target miss, typically `FM-MACRO-INFEASIBLE` (`cause: macro_gap`).
+- The CLI reads the same value from the profile YAML's `demographic`, and `build_plan_request_from_profile` carries it. The API, CLI and MCP server all resolve ULs through `src/data_layer/upper_limits.py` (`upper_limits` / `upper_limits_for`).
+
 ## Recipe sync: `default_servings`
 
 `POST /api/v1/recipes/sync` items include `default_servings` (see `RecipeDetailResponse` / sync models in `server.py`). Flutter `Recipe.toSyncPayload()` sends `default_servings` from local `servings`.

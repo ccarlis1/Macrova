@@ -1,0 +1,83 @@
+{
+  "id": "fe12-oat-bowl",
+  "name": "Overnight Oat Bowl",
+  "servings": 2,
+  "default_servings": 2,
+  "cooking_time_minutes": 10,
+  "instructions": [
+    "Mix.",
+    "Chill overnight."
+  ],
+  "ingredients": [
+    {
+      "ingredient_id": "fe12-oat-bowl:line:0",
+      "ingredient_name": "oats",
+      "quantity": 80.0,
+      "unit": "g",
+      "calories_per_100g": 379.0,
+      "protein_per_100g": 13.150000000000002,
+      "carbs_per_100g": 67.7,
+      "fat_per_100g": 6.5200000000000005,
+      "micronutrients_per_100g": {
+        "vitamin_e_mg": 0.42000000000000004,
+        "vitamin_k_ug": 2.0,
+        "b1_thiamine_mg": 0.4600000000000001,
+        "b2_riboflavin_mg": 0.155,
+        "b3_niacin_mg": 1.125,
+        "b5_pantothenic_acid_mg": 1.12,
+        "b6_pyridoxine_mg": 0.10000000000000002,
+        "folate_ug": 32.0,
+        "calcium_mg": 52.0,
+        "copper_mg": 0.391,
+        "iron_mg": 4.25,
+        "magnesium_mg": 138.0,
+        "manganese_mg": 3.63,
+        "phosphorus_mg": 410.0,
+        "potassium_mg": 362.0,
+        "selenium_ug": 28.900000000000002,
+        "sodium_mg": 6.000000000000001,
+        "zinc_mg": 3.6400000000000006,
+        "fiber_g": 10.1,
+        "omega_6_g": 2.2
+      },
+      "unit_conversions": {
+        "g": 1.0
+      },
+      "resolved": true
+    },
+    {
+      "ingredient_id": "fe12-oat-bowl:line:1",
+      "ingredient_name": "milk",
+      "quantity": 200.0,
+      "unit": "g",
+      "calories_per_100g": 55.0,
+      "protein_per_100g": 3.39,
+      "carbs_per_100g": 5.08,
+      "fat_per_100g": 2.12,
+      "micronutrients_per_100g": {
+        "vitamin_c_mg": 1.0,
+        "vitamin_d_iu": 1680.0,
+        "calcium_mg": 127.0,
+        "sodium_mg": 55.0
+      },
+      "unit_conversions": {
+        "g": 1.0,
+        "ml": 1.03
+      },
+      "resolved": true
+    }
+  ],
+  "tag_slugs_by_type": {
+    "context": [
+      "breakfast",
+      "meal-prep"
+    ],
+    "nutrition": [
+      "high-fiber"
+    ],
+    "time": [
+      "time-2"
+    ]
+  },
+  "is_meal_prep_capable": true
+}

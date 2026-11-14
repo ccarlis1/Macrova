@@ -7,12 +7,15 @@ import 'package:uuid/uuid.dart';
 import '../models/ingredient.dart';
 import '../models/models.dart';
 import '../models/recipe.dart';
+import '../models/tag.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
 
 const _uuid = Uuid();
 
 typedef RecipeListSyncFn = Future<List<String>> Function(List<Recipe> recipes);
+typedef RecipeDetailFn = Future<Recipe> Function(String id);
+typedef TagListFn = Future<List<TagMeta>> Function();
 
 /// Dev: `flutter run --dart-define=BUNDLE_SERVER_RECIPES=true`
 const _bundleServerRecipes = bool.fromEnvironment(
@@ -88,10 +91,23 @@ Ingredient? _matchSavedIngredient(
 }
 
 class RecipeProvider extends ChangeNotifier {
-  RecipeProvider({RecipeListSyncFn? recipeSyncFn})
-      : _recipeSyncFn = recipeSyncFn ?? ApiService.syncRecipes;
+  RecipeProvider({
+    RecipeListSyncFn? recipeSyncFn,
+    RecipeDetailFn? recipeDetailFn,
+    TagListFn? tagListFn,
+  })  : _recipeSyncFn = recipeSyncFn ?? ApiService.syncRecipes,
+        _recipeDetailFn = recipeDetailFn ?? ApiService.getRecipe,
+        _tagListFn = tagListFn ?? (() => ApiService.listTags());
 
   final RecipeListSyncFn _recipeSyncFn;
+  final RecipeDetailFn _recipeDetailFn;
+  final TagListFn _tagListFn;
+
+  /// `GET /api/v1/tags`, fetched once per session ([loadTagRegistry]).
+  List<TagMeta>? _tagRegistry;
+  bool _tagRegistryLoading = false;
+  String? _tagRegistryError;
+  Future<void>? _tagRegistryInFlight;
 
   List<Recipe> _localRecipes = [];
   List<RecipeSummary> _remoteSummaries = [];
@@ -137,6 +153,42 @@ class RecipeProvider extends ChangeNotifier {
             a.name.toLowerCase().compareTo(b.name.toLowerCase()),
       );
     return List.unmodifiable(merged);
+  }
+
+  /// Registry tags, or null until [loadTagRegistry] succeeds.
+  List<TagMeta>? get tagRegistry =>
+      _tagRegistry == null ? null : List.unmodifiable(_tagRegistry!);
+  bool get tagRegistryLoading => _tagRegistryLoading;
+  String? get tagRegistryError => _tagRegistryError;
+
+  /// Offerable `context` tags with `semantic_class == meal_role`, registry order.
+  List<TagMeta> get mealRoleTags => [
+        for (final t in _tagRegistry ?? const <TagMeta>[])
+          if (t.isMealRole && t.isOfferable) t,
+      ];
+
+  /// Fetches the tag registry once per session; [force] refetches (retry).
+  Future<void> loadTagRegistry({bool force = false}) {
+    if (!force && _tagRegistry != null) return Future.value();
+    final inFlight = _tagRegistryInFlight;
+    if (inFlight != null) return inFlight;
+    final f = _fetchTagRegistry();
+    _tagRegistryInFlight = f;
+    return f.whenComplete(() => _tagRegistryInFlight = null);
+  }
+
+  Future<void> _fetchTagRegistry() async {
+    _tagRegistryLoading = true;
+    _tagRegistryError = null;
+    notifyListeners();
+    try {
+      _tagRegistry = await _tagListFn();
+    } catch (e) {
+      _tagRegistryError = e is ApiException ? e.message : e.toString();
+    } finally {
+      _tagRegistryLoading = false;
+      notifyListeners();
+    }
   }
 
   bool get loaded => _loaded;
@@ -296,7 +348,12 @@ class RecipeProvider extends ChangeNotifier {
 
   /// Loads full recipe JSON from [ApiService.getRecipe] and merges into local storage.
   Future<Recipe> fetchRecipeDetail(String id) async {
-    final recipe = await ApiService.getRecipe(id);
+    final fetched = await _recipeDetailFn(id);
+    // The detail doesn't return cuisine / cost_level: keep values set here.
+    final prior = _localById(id);
+    final recipe = prior == null
+        ? fetched
+        : fetched.copyWith(cuisine: prior.cuisine, costLevel: prior.costLevel);
     final idx = _localRecipes.indexWhere((r) => r.id == id);
     if (idx >= 0) {
       _localRecipes[idx] = recipe;
@@ -306,6 +363,32 @@ class RecipeProvider extends ChangeNotifier {
     await StorageService.saveRecipes(_localRecipes);
     notifyListeners();
     return recipe;
+  }
+
+  /// Refreshes [Recipe.tagSlugsByType] / [Recipe.isMealPrepCapable] of a stored
+  /// recipe from `GET /api/v1/recipes/{id}`, keeping its local lines. Use before
+  /// editing a server recipe whose tags were never loaded, since a sync with
+  /// `tag_slugs_by_type` replaces the stored non-`time` tags.
+  Future<Recipe> refreshServerTags(Recipe recipe) async {
+    final detail = await _recipeDetailFn(recipe.id);
+    final merged = recipe.copyWith(
+      tagSlugsByType: detail.tagSlugsByType,
+      isMealPrepCapable: detail.isMealPrepCapable,
+    );
+    final idx = _localRecipes.indexWhere((r) => r.id == recipe.id);
+    if (idx >= 0) {
+      _localRecipes[idx] = merged;
+      await StorageService.saveRecipes(_localRecipes);
+    }
+    notifyListeners();
+    return merged;
+  }
+
+  Recipe? _localById(String id) {
+    for (final r in _localRecipes) {
+      if (r.id == id) return r;
+    }
+    return null;
   }
 
   /// Fetches recipe id+name list from the API and merges into [recipes].

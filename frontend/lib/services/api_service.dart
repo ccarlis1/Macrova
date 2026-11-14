@@ -6,6 +6,7 @@ import '../models/ingredient_search.dart';
 import '../models/models.dart';
 import '../models/nutrition_summary.dart';
 import '../models/recipe.dart';
+import '../models/tag.dart';
 
 /// Thrown when the API returns a non-success status with a parseable body.
 class ApiException implements Exception {
@@ -204,6 +205,42 @@ class ApiService {
       return Recipe.fromJson(
         jsonDecode(res.body) as Map<String, dynamic>,
       );
+    }
+
+    throw ApiException.fromResponse(res);
+  }
+
+  /// GET /api/v1/tags (optionally `?type=context|time|nutrition|constraint`).
+  ///
+  /// Returns every registry tag; callers offer only [TagMeta.isOfferable] ones.
+  /// [client] is for tests.
+  static Future<List<TagMeta>> listTags({
+    String? type,
+    http.Client? client,
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/v1/tags').replace(
+      queryParameters: type == null ? null : {'type': type},
+    );
+    final res = client == null ? await http.get(uri) : await client.get(uri);
+
+    if (res.statusCode == 200) {
+      final decoded = jsonDecode(res.body);
+      if (decoded is! Map) {
+        throw const ApiException(
+          statusCode: 200,
+          code: 'INVALID_RESPONSE',
+          message: 'Tag list response was not a JSON object',
+        );
+      }
+      try {
+        return TagMeta.listFromResponse(Map<String, dynamic>.from(decoded));
+      } on FormatException catch (e) {
+        throw ApiException(
+          statusCode: 200,
+          code: 'INVALID_RESPONSE',
+          message: e.message,
+        );
+      }
     }
 
     throw ApiException.fromResponse(res);

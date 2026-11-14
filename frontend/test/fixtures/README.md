@@ -13,3 +13,16 @@ parity probe in `docs/sprints/sprint2/probes/parity_probe.py`).
 
 Used by `test/plan_failure_dto_test.dart` (FE-11). Re-capture if the
 `PlanFailure` / `PlanFailureCause` contract changes.
+
+## Tag fixtures (FE-12)
+
+Captured in-process (FastAPI `TestClient`) from the committed backend at the
+sprint2-wave2 BE-19 commit, with `MACROVA_DATA_DIR` pointing at an empty temp folder.
+
+| File | Request | Notes |
+| --- | --- | --- |
+| `tags_list_response.json` | `GET /api/v1/tags` | The seeded registry: 4 `context`/`meal_role`, `meal-prep` (`capability`), 3 `nutrition`, 1 `constraint`, 5 `time`; all `source: system`. |
+| `recipe_detail_meal_prep.json` | `POST /api/v1/recipes/sync` (`default_servings: 2`, `context: [breakfast, meal-prep]`, `nutrition: [high-fiber]`, `cuisine: american`, `cost_level: cheap`), then `GET /api/v1/recipes/fe12-oat-bowl` | Detail carries `tag_slugs_by_type` (with the server-derived `time`) and `is_meal_prep_capable: true`, but **not** `cuisine` / `cost_level`. |
+
+Used by `test/tag_registry_dto_test.dart`, `test/recipe_sync_payload_test.dart` and
+`test/widgets/recipe_builder_tags_test.dart`.

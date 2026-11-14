@@ -140,6 +140,28 @@ class Recipe {
   final int cookingTimeMinutes;
   final List<String> instructions;
 
+  /// Canonical tag slugs by tag type (`context`, `time`, `nutrition`,
+  /// `constraint`), as returned by `GET /api/v1/recipes/{id}` and edited in the
+  /// Recipe Builder (`context` only). The server always derives `time` from
+  /// [cookingTimeMinutes]; it is kept here for display but never sent on sync.
+  /// This is the planner-facing tag source; the legacy `Recipe.tags` projection
+  /// is not read by the app.
+  final Map<String, List<String>> tagSlugsByType;
+
+  /// Server-computed (`default_servings >= 2` and a hard-eligible `meal-prep`
+  /// context tag). Read-only: never sent on sync; refreshed from the detail.
+  final bool isMealPrepCapable;
+
+  /// Cuisine from the tagger's closed vocabulary ([kCuisineVocabulary]), set in
+  /// the Recipe Builder. Null when the app doesn't know it: the recipe detail
+  /// doesn't return the stored cuisine. Sent as sync `cuisine` only when set.
+  final String? cuisine;
+
+  /// `cheap` | `standard` | `premium`, set in the Recipe Builder. Null when the
+  /// app doesn't know it (not returned by the detail). Sent as sync
+  /// `cost_level` only when set; the server stores `standard` otherwise.
+  final String? costLevel;
+
   const Recipe({
     required this.id,
     required this.name,
@@ -147,7 +169,19 @@ class Recipe {
     this.servings = 1,
     this.cookingTimeMinutes = 0,
     this.instructions = const [],
+    this.tagSlugsByType = const {},
+    this.isMealPrepCapable = false,
+    this.cuisine,
+    this.costLevel,
   });
+
+  /// Canonical `context` slug that marks a recipe as batchable (FE-12 switch).
+  static const mealPrepSlug = 'meal-prep';
+
+  /// `context` slugs (meal roles, `meal-prep`, user context tags).
+  List<String> get contextSlugs => tagSlugsByType['context'] ?? const [];
+
+  bool get hasMealPrepTag => contextSlugs.contains(mealPrepSlug);
 
   double get totalCalories =>
       ingredients.fold(0, (sum, e) => sum + e.calories);
@@ -184,6 +218,10 @@ class Recipe {
     int? servings,
     int? cookingTimeMinutes,
     List<String>? instructions,
+    Map<String, List<String>>? tagSlugsByType,
+    bool? isMealPrepCapable,
+    String? cuisine,
+    String? costLevel,
   }) {
     return Recipe(
       id: id ?? this.id,
@@ -192,8 +230,38 @@ class Recipe {
       servings: servings ?? this.servings,
       cookingTimeMinutes: cookingTimeMinutes ?? this.cookingTimeMinutes,
       instructions: instructions ?? this.instructions,
+      tagSlugsByType: tagSlugsByType ?? this.tagSlugsByType,
+      isMealPrepCapable: isMealPrepCapable ?? this.isMealPrepCapable,
+      cuisine: cuisine ?? this.cuisine,
+      costLevel: costLevel ?? this.costLevel,
     );
   }
+
+  /// `tag_slugs_by_type` JSON → map of non-empty string lists (unknown shapes dropped).
+  static Map<String, List<String>> _tagSlugsFromJson(dynamic raw) {
+    if (raw is! Map) return const {};
+    final out = <String, List<String>>{};
+    raw.forEach((key, value) {
+      if (key is! String || value is! List) return;
+      final slugs = [
+        for (final s in value)
+          if (s is String && s.trim().isNotEmpty) s.trim(),
+      ];
+      if (slugs.isNotEmpty) out[key] = slugs;
+    });
+    return out;
+  }
+
+  static String? _nonEmptyString(dynamic raw) =>
+      raw is String && raw.trim().isNotEmpty ? raw.trim() : null;
+
+  /// Sync `tag_slugs_by_type`: every type except the server-derived `time`.
+  /// The server replaces the stored non-`time` types with what is sent, so the
+  /// types read from the detail (nutrition, constraint) are sent back as-is.
+  Map<String, List<String>> get _syncTagSlugsByType => {
+        for (final e in tagSlugsByType.entries)
+          if (e.key != 'time' && e.value.isNotEmpty) e.key: List.of(e.value),
+      };
 
   static List<String> _instructionsFromJson(dynamic raw) {
     if (raw is! List) return const [];
@@ -272,17 +340,31 @@ class Recipe {
         'servings': servings,
         'cooking_time_minutes': cookingTimeMinutes,
         'instructions': instructions,
+        'tag_slugs_by_type': tagSlugsByType,
+        'is_meal_prep_capable': isMealPrepCapable,
+        if (cuisine != null) 'cuisine': cuisine,
+        if (costLevel != null) 'cost_level': costLevel,
       };
 
   /// Body fragment for `POST /api/v1/recipes/sync` (server `RecipeSyncItem` shape).
-  Map<String, dynamic> toSyncPayload() => {
-        'id': id,
-        'name': name,
-        'cooking_time_minutes': cookingTimeMinutes,
-        'instructions': instructions,
-        'default_servings': servings,
-        'ingredients': ingredients.map(_syncLine).toList(),
-      };
+  ///
+  /// Tag fields are sent only when known, since the server keeps its stored
+  /// value for an omitted field: `tag_slugs_by_type` when non-empty (minus
+  /// `time`), `cuisine` / `cost_level` when set.
+  Map<String, dynamic> toSyncPayload() {
+    final tags = _syncTagSlugsByType;
+    return {
+      'id': id,
+      'name': name,
+      'cooking_time_minutes': cookingTimeMinutes,
+      'instructions': instructions,
+      'default_servings': servings,
+      'ingredients': ingredients.map(_syncLine).toList(),
+      if (tags.isNotEmpty) 'tag_slugs_by_type': tags,
+      if (cuisine != null) 'cuisine': cuisine,
+      if (costLevel != null) 'cost_level': costLevel,
+    };
+  }
 
   /// One `RecipeSyncIngredientLine`. `grams_per_unit` (BE-19) is the weight of
   /// one [RecipeIngredientEntry.unit], sent when the unit isn't `g` and the
@@ -312,6 +394,10 @@ class Recipe {
       servings: json['servings'] as int? ?? 1,
       cookingTimeMinutes: _cookingMinutesFromJson(json),
       instructions: _instructionsFromJson(json['instructions']),
+      tagSlugsByType: _tagSlugsFromJson(json['tag_slugs_by_type']),
+      isMealPrepCapable: json['is_meal_prep_capable'] == true,
+      cuisine: _nonEmptyString(json['cuisine']),
+      costLevel: _nonEmptyString(json['cost_level']),
     );
   }
 

@@ -69,7 +69,7 @@ Precedent: PR #62 (Hass avocado weight) took the weight from FDC and recorded th
 
 ## Close-out (2026-11-14)
 
-**Result: 9 of 18 samples `ready_for_planning`** (was 6). `tools.get_sample_recipes()` re-run after the change: 9/18. Each of the 9 remaining recipes is blocked only by units with no exact FDC portion, listed below. No weight was guessed.
+**Result: 11 of 18 samples `ready_for_planning`** (was 6). `tools.get_sample_recipes()` re-run after the change: 11/18. The 7 remaining recipes are blocked by units with no close FDC portion, listed below.
 
 FDC `/v1/food/{fdc_id}` was fetched for all 14 records. Raw payloads are in `debug_artifacts/data1/<fdc_id>.json` (gitignored). Every portion's `measureUnit` is `undetermined`; the portion name is in `modifier`.
 
@@ -77,12 +77,11 @@ FDC `/v1/food/{fdc_id}` was fetched for all 14 records. Raw payloads are in `deb
 - whey protein powder (FDC 173177): `scoop: 28.67` from foodPortions id 92053 (modifier `scoop`, amount 3 = 86.0 g). The feared gap didn't exist: SR Legacy has a scoop portion. Unblocks Pre Workout 1 and Pre Workout 2.
 - carrots `tbsp, diced` (Bolognese): FDC has no diced tbsp portion, so the sample's unit becomes plain `tbsp`, per the compound-unit rule. The weight is the record's existing `tbsp: 7`, which predates this task and has no source (grandfathered in the new data test).
 
-**Not fixed (no exact FDC portion)**
+**Not fixed (no close FDC portion)**
 
 | Ingredient (FDC) | Recipe unit | What FDC has |
 |---|---|---|
 | salmon canned (175174) | `small can` | can, total contents 417 g (id 95800); oz |
-| tortillas corn (175036) | `large` | tortilla 24 g (id 95472), no size; enchilada 19 g |
 | sourdough bread (172675) | `large slice` | slice 139 g (id 91076, looks like a whole-loaf slice); oz |
 | chia seeds (170554) | `tbsp, whole pieces` | oz only (id 86844) |
 | low fat greek yogurt (170903) | `cup` | container (7 oz) 200 g (id 87526) |
@@ -90,16 +89,31 @@ FDC `/v1/food/{fdc_id}` was fetched for all 14 records. Raw payloads are in `deb
 | chickpeas drained (173800) | `cup, whole pieces` | can drained 253 g (id 93273) |
 | parmesan cheese hard (170848) | `tbsp, grated` | cubic inch 10.3 g (id 87388); oz; package |
 | salami genoa (2126122, Branded) | `slice` | no foodPortions; servingSize 56 g ("2 ONZ") |
-| sweet potato (168482) | `medium` | sweetpotato, 5" long 130 g (id 83167); cup, cubes 133 g |
-| roast beef lunchmeat (174570) | `medium slice` | slice rectangle 13.8 g (id 94596); slice oval 9.3 g (id 94595) |
-| sauerkraut (169279) | `tbsp` | cup 142 g (id 84590); cup, undrained 236 g (id 84591) |
 
-Mapping any of these needs a human call: either a near-match portion (for example sweet potato `medium` = the 5" portion, tortilla `large` = `tortilla`, roast beef `medium slice` = `slice rectangle`), a derived volume (sauerkraut tbsp = cup / 16), or a changed sample quantity (out of this task's contract).
+**Near matches (approved by the user on 2026-11-14 after the exact-match pass)**
+
+Each is an FDC portion that names the same food but not the recipe's size word. The note on each record says it's a near match.
+- sweet potato `medium: 130`: portion 83167, `sweetpotato, 5" long`. FDC has no size names. Unblocks Sweet Potato Bowl.
+- tortillas corn `large: 24`: portion 95472, `tortilla`, the only tortilla size (enchilada is 19 g). Canned Salmon Wrap is still blocked by the salmon can.
+- roast beef lunchmeat `medium slice: 13.8`: portion 94596, `slice rectangle`, the larger of the two slices (oval is 9.3 g). Unblocks Power Omelette.
+- sauerkraut `tbsp: 8.88`: derived from portion 84590, cup 142 g / 16. Roast Beef Sandwich is still blocked by the bread.
+
+**Rejected as not near**
+
+The closest FDC portion is a different amount, so mapping would put wrong calories into plans:
+- salmon `small can` = 417 g whole can, about 2.5× a small can.
+- sourdough `large slice` = 139 g slice, several ordinary slices.
+- yogurt `cup` = container 170 g or 200 g; a cup is a different volume.
+- chickpeas `cup` = can drained 253 g, about 1.5 cups.
+- parmesan `tbsp, grated` = cubic inch 10.3 g, solid not grated.
+- chia `tbsp` and salami `slice` have no portion at all (oz only; branded record with no portions).
+
+Fixing the rest needs a different FDC record for the same food (a different ingredient, so out of scope here), or a sample recipe rewritten in grams.
 
 **Tests**
-- `tests/mcp_server/test_server.py::test_sample_recipes_ready_for_planning`: exactly 9, with the 9 not-ready names.
+- `tests/mcp_server/test_server.py::test_sample_recipes_ready_for_planning`: exactly 11, with the 7 not-ready names.
 - `tests/test_ingredient_unit_sources.py`: every non-`g` key needs an FDC note. The 41 earlier keys are grandfathered, and the test fails if one is removed without leaving the list.
-- `tests/integration/test_sample_recipes_plan.py`: a 3-day `/api/v1/plan` over the 18 sample ids with the Flutter new-user macros (2000 kcal, 150 g protein, fat 60–74 g). `warnings.nutrition` names exactly the 9 not-ready recipes and no others.
+- `tests/integration/test_sample_recipes_plan.py`: a 3-day `/api/v1/plan` over the 18 sample ids with the Flutter new-user macros (2000 kcal, 150 g protein, fat 60–74 g). `warnings.nutrition` names exactly the 7 not-ready recipes and no others.
 - The data diff is the whey `grams_per_unit` and `notes` plus one sample unit string. No `per_100g` or `review_status` change.
 
 **Validation:** full suite 1371 passed; OpenAPI `--check` exit 0; benchmark (main → branch) 153/153, 0 regressions, diff exit 0; probes P1 OK valid, P2 FM-3, P3 OK valid.

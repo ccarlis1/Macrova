@@ -259,13 +259,13 @@ def test_sample_recipes_carry_valid_tags():
 
 
 def test_sample_recipes_ready_for_planning():
-    """DATA-1: 9 of 18 samples plan. Each gap is a unit with no exact FDC portion (see the stub)."""
+    """DATA-1: 11 of 18 samples plan. Each gap is a unit with no close FDC portion (see the stub)."""
     samples = _call("macrova_get_sample_recipes", {}).structured_content["recipes"]
     not_ready = sorted(r["name"] for r in samples if not r["ready_for_planning"])
-    assert sum(r["ready_for_planning"] for r in samples) == 9
+    assert sum(r["ready_for_planning"] for r in samples) == 11
     assert not_ready == [
         "Canned Salmon Wrap", "Dense Bean Salad", "Greek Yogurt Balance", "Greek Yogurt Protein Bowl",
-        "Power Omelette", "Power Shake", "Roast Beef Sandwich", "Shakshuka", "Sweet Potato Bowl",
+        "Power Shake", "Roast Beef Sandwich", "Shakshuka",
     ]
 
 

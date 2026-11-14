@@ -2528,10 +2528,11 @@
       "description": "Roast beef, deli style, prepackaged, sliced",
       "fdc_id": 174570,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "medium slice": 13.8
       },
       "name": "roast beef lunchmeat",
-      "notes": "",
+      "notes": "medium slice: 13.8 g, FDC 174570 foodPortions id 94596 (undetermined slice rectangle); near match: FDC has slice rectangle 13.8 g and slice oval 9.3 g, the rectangle is used for medium slice.",
       "per_100g": {
         "b12_cobalamin_ug": 2.04,
         "b1_thiamine_mg": 0.043,
@@ -2759,10 +2760,11 @@
       "description": "Sauerkraut, canned, solids and liquids",
       "fdc_id": 169279,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "tbsp": 8.88
       },
       "name": "sauerkraut",
-      "notes": "",
+      "notes": "tbsp: 8.88 g, FDC 169279 foodPortions id 84590 (undetermined cup); derived: cup 142.0 g / 16 tbsp = 8.875 g.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.021,
@@ -3083,10 +3085,11 @@
       "description": "Sweet potato, raw, unprepared (Includes foods for USDA's Food Distribution Program)",
       "fdc_id": 168482,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "medium": 130.0
       },
       "name": "sweet potato",
-      "notes": "SR Legacy sweet potato raw; replace 0-kcal Foundation.",
+      "notes": "SR Legacy sweet potato raw; replace 0-kcal Foundation. medium: 130 g, FDC 168482 foodPortions id 83167 (undetermined sweetpotato, 5\" long); near match: FDC has no size names, the 5\" sweet potato is used as medium.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.078,
@@ -3316,10 +3319,11 @@
       "description": "Tortillas, ready-to-bake or -fry, corn",
       "fdc_id": 175036,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "large": 24.0
       },
       "name": "tortillas corn",
-      "notes": "SR Legacy Tortillas, ready-to-bake or -fry, corn; not flour tortillas (167535).",
+      "notes": "SR Legacy Tortillas, ready-to-bake or -fry, corn; not flour tortillas (167535). large: 24 g, FDC 175036 foodPortions id 95472 (undetermined tortilla); near match: FDC has one tortilla size (enchilada-size is 19 g), used for large.",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.094,

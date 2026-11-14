@@ -12,10 +12,10 @@ from src.api.server import app
 
 SAMPLES = "data/recipes/recipes.json.example"
 SAMPLE_IDS = [f"recipe_{n:03d}" for n in range(1, 19)]
-# No exact FDC portion for a unit these recipes use (DATA-1 close-out lists each one).
+# No close FDC portion for a unit these recipes use (DATA-1 close-out lists each one).
 NOT_READY = {
     "recipe_007", "recipe_008", "recipe_009", "recipe_010", "recipe_011",
-    "recipe_014", "recipe_016", "recipe_017", "recipe_018",
+    "recipe_014", "recipe_018",
 }
 
 

@@ -73,6 +73,8 @@ class MealPlanProvider extends ChangeNotifier {
   bool _loading = false;
   bool _syncing = false;
   String? _error;
+  String? _errorCode;
+  String? _errorMessage;
 
   int _days = 7;
   /// Per-day canonical schedule; length always equals [_days].
@@ -83,6 +85,33 @@ class MealPlanProvider extends ChangeNotifier {
   String _planningMode = 'deterministic';
   /// `local` | `api` per OpenAPI / server PlanRequest.
   String _ingredientSource = 'local';
+
+  /// Pool-level tag filters (hard AND constraints on the server).
+  final List<String> _cuisine = [];
+  String? _costLevel;
+  String? _prepTimeBucket;
+  final List<String> _dietaryFlags = [];
+
+  /// Local-only cooked slots (`"$day:$mealIndex"`). Cleared on successful new plan.
+  final Set<String> _cookedSlots = {};
+
+  static const Set<String> allowedCostLevels = {
+    'cheap',
+    'standard',
+    'premium',
+  };
+  static const Set<String> allowedPrepTimeBuckets = {
+    'snack',
+    'quick_meal',
+    'weeknight_meal',
+    'meal_prep',
+  };
+  static const Set<String> allowedDietaryFlags = {
+    'vegetarian',
+    'vegan',
+    'gluten_free',
+    'dairy_free',
+  };
 
   MealPlanProvider() {
     _scheduleDays = List.generate(
@@ -95,19 +124,54 @@ class MealPlanProvider extends ChangeNotifier {
   bool get loading => _loading;
   bool get syncing => _syncing;
   String? get error => _error;
+  String? get errorCode => _errorCode;
+  String? get errorMessage => _errorMessage;
   int get days => _days;
   List<DaySchedule> get scheduleDays => List.unmodifiable(_scheduleDays);
   Set<String> get selectedRecipeIds => Set.unmodifiable(_selectedRecipeIds);
   String get planningMode => _planningMode;
   String get ingredientSource => _ingredientSource;
 
+  List<String> get cuisine => List.unmodifiable(_cuisine);
+  String? get costLevel => _costLevel;
+  String? get prepTimeBucket => _prepTimeBucket;
+  List<String> get dietaryFlags => List.unmodifiable(_dietaryFlags);
+
+  /// Device-local cooked slot keys; not sent to the planner or API.
+  Set<String> get cookedSlots => Set.unmodifiable(_cookedSlots);
+
+  /// Slot key: 1-based [day], 0-based [mealIndex] within that day's meals.
+  static String cookedSlotKey(int day, int mealIndex) => '$day:$mealIndex';
+
+  bool isCooked(int day, int mealIndex) =>
+      _cookedSlots.contains(cookedSlotKey(day, mealIndex));
+
+  /// Count of active pool-filter dimensions (for CTA detail).
+  int get activePoolFilterCount {
+    var n = 0;
+    if (_cuisine.isNotEmpty) n++;
+    if (_costLevel != null) n++;
+    if (_prepTimeBucket != null) n++;
+    if (_dietaryFlags.isNotEmpty) n++;
+    return n;
+  }
+
+  bool get hasActivePoolFilters => activePoolFilterCount > 0;
+
   /// First day meal count (for compact summary strings).
   int get mealsPerDaySummary =>
       _scheduleDays.isEmpty ? 3 : _scheduleDays.first.meals.length;
 
   Future<void> load() async {
+    _cookedSlots
+      ..clear()
+      ..addAll(await StorageService.loadCookedSlots());
+
     final raw = await StorageService.loadPlannerConfig();
-    if (raw == null) return;
+    if (raw == null) {
+      notifyListeners();
+      return;
+    }
 
     _days = (raw['days'] as num?)?.toInt().clamp(1, 7) ?? _days;
 
@@ -172,6 +236,32 @@ class MealPlanProvider extends ChangeNotifier {
     final ingSrc = raw['ingredient_source'] as String?;
     if (ingSrc != null && ingSrc.isNotEmpty) _ingredientSource = ingSrc;
 
+    _cuisine.clear();
+    final cuisineRaw = raw['cuisine'];
+    if (cuisineRaw is List) {
+      for (final c in cuisineRaw) {
+        if (c is String && c.isNotEmpty) _cuisine.add(c);
+      }
+    }
+
+    final cost = raw['cost_level'] as String?;
+    _costLevel =
+        (cost != null && allowedCostLevels.contains(cost)) ? cost : null;
+
+    final prep = raw['prep_time_bucket'] as String?;
+    _prepTimeBucket =
+        (prep != null && allowedPrepTimeBuckets.contains(prep)) ? prep : null;
+
+    _dietaryFlags.clear();
+    final dietaryRaw = raw['dietary_flags'];
+    if (dietaryRaw is List) {
+      for (final f in dietaryRaw) {
+        if (f is String && allowedDietaryFlags.contains(f)) {
+          _dietaryFlags.add(f);
+        }
+      }
+    }
+
     notifyListeners();
   }
 
@@ -192,6 +282,10 @@ class MealPlanProvider extends ChangeNotifier {
         'selected_recipe_ids': _selectedRecipeIds.toList(),
         'planning_mode': _planningMode,
         'ingredient_source': _ingredientSource,
+        'cuisine': List<String>.from(_cuisine),
+        'cost_level': _costLevel,
+        'prep_time_bucket': _prepTimeBucket,
+        'dietary_flags': List<String>.from(_dietaryFlags),
       });
 
   void setPlanningMode(String mode) {
@@ -202,6 +296,56 @@ class MealPlanProvider extends ChangeNotifier {
 
   void setIngredientSource(String source) {
     _ingredientSource = source;
+    notifyListeners();
+    unawaited(_persistConfig());
+  }
+
+  void toggleCuisine(String value) {
+    if (value.isEmpty) return;
+    if (_cuisine.contains(value)) {
+      _cuisine.remove(value);
+    } else {
+      _cuisine.add(value);
+    }
+    notifyListeners();
+    unawaited(_persistConfig());
+  }
+
+  void clearCuisine() {
+    if (_cuisine.isEmpty) return;
+    _cuisine.clear();
+    notifyListeners();
+    unawaited(_persistConfig());
+  }
+
+  /// Single-select; pass null or the current value again to clear.
+  void setCostLevel(String? value) {
+    if (value != null && !allowedCostLevels.contains(value)) return;
+    final next = (value != null && value == _costLevel) ? null : value;
+    if (next == _costLevel) return;
+    _costLevel = next;
+    notifyListeners();
+    unawaited(_persistConfig());
+  }
+
+  /// Single-select; pass null or the current value again to clear.
+  void setPrepTimeBucket(String? value) {
+    if (value != null && !allowedPrepTimeBuckets.contains(value)) return;
+    final next =
+        (value != null && value == _prepTimeBucket) ? null : value;
+    if (next == _prepTimeBucket) return;
+    _prepTimeBucket = next;
+    notifyListeners();
+    unawaited(_persistConfig());
+  }
+
+  void toggleDietaryFlag(String value) {
+    if (!allowedDietaryFlags.contains(value)) return;
+    if (_dietaryFlags.contains(value)) {
+      _dietaryFlags.remove(value);
+    } else {
+      _dietaryFlags.add(value);
+    }
     notifyListeners();
     unawaited(_persistConfig());
   }
@@ -314,15 +458,38 @@ class MealPlanProvider extends ChangeNotifier {
   List<DaySchedule> scheduleDaysForApi() =>
       List<DaySchedule>.from(_scheduleDays);
 
+  void _setError(Object e) {
+    if (e is ApiException) {
+      _errorCode = e.code;
+      _errorMessage = e.message;
+      _error = e.message;
+    } else {
+      _errorCode = null;
+      _errorMessage = e.toString();
+      _error = e.toString();
+    }
+  }
+
+  void _clearError() {
+    _error = null;
+    _errorCode = null;
+    _errorMessage = null;
+  }
+
+  /// Test-only: apply the same error mapping used by [generatePlan] catch.
+  @visibleForTesting
+  void debugSetError(Object e) => _setError(e);
+
   Future<void> generatePlan(PlanRequest request) async {
     _loading = true;
-    _error = null;
+    _clearError();
     notifyListeners();
 
     try {
       _mealPlan = await ApiService.plan(request);
+      await _clearCookedSlots();
     } catch (e) {
-      _error = e is ApiException ? e.message : e.toString();
+      _setError(e);
     } finally {
       _loading = false;
       notifyListeners();
@@ -334,13 +501,13 @@ class MealPlanProvider extends ChangeNotifier {
     required PlanRequest request,
   }) async {
     _syncing = true;
-    _error = null;
+    _clearError();
     notifyListeners();
 
     try {
       await ApiService.syncRecipes(recipesToSync);
     } catch (e) {
-      _error = e is ApiException ? e.message : e.toString();
+      _setError(e);
       return;
     } finally {
       _syncing = false;
@@ -352,14 +519,36 @@ class MealPlanProvider extends ChangeNotifier {
 
   void clearPlan() {
     _mealPlan = null;
-    _error = null;
+    _clearError();
+    unawaited(_clearCookedSlots());
     notifyListeners();
   }
 
   void applyPlanResult(MealPlan plan) {
     _mealPlan = plan;
-    _error = null;
+    _clearError();
+    if (_cookedSlots.isNotEmpty) {
+      _cookedSlots.clear();
+      unawaited(StorageService.saveCookedSlots(_cookedSlots));
+    }
     notifyListeners();
+  }
+
+  void toggleCooked(int day, int mealIndex) {
+    final key = cookedSlotKey(day, mealIndex);
+    if (_cookedSlots.contains(key)) {
+      _cookedSlots.remove(key);
+    } else {
+      _cookedSlots.add(key);
+    }
+    notifyListeners();
+    unawaited(StorageService.saveCookedSlots(_cookedSlots));
+  }
+
+  Future<void> _clearCookedSlots() async {
+    if (_cookedSlots.isEmpty) return;
+    _cookedSlots.clear();
+    await StorageService.saveCookedSlots(_cookedSlots);
   }
 
   void toggleRecipe(String recipeId) {

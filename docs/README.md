@@ -30,6 +30,15 @@ Navigation hub for the Macrova (`nutrition-agent`) repository. For quick setup, 
 
 - [Tag semantics contract](tagging/tag-semantics-contract.md)
 
+### Contracts
+
+- [PlanResponse](contracts/plan-response.md) — `/plan` and `/plan-from-text` field paths, `plan_status`, `PlanFailure`, meal metadata, pool filters
+
+### Frontend
+
+- [Failure handling](frontend/failure-handling.md) — `plan_status`, `report.failures[]`, `FailureViewModel`
+- [State invariants](frontend/state-invariants.md) — provider errors, nutrition authority, agent pool filters
+
 ### LLM
 
 - [Roadmap](llm/roadmap.md) — integration plan and implementation status
@@ -37,6 +46,7 @@ Navigation hub for the Macrova (`nutrition-agent`) repository. For quick setup, 
 ### Testing
 
 - [Meal planner testing guide](testing/meal-planner-testing-guide.md)
+- [Plan fixtures](testing/plan-fixtures.md) — `TC-*` vs `FM-*` fixture rules for Flutter tests
 
 ## For AI Coding Agents
 

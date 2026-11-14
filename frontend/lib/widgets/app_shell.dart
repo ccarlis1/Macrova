@@ -15,7 +15,12 @@ import '../screens/planner_config_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/recipe_builder_screen.dart';
 import '../screens/recipe_library_screen.dart';
+import '../screens/today_screen.dart';
+import '../theme/tokens.dart';
 import 'sidebar_nav.dart';
+
+/// Width at which the shell switches from bottom [NavigationBar] to sidebar rail.
+const kAppShellBreakpoint = 760.0;
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -59,47 +64,84 @@ class AppShellState extends State<AppShell> {
     setState(() => _selectedIndex = index);
   }
 
+  void _onDestinationSelected(int index) {
+    // Recipe Builder is index 3 after Today was inserted at 0.
+    if (index == 3) {
+      context.read<RecipeBuilderCoordinator>().startCreate();
+    }
+    setState(() => _selectedIndex = index);
+  }
+
+  Widget _buildIndexedStack(BuildContext context) {
+    return IndexedStack(
+      index: _selectedIndex.clamp(0, 7),
+      children: [
+        const TodayScreen(),
+        const ProfileScreen(),
+        const IngredientHubScreen(),
+        const RecipeBuilderScreen(),
+        const RecipeLibraryScreen(),
+        const PlannerConfigScreen(),
+        const MealPlanViewScreen(),
+        ListenableBuilder(
+          listenable: context.read<LlmConfigProvider>(),
+          builder: (context, _) {
+            final ready = context.read<LlmConfigProvider>().llmReady;
+            if (ready) return const AgentPaneScreen();
+            return AgentSetupScreen(
+              onOpenProfile: () => navigateTo(1),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBottomNavigationBar(BuildContext context) {
+    final tokens =
+        Theme.of(context).extension<MacrovaTokens>() ?? MacrovaTokens.light;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: tokens.stickyBar,
+        border: Border(top: BorderSide(color: tokens.lineDefault)),
+        boxShadow: MacrovaElevation.shadowCta,
+      ),
+      child: NavigationBar(
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: _onDestinationSelected,
+        labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+        destinations: AppNavItems.navigationDestinations,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Row(
-        children: [
-          SidebarNav(
-            selectedIndex: _selectedIndex,
-            onDestinationSelected: (index) {
-              if (index == 2) {
-                context.read<RecipeBuilderCoordinator>().startCreate();
-              }
-              setState(() => _selectedIndex = index);
-            },
-          ),
-          const VerticalDivider(thickness: 1, width: 1),
-          Expanded(
-            child: IndexedStack(
-              index: _selectedIndex.clamp(0, 6),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= kAppShellBreakpoint;
+
+        if (wide) {
+          return Scaffold(
+            body: Row(
               children: [
-                const ProfileScreen(),
-                const IngredientHubScreen(),
-                const RecipeBuilderScreen(),
-                const RecipeLibraryScreen(),
-                const PlannerConfigScreen(),
-                const MealPlanViewScreen(),
-                ListenableBuilder(
-                  listenable: context.read<LlmConfigProvider>(),
-                  builder: (context, _) {
-                    final ready =
-                        context.read<LlmConfigProvider>().llmReady;
-                    if (ready) return const AgentPaneScreen();
-                    return AgentSetupScreen(
-                      onOpenProfile: () => navigateTo(0),
-                    );
-                  },
+                SidebarNav(
+                  selectedIndex: _selectedIndex,
+                  onDestinationSelected: _onDestinationSelected,
                 ),
+                const VerticalDivider(thickness: 1, width: 1),
+                Expanded(child: _buildIndexedStack(context)),
               ],
             ),
-          ),
-        ],
-      ),
+          );
+        }
+
+        return Scaffold(
+          body: _buildIndexedStack(context),
+          bottomNavigationBar: _buildBottomNavigationBar(context),
+        );
+      },
     );
   }
 }

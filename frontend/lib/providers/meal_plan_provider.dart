@@ -76,12 +76,17 @@ class MealPlanProvider extends ChangeNotifier {
   String? _errorCode;
   String? _errorMessage;
 
+  /// Request behind the current plan when it came from [generatePlan]; null after
+  /// [applyPlanResult] / [clearPlan] (e.g. agent `plan-from-text` results).
+  PlanRequest? _lastRequest;
+
   int _days = 7;
   /// Per-day canonical schedule; length always equals [_days].
   List<DaySchedule> _scheduleDays = [];
 
   final Set<String> _selectedRecipeIds = {};
-  /// Matches backend `planning_mode`; keep `deterministic` until assisted UX is gated.
+  /// Matches backend `planning_mode`. Assisted modes are only offered behind the
+  /// `LlmConfigProvider` ready gate (Planner Config, FE-11 "Find a recipe").
   String _planningMode = 'deterministic';
   /// `local` | `api` per OpenAPI / server PlanRequest.
   String _ingredientSource = 'local';
@@ -126,6 +131,10 @@ class MealPlanProvider extends ChangeNotifier {
   String? get error => _error;
   String? get errorCode => _errorCode;
   String? get errorMessage => _errorMessage;
+  PlanRequest? get lastRequest => _lastRequest;
+
+  /// Whether [rerunLastRequest] can re-send the request behind the current plan.
+  bool get canRerunLastRequest => _lastRequest != null;
   int get days => _days;
   List<DaySchedule> get scheduleDays => List.unmodifiable(_scheduleDays);
   Set<String> get selectedRecipeIds => Set.unmodifiable(_selectedRecipeIds);
@@ -480,7 +489,12 @@ class MealPlanProvider extends ChangeNotifier {
   @visibleForTesting
   void debugSetError(Object e) => _setError(e);
 
+  /// Test-only: seed the request [rerunLastRequest] re-sends.
+  @visibleForTesting
+  void debugSetLastRequest(PlanRequest? request) => _lastRequest = request;
+
   Future<void> generatePlan(PlanRequest request) async {
+    _lastRequest = request;
     _loading = true;
     _clearError();
     notifyListeners();
@@ -517,7 +531,17 @@ class MealPlanProvider extends ChangeNotifier {
     await generatePlan(request);
   }
 
+  /// Re-send the request behind the current plan with another `planning_mode`
+  /// (FE-11: `assisted` runs the server's diagnosed recipe recovery). One-off:
+  /// the persisted [planningMode] is unchanged. No-op without a last request.
+  Future<void> rerunLastRequest({required String planningMode}) async {
+    final last = _lastRequest;
+    if (last == null) return;
+    await generatePlan(last.withPlanningMode(planningMode));
+  }
+
   void clearPlan() {
+    _lastRequest = null;
     _mealPlan = null;
     _clearError();
     unawaited(_clearCookedSlots());
@@ -525,6 +549,7 @@ class MealPlanProvider extends ChangeNotifier {
   }
 
   void applyPlanResult(MealPlan plan) {
+    _lastRequest = null;
     _mealPlan = plan;
     _clearError();
     if (_cookedSlots.isNotEmpty) {

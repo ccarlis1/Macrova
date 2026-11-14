@@ -1,0 +1,309 @@
+{
+  "success": false,
+  "termination_code": "TC-2",
+  "days": 1,
+  "daily_plans": [
+    {
+      "day": 1,
+      "meals": [
+        {
+          "recipe_id": "recipe_012",
+          "name": "Pre Workout 1",
+          "meal_type": "breakfast",
+          "meal_type_match": true,
+          "slot_index": 0,
+          "source": "planner",
+          "cooking_time_minutes": 5,
+          "ingredients": [
+            "50 g cream of rice dry",
+            "118 g bananas",
+            "30 g whey protein powder 24 grams of protein per scoop"
+          ],
+          "nutrition": {
+            "calories": 397.7,
+            "protein_g": 21.9,
+            "fat_g": 1.0,
+            "carbs_g": 76.9,
+            "micronutrients": {
+              "vitamin_a_ug": 265.1,
+              "vitamin_c_mg": 20.7,
+              "vitamin_e_mg": 2.5,
+              "vitamin_k_ug": 14.6,
+              "b1_thiamine_mg": 0.6,
+              "b2_riboflavin_mg": 0.4,
+              "b3_niacin_mg": 8.0,
+              "b5_pantothenic_acid_mg": 2.4,
+              "b6_pyridoxine_mg": 0.9,
+              "b12_cobalamin_ug": 1.0,
+              "folate_ug": 108.0,
+              "calcium_mg": 217.8,
+              "copper_mg": 0.6,
+              "iron_mg": 14.9,
+              "magnesium_mg": 113.3,
+              "manganese_mg": 1.2,
+              "phosphorus_mg": 262.3,
+              "potassium_mg": 755.5,
+              "selenium_ug": 22.9,
+              "sodium_mg": 115.8,
+              "zinc_mg": 3.4,
+              "fiber_g": 3.4,
+              "omega_6_g": 0.1
+            }
+          },
+          "busyness_level": 4
+        },
+        {
+          "recipe_id": "recipe_009",
+          "name": "Greek Yogurt Protein Bowl",
+          "meal_type": "lunch",
+          "meal_type_match": false,
+          "slot_index": 1,
+          "source": "planner",
+          "cooking_time_minutes": 5,
+          "ingredients": [
+            "240 g low fat greek yogurt",
+            "30 g whey protein powder 24 grams of protein per scoop",
+            "80 g blueberries",
+            "8 g chocolate dark 70-85% cacao solids",
+            "15 g honey",
+            "15 g almond butter unsalted",
+            "15 g chia seeds"
+          ],
+          "nutrition": {
+            "calories": 586.9,
+            "protein_g": 48.2,
+            "fat_g": 21.6,
+            "carbs_g": 54.9,
+            "micronutrients": {
+              "vitamin_a_ug": 480.2,
+              "vitamin_c_mg": 20.5,
+              "vitamin_e_mg": 6.7,
+              "vitamin_k_ug": 30.5,
+              "b1_thiamine_mg": 0.5,
+              "b2_riboflavin_mg": 1.1,
+              "b3_niacin_mg": 6.2,
+              "b5_pantothenic_acid_mg": 3.1,
+              "b6_pyridoxine_mg": 0.5,
+              "b12_cobalamin_ug": 2.3,
+              "folate_ug": 119.1,
+              "calcium_mg": 643.6,
+              "copper_mg": 0.9,
+              "iron_mg": 3.4,
+              "magnesium_mg": 211.7,
+              "manganese_mg": 1.5,
+              "phosphorus_mg": 743.1,
+              "potassium_mg": 899.9,
+              "selenium_ug": 51.4,
+              "sodium_mg": 199.7,
+              "zinc_mg": 5.7,
+              "fiber_g": 9.5,
+              "omega_6_g": 3.2
+            }
+          },
+          "busyness_level": 4
+        },
+        {
+          "recipe_id": "recipe_008",
+          "name": "Shakshuka",
+          "meal_type": "dinner",
+          "meal_type_match": false,
+          "slot_index": 2,
+          "source": "planner",
+          "cooking_time_minutes": 30,
+          "ingredients": [
+            "220 g eggs",
+            "500 g tomato",
+            "10 g olive oil",
+            "30 g parmesan grated",
+            "70 g spinach",
+            "160 g sourdough bread",
+            "170 g black beans drained"
+          ],
+          "nutrition": {
+            "calories": 1225.0,
+            "protein_g": 70.0,
+            "fat_g": 44.9,
+            "carbs_g": 138.9,
+            "micronutrients": {
+              "vitamin_a_ug": 968.9,
+              "vitamin_c_mg": 92.8,
+              "vitamin_d_iu": 7472.6,
+              "vitamin_e_mg": 9.4,
+              "vitamin_k_ug": 389.8,
+              "b1_thiamine_mg": 1.7,
+              "b2_riboflavin_mg": 2.2,
+              "b3_niacin_mg": 12.4,
+              "b5_pantothenic_acid_mg": 5.0,
+              "b6_pyridoxine_mg": 1.2,
+              "b12_cobalamin_ug": 2.4,
+              "folate_ug": 616.5,
+              "calcium_mg": 641.2,
+              "copper_mg": 1.1,
+              "iron_mg": 16.8,
+              "magnesium_mg": 257.6,
+              "manganese_mg": 2.6,
+              "phosphorus_mg": 1129.6,
+              "potassium_mg": 2644.1,
+              "selenium_ug": 126.5,
+              "sodium_mg": 2131.9,
+              "zinc_mg": 7.9,
+              "fiber_g": 22.8,
+              "omega_3_g": 0.1,
+              "omega_6_g": 6.5
+            }
+          },
+          "busyness_level": 4
+        }
+      ],
+      "totals": {
+        "calories": 2209.7,
+        "protein_g": 140.1,
+        "fat_g": 67.5,
+        "carbs_g": 270.7,
+        "micronutrients": {
+          "potassium_mg": 4299.5,
+          "iron_mg": 35.1,
+          "fiber_g": 35.7,
+          "vitamin_e_mg": 18.6,
+          "omega_6_g": 9.9,
+          "vitamin_d_iu": 7472.6,
+          "selenium_ug": 200.8,
+          "magnesium_mg": 582.6,
+          "vitamin_c_mg": 134.0,
+          "b3_niacin_mg": 26.6,
+          "b1_thiamine_mg": 2.8,
+          "b5_pantothenic_acid_mg": 10.5,
+          "manganese_mg": 5.3,
+          "sodium_mg": 2447.3,
+          "b12_cobalamin_ug": 5.7,
+          "b6_pyridoxine_mg": 2.6,
+          "b2_riboflavin_mg": 3.7,
+          "copper_mg": 2.6,
+          "folate_ug": 843.6,
+          "zinc_mg": 16.9,
+          "phosphorus_mg": 2135.0,
+          "calcium_mg": 1502.6,
+          "vitamin_a_ug": 1714.2,
+          "omega_3_g": 0.1,
+          "vitamin_k_ug": 434.8
+        }
+      }
+    }
+  ],
+  "warnings": {
+    "type": "sodium_advisory_text",
+    "message": "Weekly sodium exceeds 200% of prorated RDI.",
+    "exclusions": [
+      "Exclusion term 'brussels sprouts' matched no allergen class and no ingredient in the recipe pool.",
+      "Exclusion term 'liver' matched no allergen class and no ingredient in the recipe pool.",
+      "Pool ingredient 'banana' is not classified in the allergen table; allergy safety coverage is incomplete for this ingredient.",
+      "Pool ingredient 'cinnamon' is not classified in the allergen table; allergy safety coverage is incomplete for this ingredient.",
+      "Pool ingredient 'pepper' is not classified in the allergen table; allergy safety coverage is incomplete for this ingredient."
+    ],
+    "nutrition": [
+      "Recipe 'llm_0415c122c1511957' removed from the pool: unresolved ingredients ['cherry tomatoes (to taste: needs grams)'].",
+      "Recipe 'llm_26427200aaed5fee' removed from the pool: unresolved ingredients ['garlic (to taste: needs grams)'].",
+      "Recipe 'llm_59834f6218eb974e' removed from the pool: unresolved ingredients ['rolled oats (to taste: needs grams)'].",
+      "Recipe 'llm_922a991802b00168' removed from the pool: unresolved ingredients ['garlic (to taste: needs grams)'].",
+      "Recipe 'llm_b9f9293329997a31' removed from the pool: unresolved ingredients ['garlic (to taste: needs grams)'].",
+      "Recipe 'llm_e404d7d8e053dacb' removed from the pool: unresolved ingredients ['garlic (to taste: needs grams)'].",
+      "Recipe 'llm_ee4f05b19ed0ee4a' removed from the pool: unresolved ingredients ['garlic (to taste: needs grams)']."
+    ]
+  },
+  "report": {
+    "failures": [
+      {
+        "code": "FM-4",
+        "message": "Weekly micronutrient targets are infeasible with current constraints.",
+        "details": {
+          "deficient_nutrients": [
+            {
+              "nutrient": "omega_3_g",
+              "achieved": 0.12760000000000002,
+              "required": 1.2800000000000002,
+              "full_req": 1.6,
+              "deficit": 1.1524000000000003,
+              "classification": "marginal",
+              "achieved_kind": "actual"
+            },
+            {
+              "nutrient": "omega_6_g",
+              "achieved": 9.907839999999998,
+              "required": 13.600000000000001,
+              "full_req": 17.0,
+              "deficit": 3.692160000000003,
+              "classification": "marginal",
+              "achieved_kind": "actual"
+            }
+          ]
+        },
+        "fix_hint": "Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.",
+        "explanation": "The available recipes can't provide enough omega 3 and omega 6 over the plan.",
+        "fix": "Add recipes rich in omega 3 and omega 6, or lower those goals.",
+        "cause": "nutrient_gap"
+      }
+    ],
+    "failure_cause": {
+      "cause": "nutrient_gap",
+      "recipe_could_help": true,
+      "recipe_gap": {
+        "per_meal_calories": 800.0,
+        "per_meal_protein_g": 50.0,
+        "per_meal_fat_g_max": 33.3,
+        "per_meal_carbs_g": 93.8,
+        "excluded_ingredients": [
+          "brussels sprouts",
+          "liver",
+          "peanut butter",
+          "peanuts",
+          "shellfish"
+        ],
+        "nutrient_min_per_recipe": {
+          "omega_3_g": 1.152,
+          "omega_6_g": 3.692
+        },
+        "meal_types": [
+          "breakfast",
+          "lunch",
+          "dinner"
+        ],
+        "slots": []
+      }
+    },
+    "deficient_nutrients": [
+      {
+        "nutrient": "omega_3_g",
+        "achieved": 0.12760000000000002,
+        "required": 1.2800000000000002,
+        "full_req": 1.6,
+        "deficit": 1.1524000000000003,
+        "classification": "marginal",
+        "achieved_kind": "actual"
+      },
+      {
+        "nutrient": "omega_6_g",
+        "achieved": 9.907839999999998,
+        "required": 13.600000000000001,
+        "full_req": 17.0,
+        "deficit": 3.692160000000003,
+        "classification": "marginal",
+        "achieved_kind": "actual"
+      }
+    ],
+    "meal_type_summary": {
+      "matched": 1,
+      "mismatched": 2,
+      "unknown": 0,
+      "planner_only_mismatch_rate": 0.6667
+    }
+  },
+  "goals": {
+    "daily_calories": 2400,
+    "daily_protein_g": 150.0,
+    "daily_fat_g_min": 50.0,
+    "daily_fat_g_max": 100.0,
+    "daily_carbs_g": 281.25
+  },
+  "plan_status": "partial",
+  "plan_status_message": "Did not meet micronutrient floors."
+}

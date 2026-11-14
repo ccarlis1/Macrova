@@ -332,6 +332,31 @@ class PlanRequest {
     }
     return map;
   }
+
+  /// Same request with a different `planning_mode` (every other field kept).
+  PlanRequest withPlanningMode(String mode) => PlanRequest(
+        dailyCalories: dailyCalories,
+        dailyProteinG: dailyProteinG,
+        dailyFatGMin: dailyFatGMin,
+        dailyFatGMax: dailyFatGMax,
+        schedule: schedule,
+        scheduleDays: scheduleDays,
+        likedFoods: likedFoods,
+        dislikedFoods: dislikedFoods,
+        allergies: allergies,
+        days: days,
+        ingredientSource: ingredientSource,
+        micronutrientGoals: micronutrientGoals,
+        micronutrientWeeklyMinFraction: micronutrientWeeklyMinFraction,
+        maxDailyCalories: maxDailyCalories,
+        planningMode: mode,
+        recipeIds: recipeIds,
+        cuisine: cuisine,
+        costLevel: costLevel,
+        prepTimeBucket: prepTimeBucket,
+        dietaryFlags: dietaryFlags,
+        recipeTagsPath: recipeTagsPath,
+      );
 }
 
 class NutritionProfile {
@@ -409,6 +434,12 @@ class PlanFailure {
   final String? date;
   final Map<String, dynamic> details;
   final String? fixHint;
+  /// Plain-language headline (`src/api/failure_explanations.py`); null on old servers.
+  final String? explanation;
+  /// Plain-language one-line fix; null on old servers (fall back to [fixHint]).
+  final String? fix;
+  /// Diagnosis cause (`GapSpec.kind` / `UnrecoverableReason.code`); informational.
+  final String? cause;
 
   const PlanFailure({
     required this.code,
@@ -419,7 +450,13 @@ class PlanFailure {
     this.date,
     this.details = const {},
     this.fixHint,
+    this.explanation,
+    this.fix,
+    this.cause,
   });
+
+  /// True when the failure names one meal slot (0-based [dayIndex] + [slotIndex]).
+  bool get isSlotFailure => dayIndex != null && slotIndex != null;
 
   factory PlanFailure.fromJson(Map<String, dynamic> json) {
     final detailsRaw = json['details'];
@@ -434,6 +471,90 @@ class PlanFailure {
           ? Map<String, dynamic>.from(detailsRaw)
           : const {},
       fixHint: json['fix_hint'] as String?,
+      explanation: json['explanation'] as String?,
+      fix: json['fix'] as String?,
+      cause: json['cause'] as String?,
+    );
+  }
+}
+
+/// `report.failure_cause.recipe_gap` (`PlanRecipeGap` in OpenAPI): what a new recipe
+/// would need to satisfy. Indices in [slots] are 0-based `[day_index, slot_index]`.
+class PlanRecipeGap {
+  final double? perMealCalories;
+  final double? perMealProteinG;
+  final double? perMealFatGMax;
+  final double? perMealCarbsG;
+  final int? cookTimeCapMinutes;
+  final List<String> excludedIngredients;
+  final Map<String, double> nutrientMinPerRecipe;
+  final List<String> mealTypes;
+  final List<List<int>> slots;
+
+  const PlanRecipeGap({
+    this.perMealCalories,
+    this.perMealProteinG,
+    this.perMealFatGMax,
+    this.perMealCarbsG,
+    this.cookTimeCapMinutes,
+    this.excludedIngredients = const [],
+    this.nutrientMinPerRecipe = const {},
+    this.mealTypes = const [],
+    this.slots = const [],
+  });
+
+  factory PlanRecipeGap.fromJson(Map<String, dynamic> json) {
+    List<String> strings(dynamic raw) => raw is List
+        ? [for (final e in raw) if (e is String) e]
+        : const [];
+    final nutrientsRaw = json['nutrient_min_per_recipe'];
+    final slotsRaw = json['slots'];
+    return PlanRecipeGap(
+      perMealCalories: (json['per_meal_calories'] as num?)?.toDouble(),
+      perMealProteinG: (json['per_meal_protein_g'] as num?)?.toDouble(),
+      perMealFatGMax: (json['per_meal_fat_g_max'] as num?)?.toDouble(),
+      perMealCarbsG: (json['per_meal_carbs_g'] as num?)?.toDouble(),
+      cookTimeCapMinutes: (json['cook_time_cap_minutes'] as num?)?.toInt(),
+      excludedIngredients: strings(json['excluded_ingredients']),
+      nutrientMinPerRecipe: nutrientsRaw is Map
+          ? {
+              for (final e in nutrientsRaw.entries)
+                if (e.value is num)
+                  e.key.toString(): (e.value as num).toDouble(),
+            }
+          : const {},
+      mealTypes: strings(json['meal_types']),
+      slots: slotsRaw is List
+          ? [
+              for (final s in slotsRaw)
+                if (s is List)
+                  [for (final i in s) if (i is num) i.toInt()],
+            ]
+          : const [],
+    );
+  }
+}
+
+/// `report.failure_cause` (`PlanFailureCause` in OpenAPI): plan-wide diagnosis.
+class PlanFailureCause {
+  final String? cause;
+  final bool recipeCouldHelp;
+  final PlanRecipeGap? recipeGap;
+
+  const PlanFailureCause({
+    this.cause,
+    required this.recipeCouldHelp,
+    this.recipeGap,
+  });
+
+  factory PlanFailureCause.fromJson(Map<String, dynamic> json) {
+    final gapRaw = json['recipe_gap'];
+    return PlanFailureCause(
+      cause: json['cause'] as String?,
+      recipeCouldHelp: json['recipe_could_help'] as bool? ?? false,
+      recipeGap: gapRaw is Map
+          ? PlanRecipeGap.fromJson(Map<String, dynamic>.from(gapRaw))
+          : null,
     );
   }
 }
@@ -609,6 +730,8 @@ class MealPlan {
   final String planStatus;
   final String? planStatusMessage;
   final List<PlanFailure> failures;
+  /// `report.failure_cause`; null when nothing failed or on old servers.
+  final PlanFailureCause? failureCause;
   /// Telemetry only (`TC-*`); do not use for UI branching.
   final String? terminationCode;
 
@@ -629,6 +752,7 @@ class MealPlan {
     this.planStatus = 'success',
     this.planStatusMessage,
     this.failures = const [],
+    this.failureCause,
     this.terminationCode,
   });
 
@@ -891,7 +1015,13 @@ class MealPlan {
 
     final reportRaw = json['report'];
     final failures = <PlanFailure>[];
+    PlanFailureCause? failureCause;
     if (reportRaw is Map) {
+      final causeRaw = reportRaw['failure_cause'];
+      if (causeRaw is Map) {
+        failureCause =
+            PlanFailureCause.fromJson(Map<String, dynamic>.from(causeRaw));
+      }
       final failuresRaw = reportRaw['failures'];
       if (failuresRaw is List) {
         for (final f in failuresRaw) {
@@ -929,6 +1059,7 @@ class MealPlan {
       planStatus: planStatus,
       planStatusMessage: planStatusMessage,
       failures: failures,
+      failureCause: failureCause,
       terminationCode: termination,
     );
   }

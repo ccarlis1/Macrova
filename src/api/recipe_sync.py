@@ -9,7 +9,9 @@ from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field, StrictInt, field_validator
 
+from src.api.error_mapping import INGREDIENT_QUANTITY_REQUIRED, ApiContractError
 from src.llm.schemas import RecipeTagsJson
+from src.nutrition.calculator import is_to_taste_allowed
 from src.llm.tag_repository import (
     TagRepositoryError,
     load_recipe_tags,
@@ -121,6 +123,14 @@ def _normalize_ingredient_for_storage(line: RecipeSyncIngredientLine) -> Dict[st
     unit = line.unit.strip()
     lowered = unit.lower()
     is_to_taste = lowered == "to taste" or "to taste" in lowered
+    if is_to_taste and not is_to_taste_allowed(line.name):
+        name = line.name.strip()
+        raise ApiContractError(
+            INGREDIENT_QUANTITY_REQUIRED,
+            f"Ingredient {name!r} needs a quantity: only seasonings (salt, water, "
+            "spices, herbs) may be 'to taste'.",
+            details={"ingredient": name},
+        )
     quantity = 0.0 if is_to_taste else float(line.quantity)
     out_unit = "to taste" if is_to_taste else unit
     return {

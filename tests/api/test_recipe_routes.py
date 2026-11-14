@@ -263,3 +263,59 @@ def test_detail_unexpected_calculator_error_is_500_envelope(monkeypatch, tmp_pat
     body = res.json()
     assert "error" in body and body["error"]["code"]
     assert "ingredients" not in body
+
+
+# --- Sprint 2 BE-18: `to taste` only for seasonings at save time ---
+
+
+def _to_taste_item(rid: str, name: str) -> dict:
+    return {
+        "id": rid,
+        "name": "To taste fixture",
+        "ingredients": [
+            {"name": "almonds", "quantity": 30, "unit": "g"},
+            {"name": name, "quantity": 0, "unit": "to taste"},
+        ],
+    }
+
+
+def _assert_quantity_required(res, ingredient: str):
+    assert res.status_code == 422, res.text
+    err = res.json()["error"]
+    assert err["code"] == "INGREDIENT_QUANTITY_REQUIRED"
+    assert err["details"] == {"ingredient": ingredient}
+
+
+@pytest.mark.parametrize("route", ["sync", "create", "put"])
+def test_save_rejects_non_seasoning_to_taste(route, monkeypatch, tmp_path):
+    _configure_paths(monkeypatch, tmp_path)
+    client = TestClient(app)
+    item = _to_taste_item("r-be18", "rolled oats")
+    if route == "sync":
+        res = client.post("/api/v1/recipes/sync", json={"recipes": [item]})
+    elif route == "create":
+        res = client.post("/api/v1/recipes", json=item)
+    else:
+        res = client.put("/api/v1/recipes/r-be18", json=item)
+
+    _assert_quantity_required(res, "rolled oats")
+    # Nothing was stored: the request is rejected before the write.
+    assert json.loads((tmp_path / "recipes.json").read_text())["recipes"] == []
+
+
+def test_sync_rejects_whole_batch_when_one_line_needs_grams(monkeypatch, tmp_path):
+    _configure_paths(monkeypatch, tmp_path)
+    good = {"id": "r-good", "name": "Good", "ingredients": [{"name": "almonds", "quantity": 30, "unit": "g"}]}
+    res = TestClient(app).post(
+        "/api/v1/recipes/sync", json={"recipes": [good, _to_taste_item("r-bad", "cherry tomatoes")]}
+    )
+    _assert_quantity_required(res, "cherry tomatoes")
+    assert json.loads((tmp_path / "recipes.json").read_text())["recipes"] == []
+
+
+def test_save_accepts_seasoning_to_taste(monkeypatch, tmp_path):
+    _configure_paths(monkeypatch, tmp_path)
+    res = TestClient(app).post("/api/v1/recipes", json=_to_taste_item("r-salt", "salt"))
+    assert res.status_code == 200, res.text
+    stored = json.loads((tmp_path / "recipes.json").read_text())["recipes"][0]
+    assert stored["ingredients"][1] == {"name": "salt", "quantity": 0.0, "unit": "to taste"}

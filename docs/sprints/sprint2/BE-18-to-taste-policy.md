@@ -1,6 +1,6 @@
 # BE-18 — `to taste` only for seasonings; drop recipes that hide nutrients
 
-**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** —
+**Status:** done  ·  **Complexity:** M  ·  **Depends on:** —
 
 ## Summary
 
@@ -20,15 +20,15 @@ Current mechanics:
 
 ## Acceptance criteria
 
-- [ ] A committed list of ingredients allowed as `to taste` exists in one place (see notes). Each entry has a `category` from a closed set: `salt`, `water`, `spice`, `herb`. It covers at least the salt, pepper, water and spice names in the committed data (for example cinnamon). A test asserts every entry has a category from that set, and that `rolled oats` and `cherry tomatoes` are not on the list.
-- [ ] `convert_recipes` drops a recipe with a `to taste` line whose name is not allowed, adds it to `unresolved_log` with a reason that names the ingredient (for example `"rolled oats (to taste: needs grams)"`), and so it appears in `warnings.nutrition`. Test in `tests/test_converters.py` with a fixture recipe; fails today because the recipe stays in the pool.
-- [ ] Allowed `to taste` lines still count as 0 g and don't drop the recipe. Same test module.
-- [ ] `POST /api/v1/recipes/sync`, `POST /api/v1/recipes` and `PUT /api/v1/recipes/{id}` reject a non-allowed `to taste` line with a structured error. Register a new code (proposed: `INGREDIENT_QUANTITY_REQUIRED`) in `src/api/error_mapping.py`, with `details.ingredient`. Tests in `tests/api/test_recipe_routes.py`; fail today because the line is stored.
-- [ ] The LLM path still enforces the same rule: a generated draft with a non-allowed `to taste` line is rejected by `validate_recipe_draft`. Test in `tests/test_recipe_validator.py`.
-- [ ] `/api/v1/plan` on the committed `recipes.json` lists the affected committed recipes in `warnings.nutrition`. Record the list in this stub when closing. Don't edit the recipes' quantities: amounts are recipe data, and nobody has supplied them.
-- [ ] OpenAPI regenerated; the new error code appears in the error schema; contract test updated (`tests/test_api_v1_and_openapi.py`).
-- [ ] Flutter: if `ApiException` maps known codes to messages, add the new code. If not, no Flutter change. `REQUIRES_VERIFICATION` in `frontend/lib/services/api_service.dart`.
-- [ ] `benchmark-audit`: 153/153, 0 regressions. If a benchmark scenario uses a now-dropped recipe, stop and report rather than editing the scenario.
+- [x] A committed list of ingredients allowed as `to taste` exists in one place (see notes). Each entry has a `category` from a closed set: `salt`, `water`, `spice`, `herb`. It covers at least the salt, pepper, water and spice names in the committed data (for example cinnamon). A test asserts every entry has a category from that set, and that `rolled oats` and `cherry tomatoes` are not on the list.
+- [x] `convert_recipes` drops a recipe with a `to taste` line whose name is not allowed, adds it to `unresolved_log` with a reason that names the ingredient (for example `"rolled oats (to taste: needs grams)"`), and so it appears in `warnings.nutrition`. Test in `tests/test_converters.py` with a fixture recipe; fails today because the recipe stays in the pool.
+- [x] Allowed `to taste` lines still count as 0 g and don't drop the recipe. Same test module.
+- [x] `POST /api/v1/recipes/sync`, `POST /api/v1/recipes` and `PUT /api/v1/recipes/{id}` reject a non-allowed `to taste` line with a structured error. Register a new code (proposed: `INGREDIENT_QUANTITY_REQUIRED`) in `src/api/error_mapping.py`, with `details.ingredient`. Tests in `tests/api/test_recipe_routes.py`; fail today because the line is stored.
+- [x] The LLM path still enforces the same rule: a generated draft with a non-allowed `to taste` line is rejected by `validate_recipe_draft`. Test in `tests/test_recipe_validator.py`.
+- [x] `/api/v1/plan` on the committed `recipes.json` lists the affected committed recipes in `warnings.nutrition`. Record the list in this stub when closing. Don't edit the recipes' quantities: amounts are recipe data, and nobody has supplied them.
+- [x] OpenAPI regenerated; the new error code appears in the error schema; contract test updated (`tests/test_api_v1_and_openapi.py`).
+- [x] Flutter: if `ApiException` maps known codes to messages, add the new code. If not, no Flutter change. `REQUIRES_VERIFICATION` in `frontend/lib/services/api_service.dart`.
+- [x] `benchmark-audit`: 153/153, 0 regressions. If a benchmark scenario uses a now-dropped recipe, stop and report rather than editing the scenario.
 
 ## Implementation notes
 
@@ -53,3 +53,15 @@ Current mechanics:
 - Deduplicating `recipes.json` (deferred, see README).
 - Adding gram quantities to committed recipes.
 - Unit conversions (BE-19).
+
+## Close-out (2026-11-14)
+
+- **List:** `data/reference/to_taste_allowed.json` (24 names, categories `salt`/`water`/`spice`/`herb`), matched after `IngredientNormalizer` (so "ground cinnamon" → `cinnamon`). Loader and rule (`load_to_taste_allowed`, `is_to_taste_allowed`) live in `src/nutrition/calculator.py`, next to the "to taste counts as 0 g" rule, so the planner, save and LLM paths share one definition. Tests: `tests/test_to_taste_allowed.py`.
+- **Garlic call:** fresh garlic is **not** allowed. It is a vegetable (≈149 kcal/100 g), not salt, water, spice or herb; `garlic powder` is listed as a spice.
+- **Planning:** no second drop mechanism. `NutritionCalculator.unresolved_ingredient_names` now reports a non-allowed `to taste` line as `"<name> (to taste: needs grams)"`, so `convert_recipes` drops it through the existing `unresolved_log` → `warnings.nutrition` path (also used by the MCP sample readiness check and LLM recovery). Tests: `tests/test_converters.py::TestToTastePolicy`.
+- **Save:** `recipe_sync._normalize_ingredient_for_storage` raises `ApiContractError("INGREDIENT_QUANTITY_REQUIRED", details={"ingredient": name})` → HTTP 422 with `details.ingredient`. `ApiContractError` gained an optional `details`. The sync loop builds every row before writing, so one bad line rejects the whole request and nothing (recipes or tags) is written. Tests: `tests/api/test_recipe_routes.py` (sync, create, put, mixed batch, salt accepted).
+- **LLM:** `validate_recipe_draft` gate 2b returns `INGREDIENT_QUANTITY_REQUIRED`. Tests: `tests/test_llm_recipe_validator_gates.py`.
+- **OpenAPI:** `ApiErrorBody.code` is a free string (no enum), so the code is documented as a 422 `ApiErrorResponse` on the six save routes (`RECIPE_SAVE_ERROR_RESPONSES`). This replaces FastAPI's default 422 `HTTPValidationError` entry on those routes, which the app never sends: schema errors are 400 `INVALID_REQUEST` (`_request_validation_exception_handler`). Contract test: `test_openapi_recipe_save_routes_document_ingredient_quantity_required`.
+- **Flutter:** no change. `ApiException.fromResponse` passes the server `message` through and maps no codes.
+- **Committed recipes now in `warnings.nutrition`** (7, all LLM-generated; quantities not edited): `llm_0415c122c1511957` Quinoa Salad (cherry tomatoes); `llm_59834f6218eb974e` Oatmeal with Fruits (rolled oats); Grilled Chicken with Vegetables ×5 (garlic): `llm_26427200aaed5fee`, `llm_922a991802b00168`, `llm_b9f9293329997a31`, `llm_e404d7d8e053dacb`, `llm_ee4f05b19ed0ee4a`. Test: `tests/integration/test_to_taste_plan_warnings.py`.
+- **Benchmark:** its library (`evaluation/benchmark/recipes.json`) has no `to taste` lines, and `recipes.json.example` has none either.

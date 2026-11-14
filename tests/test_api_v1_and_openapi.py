@@ -475,3 +475,21 @@ def test_recipe_detail_ingredient_line_contract(tmp_path, monkeypatch):
     assert line["resolved"] is True
     assert line["calories_per_100g"] > 0
     assert line["unit_conversions"]["g"] == 1.0
+
+
+def test_openapi_recipe_save_routes_document_ingredient_quantity_required():
+    """Sprint 2 BE-18: sync/create/update document the 422 INGREDIENT_QUANTITY_REQUIRED envelope."""
+    import json as _json
+    from pathlib import Path as _Path
+
+    for schema in (app.openapi(), _json.loads(_Path("openapi/openapi.json").read_text(encoding="utf-8"))):
+        paths = schema["paths"]
+        for path, method in (
+            ("/api/v1/recipes/sync", "post"),
+            ("/api/v1/recipes", "post"),
+            ("/api/v1/recipes/{recipe_id}", "put"),
+        ):
+            resp = paths[path][method]["responses"]["422"]
+            assert "INGREDIENT_QUANTITY_REQUIRED" in resp["description"]
+            ref = resp["content"]["application/json"]["schema"]["$ref"]
+            assert ref == "#/components/schemas/ApiErrorResponse"

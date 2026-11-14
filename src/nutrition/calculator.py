@@ -1,11 +1,58 @@
 """Nutrition calculator for computing nutrition values for ingredients and recipes."""
+import json
 from dataclasses import replace
+from functools import lru_cache
+from pathlib import Path
 from typing import Dict, Any, Optional, List
 
 from src.data_layer.models import Ingredient, Recipe, NutritionProfile, MicronutrientProfile
 from src.data_layer.exceptions import IngredientNotFoundError
+from src.ingestion.ingredient_normalizer import IngredientNormalizer
 from src.providers.ingredient_provider import IngredientDataProvider
 from src.ingestion.nutrition_scaler import BASE_SERVING_WEIGHTS
+
+#: Committed list of ingredients that may be ``to taste`` (counted as 0 g). Sprint 2 BE-18.
+DEFAULT_TO_TASTE_ALLOWED_PATH = "data/reference/to_taste_allowed.json"
+TO_TASTE_CATEGORIES = frozenset({"salt", "water", "spice", "herb"})
+
+_NORMALIZER = IngredientNormalizer()
+
+
+def _to_taste_key(name: str) -> str:
+    return _NORMALIZER.normalize(str(name or "")).canonical_name
+
+
+@lru_cache(maxsize=4)
+def load_to_taste_allowed(path: Optional[str] = None) -> Dict[str, str]:
+    """Normalized ingredient name -> category for names allowed as ``to taste``.
+
+    Fails fast on a malformed file or a category outside ``TO_TASTE_CATEGORIES``.
+    """
+    raw_path = Path(path or DEFAULT_TO_TASTE_ALLOWED_PATH)
+    if not raw_path.is_absolute():
+        raw_path = Path(__file__).resolve().parent.parent.parent / raw_path
+    data = json.loads(raw_path.read_text(encoding="utf-8"))
+    entries = data.get("ingredients") if isinstance(data, dict) else None
+    if not isinstance(entries, list) or not entries:
+        raise ValueError("to_taste_allowed.json must contain a non-empty 'ingredients' list")
+    allowed: Dict[str, str] = {}
+    for entry in entries:
+        name = _to_taste_key(entry.get("name", "")) if isinstance(entry, dict) else ""
+        category = entry.get("category") if isinstance(entry, dict) else None
+        if not name or category not in TO_TASTE_CATEGORIES:
+            raise ValueError(f"invalid to_taste_allowed entry: {entry!r}")
+        allowed[name] = category
+    return allowed
+
+
+def is_to_taste_allowed(name: str) -> bool:
+    """True when ``name`` may be authored as ``to taste`` (a seasoning: salt, water, spice, herb)."""
+    return _to_taste_key(name) in load_to_taste_allowed()
+
+
+def to_taste_needs_grams_reason(name: str) -> str:
+    """The ``unresolved_ingredients`` entry for a nutrient-bearing ``to taste`` line."""
+    return f"{name} (to taste: needs grams)"
 
 
 class NutritionCalculator:
@@ -128,17 +175,22 @@ class NutritionCalculator:
         )
 
     def unresolved_ingredient_names(self, recipe: Recipe) -> List[str]:
-        """Return sorted unique names of non-to-taste ingredients that cannot be resolved.
+        """Return sorted unique names of ingredients that cannot be resolved.
 
         Used by ``convert_recipes`` to drop incomplete recipes from the pool
         (§4.4: no silent zeros). Does not mutate state.
 
         Conversion failures include the unit in ``IngredientNotFoundError.ingredient_name``
         (e.g. ``"quinoa (no gram conversion for 'cup')"``) so warnings name both.
+        A ``to taste`` line counts as 0 g, which is only honest for seasonings:
+        any other ``to taste`` line is unresolved too
+        (``"rolled oats (to taste: needs grams)"``, Sprint 2 BE-18).
         """
         missing: set[str] = set()
         for ingredient in recipe.ingredients:
             if ingredient.is_to_taste:
+                if not is_to_taste_allowed(ingredient.name):
+                    missing.add(to_taste_needs_grams_reason(ingredient.name))
                 continue
             try:
                 self.calculate_ingredient_nutrition(ingredient)

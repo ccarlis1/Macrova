@@ -147,6 +147,19 @@ class ApiErrorResponse(BaseModel):
     error: ApiErrorBody
 
 
+#: Error responses shared by the recipe save routes (sync, create, update).
+RECIPE_SAVE_ERROR_RESPONSES: Dict[Any, Dict[str, Any]] = {
+    422: {
+        "model": ApiErrorResponse,
+        "description": (
+            "INGREDIENT_QUANTITY_REQUIRED: a nutrient-bearing ingredient was sent as "
+            "'to taste'; details.ingredient names it. Only seasonings (salt, water, "
+            "spices, herbs) may be 'to taste'."
+        ),
+    },
+}
+
+
 class PlanRequest(BaseModel):
     daily_calories: int
     daily_protein_g: float
@@ -1818,8 +1831,8 @@ def ingredient_resolve_endpoint(request: IngredientResolveRequest) -> Any:
         return JSONResponse(status_code=status_code, content=payload)
 
 
-@app.post("/api/v1/recipes/sync", response_model=RecipeSyncResponse)
-@app.post("/api/recipes/sync", response_model=RecipeSyncResponse)
+@app.post("/api/v1/recipes/sync", response_model=RecipeSyncResponse, responses=RECIPE_SAVE_ERROR_RESPONSES)
+@app.post("/api/recipes/sync", response_model=RecipeSyncResponse, responses=RECIPE_SAVE_ERROR_RESPONSES)
 def sync_recipes_endpoint(body: RecipeSyncRequest) -> Any:
     """Upsert client-owned recipes into the server's file-backed pool by id."""
     try:
@@ -1838,8 +1851,8 @@ def sync_recipes_endpoint(body: RecipeSyncRequest) -> Any:
         return JSONResponse(status_code=status_code, content=payload)
 
 
-@app.post("/api/v1/recipes", response_model=RecipeSyncResponse)
-@app.post("/api/recipes", response_model=RecipeSyncResponse)
+@app.post("/api/v1/recipes", response_model=RecipeSyncResponse, responses=RECIPE_SAVE_ERROR_RESPONSES)
+@app.post("/api/recipes", response_model=RecipeSyncResponse, responses=RECIPE_SAVE_ERROR_RESPONSES)
 def create_recipe_endpoint(item: RecipeSyncItem) -> Any:
     """Upsert a single recipe (same semantics as sync)."""
     try:
@@ -1856,8 +1869,8 @@ def create_recipe_endpoint(item: RecipeSyncItem) -> Any:
         return JSONResponse(status_code=status_code, content=payload)
 
 
-@app.put("/api/v1/recipes/{recipe_id}", response_model=RecipeSyncResponse)
-@app.put("/api/recipes/{recipe_id}", response_model=RecipeSyncResponse)
+@app.put("/api/v1/recipes/{recipe_id}", response_model=RecipeSyncResponse, responses=RECIPE_SAVE_ERROR_RESPONSES)
+@app.put("/api/recipes/{recipe_id}", response_model=RecipeSyncResponse, responses=RECIPE_SAVE_ERROR_RESPONSES)
 def put_recipe_endpoint(recipe_id: str, item: RecipeSyncItem) -> Any:
     """Upsert by path id; body [id] must match the path."""
     try:

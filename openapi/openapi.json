@@ -2223,11 +2223,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ApiErrorResponse"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "INGREDIENT_QUANTITY_REQUIRED: a nutrient-bearing ingredient was sent as 'to taste'; details.ingredient names it. Only seasonings (salt, water, spices, herbs) may be 'to taste'."
           }
         },
         "summary": "Create Recipe Endpoint"
@@ -2300,11 +2300,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ApiErrorResponse"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "INGREDIENT_QUANTITY_REQUIRED: a nutrient-bearing ingredient was sent as 'to taste'; details.ingredient names it. Only seasonings (salt, water, spices, herbs) may be 'to taste'."
           }
         },
         "summary": "Sync Recipes Endpoint"
@@ -2425,11 +2425,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ApiErrorResponse"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "INGREDIENT_QUANTITY_REQUIRED: a nutrient-bearing ingredient was sent as 'to taste'; details.ingredient names it. Only seasonings (salt, water, spices, herbs) may be 'to taste'."
           }
         },
         "summary": "Put Recipe Endpoint"
@@ -3136,11 +3136,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ApiErrorResponse"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "INGREDIENT_QUANTITY_REQUIRED: a nutrient-bearing ingredient was sent as 'to taste'; details.ingredient names it. Only seasonings (salt, water, spices, herbs) may be 'to taste'."
           }
         },
         "summary": "Create Recipe Endpoint"
@@ -3213,11 +3213,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ApiErrorResponse"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "INGREDIENT_QUANTITY_REQUIRED: a nutrient-bearing ingredient was sent as 'to taste'; details.ingredient names it. Only seasonings (salt, water, spices, herbs) may be 'to taste'."
           }
         },
         "summary": "Sync Recipes Endpoint"
@@ -3376,11 +3376,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ApiErrorResponse"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "INGREDIENT_QUANTITY_REQUIRED: a nutrient-bearing ingredient was sent as 'to taste'; details.ingredient names it. Only seasonings (salt, water, spices, herbs) may be 'to taste'."
           }
         },
         "summary": "Put Recipe Endpoint"

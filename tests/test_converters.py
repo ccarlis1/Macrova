@@ -346,3 +346,67 @@ class TestConvertersDeterminism:
         plan2 = convert_profile(profile, days=2)
         assert len(plan1.schedule) == len(plan2.schedule)
         assert plan1.daily_calories == plan2.daily_calories
+
+
+# ---------------------------------------------------------------------------
+# Sprint 2 BE-18: `to taste` only for seasonings
+# ---------------------------------------------------------------------------
+
+
+class TestToTastePolicy:
+    @pytest.fixture
+    def calculator(self):
+        provider = LocalIngredientProvider(NutritionDB(FIXTURES_DIR + "/test_ingredients.json"))
+        provider.resolve_all(["egg", "oatmeal", "salt"])
+        return NutritionCalculator(provider)
+
+    @staticmethod
+    def _recipe(rid: str, to_taste_name: str) -> Recipe:
+        return Recipe(
+            id=rid,
+            name=rid,
+            ingredients=[
+                Ingredient("egg", 2.0, "large", is_to_taste=False),
+                Ingredient(to_taste_name, 0.0, "to taste", is_to_taste=True),
+            ],
+            cooking_time_minutes=5,
+            instructions=[],
+        )
+
+    def test_non_seasoning_to_taste_drops_recipe_with_named_reason(self, calculator):
+        log = []
+        pool = convert_recipes([self._recipe("r_oats", "rolled oats")], calculator, unresolved_log=log)
+
+        assert pool == []
+        assert log == [
+            {
+                "recipe_id": "r_oats",
+                "recipe_name": "r_oats",
+                "unresolved_ingredients": ["rolled oats (to taste: needs grams)"],
+            }
+        ]
+
+    def test_seasoning_to_taste_counts_as_zero_and_keeps_recipe(self, calculator):
+        log = []
+        with_salt = convert_recipes([self._recipe("r_salt", "salt")], calculator, unresolved_log=log)
+        egg_only = convert_recipes(
+            [
+                Recipe(
+                    id="r_egg",
+                    name="r_egg",
+                    ingredients=[Ingredient("egg", 2.0, "large", is_to_taste=False)],
+                    cooking_time_minutes=5,
+                    instructions=[],
+                )
+            ],
+            calculator,
+        )
+
+        assert log == []
+        assert [r.id for r in with_salt] == ["r_salt"]
+        assert with_salt[0].nutrition.calories == egg_only[0].nutrition.calories
+
+    def test_seasoning_match_uses_ingredient_normalizer(self, calculator):
+        log = []
+        pool = convert_recipes([self._recipe("r_cin", "Ground Cinnamon")], calculator, unresolved_log=log)
+        assert [r.id for r in pool] == ["r_cin"] and log == []

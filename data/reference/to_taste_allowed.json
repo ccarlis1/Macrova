@@ -1,0 +1,31 @@
+{
+  "source": "Sprint 2 BE-18: `to taste` only for seasonings",
+  "note": "A `to taste` line counts as 0 g. That is only honest for seasonings whose amount carries no meaningful nutrition, so only these names may be `to taste`. Any other `to taste` line drops the recipe from the planning pool (warnings.nutrition) and is rejected at save. Names are matched after src/ingestion/ingredient_normalizer.py (lowercase, descriptors such as ground/fresh/dried removed). Fresh garlic is deliberately absent: it is a vegetable (about 149 kcal/100 g), not salt, water, spice or herb; garlic powder is a spice.",
+  "categories": ["salt", "water", "spice", "herb"],
+  "ingredients": [
+    {"name": "salt", "category": "salt"},
+    {"name": "sea salt", "category": "salt"},
+    {"name": "kosher salt", "category": "salt"},
+    {"name": "water", "category": "water"},
+    {"name": "pepper", "category": "spice"},
+    {"name": "black pepper", "category": "spice"},
+    {"name": "white pepper", "category": "spice"},
+    {"name": "red pepper flakes", "category": "spice"},
+    {"name": "cayenne pepper", "category": "spice"},
+    {"name": "cinnamon", "category": "spice"},
+    {"name": "nutmeg", "category": "spice"},
+    {"name": "paprika", "category": "spice"},
+    {"name": "cumin", "category": "spice"},
+    {"name": "turmeric", "category": "spice"},
+    {"name": "chili powder", "category": "spice"},
+    {"name": "garlic powder", "category": "spice"},
+    {"name": "onion powder", "category": "spice"},
+    {"name": "basil", "category": "herb"},
+    {"name": "oregano", "category": "herb"},
+    {"name": "thyme", "category": "herb"},
+    {"name": "rosemary", "category": "herb"},
+    {"name": "parsley", "category": "herb"},
+    {"name": "cilantro", "category": "herb"},
+    {"name": "dill", "category": "herb"}
+  ]
+}

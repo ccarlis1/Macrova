@@ -9,7 +9,8 @@ from src.data_layer import user_data
 from src.llm import tag_repository
 from src.llm.client import LLMClient
 from src.llm.schemas import PrepTimeBucket, RecipeTagsJson, TagMetaJson, ValidationFailure, parse_llm_json
-from src.llm.time_bucket import time_bucket
+# deterministic_prep_time_bucket lives with time_bucket (one derivation, shared with recipe sync).
+from src.llm.time_bucket import deterministic_prep_time_bucket, time_bucket
 
 
 # Closed cuisine vocabulary for the legacy `cuisine` field (identity_hint; display/soft only).
@@ -74,18 +75,6 @@ def _recipe_for_prompt(recipe: Recipe) -> Dict[str, Any]:
         "instructions": list(recipe.instructions),
         "cooking_time_minutes": int(recipe.cooking_time_minutes),
     }
-
-
-def deterministic_prep_time_bucket(cooking_time_minutes: int) -> str:
-    """Effort bucket derived from the known cook time (mirrors planner busyness caps)."""
-    m = int(cooking_time_minutes)
-    if m <= 5:
-        return "snack"
-    if m <= 15:
-        return "quick_meal"
-    if m <= 30:
-        return "weeknight_meal"
-    return "meal_prep"
 
 
 def _registry_slugs_by_type(tag_repo_path: str) -> Dict[str, List[str]]:

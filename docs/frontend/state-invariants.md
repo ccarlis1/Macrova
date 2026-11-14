@@ -7,6 +7,7 @@ Invariants for meal-plan UI state after integrity remediation. Reuse existing pr
 - Surface HTTP/API errors via **`errorCode`** + **`errorMessage`** (and legacy `error` string). `ApiException.code` populates `errorCode`.
 - **`clearPlan()`** nulls the plan, clears errors, and clears local cooked slots.
 - Successful `generatePlan` / `applyPlanResult` also clear cooked slots so mark-cooked state does not leak across plans.
+- **`lastRequest`** is the `PlanRequest` behind the current plan when it came from `generatePlan`; `applyPlanResult` (plan-from-text) and `clearPlan()` null it. `rerunLastRequest(planningMode:)` re-sends it with another mode (FE-11 "Find a recipe"); it does not change the saved `planningMode`.
 
 ## Nutrition authority on planner surfaces
 

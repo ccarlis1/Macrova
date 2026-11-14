@@ -23,19 +23,19 @@ Sprint 1 UX rule, carried from FE-9: per failing slot, show the FM code, a one-l
 
 ## Acceptance criteria
 
-- [ ] `PlanFailure` parses `explanation`, `fix` and `cause`. `MealPlan` parses `report.failure_cause` into a new `PlanFailureCause` DTO with a `PlanRecipeGap`. Unknown keys are ignored, and missing fields are null. Test: `test/plan_failure_dto_test.dart` with a fixture taken from a real `/api/v1/plan` failure response (commit the fixture under `test/fixtures/`).
-- [ ] `FailurePanel` headline is `explanation` when present (falling back to `message`); the fix line is `fix` (falling back to `fix_hint`); the code chip shows `code`. Widget test: a fixture with both explanation and message renders the explanation and not the message.
-- [ ] Every failure renders, not just the first. A failure with `day_index`/`slot_index` is shown on that slot in Meal Plan View (and on Today, when it is that day) as an inline failure row with code + fix. A failure with no slot appears in the hero panel. Widget test with two slot failures on different slots.
-- [ ] When `failure_cause.recipe_could_help == true`:
+- [x] `PlanFailure` parses `explanation`, `fix` and `cause`. `MealPlan` parses `report.failure_cause` into a new `PlanFailureCause` DTO with a `PlanRecipeGap`. Unknown keys are ignored, and missing fields are null. Test: `test/plan_failure_dto_test.dart` with a fixture taken from a real `/api/v1/plan` failure response (commit the fixture under `test/fixtures/`).
+- [x] `FailurePanel` headline is `explanation` when present (falling back to `message`); the fix line is `fix` (falling back to `fix_hint`); the code chip shows `code`. Widget test: a fixture with both explanation and message renders the explanation and not the message.
+- [x] Every failure renders, not just the first. A failure with `day_index`/`slot_index` is shown on that slot in Meal Plan View (and on Today, when it is that day) as an inline failure row with code + fix. A failure with no slot appears in the hero panel. Widget test with two slot failures on different slots.
+- [x] When `failure_cause.recipe_could_help == true`:
   - The panel shows a one-line gap summary built only from non-null `recipe_gap` fields (for example "A recipe near 650 kcal and 40 g protein would help").
   - If `LlmConfigProvider` reports ready, it shows a "Find a recipe" button that re-runs the same plan request with `planning_mode: "assisted"`.
   - If not ready, it shows the gap summary and a "Set up AI help" link to Agent Setup instead.
   - Widget tests cover the ready and not-ready cases. In the ready case, assert `MealPlanProvider` was called with `assisted`, using a fake provider.
-- [ ] When `recipe_could_help == false` (or `failure_cause` is null), no recipe button is shown. Test.
-- [ ] Success-with-warnings still renders `AdvisoryCard`, not `FailurePanel` (regression test; `docs/frontend/failure-handling.md` invariant).
-- [ ] No parsing of `termination_code` for UX (AGENTS.md). A grep check in review is enough.
-- [ ] `docs/frontend/failure-handling.md` updated with the field mapping.
-- [ ] `cd frontend && flutter analyze && flutter test` green.
+- [x] When `recipe_could_help == false` (or `failure_cause` is null), no recipe button is shown. Test.
+- [x] Success-with-warnings still renders `AdvisoryCard`, not `FailurePanel` (regression test; `docs/frontend/failure-handling.md` invariant).
+- [x] No parsing of `termination_code` for UX (AGENTS.md). A grep check in review is enough.
+- [x] `docs/frontend/failure-handling.md` updated with the field mapping.
+- [x] `cd frontend && flutter analyze && flutter test` green.
 
 ## Implementation notes
 

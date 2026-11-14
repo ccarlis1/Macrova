@@ -627,3 +627,67 @@ def test_client_tag_types_replace_stored_and_prune_tag_metadata(monkeypatch, tmp
     raw = json.loads((tmp_path / "recipe_tags.json").read_text())["tags_by_id"]["r-be19-llm"]
     assert "high-fiber" not in _raw_recipe_tag_slug_set(raw)
     assert entry.cuisine == "italian"
+
+
+# --- BE-19 follow-up: a saved line weight survives into the planning pool ---
+
+
+def _plan_path_calculator():
+    """Calculator the plan endpoint builds (local provider, names resolved up front)."""
+    from src.api import server
+    from src.data_layer.nutrition_db import NutritionDB
+    from src.nutrition.calculator import NutritionCalculator
+    from src.providers.local_provider import LocalIngredientProvider
+
+    return NutritionCalculator(LocalIngredientProvider(NutritionDB(server.ingredients_path)))
+
+
+def test_synced_line_weight_recipe_enters_planning_pool(monkeypatch, tmp_path):
+    from src.data_layer.recipe_db import RecipeDB
+    from src.planning.converters import convert_recipes, extract_ingredient_names
+
+    _configure_paths(monkeypatch, tmp_path)
+    item = _be19_item(
+        "r-be19-pool", {"name": "almonds", "quantity": 1, "unit": "cup", "grams_per_unit": 143}
+    )
+    res = TestClient(app).post("/api/v1/recipes/sync", json={"recipes": [item]})
+    assert res.json() == {"synced_ids": ["r-be19-pool"], "errors": []}
+
+    recipes = RecipeDB(
+        str(tmp_path / "recipes.json"), tag_repo_path=str(tmp_path / "recipe_tags.json")
+    ).get_all_recipes()
+    assert [r.id for r in recipes] == ["r-be19-pool"]
+    assert recipes[0].ingredients[0].grams_per_unit == 143.0
+
+    calculator = _plan_path_calculator()
+    calculator.provider.resolve_all(extract_ingredient_names(recipes))
+    log: list = []
+    pool = convert_recipes(recipes, calculator, unresolved_log=log)
+    assert log == []
+    assert [r.id for r in pool] == ["r-be19-pool"]
+    assert abs(pool[0].nutrition.calories - 579.0 * 1.43) < 1e-6
+
+
+def test_line_without_any_conversion_is_dropped_with_nutrition_warning():
+    """Inverse: neither record nor line converts ``cup`` (save rejects it, so build directly)."""
+    from src.api.server import _merge_nutrition_warnings
+    from src.data_layer.models import Ingredient, Recipe
+    from src.planning.converters import convert_recipes
+
+    recipe = Recipe(
+        id="r-be19-nogpu",
+        name="No conversion",
+        ingredients=[Ingredient(name="almonds", quantity=1.0, unit="cup")],
+        cooking_time_minutes=10,
+        instructions=[],
+    )
+    log: list = []
+    pool = convert_recipes([recipe], _plan_path_calculator(), unresolved_log=log)
+    assert pool == []
+    assert [row["recipe_id"] for row in log] == ["r-be19-nogpu"]
+    assert any("almonds" in n and "cup" in n for n in log[0]["unresolved_ingredients"])
+
+    out: dict = {}
+    _merge_nutrition_warnings(out, log)
+    (warning,) = out["warnings"]["nutrition"]
+    assert warning.startswith("Recipe 'r-be19-nogpu' removed from the pool")

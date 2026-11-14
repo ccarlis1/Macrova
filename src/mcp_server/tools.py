@@ -40,7 +40,8 @@ from src.mcp_server.indexing import (
     pins_from_mcp,
     recipe_gap_slots,
 )
-from src.mcp_server.nutrients import daily_rdis, plain_name, plain_names, upper_limits
+from src.data_layer.upper_limits import upper_limits_for
+from src.mcp_server.nutrients import daily_rdis, plain_name, plain_names
 from src.models.legacy_schedule_migration import merge_schedule_warnings_into_result
 from src.data_layer import user_data
 from src.nutrition.calculator import NutritionCalculator
@@ -516,7 +517,7 @@ def plan_meals(
         batches=batches,
         keep_batch_recipes=True,
     )
-    resolved_ul = upper_limits(targets.demographic) if targets.demographic else None
+    resolved_ul = upper_limits_for(targets.demographic)
     planner_result = run_planner(inputs.planning_profile, inputs.recipe_pool, days, resolved_ul=resolved_ul)
     out = format_plan_response(
         planner_result, inputs, user_profile=user_profile, days=days, pins=plan_pins, batches=batches

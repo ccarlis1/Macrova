@@ -10,13 +10,25 @@ data/reference/ul_by_demographic.json, merged with user overrides.
 
 import json
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Literal, Optional, List, Tuple, get_args
 
 from src.data_layer.models import UpperLimits, MicronutrientProfile
 
 # Spec Section 2.3: default path for UL reference data
 DEFAULT_UL_REFERENCE_PATH = "data/reference/ul_by_demographic.json"
+
+# Reference tables, resolved from the repo root so callers work from any cwd.
+# Shared by the HTTP API, the CLI and the MCP server (Sprint 2 BE-17).
+_REFERENCE_DIR = Path(__file__).resolve().parents[2] / "data" / "reference"
+RDI_PATH = _REFERENCE_DIR / "rdi_by_demographic.json"
+UL_PATH = _REFERENCE_DIR / "ul_by_demographic.json"
+
+# The demographics both reference tables carry. One definition: the API, CLI and
+# MCP server all type against this literal.
+Demographic = Literal["adult_male", "adult_female", "pregnancy", "lactation"]
+DEMOGRAPHICS: Tuple[str, ...] = get_args(Demographic)
 
 
 @dataclass
@@ -226,3 +238,35 @@ def validate_daily_upper_limits(
             ))
     
     return violations
+
+
+@lru_cache(maxsize=None)
+def _rdi_table() -> Dict[str, Dict[str, float]]:
+    with open(RDI_PATH, encoding="utf-8") as f:
+        return json.load(f)["demographics"]
+
+
+def daily_rdis(demographic: Demographic) -> Dict[str, float]:
+    """Daily recommended intakes for a demographic, keyed like ``vitamin_c_mg``."""
+    return {key: float(value) for key, value in _rdi_table()[demographic].items()}
+
+
+def upper_limits(demographic: Demographic) -> UpperLimits:
+    """Daily upper limits for a demographic from the shared reference table.
+
+    The one UL resolution path for the HTTP API, the CLI and the MCP server.
+    The planner enforces the result per day (``plan_meals(..., resolved_ul=...)``).
+    """
+    return resolve_upper_limits(UpperLimitsLoader(str(UL_PATH)), demographic=demographic)
+
+
+def upper_limits_for(demographic: Optional[str]) -> Optional[UpperLimits]:
+    """``upper_limits(demographic)``, or None (no ULs) when no demographic is set.
+
+    Callers pass the result to ``plan_meals(..., resolved_ul=...)`` only when it is
+    not None, so an unset demographic plans exactly as before ULs were wired.
+    Raises KeyError for a demographic the reference table doesn't carry.
+    """
+    if not demographic:
+        return None
+    return upper_limits(demographic)  # type: ignore[arg-type]

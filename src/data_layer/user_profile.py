@@ -10,6 +10,7 @@ from src.llm.schemas import BudgetLevel, PlannerConfigJson
 
 from src.data_layer.macro_targets import MacroTargetsError, validate_macro_targets
 from src.data_layer.models import MicronutrientProfile, ProfilePin, UserProfile
+from src.data_layer.upper_limits import DEMOGRAPHICS
 from src.models.legacy_schedule_migration import (
     canonical_day_to_meal_only_legacy_dict,
     legacy_schedule_dict_to_day_schedule,
@@ -214,6 +215,23 @@ def load_normalized_profile_schedule_days(
     return normalize_schedule_days_for_api(schedule_days)
 
 
+def _profile_demographic(raw: Any) -> Optional[str]:
+    """Read the optional YAML ``demographic`` (Sprint 2 BE-17).
+
+    Unset, null or blank means no upper limits. A value the reference tables don't
+    carry is an error, not a silent "no ULs".
+    """
+    if raw is None or (isinstance(raw, str) and not raw.strip()):
+        return None
+    value = str(raw).strip()
+    if value not in DEMOGRAPHICS:
+        raise ValueError(
+            f"Unsupported demographic {value!r} in profile YAML; "
+            f"supported: {', '.join(DEMOGRAPHICS)}"
+        )
+    return value
+
+
 class UserProfileLoader:
     """Loader for user profile configuration from YAML."""
 
@@ -319,6 +337,7 @@ class UserProfileLoader:
             micronutrient_weekly_min_fraction=micronutrient_weekly_min_fraction,
             schedule_days=schedule_days,
             pins=load_profile_pins(yaml_path=self.yaml_path),
+            demographic=_profile_demographic(data.get("demographic")),
         )
 
 

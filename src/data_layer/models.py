@@ -304,6 +304,11 @@ class UserProfile:
     # Canonical slot pins persisted in profile storage.
     pins: Optional[List["ProfilePin"]] = None
 
+    # Optional demographic (one of ``upper_limits.DEMOGRAPHICS``). When set, the
+    # planner enforces that demographic's daily upper limits. It does not set
+    # micronutrient targets (Sprint 2 BE-17). None means no ULs.
+    demographic: Optional[str] = None
+
     # Future (post-MVP)
     # meal_prep_meals: List[Meal]
 

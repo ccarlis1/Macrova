@@ -824,6 +824,24 @@
             ],
             "title": "Cuisine"
           },
+          "demographic": {
+            "anyOf": [
+              {
+                "enum": [
+                  "adult_male",
+                  "adult_female",
+                  "pregnancy",
+                  "lactation"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional demographic whose daily upper limits (ULs) the planner enforces per day (data/reference/ul_by_demographic.json). Omit for no ULs. Does not set micronutrient goals.",
+            "title": "Demographic"
+          },
           "dietary_flags": {
             "anyOf": [
               {
@@ -1065,6 +1083,24 @@
             "minimum": 1.0,
             "title": "Days",
             "type": "integer"
+          },
+          "demographic": {
+            "anyOf": [
+              {
+                "enum": [
+                  "adult_male",
+                  "adult_female",
+                  "pregnancy",
+                  "lactation"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional demographic whose daily upper limits (ULs) the planner enforces per day (data/reference/ul_by_demographic.json). Omit for no ULs. Does not set micronutrient goals.",
+            "title": "Demographic"
           },
           "dietary_flags": {
             "anyOf": [

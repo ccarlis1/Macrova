@@ -39,6 +39,7 @@ from src.data_layer.models import (
     MicronutrientProfile,
 )
 from src.data_layer.recipe_db import RecipeDB
+from src.data_layer.upper_limits import Demographic, upper_limits_for
 from src.data_layer import user_data
 from src.data_layer.nutrition_db import NutritionDB
 from src.data_layer.meal_prep import MealPrepBatchRepository
@@ -193,6 +194,15 @@ class PlanRequest(BaseModel):
     micronutrient_weekly_min_fraction: float = Field(default=1.0, gt=0.0, le=1.0)
     # HC-5 hard daily ceiling. May be below daily_calories; the planner reports FM-2.
     max_daily_calories: Optional[int] = Field(default=None, gt=0)
+    # Daily upper limits (BE-17). Unset => no ULs (unchanged behavior).
+    demographic: Optional[Demographic] = Field(
+        default=None,
+        description=(
+            "Optional demographic whose daily upper limits (ULs) the planner enforces per day "
+            "(data/reference/ul_by_demographic.json). Omit for no ULs. Does not set "
+            "micronutrient goals."
+        ),
+    )
 
     # Optional tag-based recipe pool filtering (deterministic).
     cuisine: Optional[List[str]] = None
@@ -264,6 +274,16 @@ class PlanFromTextRequest(BaseModel):
     planning_mode: Optional[
         Literal["deterministic", "assisted", "assisted_cached", "assisted_live"]
     ] = None
+
+    # Daily upper limits (BE-17). Unset => no ULs (unchanged behavior).
+    demographic: Optional[Demographic] = Field(
+        default=None,
+        description=(
+            "Optional demographic whose daily upper limits (ULs) the planner enforces per day "
+            "(data/reference/ul_by_demographic.json). Omit for no ULs. Does not set "
+            "micronutrient goals."
+        ),
+    )
 
 
 class ProfileScheduleWriteResponse(BaseModel):
@@ -949,6 +969,15 @@ def _local_ingredient_to_resolve_payload(data: Dict[str, Any]) -> Dict[str, Any]
     }
 
 
+def _resolved_ul_kwargs(user_profile: UserProfile) -> Dict[str, Any]:
+    """``{"resolved_ul": ...}`` for the profile's demographic, or ``{}`` when unset (BE-17).
+
+    Empty when unset, so planner calls are exactly what they were before ULs were wired.
+    """
+    resolved_ul = upper_limits_for(getattr(user_profile, "demographic", None))
+    return {"resolved_ul": resolved_ul} if resolved_ul is not None else {}
+
+
 def _build_user_profile(
     request: PlanRequest,
     *,
@@ -1002,6 +1031,7 @@ def _build_user_profile(
         max_daily_calories=request.max_daily_calories,
         schedule_days=schedule_days,
         pins=list(persisted_pins or []),
+        demographic=request.demographic,
     )
     return profile, warnings
 
@@ -1339,8 +1369,9 @@ async def plan_meals_endpoint(
             # Omitted => deterministic regardless of LLM env (assisted modes are explicit-only).
             effective_mode = "deterministic"
 
+        ul_kwargs = _resolved_ul_kwargs(user_profile)
         if effective_mode == "deterministic":
-            result = plan_meals(planning_profile, recipe_pool, plan_request.days)
+            result = plan_meals(planning_profile, recipe_pool, plan_request.days, **ul_kwargs)
         else:
             if not llm_settings.enabled:
                 raise LLMPlanningModeError(
@@ -1385,6 +1416,7 @@ async def plan_meals_endpoint(
                 deterministic_strict_override=deterministic_strict_override,
                 use_feedback_cache=use_feedback_cache,
                 force_live_generation=force_live_generation,
+                **ul_kwargs,
             )
 
             # Ensure formatter sees any recipes persisted by the feedback loop.
@@ -1459,6 +1491,7 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
                 ) from e
 
             user_profile = user_profile_from_planner_config(cfg)
+            user_profile.demographic = request.demographic
             days = int(cfg.days)
             # Deterministic mode only allows explicit request fields for recipe-pool filtering;
             # never infer cuisine/cost from the prompt.
@@ -1478,6 +1511,7 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
             client = build_llm_client()
             cfg = parse_nl_config(client, request.prompt)
             user_profile = user_profile_from_planner_config(cfg)
+            user_profile.demographic = request.demographic
             days = int(cfg.days)
 
             # LLM overhaul Stage 8: cuisine/budget inferred from the prompt are soft preferences
@@ -1543,8 +1577,9 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
         recipe_by_id = inputs.recipe_by_id
         planning_profile = inputs.planning_profile
 
+        ul_kwargs = _resolved_ul_kwargs(user_profile)
         if effective_mode == "deterministic":
-            result = plan_meals(planning_profile, recipe_pool, days)
+            result = plan_meals(planning_profile, recipe_pool, days, **ul_kwargs)
         else:
             llm_client = build_llm_client()
             validation_provider = build_usda_provider()
@@ -1580,6 +1615,7 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
                 deterministic_strict_override=deterministic_strict_override,
                 use_feedback_cache=use_feedback_cache,
                 force_live_generation=force_live_generation,
+                **ul_kwargs,
             )
 
             # Ensure formatter sees any recipes persisted by the feedback loop.

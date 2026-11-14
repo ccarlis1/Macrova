@@ -207,6 +207,17 @@ def test_openapi_plan_request_has_max_daily_calories():
     assert "max_daily_calories" in props
 
 
+def test_openapi_plan_requests_have_demographic():
+    """Sprint 2 BE-17: optional ``demographic`` (daily ULs) on both plan request schemas."""
+    components = _openapi_components()
+    for name in ("PlanRequest", "PlanFromTextRequest"):
+        props = components[name]["properties"]
+        assert "demographic" in props, name
+        assert "demographic" not in components[name].get("required", [])
+        enums = [b.get("enum") for b in props["demographic"]["anyOf"] if "enum" in b]
+        assert enums == [["adult_male", "adult_female", "pregnancy", "lactation"]]
+
+
 def test_openapi_plan_response_includes_failure_codes():
     schema = app.openapi()
     components = schema["components"]["schemas"]

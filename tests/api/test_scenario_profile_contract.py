@@ -34,7 +34,9 @@ _PROFILE_TO_PLAN_REQUEST: dict[str, str] = {
 
 # Keys that intentionally do not map to PlanRequest.
 _ALLOWLIST: dict[str, str] = {
-    "demographic": "not wired: ULs not enforced over HTTP",
+    # PlanRequest.demographic exists (BE-17), but the benchmark harness deliberately
+    # doesn't send it: the oracle labels were written without daily ULs.
+    "demographic": "harness sends no demographic: oracle labels assume no ULs",
     "intent_excluded_ingredients": "oracle-only metadata",
 }
 

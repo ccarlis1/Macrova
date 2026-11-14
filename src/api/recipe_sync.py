@@ -324,8 +324,12 @@ def _build_updated_tags_by_id(
 
     - ``prep_time_bucket`` and the ``time`` slug are derived from ``cooking_time_minutes``
       (``time_bucket`` helpers, the tagger's derivation); a client ``time`` slug is replaced.
-    - Client ``tag_slugs_by_type`` (canonicalized) replace the other types; omitted keeps
-      the stored ones.
+    - Client ``tag_slugs_by_type`` (canonicalized), when sent, replaces the stored
+      ``tag_slugs_by_type`` as a whole: a stored type the client doesn't send is
+      removed. Omitted (or empty) keeps the stored types.
+    - The prior entry's per-recipe ``tag_metadata`` is pruned to the slugs that survive,
+      unchanged for those (a ``proposed`` slug stays ``proposed``), so removed slugs stop
+      counting in the tag store's slug sets.
     - ``cuisine`` / ``cost_level`` / ``dietary_flags``: sent value, else stored value, else
       ``"unknown"`` / ``"standard"`` / ``[]``.
     """
@@ -351,6 +355,10 @@ def _build_updated_tags_by_id(
             fields["cost_level"] = item.cost_level
         if item.dietary_flags is not None:
             fields["dietary_flags"] = list(item.dietary_flags)
+        if prior is not None and prior.tag_metadata:
+            surviving = {s for type_slugs in slugs.values() for s in type_slugs}
+            kept = {k: v for k, v in prior.tag_metadata.items() if k in surviving}
+            fields["tag_metadata"] = kept or None
 
         if prior is not None:
             out[item.id] = prior.model_copy(update=fields)

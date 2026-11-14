@@ -584,3 +584,46 @@ def test_sync_skips_item_whose_dietary_flag_is_contradicted(monkeypatch, tmp_pat
     tags = _tags(tmp_path)
     assert set(tags) == {"r-be19-flag-ok"}
     assert [f.value for f in tags["r-be19-flag-ok"].dietary_flags] == ["vegan", "gluten_free"]
+
+
+# --- BE-19 follow-up: client tag types replace stored ones; tag_metadata follows ---
+
+
+def test_client_tag_types_replace_stored_and_prune_tag_metadata(monkeypatch, tmp_path):
+    from src.llm.recipe_tagger import _quarantined_metadata
+    from src.llm.tag_repository import _raw_recipe_tag_slug_set, _recipe_tag_slug_set
+
+    _configure_paths(monkeypatch, tmp_path)
+    tags_path = str(tmp_path / "recipe_tags.json")
+    # Tagger-style prior entry: LLM-proposed slugs carry per-recipe tag_metadata.
+    upsert_recipe_tags(
+        tags_path,
+        {
+            "r-be19-llm": RecipeTagsJson(
+                cuisine="italian",
+                cost_level="cheap",
+                prep_time_bucket="quick_meal",
+                tag_slugs_by_type={
+                    "context": ["meal-prep"],
+                    "nutrition": ["high-fiber"],
+                    "time": ["time-2"],
+                },
+                tag_metadata=_quarantined_metadata(["meal-prep", "high-fiber"], tags_path),
+            )
+        },
+    )
+    item = _be19_item("r-be19-llm", tag_slugs_by_type={"context": ["meal-prep"]})
+    assert TestClient(app).post("/api/v1/recipes/sync", json={"recipes": [item]}).status_code == 200
+
+    entry = _tags(tmp_path)["r-be19-llm"]
+    # Sent types replace the stored types as a whole: the nutrition type is gone.
+    assert entry.tag_slugs_by_type == {"context": ["meal-prep"], "time": ["time-2"]}
+    # Metadata of the removed slug is pruned; the surviving slug stays proposed.
+    assert set(entry.tag_metadata or {}) == {"meal-prep"}
+    assert entry.tag_metadata["meal-prep"].eligibility == "proposed"
+    assert entry.tag_metadata["meal-prep"].source == "llm"
+    assert "high-fiber" not in _recipe_tag_slug_set(entry)
+
+    raw = json.loads((tmp_path / "recipe_tags.json").read_text())["tags_by_id"]["r-be19-llm"]
+    assert "high-fiber" not in _raw_recipe_tag_slug_set(raw)
+    assert entry.cuisine == "italian"

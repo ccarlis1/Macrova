@@ -358,6 +358,8 @@ def test_recipe_sync_writes_json_and_plan_sees_recipe(tmp_path, monkeypatch):
     recipes_file = tmp_path / "recipes.json"
     recipes_file.write_text('{"recipes": []}', encoding="utf-8")
     monkeypatch.setattr("src.api.server.recipes_path", str(recipes_file))
+    # Sync always writes a tags_by_id entry (BE-19): keep it out of the committed tag store.
+    monkeypatch.setattr("src.api.server.DEFAULT_TAG_PATH", str(tmp_path / "recipe_tags.json"))
 
     client = TestClient(app)
     rid = "00000000-0000-4000-8000-000000000001"
@@ -495,3 +497,29 @@ def test_openapi_recipe_save_routes_document_ingredient_quantity_required():
             assert "INGREDIENT_QUANTITY_REQUIRED" in resp["description"]
             ref = resp["content"]["application/json"]["schema"]["$ref"]
             assert ref == "#/components/schemas/ApiErrorResponse"
+
+
+def test_openapi_recipe_save_line_grams_per_unit_and_unit_error_codes():
+    """Sprint 2 BE-19: line ``grams_per_unit``, sync item tag fields and the 400 save codes."""
+    import json as _json
+    from pathlib import Path as _Path
+
+    for schema in (app.openapi(), _json.loads(_Path("openapi/openapi.json").read_text(encoding="utf-8"))):
+        comps = schema["components"]["schemas"]
+        line = comps["RecipeSyncIngredientLine"]["properties"]
+        assert "grams_per_unit" in line
+        assert "grams_per_unit" not in comps["RecipeSyncIngredientLine"].get("required", [])
+        item = comps["RecipeSyncItem"]
+        for field in ("cuisine", "cost_level", "dietary_flags"):
+            assert field in item["properties"]
+            assert field not in item.get("required", [])
+        assert "errors" in comps["RecipeSyncResponse"]["properties"]
+        for path, method in (
+            ("/api/v1/recipes/sync", "post"),
+            ("/api/v1/recipes", "post"),
+            ("/api/v1/recipes/{recipe_id}", "put"),
+        ):
+            resp = schema["paths"][path][method]["responses"]["400"]
+            assert "UNIT_NOT_CONVERTIBLE" in resp["description"]
+            assert "INGREDIENT_UNRESOLVED" in resp["description"]
+            assert resp["content"]["application/json"]["schema"]["$ref"] == "#/components/schemas/ApiErrorResponse"

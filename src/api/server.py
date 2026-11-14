@@ -151,6 +151,17 @@ class ApiErrorResponse(BaseModel):
 
 #: Error responses shared by the recipe save routes (sync, create, update).
 RECIPE_SAVE_ERROR_RESPONSES: Dict[Any, Dict[str, Any]] = {
+    400: {
+        "model": ApiErrorResponse,
+        "description": (
+            "UNIT_NOT_CONVERTIBLE (create/update): a line's unit has no gram conversion "
+            "(not a mass unit, not on the ingredient record, no line grams_per_unit). "
+            "INGREDIENT_UNRESOLVED (create/update): a line's ingredient isn't in the local "
+            "ingredient table. Both carry details {ingredient, unit}; sync instead skips "
+            "the item and reports '<recipe id>: <CODE>: <message>' in errors. "
+            "INVALID_REQUEST: schema validation (e.g. cuisine outside the vocabulary)."
+        ),
+    },
     422: {
         "model": ApiErrorResponse,
         "description": (
@@ -857,6 +868,9 @@ def _flutter_ingredient_entries(
             entry["resolved"] = False
             continue
         entry["unit_conversions"] = NutritionCalculator.unit_conversions(info)
+        if ing.grams_per_unit is not None and calculator.record_grams(ing, info) is None:
+            # The line's own weight (BE-19); the record wins when it has the unit.
+            entry["unit_conversions"][ing.unit] = float(ing.grams_per_unit)
         try:
             grams = calculator.to_grams(ing, info)
             prof = calculator.calculate_ingredient_nutrition(ing)
@@ -1868,6 +1882,15 @@ def ingredient_resolve_endpoint(request: IngredientResolveRequest) -> Any:
         return JSONResponse(status_code=status_code, content=payload)
 
 
+def _save_time_calculator() -> NutritionCalculator:
+    """Calculator for save-time checks: the local provider the plan endpoint builds.
+
+    Local only, never USDA: a recipe whose ingredient exists only via
+    ``ingredient_source=api`` is rejected at save (``INGREDIENT_UNRESOLVED``).
+    """
+    return NutritionCalculator(LocalIngredientProvider(NutritionDB(ingredients_path)))
+
+
 @app.post("/api/v1/recipes/sync", response_model=RecipeSyncResponse, responses=RECIPE_SAVE_ERROR_RESPONSES)
 @app.post("/api/recipes/sync", response_model=RecipeSyncResponse, responses=RECIPE_SAVE_ERROR_RESPONSES)
 def sync_recipes_endpoint(body: RecipeSyncRequest) -> Any:
@@ -1875,12 +1898,15 @@ def sync_recipes_endpoint(body: RecipeSyncRequest) -> Any:
     try:
         if not body.recipes:
             return RecipeSyncResponse(synced_ids=[])
+        errors: List[str] = []
         synced_ids = atomic_upsert_recipes_by_id(
             path=recipes_path,
             items=body.recipes,
             tag_path=DEFAULT_TAG_PATH,
+            calculator=_save_time_calculator(),
+            errors=errors,
         )
-        return RecipeSyncResponse(synced_ids=synced_ids)
+        return RecipeSyncResponse(synced_ids=synced_ids, errors=errors)
     except HTTPException:
         raise
     except Exception as exc:
@@ -1897,6 +1923,7 @@ def create_recipe_endpoint(item: RecipeSyncItem) -> Any:
             path=recipes_path,
             items=[item],
             tag_path=DEFAULT_TAG_PATH,
+            calculator=_save_time_calculator(),
         )
         return RecipeSyncResponse(synced_ids=synced_ids)
     except HTTPException:
@@ -1925,6 +1952,7 @@ def put_recipe_endpoint(recipe_id: str, item: RecipeSyncItem) -> Any:
             path=recipes_path,
             items=[item],
             tag_path=DEFAULT_TAG_PATH,
+            calculator=_save_time_calculator(),
         )
         return RecipeSyncResponse(synced_ids=synced_ids)
     except HTTPException:

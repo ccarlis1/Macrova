@@ -94,4 +94,5 @@ def test_sync_backward_compatible_without_new_fields(monkeypatch, tmp_path):
 
     detail = client.get(f"/api/v1/recipes/{rid}").json()
     assert detail["default_servings"] == 1
-    assert detail["tag_slugs_by_type"] == {}
+    # BE-19: every synced recipe gets a tags_by_id entry with the derived time slug (0 min).
+    assert detail["tag_slugs_by_type"] == {"time": ["time-0"]}

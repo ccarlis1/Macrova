@@ -1690,6 +1690,19 @@
       "RecipeSyncIngredientLine": {
         "description": "One ingredient line as sent by the client.",
         "properties": {
+          "grams_per_unit": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Weight in grams of one `unit` of this line (e.g. the Ingredient Hub's cup weight). Used only when the ingredient record has no conversion for the unit; stored on the recipe line, never in the reference ingredient table.",
+            "title": "Grams Per Unit"
+          },
           "name": {
             "minLength": 1,
             "title": "Name",
@@ -1722,11 +1735,73 @@
             "title": "Cooking Time Minutes",
             "type": "integer"
           },
+          "cost_level": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BudgetLevel"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Omitted keeps the stored value (else \"standard\")."
+          },
+          "cuisine": {
+            "anyOf": [
+              {
+                "enum": [
+                  "american",
+                  "mexican",
+                  "italian",
+                  "mediterranean",
+                  "middle-eastern",
+                  "indian",
+                  "chinese",
+                  "japanese",
+                  "korean",
+                  "thai",
+                  "vietnamese",
+                  "french",
+                  "greek",
+                  "spanish",
+                  "latin-american",
+                  "african",
+                  "caribbean",
+                  "british",
+                  "german",
+                  "eastern-european",
+                  "fusion",
+                  "unknown"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cuisine from the tagger's closed vocabulary. Omitted keeps the stored value (else \"unknown\").",
+            "title": "Cuisine"
+          },
           "default_servings": {
             "default": 1,
             "minimum": 1.0,
             "title": "Default Servings",
             "type": "integer"
+          },
+          "dietary_flags": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DietaryFlag"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Omitted keeps the stored flags (else []); [] clears them.",
+            "title": "Dietary Flags"
           },
           "id": {
             "minLength": 1,
@@ -2368,6 +2443,16 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "UNIT_NOT_CONVERTIBLE (create/update): a line's unit has no gram conversion (not a mass unit, not on the ingredient record, no line grams_per_unit). INGREDIENT_UNRESOLVED (create/update): a line's ingredient isn't in the local ingredient table. Both carry details {ingredient, unit}; sync instead skips the item and reports '<recipe id>: <CODE>: <message>' in errors. INVALID_REQUEST: schema validation (e.g. cuisine outside the vocabulary)."
+          },
           "422": {
             "content": {
               "application/json": {
@@ -2444,6 +2529,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "UNIT_NOT_CONVERTIBLE (create/update): a line's unit has no gram conversion (not a mass unit, not on the ingredient record, no line grams_per_unit). INGREDIENT_UNRESOLVED (create/update): a line's ingredient isn't in the local ingredient table. Both carry details {ingredient, unit}; sync instead skips the item and reports '<recipe id>: <CODE>: <message>' in errors. INVALID_REQUEST: schema validation (e.g. cuisine outside the vocabulary)."
           },
           "422": {
             "content": {
@@ -2569,6 +2664,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "UNIT_NOT_CONVERTIBLE (create/update): a line's unit has no gram conversion (not a mass unit, not on the ingredient record, no line grams_per_unit). INGREDIENT_UNRESOLVED (create/update): a line's ingredient isn't in the local ingredient table. Both carry details {ingredient, unit}; sync instead skips the item and reports '<recipe id>: <CODE>: <message>' in errors. INVALID_REQUEST: schema validation (e.g. cuisine outside the vocabulary)."
           },
           "422": {
             "content": {
@@ -3281,6 +3386,16 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "UNIT_NOT_CONVERTIBLE (create/update): a line's unit has no gram conversion (not a mass unit, not on the ingredient record, no line grams_per_unit). INGREDIENT_UNRESOLVED (create/update): a line's ingredient isn't in the local ingredient table. Both carry details {ingredient, unit}; sync instead skips the item and reports '<recipe id>: <CODE>: <message>' in errors. INVALID_REQUEST: schema validation (e.g. cuisine outside the vocabulary)."
+          },
           "422": {
             "content": {
               "application/json": {
@@ -3357,6 +3472,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "UNIT_NOT_CONVERTIBLE (create/update): a line's unit has no gram conversion (not a mass unit, not on the ingredient record, no line grams_per_unit). INGREDIENT_UNRESOLVED (create/update): a line's ingredient isn't in the local ingredient table. Both carry details {ingredient, unit}; sync instead skips the item and reports '<recipe id>: <CODE>: <message>' in errors. INVALID_REQUEST: schema validation (e.g. cuisine outside the vocabulary)."
           },
           "422": {
             "content": {
@@ -3520,6 +3645,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "UNIT_NOT_CONVERTIBLE (create/update): a line's unit has no gram conversion (not a mass unit, not on the ingredient record, no line grams_per_unit). INGREDIENT_UNRESOLVED (create/update): a line's ingredient isn't in the local ingredient table. Both carry details {ingredient, unit}; sync instead skips the item and reports '<recipe id>: <CODE>: <message>' in errors. INVALID_REQUEST: schema validation (e.g. cuisine outside the vocabulary)."
           },
           "422": {
             "content": {

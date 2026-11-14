@@ -1,6 +1,8 @@
 # FE-1 — Planner screen card-based rebuild
 
-**Status:** todo  ·  **Complexity:** L  ·  **Depends on:** DM-2, DM-4, BE-3
+**Status:** superseded  ·  **Complexity:** L  ·  **Depends on:** DM-2, DM-4, BE-3
+
+Sprint 2 close-out (DOC-1, 2026-11-14): Superseded by: FE-14, FE-15. The redesign (PR #63: `TodayScreen`, `MealPlanView`, `MealCard`, `MealDetailSheet`) replaced this screen; the `source` card variants move to FE-14/FE-15.
 
 ## Summary
 

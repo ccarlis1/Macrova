@@ -17,7 +17,7 @@ Other ``INVALID_REQUEST`` responses (schema / FastAPI validation) may omit
 
 from __future__ import annotations
 
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from src.config.llm_settings import LLMSettingsError
 from src.llm.client import (
@@ -48,6 +48,10 @@ RECIPE_NOT_BATCHABLE = "RECIPE_NOT_BATCHABLE"
 BATCH_CONFLICT = "BATCH_CONFLICT"
 BATCH_INVALID = "BATCH_INVALID"
 PROFILE_PIN_INVALID = "PROFILE_PIN_INVALID"
+#: A nutrient-bearing ingredient was sent as ``to taste`` (Sprint 2 BE-18). HTTP 422,
+#: ``details.ingredient`` names it. Only seasonings in data/reference/to_taste_allowed.json
+#: may be ``to taste``.
+INGREDIENT_QUANTITY_REQUIRED = "INGREDIENT_QUANTITY_REQUIRED"
 FM_TAG_EMPTY = "FM-TAG-EMPTY"
 FM_BATCH_CONFLICT = "FM-BATCH-CONFLICT"
 FM_MACRO_INFEASIBLE = "FM-MACRO-INFEASIBLE"
@@ -60,9 +64,10 @@ FM_5 = "FM-5"
 class ApiContractError(Exception):
     """Typed API-layer contract error with deterministic code mapping."""
 
-    def __init__(self, code: str, message: str):
+    def __init__(self, code: str, message: str, details: Optional[Dict[str, Any]] = None):
         super().__init__(message)
         self.code = code
+        self.details = dict(details) if details else None
 
 
 def _payload(code: str, message: str) -> Dict[str, Any]:
@@ -169,6 +174,11 @@ def map_exception_to_api_error(exc: Exception) -> Tuple[int, Dict[str, Any]]:
             return 409, _payload(BATCH_CONFLICT, str(exc))
         if exc.code == BATCH_INVALID:
             return 400, _payload(BATCH_INVALID, str(exc))
+        if exc.code == INGREDIENT_QUANTITY_REQUIRED:
+            payload = _payload(INGREDIENT_QUANTITY_REQUIRED, str(exc))
+            if exc.details:
+                payload[API_ERROR]["details"] = exc.details
+            return 422, payload
         return 400, _payload(exc.code, str(exc))
 
     # Profile pin validation errors currently surface as ValueError prefixed with

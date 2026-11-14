@@ -1,6 +1,6 @@
 # DATA-1 — FDC portion weights so all 18 sample recipes are plannable
 
-**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** — (needs input I-2: `USDA_API_KEY`)
+**Status:** done  ·  **Complexity:** M  ·  **Depends on:** — (needs input I-2: `USDA_API_KEY`)
 
 ## Summary
 
@@ -37,12 +37,12 @@ Precedent: PR #62 (Hass avocado weight) took the weight from FDC and recorded th
 
 ## Acceptance criteria
 
-- [ ] `tools.get_sample_recipes()` reports 18/18 `ready_for_planning`. If an item can't be fixed without guessing (likely candidate: the whey scoop, because SR Legacy has no scoop portion), the stub lists it with the reason, and the count is 17/18 or lower with every gap explained. Test: `tests/mcp_server/test_server.py` gets `test_sample_recipes_ready_for_planning`, asserting the exact expected count and the names of any not-ready recipes. It fails today (6).
-- [ ] Every added `grams_per_unit` key has a matching `notes` entry on that record, in the form `"<unit>: <grams> g, FDC <fdc_id> foodPortions id <portion id> (<measureUnit> <modifier>)"`. Test: a data test that every non-`g` key in `grams_per_unit` across the file has a `notes` mention. Grandfathered keys that predate this task are listed in the test as known exceptions, so the test fails on any new key without a source.
-- [ ] No per-100 g nutrient value changes. Test: compare against a snapshot of `per_100g` blocks taken before the change (or check `git diff` in the PR: only `grams_per_unit` and `notes` lines change).
-- [ ] `review_status` stays `draft`. Human review is tracked separately.
-- [ ] `/api/v1/plan` with `recipe_ids` set to the 18 sample ids and the Flutter new-user default macros, 3 days: no sample recipe appears in `warnings.nutrition`. Integration test in `tests/integration/`.
-- [ ] `benchmark-audit`: 153/153, 0 regressions. Changing `grams_per_unit` can change the nutrition of benchmark recipes that use the same unit.
+- [x] `tools.get_sample_recipes()` reports 18/18 `ready_for_planning`. If an item can't be fixed without guessing (likely candidate: the whey scoop, because SR Legacy has no scoop portion), the stub lists it with the reason, and the count is 17/18 or lower with every gap explained. Test: `tests/mcp_server/test_server.py` gets `test_sample_recipes_ready_for_planning`, asserting the exact expected count and the names of any not-ready recipes. It fails today (6).
+- [x] Every added `grams_per_unit` key has a matching `notes` entry on that record, in the form `"<unit>: <grams> g, FDC <fdc_id> foodPortions id <portion id> (<measureUnit> <modifier>)"`. Test: a data test that every non-`g` key in `grams_per_unit` across the file has a `notes` mention. Grandfathered keys that predate this task are listed in the test as known exceptions, so the test fails on any new key without a source.
+- [x] No per-100 g nutrient value changes. Test: compare against a snapshot of `per_100g` blocks taken before the change (or check `git diff` in the PR: only `grams_per_unit` and `notes` lines change).
+- [x] `review_status` stays `draft`. Human review is tracked separately.
+- [x] `/api/v1/plan` with `recipe_ids` set to the 18 sample ids and the Flutter new-user default macros, 3 days: no sample recipe appears in `warnings.nutrition`. Integration test in `tests/integration/`.
+- [x] `benchmark-audit`: 153/153, 0 regressions. Changing `grams_per_unit` can change the nutrition of benchmark recipes that use the same unit.
 
 ## Implementation notes
 
@@ -66,3 +66,59 @@ Precedent: PR #62 (Hass avocado weight) took the weight from FDC and recorded th
 - Human FDC review of the table (human-only).
 - New ingredients or new sample recipes.
 - `data/recipes/recipes.json` (the user/committed pool; separate from the samples).
+
+## Close-out (2026-11-14)
+
+**Result: 18 of 18 samples `ready_for_planning`** (was 6). `tools.get_sample_recipes()` re-run after the change: 18/18. A 3-day plan over the 18 samples with the Flutter new-user macros now returns `success` (it was `partial`). Weights come from FDC where FDC has a matching portion, and from Cronometer NCCDB servings where it doesn't (see below).
+
+FDC `/v1/food/{fdc_id}` was fetched for all 14 records. Raw payloads are in `debug_artifacts/data1/<fdc_id>.json` (gitignored). Every portion's `measureUnit` is `undetermined`; the portion name is in `modifier`.
+
+**Fixed**
+- whey protein powder (FDC 173177): `scoop: 28.67` from foodPortions id 92053 (modifier `scoop`, amount 3 = 86.0 g). The feared gap didn't exist: SR Legacy has a scoop portion. Unblocks Pre Workout 1 and Pre Workout 2.
+- carrots `tbsp, diced` (Bolognese): FDC has no diced tbsp portion, so the sample's unit becomes plain `tbsp`, per the compound-unit rule. The weight is the record's existing `tbsp: 7`, which predates this task and has no source (grandfathered in the new data test).
+
+**Where FDC has no matching portion**
+
+| Ingredient (FDC) | Recipe unit | What FDC has |
+|---|---|---|
+| salmon canned (175174) | `small can` | can, total contents 417 g (id 95800); oz |
+| sourdough bread (172675) | `large slice` | slice 139 g (id 91076, looks like a whole-loaf slice); oz |
+| chia seeds (170554) | `tbsp, whole pieces` | oz only (id 86844) |
+| low fat greek yogurt (170903) | `cup` | container (7 oz) 200 g (id 87526) |
+| greek yogurt plain nonfat (170894) | `cup` | container 170 g (id 87513) |
+| chickpeas drained (173800) | `cup, whole pieces` | can drained 253 g (id 93273) |
+| parmesan cheese hard (170848) | `tbsp, grated` | cubic inch 10.3 g (id 87388); oz; package |
+| salami genoa (2126122, Branded) | `slice` | no foodPortions; servingSize 56 g ("2 ONZ") |
+
+**Near matches (approved by the user on 2026-11-14 after the exact-match pass)**
+
+Each is an FDC portion that names the same food but not the recipe's size word. The note on each record says it's a near match.
+- sweet potato `medium: 130`: portion 83167, `sweetpotato, 5" long`. FDC has no size names. Unblocks Sweet Potato Bowl.
+- tortillas corn `large: 24`: portion 95472, `tortilla`, the only tortilla size (enchilada is 19 g). Canned Salmon Wrap is still blocked by the salmon can.
+- roast beef lunchmeat `medium slice: 13.8`: portion 94596, `slice rectangle`, the larger of the two slices (oval is 9.3 g). Unblocks Power Omelette.
+- sauerkraut `tbsp: 8.88`: derived from portion 84590, cup 142 g / 16. Roast Beef Sandwich is still blocked by the bread.
+
+**Cronometer NCCDB servings (user-supplied 2026-11-14)**
+
+The sample recipes were built in Cronometer, whose servings for these foods come from NCCDB, not FDC. The user read the gram weight of each serving from Cronometer. These replace the FDC near matches I had rejected, because the closest FDC portion was a different amount. Each record's note names the source as `Cronometer NCCDB serving, user-supplied 2026-11-14`. This overrides the stub's "FDC sources only" rule, at the user's direction.
+
+| Ingredient | Recipe unit | Grams | Closest FDC portion (not used) |
+|---|---|---|---|
+| salmon canned | `small can` | 92 | whole can 417 g |
+| sourdough bread | `large slice` | 43 | slice 139 g |
+| low fat greek yogurt | `cup` | 245 | container 200 g |
+| greek yogurt plain nonfat | `cup` | 245 | container 170 g |
+| chickpeas drained | `cup, whole pieces` | 152 | drained can 253 g |
+| parmesan cheese hard | `tbsp, grated` | 6 | cubic inch 10.3 g |
+| chia seeds | `tbsp, whole pieces` | 10 | oz only |
+| salami genoa | `slice` | 10 | none (Branded record) |
+
+Both yogurts use the one cup weight the user gave (245 g). The four FDC near matches above stay. Cronometer may have its own NCCDB weights for those units too; they weren't checked.
+
+**Tests**
+- `tests/mcp_server/test_server.py::test_sample_recipes_ready_for_planning`: all 18 ready, none named as not ready. `test_analyze_recipe_reports_matches_and_gaps` now uses chia by the `cup` as its unconvertible example, since `tbsp, whole pieces` resolves.
+- `tests/test_ingredient_unit_sources.py`: every non-`g` key needs a source note, either an FDC portion id or a user-supplied Cronometer NCCDB serving. The 41 earlier keys are grandfathered, and the test fails if one is removed without leaving the list.
+- `tests/integration/test_sample_recipes_plan.py`: a 3-day `/api/v1/plan` over the 18 sample ids with the Flutter new-user macros (2000 kcal, 150 g protein, fat 60–74 g) returns `success`, and no sample appears in `warnings.nutrition`.
+- Only `grams_per_unit` and `notes` change in the ingredient table, plus the one carrots unit string in the samples. No `per_100g` or `review_status` change.
+
+**Validation:** full suite 1371 passed; OpenAPI `--check` exit 0; benchmark (main → branch) 153/153, 0 regressions, diff exit 0; probes P1 OK valid, P2 FM-3, P3 OK valid.

@@ -10,6 +10,10 @@ class RecipeIngredientEntry {
   final Map<String, double> micronutrientsPer100g;
   final Map<String, double> unitConversions;
 
+  /// False when the server couldn't resolve the ingredient or its unit
+  /// (`resolved: false` on `GET /api/v1/recipes/{id}`); nutrition is then zero.
+  final bool resolved;
+
   const RecipeIngredientEntry({
     required this.ingredientId,
     required this.ingredientName,
@@ -21,6 +25,7 @@ class RecipeIngredientEntry {
     this.fatPer100g = 0,
     this.micronutrientsPer100g = const {},
     this.unitConversions = const {},
+    this.resolved = true,
   });
 
   double get _grams {
@@ -70,6 +75,7 @@ class RecipeIngredientEntry {
     double? fatPer100g,
     Map<String, double>? micronutrientsPer100g,
     Map<String, double>? unitConversions,
+    bool? resolved,
   }) {
     return RecipeIngredientEntry(
       ingredientId: ingredientId ?? this.ingredientId,
@@ -83,6 +89,7 @@ class RecipeIngredientEntry {
       micronutrientsPer100g:
           micronutrientsPer100g ?? this.micronutrientsPer100g,
       unitConversions: unitConversions ?? this.unitConversions,
+      resolved: resolved ?? this.resolved,
     );
   }
 
@@ -97,6 +104,7 @@ class RecipeIngredientEntry {
         'fat_per_100g': fatPer100g,
         'micronutrients_per_100g': micronutrientsPer100g,
         'unit_conversions': unitConversions,
+        'resolved': resolved,
       };
 
   factory RecipeIngredientEntry.fromJson(Map<String, dynamic> json) {
@@ -119,6 +127,7 @@ class RecipeIngredientEntry {
           (json['unit_conversions'] as Map<String, dynamic>?)
                   ?.map((k, v) => MapEntry(k, (v as num).toDouble())) ??
               const {},
+      resolved: json['resolved'] as bool? ?? true,
     );
   }
 }

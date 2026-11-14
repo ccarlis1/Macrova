@@ -30,6 +30,7 @@ from src.ingestion.nutrient_mapper import MappedNutrition, NutrientMapper
 from src.ingestion.ingredient_cache import CachedIngredientLookup
 from src.ingestion.usda_client import DataType, USDAClient, USDALookupError
 
+from src.data_layer.exceptions import IngredientNotFoundError
 from src.data_layer.macro_targets import MacroTargetsError, validate_macro_targets
 from src.data_layer.models import (
     UserProfile,
@@ -38,6 +39,7 @@ from src.data_layer.models import (
     MicronutrientProfile,
 )
 from src.data_layer.recipe_db import RecipeDB
+from src.data_layer import user_data
 from src.data_layer.nutrition_db import NutritionDB
 from src.data_layer.meal_prep import MealPrepBatchRepository
 from src.providers.local_provider import LocalIngredientProvider
@@ -103,11 +105,12 @@ from src.api.tag_routes import router as tag_router
 from src.api.meal_prep_routes import router as meal_prep_router
 
 
-recipes_path = "data/recipes/recipes.json"
+# User-writable stores resolve through MACROVA_DATA_DIR (Sprint 2 BE-22); unset -> repo paths.
+recipes_path = user_data.recipes_path()
 # Q2(d): committed ingredient table (draft, pending review) is the default local nutrition source (§4.4).
 ingredients_path = "data/reference/ingredient_nutrition.json"
 DEFAULT_INGREDIENTS_PATH = ingredients_path
-DEFAULT_TAG_PATH = "data/recipes/recipe_tags.json"
+DEFAULT_TAG_PATH = user_data.recipe_tags_path()
 
 app = FastAPI(title="Nutrition Agent API")
 app.include_router(tag_router, prefix="/api/v1")
@@ -144,6 +147,19 @@ class ApiErrorBody(BaseModel):
 
 class ApiErrorResponse(BaseModel):
     error: ApiErrorBody
+
+
+#: Error responses shared by the recipe save routes (sync, create, update).
+RECIPE_SAVE_ERROR_RESPONSES: Dict[Any, Dict[str, Any]] = {
+    422: {
+        "model": ApiErrorResponse,
+        "description": (
+            "INGREDIENT_QUANTITY_REQUIRED: a nutrient-bearing ingredient was sent as "
+            "'to taste'; details.ingredient names it. Only seasonings (salt, water, "
+            "spices, herbs) may be 'to taste'."
+        ),
+    },
+}
 
 
 class PlanRequest(BaseModel):
@@ -305,6 +321,41 @@ class RecipeDetailResponse(BaseModel):
     ingredients: List[Dict[str, Any]]
     tag_slugs_by_type: Dict[str, List[str]] = Field(default_factory=dict)
     is_meal_prep_capable: bool
+
+
+class StarterRecipe(BaseModel):
+    """One recipe of the optional starter pack (Sprint 2 BE-22)."""
+
+    id: str
+    name: str
+    cooking_time_minutes: int
+    calories_per_serving: Optional[float] = Field(
+        default=None, description="Null when an ingredient doesn't resolve (see unresolved)."
+    )
+    protein_g_per_serving: Optional[float] = None
+    tag_slugs_by_type: Dict[str, List[str]] = Field(default_factory=dict)
+    ready_for_planning: bool = Field(
+        description="False when an ingredient or unit doesn't resolve; the planner would drop it."
+    )
+    unresolved: List[str] = Field(default_factory=list)
+
+
+class StarterRecipesResponse(BaseModel):
+    recipes: List[StarterRecipe]
+
+
+class StarterImportRequest(BaseModel):
+    recipe_ids: List[str] = Field(..., description="Starter recipe ids to copy into the user's pool.")
+
+
+class StarterImportSkipped(BaseModel):
+    id: str
+    reason: Literal["already_in_pool", "not_a_starter_recipe"]
+
+
+class StarterImportResponse(BaseModel):
+    imported: List[str]
+    skipped: List[StarterImportSkipped]
 
 
 class PlanFailure(BaseModel):
@@ -775,68 +826,63 @@ def _flutter_ingredient_entries(
     recipe: DataRecipe,
     calculator: NutritionCalculator,
 ) -> List[Dict[str, Any]]:
-    """Map data-layer recipe lines to Flutter `RecipeIngredientEntry` JSON."""
+    """Map data-layer recipe lines to Flutter `RecipeIngredientEntry` JSON.
+
+    Each measurable line carries the record's per-100 g nutrition and its
+    ``unit_conversions`` (``NutritionCalculator.unit_conversions``). A line whose
+    ingredient or unit doesn't resolve is still returned, with zeros and
+    ``resolved: false`` -- never silent zeros on a resolved line. Any other error
+    propagates to the endpoint's error envelope.
+    """
     out: List[Dict[str, Any]] = []
     for idx, ing in enumerate(recipe.ingredients):
-        iid = f"{recipe.id}:line:{idx}"
+        entry: Dict[str, Any] = {
+            "ingredient_id": f"{recipe.id}:line:{idx}",
+            "ingredient_name": ing.name,
+            "quantity": float(ing.quantity),
+            "unit": ing.unit,
+            "calories_per_100g": 0.0,
+            "protein_per_100g": 0.0,
+            "carbs_per_100g": 0.0,
+            "fat_per_100g": 0.0,
+            "micronutrients_per_100g": {},
+            "unit_conversions": {},
+            "resolved": True,
+        }
+        out.append(entry)
         if ing.is_to_taste:
-            out.append(
-                {
-                    "ingredient_id": iid,
-                    "ingredient_name": ing.name,
-                    "quantity": float(ing.quantity),
-                    "unit": ing.unit,
-                    "calories_per_100g": 0.0,
-                    "protein_per_100g": 0.0,
-                    "carbs_per_100g": 0.0,
-                    "fat_per_100g": 0.0,
-                    "micronutrients_per_100g": {},
-                    "unit_conversions": {},
-                }
-            )
             continue
+        info = calculator.provider.get_ingredient_info(ing.name)
+        if info is None:
+            entry["resolved"] = False
+            continue
+        entry["unit_conversions"] = NutritionCalculator.unit_conversions(info)
         try:
+            grams = calculator.to_grams(ing, info)
             prof = calculator.calculate_ingredient_nutrition(ing)
-            grams = calculator._convert_quantity_to_grams(ing)  # noqa: SLF001
-            if grams <= 0:
-                raise ValueError("nonpositive grams")
-            factor = 100.0 / grams
-            micro_per_100g: Dict[str, float] = {}
-            if prof.micronutrients is not None:
-                for field in NutritionCalculator.MICRONUTRIENT_FIELDS:
-                    total = float(getattr(prof.micronutrients, field, 0.0))
-                    scaled = total * factor
-                    if scaled != 0.0:
-                        micro_per_100g[field] = scaled
-            out.append(
-                {
-                    "ingredient_id": iid,
-                    "ingredient_name": ing.name,
-                    "quantity": float(ing.quantity),
-                    "unit": ing.unit,
-                    "calories_per_100g": float(prof.calories) * factor,
-                    "protein_per_100g": float(prof.protein_g) * factor,
-                    "carbs_per_100g": float(prof.carbs_g) * factor,
-                    "fat_per_100g": float(prof.fat_g) * factor,
-                    "micronutrients_per_100g": micro_per_100g,
-                    "unit_conversions": {},
-                }
-            )
-        except Exception:
-            out.append(
-                {
-                    "ingredient_id": iid,
-                    "ingredient_name": ing.name,
-                    "quantity": float(ing.quantity),
-                    "unit": ing.unit,
-                    "calories_per_100g": 0.0,
-                    "protein_per_100g": 0.0,
-                    "carbs_per_100g": 0.0,
-                    "fat_per_100g": 0.0,
-                    "micronutrients_per_100g": {},
-                    "unit_conversions": {},
-                }
-            )
+        except IngredientNotFoundError:
+            # Unknown unit or no nutrition block: the planner drops this recipe too.
+            entry["resolved"] = False
+            continue
+        if grams <= 0:
+            entry["resolved"] = False
+            continue
+        factor = 100.0 / grams
+        micro_per_100g: Dict[str, float] = {}
+        if prof.micronutrients is not None:
+            for field in NutritionCalculator.MICRONUTRIENT_FIELDS:
+                scaled = float(getattr(prof.micronutrients, field, 0.0)) * factor
+                if scaled != 0.0:
+                    micro_per_100g[field] = scaled
+        entry.update(
+            {
+                "calories_per_100g": float(prof.calories) * factor,
+                "protein_per_100g": float(prof.protein_g) * factor,
+                "carbs_per_100g": float(prof.carbs_g) * factor,
+                "fat_per_100g": float(prof.fat_g) * factor,
+                "micronutrients_per_100g": micro_per_100g,
+            }
+        )
     return out
 
 
@@ -1264,6 +1310,7 @@ async def plan_meals_endpoint(
             inputs.recipes,
             active_batches,
             parity_ctx.seed,
+            days=plan_request.days,
         )
         logger.debug(
             "Built effective plan request for /api/v1/plan with keys=%s seed=%s",
@@ -1821,8 +1868,8 @@ def ingredient_resolve_endpoint(request: IngredientResolveRequest) -> Any:
         return JSONResponse(status_code=status_code, content=payload)
 
 
-@app.post("/api/v1/recipes/sync", response_model=RecipeSyncResponse)
-@app.post("/api/recipes/sync", response_model=RecipeSyncResponse)
+@app.post("/api/v1/recipes/sync", response_model=RecipeSyncResponse, responses=RECIPE_SAVE_ERROR_RESPONSES)
+@app.post("/api/recipes/sync", response_model=RecipeSyncResponse, responses=RECIPE_SAVE_ERROR_RESPONSES)
 def sync_recipes_endpoint(body: RecipeSyncRequest) -> Any:
     """Upsert client-owned recipes into the server's file-backed pool by id."""
     try:
@@ -1841,8 +1888,8 @@ def sync_recipes_endpoint(body: RecipeSyncRequest) -> Any:
         return JSONResponse(status_code=status_code, content=payload)
 
 
-@app.post("/api/v1/recipes", response_model=RecipeSyncResponse)
-@app.post("/api/recipes", response_model=RecipeSyncResponse)
+@app.post("/api/v1/recipes", response_model=RecipeSyncResponse, responses=RECIPE_SAVE_ERROR_RESPONSES)
+@app.post("/api/recipes", response_model=RecipeSyncResponse, responses=RECIPE_SAVE_ERROR_RESPONSES)
 def create_recipe_endpoint(item: RecipeSyncItem) -> Any:
     """Upsert a single recipe (same semantics as sync)."""
     try:
@@ -1859,8 +1906,8 @@ def create_recipe_endpoint(item: RecipeSyncItem) -> Any:
         return JSONResponse(status_code=status_code, content=payload)
 
 
-@app.put("/api/v1/recipes/{recipe_id}", response_model=RecipeSyncResponse)
-@app.put("/api/recipes/{recipe_id}", response_model=RecipeSyncResponse)
+@app.put("/api/v1/recipes/{recipe_id}", response_model=RecipeSyncResponse, responses=RECIPE_SAVE_ERROR_RESPONSES)
+@app.put("/api/recipes/{recipe_id}", response_model=RecipeSyncResponse, responses=RECIPE_SAVE_ERROR_RESPONSES)
 def put_recipe_endpoint(recipe_id: str, item: RecipeSyncItem) -> Any:
     """Upsert by path id; body [id] must match the path."""
     try:
@@ -1880,6 +1927,94 @@ def put_recipe_endpoint(recipe_id: str, item: RecipeSyncItem) -> Any:
             tag_path=DEFAULT_TAG_PATH,
         )
         return RecipeSyncResponse(synced_ids=synced_ids)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        status_code, payload = map_exception_to_api_error(exc)
+        return JSONResponse(status_code=status_code, content=payload)
+
+
+@app.get("/api/v1/starter_recipes", response_model=StarterRecipesResponse)
+def list_starter_recipes() -> Any:
+    """The optional starter pack (the bundled sample recipes) a new user can import from."""
+    try:
+        recipes = RecipeDB(
+            user_data.STARTER_RECIPES_PATH, tag_repo_path=user_data.SHIPPED_RECIPE_TAGS_PATH
+        ).get_all_recipes()
+        shipped_tags = load_recipe_tags(user_data.SHIPPED_RECIPE_TAGS_PATH)
+        calculator = NutritionCalculator(LocalIngredientProvider(NutritionDB(ingredients_path)))
+        out: List[StarterRecipe] = []
+        for recipe in recipes:
+            unresolved = calculator.unresolved_ingredient_names(recipe)
+            nutrition = None if unresolved else calculator.calculate_recipe_nutrition(recipe)
+            tags = shipped_tags.get(recipe.id)
+            out.append(
+                StarterRecipe(
+                    id=recipe.id,
+                    name=recipe.name,
+                    cooking_time_minutes=int(recipe.cooking_time_minutes),
+                    calories_per_serving=round(nutrition.calories, 1) if nutrition else None,
+                    protein_g_per_serving=round(nutrition.protein_g, 1) if nutrition else None,
+                    tag_slugs_by_type=dict((tags.tag_slugs_by_type or {}) if tags else {}),
+                    ready_for_planning=not unresolved,
+                    unresolved=list(unresolved),
+                )
+            )
+        return StarterRecipesResponse(recipes=out)
+    except Exception as exc:
+        status_code, payload = map_exception_to_api_error(exc)
+        return JSONResponse(status_code=status_code, content=payload)
+
+
+@app.post("/api/v1/starter_recipes/import", response_model=StarterImportResponse)
+def import_starter_recipes(body: StarterImportRequest) -> Any:
+    """Copy chosen starter recipes, and their shipped tags, into the user's pool.
+
+    Idempotent: an id already in the pool is ``skipped: already_in_pool``; an id that
+    isn't in the starter pack is ``skipped: not_a_starter_recipe`` (never a 4xx for the
+    whole request). An import is an upsert from a fixed source, so it reuses the sync
+    and tag-store writers.
+    """
+    try:
+        starters = {row["id"]: row for row in user_data.load_starter_recipes()}
+        existing: set[str] = set()
+        if Path(recipes_path).exists():
+            existing = {r.id for r in RecipeDB(recipes_path).get_all_recipes()}
+
+        imported: List[str] = []
+        skipped: List[StarterImportSkipped] = []
+        for rid in dict.fromkeys(body.recipe_ids):
+            if rid not in starters:
+                skipped.append(StarterImportSkipped(id=rid, reason="not_a_starter_recipe"))
+            elif rid in existing:
+                skipped.append(StarterImportSkipped(id=rid, reason="already_in_pool"))
+            else:
+                imported.append(rid)
+
+        if imported:
+            shipped_tags = load_recipe_tags(user_data.SHIPPED_RECIPE_TAGS_PATH)
+            tags = {rid: shipped_tags[rid] for rid in imported if rid in shipped_tags}
+            if tags:
+                upsert_recipe_tags(DEFAULT_TAG_PATH, tags)
+            items = [
+                RecipeSyncItem.model_validate(
+                    {
+                        key: starters[rid][key]
+                        for key in (
+                            "id",
+                            "name",
+                            "ingredients",
+                            "cooking_time_minutes",
+                            "instructions",
+                            "default_servings",
+                        )
+                        if key in starters[rid]
+                    }
+                )
+                for rid in imported
+            ]
+            atomic_upsert_recipes_by_id(path=recipes_path, items=items, tag_path=None)
+        return StarterImportResponse(imported=imported, skipped=skipped)
     except HTTPException:
         raise
     except Exception as exc:

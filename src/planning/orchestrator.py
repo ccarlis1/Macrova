@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 from src.config.llm_settings import load_llm_settings
 from src.data_layer.meal_prep import MealPrepBatchRepository
 from src.data_layer.recipe_db import RecipeDB
+from src.data_layer import user_data
 from src.data_layer.user_profile import load_profile_pins
 from src.llm.client import LLMClient
 from src.llm.planner_assistant import build_feedback_context, suggest_targeted_recipe_drafts
@@ -25,7 +26,8 @@ from src.nutrition.calculator import NutritionCalculator
 from src.data_layer.models import ProfilePin
 from src.planning.phase0_models import PlanningBatchLock, PlanningRecipe, PlanningUserProfile
 from src.planning.phase10_reporting import MealPlanResult
-from src.planning.converters import convert_recipes, extract_ingredient_names
+from src.planning.converters import _expand_schedule_days, convert_recipes, extract_ingredient_names
+from src.models.legacy_schedule_migration import legacy_schedule_dict_to_schedule_days
 from src.planning.planner import plan_meals
 from src.providers.api_provider import APIIngredientProvider
 from src.providers.ingredient_provider import IngredientDataProvider
@@ -145,14 +147,32 @@ def build_plan_request_from_profile(
     recipes: List[Any],
     batches: List[Any],
     seed: Optional[int],
+    days: int = 1,
 ) -> Dict[str, Any]:
-    """Build a PlanRequest-compatible payload from canonical local/server inputs."""
+    """Build a PlanRequest-compatible payload from canonical local/server inputs.
+
+    The schedule is emitted as canonical ``schedule_days`` (meals **and**
+    workouts), expanded to ``days`` the same way ``convert_profile`` expands it
+    for the CLI. The legacy ``schedule`` dict drops workouts, which made the
+    "same" request plan differently over HTTP than in the CLI (Sprint 2 BE-16).
+    A profile with only a legacy meal dict (``schedule_days is None``) is
+    converted with the shared migration helper; it has no workouts to lose.
+    """
+    if getattr(profile, "schedule_days", None):
+        schedule_days = _expand_schedule_days(list(profile.schedule_days), days)
+    else:
+        schedule_days, _ = legacy_schedule_dict_to_schedule_days(
+            dict(profile.schedule), days=days
+        )
     payload: Dict[str, Any] = {
         "daily_calories": int(profile.daily_calories),
         "daily_protein_g": float(profile.daily_protein_g),
         "daily_fat_g_min": float(profile.daily_fat_g[0]),
         "daily_fat_g_max": float(profile.daily_fat_g[1]),
-        "schedule": dict(profile.schedule),
+        "days": int(days),
+        "schedule_days": [
+            day.model_dump(mode="json", exclude_none=True) for day in schedule_days
+        ],
         "liked_foods": list(profile.liked_foods),
         "disliked_foods": list(profile.disliked_foods),
         "allergies": list(profile.allergies),
@@ -426,7 +446,7 @@ def plan_with_llm_feedback(
     days: int,
     *,
     max_feedback_retries: int = 3,
-    recipes_path: str = "data/recipes/recipes.json",
+    recipes_path: Optional[str] = None,
     client: Optional[LLMClient] = None,
     provider: Optional[IngredientDataProvider] = None,
     recipes_to_generate_per_attempt: Optional[int] = None,
@@ -633,7 +653,11 @@ def plan_with_llm_feedback(
             used_ids = {a.recipe_id for a in (result.plan or [])}
             to_persist = [candidates_by_id[rid] for rid in sorted(used_ids) if rid in candidates_by_id]
             try:
-                persisted_ids = append_validated_recipes(path=recipes_path, recipes=to_persist) if to_persist else []
+                persisted_ids = (
+                    append_validated_recipes(path=recipes_path or user_data.recipes_path(), recipes=to_persist)
+                    if to_persist
+                    else []
+                )
             except Exception as exc:
                 state, info = _classify_exception(exc)
                 record["status"] = "error"

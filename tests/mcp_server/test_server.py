@@ -229,8 +229,8 @@ def test_analyze_recipe_reports_matches_and_gaps():
         "name": "Draft bowl",
         "ingredients": [
             {"name": "chicken breast", "quantity": 400, "unit": "g"},
-            # No USDA portion weight for chia by the tbsp, so this unit stays unconvertible.
-            {"name": "chia seeds", "quantity": 1, "unit": "tbsp, whole pieces"},
+            # No weight for chia by the cup (only g and tbsp), so this unit stays unconvertible.
+            {"name": "chia seeds", "quantity": 1, "unit": "cup"},
             {"name": "everything bagel seasoning", "quantity": 5, "unit": "g"},
             {"name": "salt", "quantity": 1, "unit": "to taste"},
         ],
@@ -256,6 +256,13 @@ def test_sample_recipes_carry_valid_tags():
         assert set(recipe["tags"]) <= tags
         assert (recipe["per_serving_calories"] is None) == bool(recipe["unmatched"])
         assert recipe["ready_for_planning"] is not bool(recipe["unmatched"])
+
+
+def test_sample_recipes_ready_for_planning():
+    """DATA-1: all 18 samples plan (FDC portions, plus Cronometer NCCDB servings where FDC has none)."""
+    samples = _call("macrova_get_sample_recipes", {}).structured_content["recipes"]
+    assert [r["name"] for r in samples if not r["ready_for_planning"]] == []
+    assert len(samples) == 18
 
 
 def test_list_tags_returns_registry_tags_only():

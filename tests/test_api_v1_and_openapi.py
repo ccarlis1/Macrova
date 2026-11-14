@@ -57,6 +57,8 @@ def test_openapi_includes_v1_contract_paths():
         "/api/v1/profile/pins/{day_index}/{slot_index}",
         "/api/v1/meal_prep_batches",
         "/api/v1/meal_prep_batches/{batch_id}",
+        "/api/v1/starter_recipes",
+        "/api/v1/starter_recipes/import",
     ]
     missing = [p for p in required if p not in paths]
     assert not missing, f"missing paths: {missing}"
@@ -434,3 +436,62 @@ def test_llm_status_endpoint_reports_enabled(monkeypatch):
     res_on = client.get("/api/v1/llm/status")
     assert res_on.status_code == 200
     assert res_on.json() == {"enabled": True}
+
+
+def test_recipe_detail_ingredient_line_contract(tmp_path, monkeypatch):
+    """Sprint 2 BE-21: detail lines carry real nutrition, conversions and an additive ``resolved``."""
+    recipes_file = tmp_path / "recipes.json"
+    recipes_file.write_text('{"recipes": []}', encoding="utf-8")
+    monkeypatch.setattr("src.api.server.recipes_path", str(recipes_file))
+    monkeypatch.setattr("src.api.server.DEFAULT_TAG_PATH", str(tmp_path / "recipe_tags.json"))
+
+    client = TestClient(app)
+    rid = "00000000-0000-4000-8000-0000000000b2"
+    sync_body = {
+        "recipes": [
+            {
+                "id": rid,
+                "name": "Detail Contract Bowl",
+                "ingredients": [{"name": "cream of rice", "quantity": 100, "unit": "g"}],
+            }
+        ]
+    }
+    assert client.post("/api/v1/recipes/sync", json=sync_body).status_code == 200
+
+    detail = client.get(f"/api/v1/recipes/{rid}")
+    assert detail.status_code == 200
+    (line,) = detail.json()["ingredients"]
+    assert set(line) == {
+        "ingredient_id",
+        "ingredient_name",
+        "quantity",
+        "unit",
+        "calories_per_100g",
+        "protein_per_100g",
+        "carbs_per_100g",
+        "fat_per_100g",
+        "micronutrients_per_100g",
+        "unit_conversions",
+        "resolved",
+    }
+    assert line["resolved"] is True
+    assert line["calories_per_100g"] > 0
+    assert line["unit_conversions"]["g"] == 1.0
+
+
+def test_openapi_recipe_save_routes_document_ingredient_quantity_required():
+    """Sprint 2 BE-18: sync/create/update document the 422 INGREDIENT_QUANTITY_REQUIRED envelope."""
+    import json as _json
+    from pathlib import Path as _Path
+
+    for schema in (app.openapi(), _json.loads(_Path("openapi/openapi.json").read_text(encoding="utf-8"))):
+        paths = schema["paths"]
+        for path, method in (
+            ("/api/v1/recipes/sync", "post"),
+            ("/api/v1/recipes", "post"),
+            ("/api/v1/recipes/{recipe_id}", "put"),
+        ):
+            resp = paths[path][method]["responses"]["422"]
+            assert "INGREDIENT_QUANTITY_REQUIRED" in resp["description"]
+            ref = resp["content"]["application/json"]["schema"]["$ref"]
+            assert ref == "#/components/schemas/ApiErrorResponse"

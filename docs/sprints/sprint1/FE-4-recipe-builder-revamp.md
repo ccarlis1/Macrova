@@ -1,6 +1,8 @@
 # FE-4 — Recipe Builder revamp
 
-**Status:** todo  ·  **Complexity:** L  ·  **Depends on:** DM-2, BE-1, FE-5
+**Status:** merged  ·  **Complexity:** L  ·  **Depends on:** DM-2, BE-1, FE-5
+
+Sprint 2 close-out (DOC-1, 2026-11-14): Superseded by: FE-12 (Tags section, meal-prep switch), FE-13 (unit guard). Deferred: resolve-status badges and the "LLM assist" button.
 
 ## Summary
 

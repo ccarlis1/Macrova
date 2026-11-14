@@ -281,3 +281,84 @@ def test_api_plan_ignores_client_active_batches(monkeypatch):
 
     assert response.status_code == 200
     assert observed.batch_locks_count == 0
+
+
+# --- Sprint 2 BE-16: the real CLI path and POST /api/v1/plan agree on a profile with a workout ---
+
+import contextlib
+import io
+import json
+
+import pytest
+import yaml
+
+from src import cli
+from src.data_layer.recipe_db import RecipeDB
+from src.data_layer.user_profile import UserProfileLoader
+
+_PARITY_RECIPES = "data/recipes/recipes.json"  # committed fixture pool, read-only
+
+
+def _workout_profile_yaml(tmp_path) -> str:
+    """The shipped example's settings with an explicit legacy workout at 08:00."""
+    data = yaml.safe_load(open("config/user_profile.yaml.example", encoding="utf-8"))
+    data.pop("schedule_days", None)
+    data["schedule"] = {"07:00": 4, "08:00": 0, "12:00": 4, "18:00": 4}
+    path = tmp_path / "profile_with_workout.yaml"
+    path.write_text(yaml.safe_dump(data), encoding="utf-8")
+    return str(path)
+
+
+def _failure_keys(body: dict) -> list:
+    return [
+        (f["code"], f.get("day_index"), f.get("slot_index"))
+        for f in (body.get("report") or {}).get("failures", [])
+    ]
+
+
+def _run_cli_json(profile_path: str, days: int, monkeypatch) -> dict:
+    monkeypatch.setattr(
+        "sys.argv",
+        ["plan_meals", "--profile", profile_path, "--recipes", _PARITY_RECIPES,
+         "--days", str(days), "--output", "json"],
+    )
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+        try:
+            cli.main()
+        except SystemExit:
+            pass
+    text = out.getvalue()
+    return json.loads(text[text.index("{"):])
+
+
+def test_cli_and_http_plan_agree_on_profile_with_workout(tmp_path, monkeypatch):
+    # 1 day reproduces the original split (CLI FM-1 vs HTTP FM-4) in about a second;
+    # 3 days agree too (FM-MACRO-INFEASIBLE) but exhaust the search (~60 s), so they
+    # are checked by hand in the BE-16 close-out, not here.
+    days = 1
+    class _NoBatches:
+        def list_active(self):
+            return []
+
+    # Same empty pins/batches on both sides, so only the request shape can differ.
+    monkeypatch.setattr("src.planning.orchestrator.MealPrepBatchRepository", lambda: _NoBatches())
+    monkeypatch.setattr("src.planning.orchestrator.load_profile_pins", lambda **_kw: [])
+    monkeypatch.setattr("src.api.server.recipes_path", _PARITY_RECIPES)
+
+    profile_path = _workout_profile_yaml(tmp_path)
+    profile = UserProfileLoader(profile_path).load()
+    assert profile.schedule_days[0].workouts, "fixture must carry a workout"
+
+    payload = build_plan_request_from_profile(
+        profile, RecipeDB(_PARITY_RECIPES).get_all_recipes(), [], None, days=days
+    )
+    payload["planning_mode"] = "deterministic"
+    api = TestClient(app).post("/api/v1/plan", json=payload)
+    assert api.status_code == 200, api.text
+    api_body = api.json()
+
+    cli_body = _run_cli_json(profile_path, days, monkeypatch)
+
+    assert api_body["termination_code"] == cli_body["termination_code"]
+    assert _failure_keys(api_body) == _failure_keys(cli_body)

@@ -1,6 +1,8 @@
 # AI-3 — RecipeTagger v2 (typed tags)
 
-**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** DM-1, BE-1
+**Status:** parked  ·  **Complexity:** M  ·  **Depends on:** DM-1, BE-1
+
+Sprint 2 close-out (DOC-1, 2026-11-14): Parked: LLM features are optional and not on the demo path. Before reviving, check whether the current `src/llm/recipe_tagger.py` already covers it.
 
 ## Summary
 

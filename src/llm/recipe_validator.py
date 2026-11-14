@@ -8,7 +8,7 @@ from src.data_layer.exceptions import IngredientNotFoundError
 from src.data_layer.models import Ingredient, IngredientInput, Recipe
 from src.ingestion.ingredient_normalizer import CONTROLLED_DESCRIPTORS
 from src.ingestion.ingredient_validator import IngredientValidator
-from src.nutrition.calculator import NutritionCalculator
+from src.nutrition.calculator import NutritionCalculator, is_to_taste_allowed
 from src.providers.api_provider import IngredientResolutionError
 from src.providers.ingredient_provider import IngredientDataProvider
 from src.llm.recovery_types import GapSpec
@@ -212,6 +212,21 @@ def validate_recipe_draft(
                 normalized_quantity=float(validated.normalized_quantity),
             )
         )
+
+    # 2b) `to taste` counts as 0 g, so it is only allowed for seasonings (Sprint 2 BE-18).
+    for ing_idx, ing in enumerate(validated_ingredients):
+        if ing.is_to_taste and not is_to_taste_allowed(ing.name):
+            return (
+                False,
+                _validation_failure(
+                    error_code="INGREDIENT_QUANTITY_REQUIRED",
+                    message=(
+                        f"Ingredient {ing.name!r} needs a quantity: only seasonings "
+                        "(salt, water, spices, herbs) may be 'to taste'."
+                    ),
+                    field_errors=[f"ingredient_index={ing_idx}", f"ingredient={ing.name}"],
+                ),
+            )
 
     measurable = [i for i in validated_ingredients if not i.is_to_taste]
     if not measurable:

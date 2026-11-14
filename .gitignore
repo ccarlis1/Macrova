@@ -26,6 +26,7 @@ venv/
 env/
 ENV/
 .venv
+.venv311/
 
 # IDE
 .vscode/
@@ -64,6 +65,9 @@ data/ingredients/custom_ingredients.json
 
 # Recipes — recipes.json is committed (§4.4 / Q2: coverage over real pool).
 data/recipes/recipe_embeddings.pkl
+
+# Default user data folder (MACROVA_DATA_DIR; scripts/setup_user_data.py)
+/user_data/
 
 # Nutrition
 data/nutrition/nutrition_db.json

@@ -40,7 +40,7 @@ _TABLE: Dict[Tuple[str, Optional[str]], Tuple[str, str]] = {
     ),
     ("*", "EMPTY_POOL"): (
         "No recipes were available to plan with.",
-        "Add recipes, or check that your filters and excluded ingredients don't remove all of them.",
+        "Add your own recipes or import some from the starter pack, and check that your filters and excluded ingredients don't remove all of them.",
     ),
     ("FM-1", "HC-1"): (
         "{Where} has no recipe without your excluded ingredients.",
@@ -253,9 +253,12 @@ def failure_cause_block(diagnosis: Optional[Diagnosis]) -> Optional[Dict[str, An
     """
     if diagnosis is None:
         return None
+    cause = cause_of(diagnosis)
     block: Dict[str, Any] = {
-        "cause": cause_of(diagnosis),
-        "recipe_could_help": isinstance(diagnosis, GapSpec),
+        "cause": cause,
+        # An empty pool is fixed by adding recipes (the user's own or the starter pack),
+        # even though LLM recovery declines to generate them there.
+        "recipe_could_help": isinstance(diagnosis, GapSpec) or cause == "EMPTY_POOL",
     }
     if isinstance(diagnosis, GapSpec):
         block["recipe_gap"] = {

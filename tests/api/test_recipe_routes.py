@@ -153,3 +153,169 @@ def test_legacy_payload_still_works_with_defaults(monkeypatch, tmp_path):
     assert detail["default_servings"] == 1
     assert detail["tag_slugs_by_type"] == {}
     assert detail["is_meal_prep_capable"] is False
+
+
+# --- Sprint 2 BE-21: detail returns real per-100 g nutrition and unit conversions ---
+
+import json
+
+import pytest
+
+from src.data_layer.nutrition_db import NutritionDB
+from src.providers.local_provider import LocalIngredientProvider
+
+
+_BE21_LINES = [
+    {"name": "almond butter unsalted", "quantity": 2, "unit": "tbsp"},
+    {"name": "banana", "quantity": 1, "unit": "large"},
+    {"name": "almonds", "quantity": 30, "unit": "g"},
+    {"name": "salt", "quantity": 0, "unit": "to taste"},
+    {"name": "almonds", "quantity": 1, "unit": "cup"},  # no conversion on the record
+    {"name": "be21 not a real ingredient", "quantity": 50, "unit": "g"},
+]
+
+
+def _write_be21_recipe(monkeypatch, tmp_path) -> str:
+    _configure_paths(monkeypatch, tmp_path)
+    rid = "r-be21-detail"
+    (tmp_path / "recipes.json").write_text(
+        json.dumps(
+            {
+                "recipes": [
+                    {
+                        "id": rid,
+                        "name": "BE-21 detail fixture",
+                        "ingredients": _BE21_LINES,
+                        "cooking_time_minutes": 5,
+                        "instructions": ["Mix."],
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    return rid
+
+
+def _record(name: str) -> dict:
+    import src.api.server as server
+
+    info = LocalIngredientProvider(NutritionDB(server.ingredients_path)).get_ingredient_info(name)
+    assert info is not None, name
+    return info
+
+
+def test_detail_returns_record_per_100g_and_unit_conversions(monkeypatch, tmp_path):
+    rid = _write_be21_recipe(monkeypatch, tmp_path)
+    res = TestClient(app).get(f"/api/v1/recipes/{rid}")
+    assert res.status_code == 200, res.text
+    lines = res.json()["ingredients"]
+    assert len(lines) == len(_BE21_LINES)
+
+    for line in lines[:3]:
+        rec = _record(line["ingredient_name"])
+        per_100g = rec["per_100g"]
+        assert line["resolved"] is True
+        assert line["calories_per_100g"] == pytest.approx(per_100g["calories"], abs=1e-6)
+        assert line["protein_per_100g"] == pytest.approx(per_100g["protein_g"], abs=1e-6)
+        assert line["carbs_per_100g"] == pytest.approx(per_100g["carbs_g"], abs=1e-6)
+        assert line["fat_per_100g"] == pytest.approx(per_100g["fat_g"], abs=1e-6)
+        expected = {"g": 1.0, **{k: float(v) for k, v in (rec.get("grams_per_unit") or {}).items()}}
+        assert line["unit_conversions"] == expected
+
+    assert lines[0]["unit_conversions"]["tbsp"] == 16.0
+    assert lines[1]["unit_conversions"]["large"] == 118.0
+
+
+def test_detail_to_taste_line_is_resolved_zero(monkeypatch, tmp_path):
+    rid = _write_be21_recipe(monkeypatch, tmp_path)
+    salt = TestClient(app).get(f"/api/v1/recipes/{rid}").json()["ingredients"][3]
+    assert salt["unit"] == "to taste"
+    assert salt["resolved"] is True
+    assert salt["calories_per_100g"] == 0.0
+
+
+def test_detail_unresolved_lines_are_returned_with_resolved_false(monkeypatch, tmp_path):
+    rid = _write_be21_recipe(monkeypatch, tmp_path)
+    lines = TestClient(app).get(f"/api/v1/recipes/{rid}").json()["ingredients"]
+
+    bad_unit, unknown = lines[4], lines[5]
+    assert bad_unit["ingredient_name"] == "almonds" and bad_unit["unit"] == "cup"
+    assert bad_unit["resolved"] is False
+    assert bad_unit["calories_per_100g"] == 0.0
+    # The record is known, so its real conversions are still sent.
+    assert bad_unit["unit_conversions"] == {"g": 1.0}
+
+    assert unknown["resolved"] is False
+    assert unknown["unit_conversions"] == {}
+    assert unknown["calories_per_100g"] == 0.0
+
+
+def test_detail_unexpected_calculator_error_is_500_envelope(monkeypatch, tmp_path):
+    rid = _write_be21_recipe(monkeypatch, tmp_path)
+
+    def _boom(self, *args, **kwargs):
+        raise AttributeError("simulated calculator bug")
+
+    monkeypatch.setattr("src.nutrition.calculator.NutritionCalculator.to_grams", _boom)
+    res = TestClient(app).get(f"/api/v1/recipes/{rid}")
+    assert res.status_code == 500
+    body = res.json()
+    assert "error" in body and body["error"]["code"]
+    assert "ingredients" not in body
+
+
+# --- Sprint 2 BE-18: `to taste` only for seasonings at save time ---
+
+
+def _to_taste_item(rid: str, name: str) -> dict:
+    return {
+        "id": rid,
+        "name": "To taste fixture",
+        "ingredients": [
+            {"name": "almonds", "quantity": 30, "unit": "g"},
+            {"name": name, "quantity": 0, "unit": "to taste"},
+        ],
+    }
+
+
+def _assert_quantity_required(res, ingredient: str):
+    assert res.status_code == 422, res.text
+    err = res.json()["error"]
+    assert err["code"] == "INGREDIENT_QUANTITY_REQUIRED"
+    assert err["details"] == {"ingredient": ingredient}
+
+
+@pytest.mark.parametrize("route", ["sync", "create", "put"])
+def test_save_rejects_non_seasoning_to_taste(route, monkeypatch, tmp_path):
+    _configure_paths(monkeypatch, tmp_path)
+    client = TestClient(app)
+    item = _to_taste_item("r-be18", "rolled oats")
+    if route == "sync":
+        res = client.post("/api/v1/recipes/sync", json={"recipes": [item]})
+    elif route == "create":
+        res = client.post("/api/v1/recipes", json=item)
+    else:
+        res = client.put("/api/v1/recipes/r-be18", json=item)
+
+    _assert_quantity_required(res, "rolled oats")
+    # Nothing was stored: the request is rejected before the write.
+    assert json.loads((tmp_path / "recipes.json").read_text())["recipes"] == []
+
+
+def test_sync_rejects_whole_batch_when_one_line_needs_grams(monkeypatch, tmp_path):
+    _configure_paths(monkeypatch, tmp_path)
+    good = {"id": "r-good", "name": "Good", "ingredients": [{"name": "almonds", "quantity": 30, "unit": "g"}]}
+    res = TestClient(app).post(
+        "/api/v1/recipes/sync", json={"recipes": [good, _to_taste_item("r-bad", "cherry tomatoes")]}
+    )
+    _assert_quantity_required(res, "cherry tomatoes")
+    assert json.loads((tmp_path / "recipes.json").read_text())["recipes"] == []
+
+
+def test_save_accepts_seasoning_to_taste(monkeypatch, tmp_path):
+    _configure_paths(monkeypatch, tmp_path)
+    res = TestClient(app).post("/api/v1/recipes", json=_to_taste_item("r-salt", "salt"))
+    assert res.status_code == 200, res.text
+    stored = json.loads((tmp_path / "recipes.json").read_text())["recipes"][0]
+    assert stored["ingredients"][1] == {"name": "salt", "quantity": 0.0, "unit": "to taste"}

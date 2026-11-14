@@ -1,6 +1,8 @@
 # FE-9 — Failure-state surfaces
 
-**Status:** todo  ·  **Complexity:** S  ·  **Depends on:** BE-7, FE-1
+**Status:** superseded  ·  **Complexity:** S  ·  **Depends on:** BE-7, FE-1
+
+Sprint 2 close-out (DOC-1, 2026-11-14): Superseded by: FE-11 (carried, rewritten against `FailurePanel` and the new explanation fields).
 
 ## Summary
 

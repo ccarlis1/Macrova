@@ -9,6 +9,7 @@ import os
 
 from src.data_layer.user_profile import UserProfileLoader
 from src.data_layer.recipe_db import RecipeDB
+from src.data_layer import user_data
 from src.data_layer.nutrition_db import NutritionDB
 from src.nutrition.calculator import NutritionCalculator
 from src.ingestion.usda_client import USDAClient
@@ -34,7 +35,7 @@ from src.llm.recipe_tagger import tag_recipes
 from src.llm.tag_repository import load_recipe_tags, upsert_recipe_tags
 
 
-DEFAULT_TAG_PATH = "data/recipes/recipe_tags.json"
+DEFAULT_TAG_PATH = user_data.recipe_tags_path()
 
 # Load .env from project root (optional).
 # If present, this lets USDAClient.from_env() find `USDA_API_KEY`
@@ -155,8 +156,11 @@ def main():
     parser.add_argument(
         "--recipes",
         type=str,
-        default="data/recipes/recipes.json",
-        help="Path to recipes JSON file (default: data/recipes/recipes.json)"
+        default=user_data.recipes_path(),
+        help=(
+            "Path to recipes JSON file (default: $MACROVA_DATA_DIR/recipes.json, "
+            "or data/recipes/recipes.json when MACROVA_DATA_DIR is unset)"
+        ),
     )
     parser.add_argument(
         "--ingredients",
@@ -364,6 +368,12 @@ def main():
         recipe_db = RecipeDB(str(recipes_path))
         all_recipes = recipe_db.get_all_recipes()
         print(f"Found {len(all_recipes)} recipes", file=sys.stderr)
+        if not all_recipes:
+            print(
+                f"No recipes in {recipes_path}: add your own recipes, or import some from the "
+                "starter pack (GET /api/v1/starter_recipes, then POST /api/v1/starter_recipes/import).",
+                file=sys.stderr,
+            )
 
         tag_path = getattr(args, "recipe_tags_path", None) or DEFAULT_TAG_PATH
         all_recipes, filter_log = _apply_recipe_tag_filter_pre_convert(
@@ -416,6 +426,7 @@ def main():
             all_recipes,
             parity_ctx.active_batches,
             parity_ctx.seed,
+            days=args.days,
         )
         print(
             json.dumps(

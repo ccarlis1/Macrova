@@ -1,6 +1,8 @@
 # FE-5 — Tag chip picker
 
-**Status:** todo  ·  **Complexity:** S  ·  **Depends on:** BE-1
+**Status:** merged  ·  **Complexity:** S  ·  **Depends on:** BE-1
+
+Sprint 2 close-out (DOC-1, 2026-11-14): Superseded by: FE-12 (reuses `MacrovaChip`, no new chip widget). Deferred: inline "+ New tag", with the tag approval route (Sprint 2 follow-up 5).
 
 ## Summary
 

@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import Dict, List, Literal, Optional, Tuple
 from uuid import uuid4
 
+from src.data_layer import user_data
+
 
 SlotAddress = Tuple[int, int]
 
@@ -43,8 +45,8 @@ class MealPrepBatch:
 class MealPrepBatchRepository:
     """JSON-backed repository for meal prep batches."""
 
-    def __init__(self, json_path: str = "data/meal_prep/batches.json"):
-        self.json_path = Path(json_path)
+    def __init__(self, json_path: Optional[str] = None):
+        self.json_path = Path(json_path or user_data.meal_prep_batches_path())
         self._batches: List[MealPrepBatch] = []
         self._ensure_storage_parent_exists()
         self._load()

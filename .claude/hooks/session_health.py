@@ -17,7 +17,7 @@ from pathlib import Path
 
 import _common as common
 
-RUNTIME_IMPORTS = ("fastapi", "pydantic", "httpx", "yaml", "rapidfuzz", "requests", "pytest")
+RUNTIME_IMPORTS = ("fastapi", "pydantic", "httpx", "yaml", "requests", "pytest")
 
 #: Gitignored files the CLI and server open by default (tests self-heal via conftest).
 RUNTIME_DATA = (

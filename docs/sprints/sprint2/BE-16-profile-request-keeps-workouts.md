@@ -1,6 +1,6 @@
 # BE-16 — Profile → PlanRequest keeps workout slots (CLI/API parity)
 
-**Status:** todo  ·  **Complexity:** S  ·  **Depends on:** —
+**Status:** done  ·  **Complexity:** S  ·  **Depends on:** —
 
 ## Summary
 
@@ -34,11 +34,11 @@ Why the existing parity test misses it: `tests/integration/test_cli_flutter_pari
 
 ## Acceptance criteria
 
-- [ ] `build_plan_request_from_profile` emits `schedule_days` (the `DaySchedule` JSON shape `PlanRequest` accepts: meals and workouts), built from `profile.schedule_days`, and no longer emits `schedule`. Test: `tests/test_orchestrator.py` (or the existing orchestrator test module) asserts that a profile with a workout produces `schedule_days[0]["workouts"] == [{"after_meal_index": 1, ...}]`. This fails today because the key is absent.
-- [ ] The payload is a valid `PlanRequest`: `PlanRequest.model_validate(payload)` succeeds, including `days` / `schedule_days` length agreement for 1 and 3 days.
-- [ ] New parity test in `tests/integration/test_cli_flutter_parity.py` runs the CLI planning path (`convert_profile` + `plan_meals`) and `POST /api/v1/plan` with the builder's payload against the same fixture profile (with a workout) and fixture pool. It asserts the same `termination_code` and the same list of `(code, day_index, slot_index)` failures. This fails before the fix (FM-1 vs FM-4 shape).
-- [ ] `scripts/export_planner_debug_artifacts.py` output still loads, and `cli_plan_request.json` now contains `schedule_days`.
-- [ ] `benchmark-audit`: 153/153, 0 regressions (`diff_results.py --base main` exits 0).
+- [x] `build_plan_request_from_profile` emits `schedule_days` (the `DaySchedule` JSON shape `PlanRequest` accepts: meals and workouts), built from `profile.schedule_days`, and no longer emits `schedule`. Test: `tests/test_orchestrator.py` (or the existing orchestrator test module) asserts that a profile with a workout produces `schedule_days[0]["workouts"] == [{"after_meal_index": 1, ...}]`. This fails today because the key is absent.
+- [x] The payload is a valid `PlanRequest`: `PlanRequest.model_validate(payload)` succeeds, including `days` / `schedule_days` length agreement for 1 and 3 days.
+- [x] New parity test in `tests/integration/test_cli_flutter_parity.py` runs the CLI planning path (`convert_profile` + `plan_meals`) and `POST /api/v1/plan` with the builder's payload against the same fixture profile (with a workout) and fixture pool. It asserts the same `termination_code` and the same list of `(code, day_index, slot_index)` failures. This fails before the fix (FM-1 vs FM-4 shape).
+- [x] `scripts/export_planner_debug_artifacts.py` output still loads, and `cli_plan_request.json` now contains `schedule_days`.
+- [x] `benchmark-audit`: 153/153, 0 regressions (`diff_results.py --base main` exits 0).
 
 ## Implementation notes
 
@@ -63,3 +63,11 @@ Why the existing parity test misses it: `tests/integration/test_cli_flutter_pari
 - Changing either profile file. BE-20 applies the D-A default to the `.example` and untracks `config/user_profile.yaml` (W7). Run BE-16 before BE-20, so the example still has the legacy schedule with the workout. If BE-20 lands first, put a workout fixture in the test instead of relying on the example.
 - UL enforcement (BE-17).
 - Why the committed profile fails at all (D-A / BE-20).
+
+## Close-out (2026-11-14)
+
+- `build_plan_request_from_profile(..., days=1)` emits `days` and `schedule_days` (`DaySchedule.model_dump(mode="json", exclude_none=True)`), expanded with `converters._expand_schedule_days`, the same helper `convert_profile` uses: a one-day template is replicated with `day_index` 1..N. A profile with no `schedule_days` (NL-config path) is converted with `legacy_schedule_dict_to_schedule_days`; it has no workouts to lose. `schedule` is no longer emitted.
+- Callers pass their horizon: `src/cli.py` (`args.days`), `src/api/server.py` (`plan_request.days`; debug log only), `scripts/export_planner_debug_artifacts.py` (`days`, replacing its later `body["days"] = days` override, which would now break the length check). No caller read `payload["schedule"]`; the CLI only logs the key names.
+- Tests: `tests/test_orchestrator_plan_request_builder.py` (workout kept, `PlanRequest.model_validate` for 1 and 3 days, legacy-only profile); `tests/integration/test_cli_flutter_parity.py::test_cli_and_http_plan_agree_on_profile_with_workout` runs the real `src.cli.main` (`--output json`) and `POST /api/v1/plan` on a workout fixture, 1 day. The pre-fix payload shape gives HTTP `FM-4` vs CLI `FM-1 @ (0, 2)`, so it fails before the fix. 3 days was checked by hand rather than in the suite (the search exhausts, ~60 s): both give `TC-2` / `FM-MACRO-INFEASIBLE`.
+- Probe (`probes/parity_probe.py`, updated: `as_is` now carries the workout, `no_workout` reproduces the old payload) on `config/user_profile.yaml.example`, 1 day: `as_is` → FM-1 at slot 2 (`macro_gap`), matching the CLI; `no_workout` → FM-4.
+- `export_planner_debug_artifacts.py --days 3`: `cli_plan_request.json` has `days: 3`, 3 `schedule_days` with the workout, and validates as `PlanRequest`.

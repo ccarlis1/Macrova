@@ -1,6 +1,6 @@
 # BE-22 — User data folder, empty starting pool, starter-pack import
 
-**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** —  ·  **Blocks:** BE-19 (same recipe-store code), FE-16
+**Status:** done  ·  **Complexity:** M  ·  **Depends on:** —  ·  **Blocks:** BE-19 (same recipe-store code), FE-16
 
 ## Summary
 
@@ -35,21 +35,21 @@ Checked 2026-11-14:
 
 ## Acceptance criteria
 
-- [ ] **One setting.** A single module resolves user-data paths from `MACROVA_DATA_DIR`: recipes, the `tags_by_id` store, meal-prep batches. Unset → today's paths exactly. `server.py`, `meal_prep_routes.py`, `tag_routes.py`, `recipe_db.py`, `meal_prep.py` and the CLI default read from it, with no other hard-coded copies (`grep` test, or a test per call site). Reference data (`data/reference/`) and the MCP sample path are not user data and don't move.
+- [x] **One setting.** A single module resolves user-data paths from `MACROVA_DATA_DIR`: recipes, the `tags_by_id` store, meal-prep batches. Unset → today's paths exactly. `server.py`, `meal_prep_routes.py`, `tag_routes.py`, `recipe_db.py`, `meal_prep.py` and the CLI default read from it, with no other hard-coded copies (`grep` test, or a test per call site). Reference data (`data/reference/`) and the MCP sample path are not user data and don't move.
   Test: with `MACROVA_DATA_DIR=<tmp>`, a recipe sync, a meal-prep batch create and a tag create all write under `<tmp>`, and the committed files' hashes are unchanged. Fails today (writes go to `data/`).
-- [ ] **Tags in the user folder.** The tag store the user writes lives in the data folder, while the shipped registry is still readable. Either split `tags_by_id` from the registry, or copy `recipe_tags.json` into the folder at setup. Pick the smaller change and record why in this stub. `REQUIRES_VERIFICATION`: which readers expect registry and `tags_by_id` in one file.
-- [ ] **Empty start.** A setup step (`scripts/setup_user_data.py`, or a Make target if W2 is decided by then) creates the folder with an empty pool (`{"recipes": []}`) plus whatever the tag decision above needs. It never overwrites an existing folder. The folder's default location is gitignored. Tests: creates on an empty dir; leaves an existing one untouched.
-- [ ] **Starter pack API (additive).**
+- [x] **Tags in the user folder.** The tag store the user writes lives in the data folder, while the shipped registry is still readable. Either split `tags_by_id` from the registry, or copy `recipe_tags.json` into the folder at setup. Pick the smaller change and record why in this stub. `REQUIRES_VERIFICATION`: which readers expect registry and `tags_by_id` in one file.
+- [x] **Empty start.** A setup step (`scripts/setup_user_data.py`, or a Make target if W2 is decided by then) creates the folder with an empty pool (`{"recipes": []}`) plus whatever the tag decision above needs. It never overwrites an existing folder. The folder's default location is gitignored. Tests: creates on an empty dir; leaves an existing one untouched.
+- [x] **Starter pack API (additive).**
   - `GET /api/v1/starter_recipes` → `{recipes: [{id, name, cooking_time_minutes, calories_per_serving, protein_g_per_serving, tag_slugs_by_type}]}`, built from `recipes.json.example` and its tags.
   - `POST /api/v1/starter_recipes/import` with `{recipe_ids: [...]}` → `{imported: [...], skipped: [{id, reason}]}`. It copies the recipe and its `tags_by_id` entry into the user's store. It's idempotent: re-importing an id is `skipped: already_in_pool`. An unknown id is `skipped: not_a_starter_recipe`, not a 4xx for the whole request.
 
   Error envelope, OpenAPI snapshot (`python3 scripts/run_export_openapi.py --check` after regenerating), and contract tests in `tests/api/`. The Flutter DTO is FE-16's.
   Tests: list returns 18 entries with nutrition > 0 (catches the BE-21 zero-nutrition bug if it regresses). Import into an empty folder, then plan → success for 1 day. Import twice → skipped. Unknown id → skipped.
-- [ ] **Empty-pool message.**
+- [x] **Empty-pool message.**
   - HTTP: `FM-1` with `cause: EMPTY_POOL` sets `recipe_could_help: true`, and the `fix` text says to add recipes or import the starter pack (`src/api/failure_explanations.py`). Test; fails today.
   - CLI: when the loaded pool is empty, print one plain line naming the file and the two ways to fill it, before planning. Keep the exit code. Test; fails today.
-- [ ] `python3 scripts/run_pytest.py` green with `MACROVA_DATA_DIR` unset (fixtures unchanged) **and** a smoke subset with it set to a temp folder.
-- [ ] `benchmark-audit`: 153/153, 0 regressions (`run_benchmark.py` imports `src.api.server`, so check that the path change doesn't touch it).
+- [x] `python3 scripts/run_pytest.py` green with `MACROVA_DATA_DIR` unset (fixtures unchanged) **and** a smoke subset with it set to a temp folder.
+- [x] `benchmark-audit`: 153/153, 0 regressions (`run_benchmark.py` imports `src.api.server`, so check that the path change doesn't touch it).
 
 ## Implementation notes
 
@@ -81,3 +81,14 @@ Checked 2026-11-14:
 - Removing the owner's recipes from git history.
 - Multi-user storage, accounts, or a hosted data store.
 - Changing which 18 recipes make up the starter pack (owner's call; this task uses `recipes.json.example` as it is after DATA-1).
+
+## Close-out (2026-11-14)
+
+- **One setting:** `src/data_layer/user_data.py` (stdlib-only, resolved per call): `recipes_path()`, `recipe_tags_path()`, `meal_prep_batches_path()`. Unset → `data/recipes/recipes.json`, `data/recipes/recipe_tags.json`, `data/meal_prep/batches.json` exactly. Set → `<dir>/recipes.json`, `<dir>/recipe_tags.json`, `<dir>/meal_prep_batches.json`. Wired into `server.py`, `meal_prep_routes.py`, `tag_routes.py`, `recipe_db.py`, `meal_prep.py`, the CLI (`--recipes`, tag path), `orchestrator.plan_with_llm_feedback` (generated-recipe persistence default) and the three `NUTRITION_TAG_REPO_PATH` fallbacks (`schedule.py`, `time_bucket.py`, `recipe_tagger.py`; that env var still wins). Module-level globals in `server.py`/routers are read at import, so the variable must be set before the process starts. Grep test: `tests/test_user_data.py::test_no_other_hard_coded_user_data_paths_in_src`.
+- **Tag decision: copy at setup**, the smaller change. `recipe_tags.json` holds registry, aliases and `tags_by_id`, and 8 modules read the registry from that one path, so a split would touch every reader. Setup copies the shipped `tag_registry` + `tag_aliases` with an **empty** `tags_by_id`, so the user extends the shared vocabulary without inheriting anyone's per-recipe tags. Starter import copies only the picked recipes' `tags_by_id` entries (via `upsert_recipe_tags`, merge), which keeps their shipped cuisine/cost/time data. Note: without setup, a missing tag file falls back to `tag_repository`'s built-in seed tags only.
+- **Setup:** `python3 scripts/setup_user_data.py [--dir …]` (default `$MACROVA_DATA_DIR`, else `./user_data`, gitignored as `/user_data/`). Never touches an existing folder. Meal-prep batches are created on first write.
+- **Starter pack API:** `GET /api/v1/starter_recipes` (adds `ready_for_planning` and `unresolved` beyond the spec; `calories_per_serving` is `null` when unresolved rather than a partial sum) and `POST /api/v1/starter_recipes/import` (dedupes ids; `already_in_pool` / `not_a_starter_recipe`). Recipe rows go through `atomic_upsert_recipes_by_id(tag_path=None)`. `user_data.load_starter_recipes()` is the shared raw reader (MCP `_sample_recipes()` uses it). MCP now reads the **shipped** tag file explicitly: its `TAG_PATH` used to follow `server.DEFAULT_TAG_PATH`, which is now the user's store.
+- **Empty pool:** HTTP `failure_cause.recipe_could_help` is `true` for `EMPTY_POOL`, and the fix mentions the starter pack (`failure_explanations.py`; LLM recovery still declines to generate for an empty pool, unchanged). CLI prints one `No recipes in <file>: …` line to stderr; exit code unchanged (0).
+- **Tests:** `tests/test_user_data.py` (paths, setup, fresh-process isolation: sync + tag create + batch create + starter import all write under the folder, committed hashes unchanged), `tests/api/test_starter_recipes.py`. Suite with the variable unset: 1,367 passed; smoke subset (API, MCP, user data, contract) with it set: 112 passed.
+- **Pre-analysis 3 (profile pins/schedule):** `config/user_profile.yaml` stays where it is; no pin write needed the folder. FE-15 may revisit.
+- **Not done here:** README quick-start step (coordinate with BE-20); `QUICK_START.md` and `AGENTS.md` got a short section/bullet.

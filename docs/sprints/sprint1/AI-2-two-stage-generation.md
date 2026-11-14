@@ -1,6 +1,8 @@
 # AI-2 — Two-stage generation wiring
 
-**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** AI-1, AI-3, AI-4, AI-5
+**Status:** parked  ·  **Complexity:** M  ·  **Depends on:** AI-1, AI-3, AI-4, AI-5
+
+Sprint 2 close-out (DOC-1, 2026-11-14): Parked: LLM features are optional and not on the demo path.
 
 ## Summary
 

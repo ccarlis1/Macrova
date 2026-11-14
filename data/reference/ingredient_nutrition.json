@@ -3549,10 +3549,11 @@
       "description": "Beverages, Whey protein powder isolate",
       "fdc_id": 173177,
       "grams_per_unit": {
-        "g": 1.0
+        "g": 1.0,
+        "scoop": 28.67
       },
       "name": "whey protein powder 24 grams of protein per scoop",
-      "notes": "",
+      "notes": "scoop: 28.67 g, FDC 173177 foodPortions id 92053 (undetermined scoop); the portion is amount 3 = 86.0 g, so 86.0 / 3 per scoop.",
       "per_100g": {
         "b12_cobalamin_ug": 3.49,
         "b1_thiamine_mg": 0.872,

@@ -258,6 +258,17 @@ def test_sample_recipes_carry_valid_tags():
         assert recipe["ready_for_planning"] is not bool(recipe["unmatched"])
 
 
+def test_sample_recipes_ready_for_planning():
+    """DATA-1: 9 of 18 samples plan. Each gap is a unit with no exact FDC portion (see the stub)."""
+    samples = _call("macrova_get_sample_recipes", {}).structured_content["recipes"]
+    not_ready = sorted(r["name"] for r in samples if not r["ready_for_planning"])
+    assert sum(r["ready_for_planning"] for r in samples) == 9
+    assert not_ready == [
+        "Canned Salmon Wrap", "Dense Bean Salad", "Greek Yogurt Balance", "Greek Yogurt Protein Bowl",
+        "Power Omelette", "Power Shake", "Roast Beef Sandwich", "Shakshuka", "Sweet Potato Bowl",
+    ]
+
+
 def test_list_tags_returns_registry_tags_only():
     tags = _call("macrova_list_tags", {}).structured_content["tags"]
     by_slug = {t["slug"]: t for t in tags}

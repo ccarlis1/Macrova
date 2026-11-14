@@ -576,3 +576,11 @@ def test_openapi_recipe_save_line_grams_per_unit_and_unit_error_codes():
             assert "UNIT_NOT_CONVERTIBLE" in resp["description"]
             assert "INGREDIENT_UNRESOLVED" in resp["description"]
             assert resp["content"]["application/json"]["schema"]["$ref"] == "#/components/schemas/ApiErrorResponse"
+
+
+def test_openapi_sync_item_tag_slugs_description_says_time_is_derived():
+    """BE-19 follow-up: the ``time`` type is derived from cooking time; a client value is ignored."""
+    prop = _openapi_components()["RecipeSyncItem"]["properties"]["tag_slugs_by_type"]
+    description = prop.get("description", "")
+    assert "time" in description and "cooking_time_minutes" in description
+    assert "ignored" in description

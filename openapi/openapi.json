@@ -1900,6 +1900,7 @@
                 "type": "null"
               }
             ],
+            "description": "Registry tag slugs by type. When sent, replaces the stored types as a whole (a stored type not sent is removed); omitted keeps the stored ones. The `time` type is always derived from cooking_time_minutes: a client `time` value is ignored.",
             "title": "Tag Slugs By Type"
           }
         },

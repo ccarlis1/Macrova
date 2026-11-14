@@ -70,7 +70,15 @@ class RecipeSyncItem(BaseModel):
     default_servings: StrictInt = Field(default=1, ge=1)
     tag_slugs_by_type: Optional[
         Dict[Literal["context", "time", "nutrition", "constraint"], List[str]]
-    ] = None
+    ] = Field(
+        None,
+        description=(
+            "Registry tag slugs by type. When sent, replaces the stored types as a whole "
+            "(a stored type not sent is removed); omitted keeps the stored ones. The "
+            "`time` type is always derived from cooking_time_minutes: a client `time` "
+            "value is ignored."
+        ),
+    )
     cuisine: Optional[Literal[tuple(CUISINE_VOCABULARY)]] = Field(  # type: ignore[valid-type]
         None,
         description=(

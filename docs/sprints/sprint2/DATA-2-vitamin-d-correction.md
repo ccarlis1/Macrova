@@ -101,3 +101,29 @@ starter recipes were above the 4,000 IU daily UL on their own.
 Data test: `tests/test_ingredient_vitamin_d_sanity.py`: no entry above 2,000 IU/100 g (justified in the file;
 5 entries were above it before), every non-zero entry cites its FDC nutrient 1110, and no starter recipe
 exceeds the lowest daily vitamin D UL (6 failed before).
+
+## Re-probe of the default lists
+
+Recorded in the BE-20 stub ("Probe re-run (2026-11-15), after DATA-2 corrected vitamin D"). Every current
+default list still plans at 7 days for its demographic, so `DEFAULT_MICRONUTRIENT_LEFT_OUT`,
+`config/user_profile.yaml.example` and the Flutter `micronutrient_defaults_*.json` fixtures are unchanged.
+Owner option: pregnancy and lactation could keep `vitamin_e_mg` (it now succeeds); the Flutter tests pin
+the current pregnancy list. The example profile now plans at 1 day as well (CLI and HTTP, `TC-4`), so
+`test_example_profile_one_day_outcome_is_pinned` pins success; MCP's adult_female 2-day failure no longer
+names vitamin D (`test_demographic_sets_micronutrient_targets` now checks vitamin E).
+
+## Demo step 2b after the correction
+
+In-process (FastAPI `TestClient`, `MACROVA_DATA_DIR` and `NUTRITION_USER_PROFILE_PATH` on temp paths),
+fresh data folder, 7 days, Flutter new-user default request (2000 kcal, 150 g protein, fat 60–74 g, 3 meals
+2/3/4 tagged breakfast/lunch/dinner), goals and τ from `GET /api/v1/micronutrient_defaults?demographic=adult_male`:
+
+| Pool | No goals, no demographic | No goals, adult_male | Default goals, no demographic | Default goals, adult_male |
+|---|---|---|---|---|
+| all 18 | success | success (was partial, FM-MACRO-INFEASIBLE) | partial, FM-5 | partial, TC-3, FM-5 (was failed, FM-4) |
+| 8 (`recipe_007, 009, 011, 017, 003, 010, 002, 016`) | partial, FM-MACRO-INFEASIBLE | partial, FM-MACRO-INFEASIBLE | failed, FM-4 | failed, FM-4 |
+
+Binding constraint (all 18, adult_male): the vitamin D floor (600 IU/day, 4,200 IU over 7 days). Default goals
+minus `vitamin_d_iu` → success; minus any other single goal → FM-5; `vitamin_d_iu` 600 alone → FM-5, also with
+the attempt limit raised in memory to 500,000; `vitamin_d_iu` 300 alone → success. Not tuned: an owner
+decision (README → Close-out results). Pinned by `tests/api/test_demo_new_user_default.py`.

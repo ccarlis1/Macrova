@@ -4,8 +4,18 @@ import 'package:flutter/foundation.dart';
 
 import '../models/models.dart';
 import '../models/recipe.dart';
+import '../models/recipe_sync_result.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
+
+/// Plan warning for a recipe the pre-plan sync rejected.
+String recipeSyncWarning(RecipeSyncError e) {
+  final label = e.recipeLabel;
+  return label == null
+      ? 'A recipe was not synced, so the planner could not use it: ${e.raw}'
+      : 'Recipe "$label" was not synced, so the planner could not use it: '
+          '${e.message}';
+}
 
 /// Deterministic default busyness: first → 2, middle → 2–3, last → 3–4.
 int defaultMealBusyness(int mealIndex, int mealCount) {
@@ -68,7 +78,13 @@ List<WorkoutSlot> legacyTimingToWorkouts(int mealCount, String timing) {
   }
 }
 
+/// Sends a plan request ([ApiService.plan] or a test fake).
+typedef PlanRequestFn = Future<MealPlan> Function(PlanRequest request);
+
 class MealPlanProvider extends ChangeNotifier {
+  final RecipeListSyncFn _recipeSyncFn;
+  final PlanRequestFn _planFn;
+
   MealPlan? _mealPlan;
   bool _loading = false;
   bool _syncing = false;
@@ -118,7 +134,11 @@ class MealPlanProvider extends ChangeNotifier {
     'dairy_free',
   };
 
-  MealPlanProvider() {
+  MealPlanProvider({
+    RecipeListSyncFn? recipeSyncFn,
+    PlanRequestFn? planFn,
+  })  : _recipeSyncFn = recipeSyncFn ?? ApiService.syncRecipes,
+        _planFn = planFn ?? ApiService.plan {
     _scheduleDays = List.generate(
       _days,
       (i) => buildDefaultDaySchedule(i + 1, 3),
@@ -493,14 +513,25 @@ class MealPlanProvider extends ChangeNotifier {
   @visibleForTesting
   void debugSetLastRequest(PlanRequest? request) => _lastRequest = request;
 
-  Future<void> generatePlan(PlanRequest request) async {
+  Future<void> generatePlan(PlanRequest request) =>
+      _generatePlan(request);
+
+  /// [syncWarnings] (from [generatePlanWithRecipeSync]) are put ahead of the
+  /// plan's own warnings.
+  Future<void> _generatePlan(
+    PlanRequest request, {
+    List<String> syncWarnings = const [],
+  }) async {
     _lastRequest = request;
     _loading = true;
     _clearError();
     notifyListeners();
 
     try {
-      _mealPlan = await ApiService.plan(request);
+      final plan = await _planFn(request);
+      _mealPlan = syncWarnings.isEmpty
+          ? plan
+          : plan.withWarnings([...syncWarnings, ...plan.warnings]);
       await _clearCookedSlots();
     } catch (e) {
       _setError(e);
@@ -518,8 +549,9 @@ class MealPlanProvider extends ChangeNotifier {
     _clearError();
     notifyListeners();
 
+    final RecipeSyncResult synced;
     try {
-      await ApiService.syncRecipes(recipesToSync);
+      synced = await _recipeSyncFn(recipesToSync);
     } catch (e) {
       _setError(e);
       return;
@@ -528,7 +560,14 @@ class MealPlanProvider extends ChangeNotifier {
       notifyListeners();
     }
 
-    await generatePlan(request);
+    // Rejected recipes (BE-19) aren't stored, so the planner can't use them:
+    // say so on the plan instead of planning as if they were synced.
+    await _generatePlan(
+      request,
+      syncWarnings: [
+        for (final e in synced.errors) recipeSyncWarning(e),
+      ],
+    );
   }
 
   /// Re-send the request behind the current plan with another `planning_mode`

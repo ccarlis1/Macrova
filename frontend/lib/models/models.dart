@@ -735,6 +735,25 @@ class MealPlan {
   /// Telemetry only (`TC-*`); do not use for UI branching.
   final String? terminationCode;
 
+  /// This plan with [warnings] replaced (e.g. client-side sync advisories
+  /// prepended to the server's).
+  MealPlan withWarnings(List<String> warnings) => MealPlan(
+        success: success,
+        meetsGoals: meetsGoals,
+        date: date,
+        dailyPlans: dailyPlans,
+        totalNutrition: totalNutrition,
+        goals: goals,
+        targetAdherence: targetAdherence,
+        warnings: List.unmodifiable(warnings),
+        days: days,
+        planStatus: planStatus,
+        planStatusMessage: planStatusMessage,
+        failures: failures,
+        failureCause: failureCause,
+        terminationCode: terminationCode,
+      );
+
   /// All meals in plan order (flattened). Legacy / simple UIs.
   List<Meal> get meals =>
       dailyPlans.expand((d) => d.meals).toList(growable: false);

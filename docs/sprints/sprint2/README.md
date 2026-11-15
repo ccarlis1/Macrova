@@ -55,7 +55,7 @@ Waves follow roadmap Part 3, which allows at most 5 tasks in flight. FE-11 moved
 | [FE-14](./FE-14-meal-prep-tray.md) | Meal-prep tray, batch meal cards and create-batch sheet | M | FE-12 | 2 | done |
 | [FE-15](./FE-15-pins.md) | Pin and unpin a meal; pinned meal cards | S | FE-14 | 2 | done |
 | [FE-16](./FE-16-starter-pack-picker.md) | Starter-pack picker; no personal profile in the app bundle | M | P0, BE-22 | 2 | done |
-| [BE-20](./BE-20-demo-micronutrient-default.md) | Demo micronutrient default (D-A), user override, MCP busyness 2/3/4 (D-B), demo profile (W7) | M | DATA-1 | 2 | todo: backend done except W7 untrack (owner) and the 1-day example plan; Flutter default open |
+| [BE-20](./BE-20-demo-micronutrient-default.md) | Demo micronutrient default (D-A), user override, MCP busyness 2/3/4 (D-B), demo profile (W7) | M | DATA-1 | 2 | todo: backend done (W7 untracked in 94c7c42; 1-day failure accepted, D-A addendum 3); Flutter default open |
 
 `P0` = PR #63 merged. Complexity: S ≈ half a day of agent work and one small PR; M ≈ one day and one PR. No task is L. If one grows past M during Phase 1 analysis, stop and split it.
 
@@ -198,6 +198,7 @@ Applies in BE-20.
 **D-A addendum (owner, 2026-11-15).** BE-20's probe re-run found that no goal list planned at all with the daily ULs on: the 350 mg magnesium UL rejected every day, even with no micronutrient floors (see the BE-20 probe record). Decided:
 1. **Supplement-only ULs are not enforced against food.** The IOM ULs for magnesium (350 mg) and niacin (35 mg) apply to supplemental/fortified intake only, so `data/reference/ul_by_demographic.json` sets `magnesium_mg` and `b3_niacin_mg` to `null` for all four demographics (as `sodium_mg` already is), with a note in the file. No other reference value changes.
 2. **The default list may differ by demographic.** Per-demographic lists, still defined in one place.
+3. **A 1-day plan with the full default floors may fail** (owner, 2026-11-15); the default lists stay as they are. Weekly floors are met on the horizon total, so over several days a low day is offset by a high one; one day alone must hit every RDI at once. The example profile plans at 3 and 7 days and fails at 1 day on the committed pool (`partial`, FM-1). The CLI default stays `--days 1`, so the first-run docs (README, QUICK_START, USAGE) run `--days 3` and say what to do if a 1-day plan fails: plan 3+ days, or lower or remove goals.
 
 ### D-B: MCP shorthand schedule default busyness — **resolved: 2/3/4**
 
@@ -205,7 +206,7 @@ Options considered: (1) keep 2/3/3; (2) have the assistant ask; (3) 4/4/4.
 
 **Decision: 2/3/4.** The first meal is ≤ 15 min, the second ≤ 30 min, and the third has no cooking-time limit, which frees at least one slot from cooking-time constraints.
 - Today `src/mcp_server/tools.py::_schedule_days` builds `[2] + [3] * (n - 1)`, and the `schedule` field description in `src/mcp_server/server.py` says "busyness 2/3/3".
-- **For `meals_per_day` other than 3** the owner gave no rule. BE-20 uses: first meal 2, last meal 4, any others 3, and a single meal stays 2. Confirm this in the BE-20 PR.
+- **For `meals_per_day` other than 3** the owner gave no rule. BE-20 uses: one meal 2; two meals 2/4; four or more first 2, last 4, others 3. Confirmed by the owner (2026-11-15).
 
 Applies in BE-20; the demo script and BE-20's probe use 2/3/4.
 
@@ -221,7 +222,7 @@ These come from the owner's draft spec "a cloud agent can use Macrova like a new
 | W4  | Example data (**a**: hand-written `examples/` with `expected.json`)                                                                                         | No task. The demo script's inputs (new-user profile, 7-day request) would fit there.                                                                                                                                       | Sprint 3; consider for the demo inputs                                                                     |
 | W5  | Check strictness (**a**: outcomes and tolerances, not exact recipe ids)                                                                                     | The demo script already checks outcomes (`status`, matching codes)                                                                                                                                                         | Already followed; can decide now                                                                           |
 | W6 | Keep a session from changing committed data | **Decided 2026-11-14:** a `MACROVA_DATA_DIR` setting, with one change from option a: the user folder starts with an **empty** recipe pool instead of a copy of `data/`. The 18 sample recipes become an optional starter pack the user picks from. | Applied in BE-22, FE-16 |
-| W7 | Default profile | **Decided 2026-11-14: option a.** `config/user_profile.yaml.example` is the shipped default and gets the D-A defaults (BE-20). `config/user_profile.yaml` holds the owner's personal settings: BE-20 removes it from git with `git rm --cached` (the local copy stays), as `.gitignore` already intends. A fresh clone copies the example. BE-16, the probes and demo step 3 use the example. | Applied in BE-16, BE-20 |
+| W7 | Default profile | **Decided 2026-11-14: option a.** `config/user_profile.yaml.example` is the shipped default and gets the D-A defaults (BE-20). `config/user_profile.yaml` holds the owner's personal settings: The owner removed it from git with `git rm --cached` in 94c7c42 (the local copy stays, ignored), as `.gitignore` already intends. A fresh clone copies the example. BE-16, the probes and demo step 3 use the example. | Applied in BE-16, BE-20 |
 | W8  | Flutter web tier (**a**: spec it after the core passes: semantics flag, `Semantics`/`Key` labels, Linux setup doc, `make web`)                              | FE-11, FE-14 and FE-15 build the screens W8 would label (failure panel, tray, pins)                                                                                                                                        | Sprint 3+; adding `Key`s in those FE tasks now is cheap                                                    |
 
 The spec's fresh-clone findings that are already covered here:

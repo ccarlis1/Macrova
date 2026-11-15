@@ -72,13 +72,33 @@ def test_example_profile_is_canonical_three_meal_schedule_days():
     assert profile.demographic == "adult_male"
 
 
-@pytest.mark.parametrize("days", [3, 7])
-def test_example_profile_plans_on_the_committed_pool_with_uls_on(days):
+def _plan_example(days: int) -> dict:
     profile = UserProfileLoader(str(EXAMPLE)).load()
     recipes = RecipeDB(str(COMMITTED_POOL)).get_all_recipes()
     body = build_plan_request_from_profile(profile, recipes, [], None, days=days)
     body.pop("active_batches", None)
     body["planning_mode"] = "deterministic"
     assert body["demographic"] == "adult_male"  # daily ULs are enforced
-    out = TestClient(app).post("/api/v1/plan", json=body).json()
+    return TestClient(app).post("/api/v1/plan", json=body).json()
+
+
+@pytest.mark.parametrize("days", [3, 7])
+def test_example_profile_plans_on_the_committed_pool_with_uls_on(days):
+    out = _plan_example(days)
     assert out["plan_status"] == "success", out.get("report", {}).get("failures")
+
+
+def test_example_profile_one_day_outcome_is_pinned():
+    """Owner decision 2026-11-15: a 1-day plan with the full default floors may fail.
+
+    Weekly floors are checked on the horizon total, so over 3+ days a low day can be
+    offset by a high one. A single-day plan can't average floors across days: that one
+    day must hit every RDI at once, which the committed pool can't do with 3 meals.
+    Today that is a partial plan, FM-1 on day 1's third meal. If this changes, update
+    BE-20's stub and the first-run docs (README, QUICK_START, USAGE), which use --days 3.
+    """
+    out = _plan_example(1)
+    assert out["plan_status"] == "partial"
+    assert out["termination_code"] == "TC-2"
+    failures = [(f["code"], f.get("day_index"), f.get("slot_index")) for f in out["report"]["failures"]]
+    assert failures == [("FM-1", 0, 2)]

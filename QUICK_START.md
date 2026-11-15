@@ -10,14 +10,16 @@
 
 ### Basic Command (Markdown output)
 ```bash
-python3 plan_meals.py
+python3 plan_meals.py --days 3
 ```
 
 This will:
 1. Load your user profile (nutrition goals, schedule, preferences)
 2. Load all recipes and ingredients
-3. Generate a daily meal plan (breakfast, lunch, dinner)
+3. Generate a 3-day meal plan (breakfast, lunch, dinner)
 4. Display the plan in Markdown format
+
+`--days` is 1–7 (default 1). A 1-day plan with the example profile's full default micronutrient goals can fail, because one day must meet every daily goal at once; plan 3 or more days, or lower or remove goals in your profile.
 
 ### Save Output to File
 ```bash
@@ -113,7 +115,7 @@ This means:
 
 ## 🎯 Next Steps
 
-1. **Test with your data**: Run `python3 plan_meals.py` and review the output
+1. **Test with your data**: Run `python3 plan_meals.py --days 3` and review the output
 2. **Customize your profile**: Edit `config/user_profile.yaml` to match your needs
 3. **Add more recipes**: Populate `data/recipes/recipes.json` with more options
 4. **Refine ingredients**: Ensure `data/ingredients/custom_ingredients.json` has nutrition data for all recipe ingredients

@@ -28,10 +28,10 @@ Replace `<repository-url>` with your clone URL (e.g. from GitHub). The folder na
 After copying the example config and data files (see below), run:
 
 ```bash
-python3 plan_meals.py
+python3 plan_meals.py --days 3
 ```
 
-This uses the bundled ingredient database (no API key). For USDA API mode, see [USAGE.md](USAGE.md#api-mode-setup).
+This uses the bundled ingredient database (no API key). A 1-day plan (the CLI default) with the example's full default micronutrient goals can fail, because one day must meet every daily goal at once; plan 3 or more days, or lower or remove goals in your profile. For USDA API mode, see [USAGE.md](USAGE.md#api-mode-setup).
 
 ### Configure and run
 
@@ -46,9 +46,9 @@ This uses the bundled ingredient database (no API key). For USDA API mode, see [
 2. Edit `config/user_profile.yaml` with your goals, schedule, and preferences.
 3. **Run the planner:**
    ```bash
-   python3 plan_meals.py
+   python3 plan_meals.py --days 3
    ```
-   Output is Markdown by default. Use `--output json` for JSON, or see below for more options.
+   `--days` is 1–7 (default 1). Micronutrient goals are met over the whole plan, so a 1-day plan with the full default goals can fail; plan 3+ days, or lower or remove goals. Output is Markdown by default. Use `--output json` for JSON, or see below for more options.
 
 **More detail:** [QUICK_START.md](QUICK_START.md) for a short run-through; [USAGE.md](USAGE.md) for all CLI options, API mode, and the REST API.
 

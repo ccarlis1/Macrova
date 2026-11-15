@@ -20,10 +20,12 @@ Make sure you have:
 
 ### 3. Run the Meal Planner
 
-**Basic usage (Markdown output to console):**
+**Basic usage (Markdown output to console, 3 days):**
 ```bash
-python3 plan_meals.py
+python3 plan_meals.py --days 3
 ```
+
+A 1-day plan (the default) with the example profile's full default micronutrient goals can fail, because one day must meet every daily goal at once; plan 3 or more days, or lower or remove goals in your profile.
 
 **Save output to file:**
 ```bash
@@ -58,6 +60,7 @@ python3 plan_meals.py \
 | `--ingredients` | Path to ingredients JSON file | `data/ingredients/custom_ingredients.json` |
 | `--ingredient-source` | `local` = bundled JSON DB; `api` = USDA API (requires `USDA_API_KEY`) | `local` |
 | `--output` | Output format: `markdown`, `json`, or `both` | `markdown` |
+| `--days` | Planning horizon, 1–7 days | `1` |
 | `--output-file` | Optional file path to save output | (prints to stdout) |
 
 ## Ingredient source

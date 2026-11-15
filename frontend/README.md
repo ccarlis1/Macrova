@@ -8,23 +8,9 @@ A new Flutter project.
 
 - **`RecipeProvider.syncSummariesFromApi`** merges those API rows with local recipes **by id**. If you have a full local recipe with the same id, the local copy wins; otherwise the UI shows an **`Recipe.apiSummary`** placeholder (no ingredients, no macros).
 - **`GET /api/v1/recipes/{id}`** returns a full recipe for hydration / planner sync.
-- **Meal planning** sends `recipe_ids` to `POST /api/v1/plan`. Only ids that exist in the **server** recipe pool affect the solver unless you sync local recipes first.
+- **Meal planning** (`POST /api/v1/plan`) uses the whole **server** pool unless Planner Config has recipes ticked; then it sends those ids as `recipe_ids`. Before each plan the app syncs every locally stored full recipe, so local edits reach the server first.
 
-### Bundled server recipes (offline / dev)
-
-When the API is unreachable, you can still load the same shape as `data/recipes/recipes.json` from a bundled asset:
-
-1. Asset path: **`assets/dev/server_recipes.json`** (keep in sync with the repo file when recipes change):
-
-   `cp ../data/recipes/recipes.json assets/dev/server_recipes.json`
-
-2. Run with:
-
-   `flutter run -d chrome --dart-define=BUNDLE_SERVER_RECIPES=true`
-
-This merges bundled recipes into **`SharedPreferences`** (by `id`, overwriting existing entries with the same id). Ingredient lines have **quantities and names** but **macro fields are zero** until you use nutrition tooling or API-backed resolution.
-
-**Automatic ingredient lines:** On startup the app always tries to load **`assets/dev/server_recipes.json`**. If the file exists (ships with the repo copy), recipe rows that only had **id + name** from `GET /api/v1/recipes` are shown with **full ingredient lines** from that JSON (no dart-define required). When **saved** ingredients load (including **`BUNDLE_CACHED_INGREDIENTS`**), matching lines get **per-100g macros** where the ingredient **name** matches (case-insensitive).
+There is no bundled recipe asset any more (`assets/dev/server_recipes.json` and `BUNDLE_SERVER_RECIPES` were removed in FE-16): recipes come from the API.
 
 ### Bundled cached ingredients (USDA disk cache → Saved)
 
@@ -40,9 +26,7 @@ Python writes resolved foods to **`.cache/ingredients/*.json`**. To import them 
 
    `flutter run -d chrome --dart-define=BUNDLE_CACHED_INGREDIENTS=true`
 
-You can combine both dev bundles:
-
-`flutter run -d chrome --dart-define=BUNDLE_SERVER_RECIPES=true --dart-define=BUNDLE_CACHED_INGREDIENTS=true`
+When saved ingredients load, recipe lines whose per-100g macros are zero get them from a saved ingredient whose **name** matches (case-insensitive).
 
 Imports are keyed by **`fdc_id`** (string) as **`Ingredient.id`**; existing rows with the same id are replaced.
 

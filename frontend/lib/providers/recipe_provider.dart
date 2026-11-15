@@ -1,7 +1,4 @@
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/ingredient.dart';
@@ -17,14 +14,6 @@ const _uuid = Uuid();
 typedef RecipeDetailFn = Future<Recipe> Function(String id);
 typedef TagListFn = Future<List<TagMeta>> Function();
 typedef RecipeSummaryListFn = Future<List<RecipeSummary>> Function();
-
-/// Dev: `flutter run --dart-define=BUNDLE_SERVER_RECIPES=true`
-const _bundleServerRecipes = bool.fromEnvironment(
-  'BUNDLE_SERVER_RECIPES',
-  defaultValue: false,
-);
-
-const _bundledRecipesAsset = 'assets/dev/server_recipes.json';
 
 /// Resolves a recipe line label to a saved hub ingredient when the strings
 /// are not identical (e.g. "jasmine rice in unsalted water" vs "jasmine rice").
@@ -126,18 +115,7 @@ class RecipeProvider extends ChangeNotifier {
   /// Device-local favorite recipe ids (not a planner tag / not synced).
   final Set<String> _favoriteRecipeIds = {};
 
-  /// In-memory full recipes from [assets/dev/server_recipes.json] (by backend id).
-  Map<String, Recipe>? _bundledById;
-  bool _bundledAssetHydrateAttempted = false;
-
   int _ingredientEnrichmentSignature = 0;
-
-  Recipe _withBundledFallback(Recipe r) {
-    if (r.ingredients.isNotEmpty) return r;
-    final full = _bundledById?[r.id];
-    if (full != null && full.ingredients.isNotEmpty) return full;
-    return r;
-  }
 
   /// Stored recipes with at least one ingredient line (for `/recipes/sync` before planning).
   List<Recipe> get localFullRecipesForSync => List.unmodifiable(
@@ -155,7 +133,7 @@ class RecipeProvider extends ChangeNotifier {
         () => Recipe.apiSummary(id: s.id, name: s.name),
       );
     }
-    final merged = map.values.map(_withBundledFallback).toList()
+    final merged = map.values.toList()
       ..sort(
         (a, b) =>
             a.name.toLowerCase().compareTo(b.name.toLowerCase()),
@@ -238,38 +216,6 @@ class RecipeProvider extends ChangeNotifier {
     await StorageService.saveFavoriteRecipeIds(_favoriteRecipeIds);
   }
 
-  /// Loads bundled `server_recipes.json` into [_bundledById] and patches [_localRecipes]
-  /// rows that have no ingredients. Does not require [BUNDLE_SERVER_RECIPES].
-  Future<void> hydrateBundledServerRecipesFromAsset() async {
-    if (_bundledAssetHydrateAttempted) return;
-    _bundledAssetHydrateAttempted = true;
-    try {
-      final raw = await rootBundle.loadString(_bundledRecipesAsset);
-      final list = Recipe.fromServerRecipesJsonRoot(
-        jsonDecode(raw) as Map<String, dynamic>,
-      );
-      _bundledById = {for (final r in list) r.id: r};
-      var changed = false;
-      for (var i = 0; i < _localRecipes.length; i++) {
-        final r = _localRecipes[i];
-        if (r.ingredients.isEmpty) {
-          final full = _bundledById![r.id];
-          if (full != null && full.ingredients.isNotEmpty) {
-            _localRecipes[i] = full;
-            changed = true;
-          }
-        }
-      }
-      if (changed) {
-        await StorageService.saveRecipes(_localRecipes);
-      }
-      notifyListeners();
-    } catch (e, st) {
-      _bundledById = {};
-      debugPrint('hydrateBundledServerRecipesFromAsset: $e\n$st');
-    }
-  }
-
   /// Match recipe lines to [Ingredient.name] (lowercase) and copy per-100g data.
   Future<void> applyIngredientNutritionFromSavedIngredients(
     List<Ingredient> ingredients,
@@ -294,16 +240,6 @@ class RecipeProvider extends ChangeNotifier {
       if (!identical(e, r)) changed = true;
       return e;
     }).toList();
-
-    if (_bundledById != null && _bundledById!.isNotEmpty) {
-      final next = <String, Recipe>{};
-      for (final e in _bundledById!.entries) {
-        final r = _enrichRecipeLinesFromIngredients(e.value, byName);
-        if (!identical(r, e.value)) changed = true;
-        next[e.key] = r;
-      }
-      _bundledById = next;
-    }
 
     if (changed) {
       await StorageService.saveRecipes(_localRecipes);
@@ -337,27 +273,6 @@ class RecipeProvider extends ChangeNotifier {
       }
     }
     return any ? r.copyWith(ingredients: lines) : r;
-  }
-
-  /// Merges [assets/dev/server_recipes.json] (copy of repo `data/recipes/recipes.json`)
-  /// into local storage when [BUNDLE_SERVER_RECIPES] is true. Same id → replaced.
-  Future<void> mergeBundledServerRecipesIfEnabled() async {
-    if (!_bundleServerRecipes) return;
-    try {
-      final raw = await rootBundle.loadString(_bundledRecipesAsset);
-      final bundled = Recipe.fromServerRecipesJsonRoot(
-        jsonDecode(raw) as Map<String, dynamic>,
-      );
-      final byId = {for (final r in _localRecipes) r.id: r};
-      for (final r in bundled) {
-        byId[r.id] = r;
-      }
-      _localRecipes = byId.values.toList();
-      await StorageService.saveRecipes(_localRecipes);
-      notifyListeners();
-    } catch (e, st) {
-      debugPrint('mergeBundledServerRecipesIfEnabled failed: $e\n$st');
-    }
   }
 
   /// Loads full recipe JSON from [ApiService.getRecipe] and merges into local storage.
@@ -544,18 +459,11 @@ class RecipeProvider extends ChangeNotifier {
   Recipe? getRecipeById(String id) => getById(id);
 
   Recipe? getById(String id) {
-    Recipe? r;
-    try {
-      r = _localRecipes.firstWhere((x) => x.id == id);
-    } catch (_) {
-      try {
-        final s = _remoteSummaries.firstWhere((x) => x.id == id);
-        r = Recipe.apiSummary(id: s.id, name: s.name);
-      } catch (_) {
-        r = _bundledById?[id];
-        return r;
-      }
+    final local = _localById(id);
+    if (local != null) return local;
+    for (final s in _remoteSummaries) {
+      if (s.id == id) return Recipe.apiSummary(id: s.id, name: s.name);
     }
-    return _withBundledFallback(r);
+    return null;
   }
 }

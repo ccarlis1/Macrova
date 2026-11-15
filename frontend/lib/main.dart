@@ -33,8 +33,6 @@ Future<void> main() async {
   await ingredients.mergeBundledCachedIngredientsIfEnabled();
 
   await recipes.load();
-  await recipes.hydrateBundledServerRecipesFromAsset();
-  await recipes.mergeBundledServerRecipesIfEnabled();
   await recipes.applyIngredientNutritionFromSavedIngredients(
     ingredients.ingredients,
   );

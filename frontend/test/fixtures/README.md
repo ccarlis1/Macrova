@@ -88,3 +88,22 @@ Used by `test/starter_recipe_api_test.dart` (DTO, client),
 `test/widgets/starter_import_flow_test.dart`,
 `test/widgets/starter_pack_sheet_test.dart` and
 `test/widgets/starter_pack_entry_points_test.dart`.
+
+## Micronutrient-default fixtures (BE-20)
+
+Captured in-process (FastAPI `TestClient`, run from the repo root with
+`PYTHONPATH=.` on the sprint2-wave2 commit `dba3bf1`) with `MACROVA_DATA_DIR`
+pointing at an empty temp folder and `NUTRITION_USER_PROFILE_PATH` at a
+non-existent temp file. The endpoint reads neither; it is derived from
+`src/data_layer/upper_limits.py` and `data/reference/rdi_by_demographic.json`.
+
+| File | Request | Notes |
+| --- | --- | --- |
+| `micronutrient_defaults_adult_male.json` | `GET /api/v1/micronutrient_defaults?demographic=adult_male` | 23 goals; `left_out: [omega_3_g, omega_6_g]`; τ 1.0 |
+| `micronutrient_defaults_pregnancy.json` | `GET …?demographic=pregnancy` | 22 goals; `left_out: [vitamin_e_mg, omega_3_g, omega_6_g]` |
+| `micronutrient_defaults_error_invalid.json` | `GET …?demographic=teen_male` | 400 `INVALID_REQUEST` (a missing `demographic` returns the same body) |
+
+Used by `test/micronutrient_defaults_api_test.dart` (DTO, client),
+`test/providers/profile_provider_defaults_test.dart` (its
+`FakeMicronutrientDefaultsServer` serves them) and
+`test/screens/profile_screen_micronutrient_default_test.dart`.

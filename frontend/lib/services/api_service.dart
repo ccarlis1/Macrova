@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../models/ingredient_search.dart';
 import '../models/meal_prep_batch.dart';
+import '../models/micronutrient_defaults.dart';
 import '../models/models.dart';
 import '../models/nutrition_summary.dart';
 import '../models/profile_pin.dart';
@@ -436,6 +437,28 @@ class ApiService {
         res,
         'Starter import response',
         StarterImportResult.fromJson,
+      );
+    }
+    throw ApiException.fromResponse(res);
+  }
+
+  /// GET /api/v1/micronutrient_defaults?demographic=... (BE-20): the new-user
+  /// default goals for one of `UserProfile.supportedDemographics`. Read-only;
+  /// it changes nothing on the server. A missing or unknown demographic is a
+  /// 400 `INVALID_REQUEST` [ApiException]. [client] is for tests.
+  static Future<MicronutrientDefaults> fetchMicronutrientDefaults(
+    String demographic, {
+    http.Client? client,
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/v1/micronutrient_defaults').replace(
+      queryParameters: {'demographic': demographic},
+    );
+    final res = client == null ? await http.get(uri) : await client.get(uri);
+    if (res.statusCode == 200) {
+      return _parseOk(
+        res,
+        'Micronutrient defaults response',
+        MicronutrientDefaults.fromJson,
       );
     }
     throw ApiException.fromResponse(res);

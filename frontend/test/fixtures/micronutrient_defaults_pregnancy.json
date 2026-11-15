@@ -1,0 +1,33 @@
+{
+  "demographic": "pregnancy",
+  "micronutrient_goals": {
+    "vitamin_a_ug": 770.0,
+    "vitamin_c_mg": 85.0,
+    "vitamin_d_iu": 600.0,
+    "vitamin_k_ug": 90.0,
+    "b1_thiamine_mg": 1.4,
+    "b2_riboflavin_mg": 1.4,
+    "b3_niacin_mg": 18.0,
+    "b5_pantothenic_acid_mg": 6.0,
+    "b6_pyridoxine_mg": 1.9,
+    "b12_cobalamin_ug": 2.6,
+    "folate_ug": 600.0,
+    "calcium_mg": 1000.0,
+    "copper_mg": 1.0,
+    "iron_mg": 27.0,
+    "magnesium_mg": 350.0,
+    "manganese_mg": 2.0,
+    "phosphorus_mg": 700.0,
+    "potassium_mg": 2900.0,
+    "selenium_ug": 60.0,
+    "sodium_mg": 1500.0,
+    "zinc_mg": 11.0,
+    "fiber_g": 28.0
+  },
+  "left_out": [
+    "vitamin_e_mg",
+    "omega_3_g",
+    "omega_6_g"
+  ],
+  "micronutrient_weekly_min_fraction": 1.0
+}

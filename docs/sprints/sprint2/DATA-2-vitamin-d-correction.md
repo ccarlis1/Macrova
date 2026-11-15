@@ -127,3 +127,7 @@ Binding constraint (all 18, adult_male): the vitamin D floor (600 IU/day, 4,200 
 minus `vitamin_d_iu` → success; minus any other single goal → FM-5; `vitamin_d_iu` 600 alone → FM-5, also with
 the attempt limit raised in memory to 500,000; `vitamin_d_iu` 300 alone → success. Not tuned: an owner
 decision (README → Close-out results). Pinned by `tests/api/test_demo_new_user_default.py`.
+
+**Follow-up (owner, 2026-11-15):** vitamin D is now left out of the default for all four demographics
+(BE-20 stub, "Vitamin D left out of the default"), so the lists, the example profile and the Flutter
+fixtures named as unchanged in "Re-probe of the default lists" above have since changed. With the new defaults, all 18 → success for each demographic; the subset of 8 is unchanged.

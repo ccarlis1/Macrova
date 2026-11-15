@@ -25,7 +25,7 @@ Make sure you have:
 python3 plan_meals.py --days 3
 ```
 
-A 1-day plan (the default) with the example profile's full default micronutrient goals can fail, because one day must meet every daily goal at once; plan 3 or more days, or lower or remove goals in your profile.
+The example profile plans 1, 3 and 7 days on the bundled recipes. Micronutrient goals are met over the whole plan, so a 1-day plan (the default) must meet every daily goal in that one day; if a short plan fails on your own goals or recipes, plan more days, or lower or remove goals in your profile.
 
 **Save output to file:**
 ```bash

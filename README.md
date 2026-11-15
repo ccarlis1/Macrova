@@ -31,7 +31,7 @@ After copying the example config and data files (see below), run:
 python3 plan_meals.py --days 3
 ```
 
-This uses the bundled ingredient database (no API key). A 1-day plan (the CLI default) with the example's full default micronutrient goals can fail, because one day must meet every daily goal at once; plan 3 or more days, or lower or remove goals in your profile. For USDA API mode, see [USAGE.md](USAGE.md#api-mode-setup).
+This uses the bundled ingredient database (no API key). The example profile plans 1, 3 and 7 days on the bundled recipes. Micronutrient goals are met over the whole plan, so in a 1-day plan (the CLI default) that one day must meet every daily goal on its own; if a short plan fails on your own goals or recipes, plan more days, or lower or remove goals in your profile. For USDA API mode, see [USAGE.md](USAGE.md#api-mode-setup).
 
 ### Configure and run
 
@@ -41,14 +41,14 @@ This uses the bundled ingredient database (no API key). A 1-day plan (the CLI de
    cp data/recipes/recipes.json.example data/recipes/recipes.json
    cp data/ingredients/custom_ingredients.json.example data/ingredients/custom_ingredients.json
    ```
-   `config/user_profile.yaml` is your personal profile and is not shipped (`.gitignore` lists it); start from the example. Without it the CLI stops with "User profile file not found" and this same copy hint; the API server starts without it (no saved pins or schedule) and creates it on the first pin or schedule write. The example starts with the new-user micronutrient default (every recommended daily intake for `adult_male` except omega-3 and omega-6, at τ = 1.0); change any value.
+   `config/user_profile.yaml` is your personal profile and is not shipped (`.gitignore` lists it); start from the example. Without it the CLI stops with "User profile file not found" and this same copy hint; the API server starts without it (no saved pins or schedule) and creates it on the first pin or schedule write. The example starts with the new-user micronutrient default (every recommended daily intake for `adult_male` except vitamin D, omega-3 and omega-6, at τ = 1.0); change any value.
    To keep your recipes in a folder of your own with an empty starting pool, also run `python3 scripts/setup_user_data.py` and set `MACROVA_DATA_DIR` (see [QUICK_START.md](QUICK_START.md#-use-your-own-data-folder)).
 2. Edit `config/user_profile.yaml` with your goals, schedule, and preferences.
 3. **Run the planner:**
    ```bash
    python3 plan_meals.py --days 3
    ```
-   `--days` is 1–7 (default 1). Micronutrient goals are met over the whole plan, so a 1-day plan with the full default goals can fail; plan 3+ days, or lower or remove goals. Output is Markdown by default. Use `--output json` for JSON, or see below for more options.
+   `--days` is 1–7 (default 1). Micronutrient goals are met over the whole plan, so a 1-day plan must meet every goal in one day; if a short plan fails, plan more days, or lower or remove goals. Output is Markdown by default. Use `--output json` for JSON, or see below for more options.
 
 **More detail:** [QUICK_START.md](QUICK_START.md) for a short run-through; [USAGE.md](USAGE.md) for all CLI options, API mode, and the REST API.
 

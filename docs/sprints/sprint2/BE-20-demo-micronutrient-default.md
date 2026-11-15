@@ -47,7 +47,7 @@ The nutrient list comes from the re-run probe (expected: all except `omega_3_g`)
   - Done: no client copy of the values. `MicronutrientDefaults` + `ApiService.fetchMicronutrientDefaults` read the endpoint; `ProfileProvider.loadMicronutrientDefaults` (injectable fetch fn) caches per demographic and never changes the saved profile. The Profile screen fills the goal fields and τ only when every goal field is empty/zero or still holds an unedited default: on open with a saved demographic and no goals, and on picking a demographic. Typed or saved goals are never replaced; "Not set" fetches nothing. Loading hint; on failure a notice with Retry and the fields untouched; a line names the left-out nutrients and says to enter a value to add one back. Nothing is sent until Save and plan. Saved goals count as the user's own even if they came from the default. Tests: `frontend/test/screens/profile_screen_micronutrient_default_test.dart` (default shown, edit wins in the built `PlanRequest`, own goals kept, failure + Retry, loading, left-out line, Not set), `test/micronutrient_defaults_api_test.dart`, `test/providers/profile_provider_defaults_test.dart`; rules in `docs/frontend/state-invariants.md`.
 - [x] **Demo profile (W7):**
   - [x] `config/user_profile.yaml.example` gets the D-A default, in canonical `schedule_days` form with 3 meals. Test: it loads, and planning on it succeeds for 3 and 7 days with the committed pool (was "1, 3 and 7"; changed by the owner decision below).
-    - Done for 3 and 7 days (`tests/test_micronutrient_default.py`, HTTP with `demographic: adult_male` ULs on; the CLI gives the same). **1 day fails** (HTTP `partial`, FM-1 on meal 3; MCP FM-4): at D = 1 every floor must be met in one day. On the committed pool every nutrient passes alone, no single extra drop fixes it, and a greedy pass keeps 21 (drops `vitamin_e_mg` and `calcium_mg` as well); 2 days needs `calcium_mg` dropped. **Owner decision (2026-11-15): a 1-day plan with the full default floors is allowed to fail; the default lists stay as they are.** Why: weekly floors are met on the horizon total, so over several days a low day is offset by a high one; a 1-day plan can't average, so that one day must hit every RDI at once. `test_example_profile_one_day_outcome_is_pinned` pins today's 1-day result (HTTP `partial`, `TC-2`, FM-1 at day 0, slot 2) so a change is noticed. The CLI default stays `--days 1`; the first-run commands in README, QUICK_START and USAGE use `--days 3` and say that a 1-day plan with the full default goals can fail (plan 3+ days, or lower or remove goals).
+    - Done for 3 and 7 days (`tests/test_micronutrient_default.py`, HTTP with `demographic: adult_male` ULs on; the CLI gives the same). **1 day fails** (HTTP `partial`, FM-1 on meal 3; MCP FM-4): at D = 1 every floor must be met in one day. On the committed pool every nutrient passes alone, no single extra drop fixes it, and a greedy pass keeps 21 (drops `vitamin_e_mg` and `calcium_mg` as well); 2 days needs `calcium_mg` dropped. **Owner decision (2026-11-15): a 1-day plan with the full default floors is allowed to fail; the default lists stay as they are.** Why: weekly floors are met on the horizon total, so over several days a low day is offset by a high one; a 1-day plan can't average, so that one day must hit every RDI at once. `test_example_profile_one_day_outcome_is_pinned` pins today's 1-day result (HTTP `partial`, `TC-2`, FM-1 at day 0, slot 2) so a change is noticed. The CLI default stays `--days 1`; the first-run commands in README, QUICK_START and USAGE use `--days 3`. **Since DATA-2 the example plans at 1 day too** (`TC-4`, see the re-runs below); the first-run docs now say the example plans at 1, 3 and 7 days, and what to do if a short plan fails on your own goals or recipes (plan more days, or lower or remove goals).
   - [x] `git rm --cached config/user_profile.yaml`. The owner's local copy stays; check that `git status` shows it as ignored, not deleted.
     - Done by the owner in 94c7c42 ("BE-20: Stop tracking the personal config/user_profile.yaml (W7)"); the repo's path-guard hook reserves the command for the owner. The file stays on disk and `git check-ignore` reports it ignored (`.gitignore:52`). Tests no longer read, create or change that file (session guard in `tests/conftest.py`).
   - [x] When `config/user_profile.yaml` is missing, the CLI and the server either fall back to the example or fail with a message saying to copy it. Pick whichever the code already does, and test it. Document the copy step in README's quick start, next to BE-22's data-folder setup step. Whichever task lands second rebases onto the first's wording.
@@ -145,7 +145,8 @@ Pregnancy: each nutrient passes alone, but the 23 together hit the search limit 
 and it keeps iron, which matters in pregnancy, tracked). Swap it for `iron_mg` in
 `DEFAULT_MICRONUTRIENT_LEFT_OUT` if the owner prefers.
 
-**Final default (τ = 1.0): each demographic's RDIs minus**
+**Final default (τ = 1.0): each demographic's RDIs minus** (superseded: vitamin D was later left out
+too, see "Vitamin D left out of the default")
 - adult_male: `omega_3_g`, `omega_6_g` (23 goals)
 - adult_female: `omega_3_g`, `omega_6_g` (23 goals)
 - pregnancy: `vitamin_e_mg`, `omega_3_g`, `omega_6_g` (22 goals)
@@ -193,6 +194,50 @@ Found by the probe: on lactation, goals = RDIs minus `omega_3_g` and `vitamin_d_
 `tools.plan_meals` raise `PlannerStateError: negative weekly micronutrient potassium_mg=-1.24e-09`
 (`src/planning/phase7_search.py::_validate_planner_state` via `_unwind_to`): floating-point drift when
 backtracking subtracts a tracker total. Planner bug, not data; not fixed here.
+
+## Vitamin D left out of the default (owner, 2026-11-15)
+
+Demo step 2b (README → Close-out results) failed after DATA-2 with the default goals: at the Flutter
+new-user targets (2000 kcal, 150 g protein, fat 60–74 g) the 18 starter recipes can't meet the
+600 IU/day vitamin D floor over 7 days (`partial`, FM-5). Owner decision, following D-A option 4: leave
+`vitamin_d_iu` out of the default for every demographic and name it in the warning; users can add it
+back. Vitamin E stays left out for pregnancy and lactation (not decided).
+
+**Final default (τ = 1.0): each demographic's RDIs minus**
+- adult_male: `vitamin_d_iu`, `omega_3_g`, `omega_6_g` (22 goals)
+- adult_female: `vitamin_d_iu`, `omega_3_g`, `omega_6_g` (22 goals)
+- pregnancy: `vitamin_d_iu`, `vitamin_e_mg`, `omega_3_g`, `omega_6_g` (21 goals)
+- lactation: `vitamin_d_iu`, `vitamin_e_mg`, `omega_3_g`, `omega_6_g` (21 goals)
+
+The MCP warning now reads, for adult_male: "… leave out Vitamin D (IU), Omega-3 (ALA) (g) and Omega-6
+(linoleic acid) (g) …". `config/user_profile.yaml.example`, the Flutter `micronutrient_defaults_*.json`
+fixtures and the tests that pin the lists follow.
+
+Probe re-run (same probe and settings as above; it plans each goal list via
+`targets.micronutrient_goals`, so its columns don't depend on the default). The last column is the
+default itself (MCP shorthand, 3 meals, default busyness 2/3/4, sample recipes, no override):
+
+| Demographic | No goals (ULs only) | All 25 | Fail alone at τ = 1.0 | All minus those | Extra drop that succeeds | New default (MCP, 7 days) |
+|---|---|---|---|---|---|---|
+| adult_male | success | failed, FM-4 | omega_3_g, omega_6_g | 23 → success | none needed | success |
+| adult_female | success | failed, FM-4 | omega_3_g | 24 → partial, FM-5 | `vitamin_d_iu` or `omega_6_g` | success |
+| pregnancy | success | failed, FM-4 | omega_3_g | 24 → partial, FM-5 | `omega_6_g` only | success |
+| lactation | success | failed, FM-4 | omega_3_g | 24 → partial, FM-5 | not finished: the probe crashed (below) | success |
+
+The probe's own columns match the DATA-2 re-run (the default list doesn't enter them). On lactation the
+extra-drop loop again raised the known `PlannerStateError: negative weekly micronutrient
+potassium_mg=-1.24e-09` (float drift, see above; not fixed here) when it tried RDIs minus `omega_3_g` and
+`vitamin_d_iu`. The new lactation default (which also drops `vitamin_e_mg` and `omega_6_g`) does not hit
+it: it succeeds at 1, 3 and 7 days, as do the other three defaults.
+
+Example profile (adult_male default, ULs on), committed pool, CLI and HTTP: 1 day success (`TC-4`),
+3 and 7 days success (`TC-1`).
+
+Demo step 2b (in-process, fresh data folder, Flutter new-user request, 7 days, each demographic's
+own defaults and ULs): all 18 starters → `success` / `TC-1` for adult_male, adult_female, pregnancy and
+lactation, with and without the default goals. The subset of 8 is unchanged: `partial` /
+FM-MACRO-INFEASIBLE without goals, `failed` / FM-4 with them. Pinned for all four demographics by
+`tests/api/test_demo_new_user_default.py`.
 
 ## Out of scope
 

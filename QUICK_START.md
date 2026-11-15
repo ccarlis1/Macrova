@@ -19,7 +19,7 @@ This will:
 3. Generate a 3-day meal plan (breakfast, lunch, dinner)
 4. Display the plan in Markdown format
 
-`--days` is 1–7 (default 1). A 1-day plan with the example profile's full default micronutrient goals can fail, because one day must meet every daily goal at once; plan 3 or more days, or lower or remove goals in your profile.
+`--days` is 1–7 (default 1). The example profile plans 1, 3 and 7 days on the bundled recipes. Micronutrient goals are met over the whole plan, so a 1-day plan must meet every daily goal in that one day; if a short plan fails on your own goals or recipes, plan more days, or lower or remove goals in your profile.
 
 ### Save Output to File
 ```bash

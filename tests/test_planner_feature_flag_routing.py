@@ -159,7 +159,7 @@ def test_cli_feature_flag_routes_to_orchestrator_when_enabled(monkeypatch, tmp_p
         [
             "cli.py",
             "--profile",
-            "config/user_profile.yaml",
+            "config/user_profile.yaml.example",
             "--recipes",
             str(recipes_path),
             "--ingredients",
@@ -219,7 +219,7 @@ def test_cli_feature_flag_routes_to_plan_meals_when_disabled(monkeypatch, tmp_pa
         [
             "cli.py",
             "--profile",
-            "config/user_profile.yaml",
+            "config/user_profile.yaml.example",
             "--recipes",
             str(recipes_path),
             "--ingredients",

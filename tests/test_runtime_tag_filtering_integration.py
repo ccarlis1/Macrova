@@ -493,7 +493,7 @@ def test_cli_tag_filtering_reduces_recipe_pool(monkeypatch, tmp_path, capsys):
         [
             "cli.py",
             "--profile",
-            "config/user_profile.yaml",
+            "config/user_profile.yaml.example",
             "--recipes",
             str(recipes_path),
             "--ingredients",
@@ -587,7 +587,7 @@ def test_cli_tag_filtering_no_preferences_keeps_full_pool(
         [
             "cli.py",
             "--profile",
-            "config/user_profile.yaml",
+            "config/user_profile.yaml.example",
             "--recipes",
             str(recipes_path),
             "--ingredients",
@@ -677,7 +677,7 @@ def test_cli_tag_filtering_missing_tags_fallback_full_pool(
         [
             "cli.py",
             "--profile",
-            "config/user_profile.yaml",
+            "config/user_profile.yaml.example",
             "--recipes",
             str(recipes_path),
             "--ingredients",
@@ -772,7 +772,7 @@ def test_cli_tag_filtering_empty_filter_result_fallback_full_pool(
         [
             "cli.py",
             "--profile",
-            "config/user_profile.yaml",
+            "config/user_profile.yaml.example",
             "--recipes",
             str(recipes_path),
             "--ingredients",
@@ -866,7 +866,7 @@ def test_cli_tag_filtering_preserves_recipe_db_order(
         [
             "cli.py",
             "--profile",
-            "config/user_profile.yaml",
+            "config/user_profile.yaml.example",
             "--recipes",
             str(recipes_path),
             "--ingredients",
@@ -960,7 +960,7 @@ def test_cli_tag_filtering_multiple_cuisines_union_preserves_order(
         [
             "cli.py",
             "--profile",
-            "config/user_profile.yaml",
+            "config/user_profile.yaml.example",
             "--recipes",
             str(recipes_path),
             "--ingredients",
@@ -1100,7 +1100,7 @@ def test_api_and_cli_use_shared_apply_tag_filtering(monkeypatch, tmp_path):
     )
 
     # Re-use the repo's known-good profile schema for CLI wiring tests.
-    profile_path = "config/user_profile.yaml"
+    profile_path = "config/user_profile.yaml.example"
 
     monkeypatch.setattr(
         cli.sys,

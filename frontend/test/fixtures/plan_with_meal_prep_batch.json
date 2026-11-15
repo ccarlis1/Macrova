@@ -1,0 +1,719 @@
+{
+  "success": false,
+  "termination_code": "TC-2",
+  "days": 2,
+  "daily_plans": [
+    {
+      "day": 1,
+      "meals": [
+        {
+          "recipe_id": "fe14-oat-bowl",
+          "name": "Overnight Oat Bowl",
+          "meal_type": "breakfast",
+          "meal_type_match": true,
+          "slot_index": 0,
+          "source": "meal_prep_batch",
+          "batch_id": "bbd7defaac1442ea8dee5152c2311e89",
+          "servings": 1.0,
+          "cooking_time_minutes": 10,
+          "ingredients": [
+            "80 g oats",
+            "200 g milk"
+          ],
+          "nutrition": {
+            "calories": 413.2,
+            "protein_g": 17.3,
+            "fat_g": 9.5,
+            "carbs_g": 64.3,
+            "micronutrients": {
+              "vitamin_c_mg": 2.0,
+              "vitamin_d_iu": 3360.0,
+              "vitamin_e_mg": 0.3,
+              "vitamin_k_ug": 1.6,
+              "b1_thiamine_mg": 0.4,
+              "b2_riboflavin_mg": 0.1,
+              "b3_niacin_mg": 0.9,
+              "b5_pantothenic_acid_mg": 0.9,
+              "b6_pyridoxine_mg": 0.1,
+              "folate_ug": 25.6,
+              "calcium_mg": 295.6,
+              "copper_mg": 0.3,
+              "iron_mg": 3.4,
+              "magnesium_mg": 110.4,
+              "manganese_mg": 2.9,
+              "phosphorus_mg": 328.0,
+              "potassium_mg": 289.6,
+              "selenium_ug": 23.1,
+              "sodium_mg": 114.8,
+              "zinc_mg": 2.9,
+              "fiber_g": 8.1,
+              "omega_6_g": 1.8
+            }
+          },
+          "busyness_level": 4
+        }
+      ],
+      "totals": {
+        "calories": 413.2,
+        "protein_g": 17.3,
+        "fat_g": 9.5,
+        "carbs_g": 64.3,
+        "micronutrients": {
+          "zinc_mg": 2.9,
+          "sodium_mg": 114.8,
+          "b5_pantothenic_acid_mg": 0.9,
+          "vitamin_c_mg": 2.0,
+          "b6_pyridoxine_mg": 0.1,
+          "b1_thiamine_mg": 0.4,
+          "b2_riboflavin_mg": 0.1,
+          "selenium_ug": 23.1,
+          "vitamin_k_ug": 1.6,
+          "vitamin_e_mg": 0.3,
+          "potassium_mg": 289.6,
+          "fiber_g": 8.1,
+          "b3_niacin_mg": 0.9,
+          "manganese_mg": 2.9,
+          "iron_mg": 3.4,
+          "calcium_mg": 295.6,
+          "folate_ug": 25.6,
+          "omega_6_g": 1.8,
+          "vitamin_d_iu": 3360.0,
+          "phosphorus_mg": 328.0,
+          "magnesium_mg": 110.4,
+          "copper_mg": 0.3
+        }
+      }
+    },
+    {
+      "day": 2,
+      "meals": [
+        {
+          "recipe_id": "fe14-oat-bowl",
+          "name": "Overnight Oat Bowl",
+          "meal_type": "breakfast",
+          "meal_type_match": true,
+          "slot_index": 0,
+          "source": "meal_prep_batch",
+          "batch_id": "bbd7defaac1442ea8dee5152c2311e89",
+          "servings": 1.0,
+          "cooking_time_minutes": 10,
+          "ingredients": [
+            "80 g oats",
+            "200 g milk"
+          ],
+          "nutrition": {
+            "calories": 413.2,
+            "protein_g": 17.3,
+            "fat_g": 9.5,
+            "carbs_g": 64.3,
+            "micronutrients": {
+              "vitamin_c_mg": 2.0,
+              "vitamin_d_iu": 3360.0,
+              "vitamin_e_mg": 0.3,
+              "vitamin_k_ug": 1.6,
+              "b1_thiamine_mg": 0.4,
+              "b2_riboflavin_mg": 0.1,
+              "b3_niacin_mg": 0.9,
+              "b5_pantothenic_acid_mg": 0.9,
+              "b6_pyridoxine_mg": 0.1,
+              "folate_ug": 25.6,
+              "calcium_mg": 295.6,
+              "copper_mg": 0.3,
+              "iron_mg": 3.4,
+              "magnesium_mg": 110.4,
+              "manganese_mg": 2.9,
+              "phosphorus_mg": 328.0,
+              "potassium_mg": 289.6,
+              "selenium_ug": 23.1,
+              "sodium_mg": 114.8,
+              "zinc_mg": 2.9,
+              "fiber_g": 8.1,
+              "omega_6_g": 1.8
+            }
+          },
+          "busyness_level": 4
+        }
+      ],
+      "totals": {
+        "calories": 413.2,
+        "protein_g": 17.3,
+        "fat_g": 9.5,
+        "carbs_g": 64.3,
+        "micronutrients": {
+          "zinc_mg": 2.9,
+          "sodium_mg": 114.8,
+          "b5_pantothenic_acid_mg": 0.9,
+          "vitamin_c_mg": 2.0,
+          "b6_pyridoxine_mg": 0.1,
+          "b1_thiamine_mg": 0.4,
+          "b2_riboflavin_mg": 0.1,
+          "selenium_ug": 23.1,
+          "vitamin_k_ug": 1.6,
+          "vitamin_e_mg": 0.3,
+          "potassium_mg": 289.6,
+          "fiber_g": 8.1,
+          "b3_niacin_mg": 0.9,
+          "manganese_mg": 2.9,
+          "iron_mg": 3.4,
+          "calcium_mg": 295.6,
+          "folate_ug": 25.6,
+          "omega_6_g": 1.8,
+          "vitamin_d_iu": 3360.0,
+          "phosphorus_mg": 328.0,
+          "magnesium_mg": 110.4,
+          "copper_mg": 0.3
+        }
+      }
+    }
+  ],
+  "warnings": {
+    "exclusions": [
+      "Exclusion term 'brussels sprouts' matched no allergen class and no ingredient in the recipe pool.",
+      "Exclusion term 'liver' matched no allergen class and no ingredient in the recipe pool.",
+      "Pool ingredient 'banana' is not classified in the allergen table; allergy safety coverage is incomplete for this ingredient.",
+      "Pool ingredient 'cinnamon' is not classified in the allergen table; allergy safety coverage is incomplete for this ingredient.",
+      "Pool ingredient 'pepper' is not classified in the allergen table; allergy safety coverage is incomplete for this ingredient."
+    ],
+    "nutrition": [
+      "Recipe 'llm_0415c122c1511957' removed from the pool: unresolved ingredients ['cherry tomatoes (to taste: needs grams)'].",
+      "Recipe 'llm_26427200aaed5fee' removed from the pool: unresolved ingredients ['garlic (to taste: needs grams)'].",
+      "Recipe 'llm_59834f6218eb974e' removed from the pool: unresolved ingredients ['rolled oats (to taste: needs grams)'].",
+      "Recipe 'llm_b9f9293329997a31' removed from the pool: unresolved ingredients ['garlic (to taste: needs grams)'].",
+      "Recipe 'llm_922a991802b00168' removed from the pool: unresolved ingredients ['garlic (to taste: needs grams)'].",
+      "Recipe 'llm_e404d7d8e053dacb' removed from the pool: unresolved ingredients ['garlic (to taste: needs grams)'].",
+      "Recipe 'llm_ee4f05b19ed0ee4a' removed from the pool: unresolved ingredients ['garlic (to taste: needs grams)']."
+    ]
+  },
+  "report": {
+    "failures": [
+      {
+        "code": "FM-4",
+        "message": "Weekly micronutrient targets are infeasible with current constraints.",
+        "details": {
+          "deficient_nutrients": [
+            {
+              "nutrient": "vitamin_a_ug",
+              "achieved": 0.0,
+              "required": 1440.0,
+              "full_req": 1800.0,
+              "deficit": 1440.0,
+              "classification": "structural",
+              "achieved_kind": "upper_bound"
+            },
+            {
+              "nutrient": "vitamin_c_mg",
+              "achieved": 0.0,
+              "required": 144.0,
+              "full_req": 180.0,
+              "deficit": 144.0,
+              "classification": "structural",
+              "achieved_kind": "upper_bound"
+            },
+            {
+              "nutrient": "vitamin_d_iu",
+              "achieved": 0.0,
+              "required": 960.0,
+              "full_req": 1200.0,
+              "deficit": 960.0,
+              "classification": "structural",
+              "achieved_kind": "upper_bound"
+            },
+            {
+              "nutrient": "vitamin_e_mg",
+              "achieved": 0.0,
+              "required": 24.0,
+              "full_req": 30.0,
+              "deficit": 24.0,
+              "classification": "structural",
+              "achieved_kind": "upper_bound"
+            },
+            {
+              "nutrient": "vitamin_k_ug",
+              "achieved": 0.0,
+              "required": 192.0,
+              "full_req": 240.0,
+              "deficit": 192.0,
+              "classification": "structural",
+              "achieved_kind": "upper_bound"
+            },
+            {
+              "nutrient": "b1_thiamine_mg",
+              "achieved": 0.0,
+              "required": 1.92,
+              "full_req": 2.4,
+              "deficit": 1.92,
+              "classification": "structural",
+              "achieved_kind": "upper_bound"
+            },
+            {
+              "nutrient": "b2_riboflavin_mg",
+              "achieved": 0.0,
+              "required": 2.08,
+              "full_req": 2.6,
+              "deficit": 2.08,
+              "classification": "structural",
+              "achieved_kind": "upper_bound"
+            },
+            {
+              "nutrient": "b3_niacin_mg",
+              "achieved": 0.0,
+              "required": 25.6,
+              "full_req": 32.0,
+              "deficit": 25.6,
+              "classification": "structural",
+              "achieved_kind": "upper_bound"
+            },
+            {
+              "nutrient": "b5_pantothenic_acid_mg",
+              "achieved": 0.0,
+              "required": 8.0,
+              "full_req": 10.0,
+              "deficit": 8.0,
+              "classification": "structural",
+              "achieved_kind": "upper_bound"
+            },
+            {
+              "nutrient": "b6_pyridoxine_mg",
+              "achieved": 0.0,
+              "required": 2.08,
+              "full_req": 2.6,
+              "deficit": 2.08,
+              "classification": "structural",
+              "achieved_kind": "upper_bound"
+            },
+            {
+              "nutrient": "b12_cobalamin_ug",
+              "achieved": 0.0,
+              "required": 3.84,
+              "full_req": 4.8,
+              "deficit": 3.84,
+              "classification": "structural",
+              "achieved_kind": "upper_bound"
+            },
+            {
+              "nutrient": "folate_ug",
+              "achieved": 0.0,
+              "required": 640.0,
+              "full_req": 800.0,
+              "deficit": 640.0,
+              "classification": "structural",
+              "achieved_kind": "upper_bound"
+            },
+            {
+              "nutrient": "calcium_mg",
+              "achieved": 0.0,
+              "required": 1600.0,
+              "full_req": 2000.0,
+              "deficit": 1600.0,
+              "classification": "structural",
+              "achieved_kind": "upper_bound"
+            },
+            {
+              "nutrient": "copper_mg",
+              "achieved": 0.0,
+              "required": 1.4400000000000002,
+              "full_req": 1.8,
+              "deficit": 1.4400000000000002,
+              "classification": "structural",
+              "achieved_kind": "upper_bound"
+            },
+            {
+              "nutrient": "iron_mg",
+              "achieved": 0.0,
+              "required": 12.8,
+              "full_req": 16.0,
+              "deficit": 12.8,
+              "classification": "structural",
+              "achieved_kind": "upper_bound"
+            },
+            {
+              "nutrient": "magnesium_mg",
+              "achieved": 0.0,
+              "required": 640.0,
+              "full_req": 800.0,
+              "deficit": 640.0,
+              "classification": "structural",
+              "achieved_kind": "upper_bound"
+            },
+            {
+              "nutrient": "manganese_mg",
+              "achieved": 0.0,
+              "required": 3.6799999999999997,
+              "full_req": 4.6,
+              "deficit": 3.6799999999999997,
+              "classification": "structural",
+              "achieved_kind": "upper_bound"
+            },
+            {
+              "nutrient": "phosphorus_mg",
+              "achieved": 0.0,
+              "required": 1120.0,
+              "full_req": 1400.0,
+              "deficit": 1120.0,
+              "classification": "structural",
+              "achieved_kind": "upper_bound"
+            },
+            {
+              "nutrient": "potassium_mg",
+              "achieved": 0.0,
+              "required": 5440.0,
+              "full_req": 6800.0,
+              "deficit": 5440.0,
+              "classification": "structural",
+              "achieved_kind": "upper_bound"
+            },
+            {
+              "nutrient": "selenium_ug",
+              "achieved": 0.0,
+              "required": 88.0,
+              "full_req": 110.0,
+              "deficit": 88.0,
+              "classification": "structural",
+              "achieved_kind": "upper_bound"
+            },
+            {
+              "nutrient": "sodium_mg",
+              "achieved": 0.0,
+              "required": 2400.0,
+              "full_req": 3000.0,
+              "deficit": 2400.0,
+              "classification": "structural",
+              "achieved_kind": "upper_bound"
+            },
+            {
+              "nutrient": "zinc_mg",
+              "achieved": 0.0,
+              "required": 17.6,
+              "full_req": 22.0,
+              "deficit": 17.6,
+              "classification": "structural",
+              "achieved_kind": "upper_bound"
+            },
+            {
+              "nutrient": "fiber_g",
+              "achieved": 0.0,
+              "required": 60.800000000000004,
+              "full_req": 76.0,
+              "deficit": 60.800000000000004,
+              "classification": "structural",
+              "achieved_kind": "upper_bound"
+            },
+            {
+              "nutrient": "omega_3_g",
+              "achieved": 0.0,
+              "required": 2.5600000000000005,
+              "full_req": 3.2,
+              "deficit": 2.5600000000000005,
+              "classification": "structural",
+              "achieved_kind": "upper_bound"
+            },
+            {
+              "nutrient": "omega_6_g",
+              "achieved": 0.0,
+              "required": 27.200000000000003,
+              "full_req": 34.0,
+              "deficit": 27.200000000000003,
+              "classification": "structural",
+              "achieved_kind": "upper_bound"
+            }
+          ]
+        },
+        "fix_hint": "Weekly micronutrient targets cannot be met. Lower tracked goals, add richer recipes, or relax filters.",
+        "explanation": "The available recipes can't provide enough vitamin A, vitamin C, vitamin D, vitamin E, vitamin K, b1 thiamine, b2 riboflavin, b3 niacin, b5 pantothenic acid, b6 pyridoxine, b12 cobalamin, folate, calcium, copper, iron, magnesium, manganese, phosphorus, potassium, selenium, sodium, zinc, fiber, omega 3 and omega 6 over the plan.",
+        "fix": "Add recipes rich in vitamin A, vitamin C, vitamin D, vitamin E, vitamin K, b1 thiamine, b2 riboflavin, b3 niacin, b5 pantothenic acid, b6 pyridoxine, b12 cobalamin, folate, calcium, copper, iron, magnesium, manganese, phosphorus, potassium, selenium, sodium, zinc, fiber, omega 3 and omega 6, or lower those goals.",
+        "cause": "nutrient_gap"
+      }
+    ],
+    "failure_cause": {
+      "cause": "nutrient_gap",
+      "recipe_could_help": true,
+      "recipe_gap": {
+        "per_meal_calories": 800.0,
+        "per_meal_protein_g": 50.0,
+        "per_meal_fat_g_max": 33.3,
+        "per_meal_carbs_g": 93.8,
+        "excluded_ingredients": [
+          "brussels sprouts",
+          "liver",
+          "peanut butter",
+          "peanuts",
+          "shellfish"
+        ],
+        "nutrient_min_per_recipe": {
+          "vitamin_a_ug": 720.0,
+          "vitamin_c_mg": 72.0,
+          "vitamin_d_iu": 480.0,
+          "vitamin_e_mg": 12.0,
+          "vitamin_k_ug": 96.0,
+          "b1_thiamine_mg": 0.96,
+          "b2_riboflavin_mg": 1.04,
+          "b3_niacin_mg": 12.8,
+          "b5_pantothenic_acid_mg": 4.0,
+          "b6_pyridoxine_mg": 1.04,
+          "b12_cobalamin_ug": 1.92,
+          "folate_ug": 320.0,
+          "calcium_mg": 800.0,
+          "copper_mg": 0.72,
+          "iron_mg": 6.4,
+          "magnesium_mg": 320.0,
+          "manganese_mg": 1.84,
+          "phosphorus_mg": 560.0,
+          "potassium_mg": 2720.0,
+          "selenium_ug": 44.0,
+          "sodium_mg": 1200.0,
+          "zinc_mg": 8.8,
+          "fiber_g": 30.4,
+          "omega_3_g": 1.28,
+          "omega_6_g": 13.6
+        },
+        "meal_types": [
+          "breakfast",
+          "lunch",
+          "dinner"
+        ],
+        "slots": []
+      }
+    },
+    "deficient_nutrients": [
+      {
+        "nutrient": "vitamin_a_ug",
+        "achieved": 0.0,
+        "required": 1440.0,
+        "full_req": 1800.0,
+        "deficit": 1440.0,
+        "classification": "structural",
+        "achieved_kind": "upper_bound"
+      },
+      {
+        "nutrient": "vitamin_c_mg",
+        "achieved": 0.0,
+        "required": 144.0,
+        "full_req": 180.0,
+        "deficit": 144.0,
+        "classification": "structural",
+        "achieved_kind": "upper_bound"
+      },
+      {
+        "nutrient": "vitamin_d_iu",
+        "achieved": 0.0,
+        "required": 960.0,
+        "full_req": 1200.0,
+        "deficit": 960.0,
+        "classification": "structural",
+        "achieved_kind": "upper_bound"
+      },
+      {
+        "nutrient": "vitamin_e_mg",
+        "achieved": 0.0,
+        "required": 24.0,
+        "full_req": 30.0,
+        "deficit": 24.0,
+        "classification": "structural",
+        "achieved_kind": "upper_bound"
+      },
+      {
+        "nutrient": "vitamin_k_ug",
+        "achieved": 0.0,
+        "required": 192.0,
+        "full_req": 240.0,
+        "deficit": 192.0,
+        "classification": "structural",
+        "achieved_kind": "upper_bound"
+      },
+      {
+        "nutrient": "b1_thiamine_mg",
+        "achieved": 0.0,
+        "required": 1.92,
+        "full_req": 2.4,
+        "deficit": 1.92,
+        "classification": "structural",
+        "achieved_kind": "upper_bound"
+      },
+      {
+        "nutrient": "b2_riboflavin_mg",
+        "achieved": 0.0,
+        "required": 2.08,
+        "full_req": 2.6,
+        "deficit": 2.08,
+        "classification": "structural",
+        "achieved_kind": "upper_bound"
+      },
+      {
+        "nutrient": "b3_niacin_mg",
+        "achieved": 0.0,
+        "required": 25.6,
+        "full_req": 32.0,
+        "deficit": 25.6,
+        "classification": "structural",
+        "achieved_kind": "upper_bound"
+      },
+      {
+        "nutrient": "b5_pantothenic_acid_mg",
+        "achieved": 0.0,
+        "required": 8.0,
+        "full_req": 10.0,
+        "deficit": 8.0,
+        "classification": "structural",
+        "achieved_kind": "upper_bound"
+      },
+      {
+        "nutrient": "b6_pyridoxine_mg",
+        "achieved": 0.0,
+        "required": 2.08,
+        "full_req": 2.6,
+        "deficit": 2.08,
+        "classification": "structural",
+        "achieved_kind": "upper_bound"
+      },
+      {
+        "nutrient": "b12_cobalamin_ug",
+        "achieved": 0.0,
+        "required": 3.84,
+        "full_req": 4.8,
+        "deficit": 3.84,
+        "classification": "structural",
+        "achieved_kind": "upper_bound"
+      },
+      {
+        "nutrient": "folate_ug",
+        "achieved": 0.0,
+        "required": 640.0,
+        "full_req": 800.0,
+        "deficit": 640.0,
+        "classification": "structural",
+        "achieved_kind": "upper_bound"
+      },
+      {
+        "nutrient": "calcium_mg",
+        "achieved": 0.0,
+        "required": 1600.0,
+        "full_req": 2000.0,
+        "deficit": 1600.0,
+        "classification": "structural",
+        "achieved_kind": "upper_bound"
+      },
+      {
+        "nutrient": "copper_mg",
+        "achieved": 0.0,
+        "required": 1.4400000000000002,
+        "full_req": 1.8,
+        "deficit": 1.4400000000000002,
+        "classification": "structural",
+        "achieved_kind": "upper_bound"
+      },
+      {
+        "nutrient": "iron_mg",
+        "achieved": 0.0,
+        "required": 12.8,
+        "full_req": 16.0,
+        "deficit": 12.8,
+        "classification": "structural",
+        "achieved_kind": "upper_bound"
+      },
+      {
+        "nutrient": "magnesium_mg",
+        "achieved": 0.0,
+        "required": 640.0,
+        "full_req": 800.0,
+        "deficit": 640.0,
+        "classification": "structural",
+        "achieved_kind": "upper_bound"
+      },
+      {
+        "nutrient": "manganese_mg",
+        "achieved": 0.0,
+        "required": 3.6799999999999997,
+        "full_req": 4.6,
+        "deficit": 3.6799999999999997,
+        "classification": "structural",
+        "achieved_kind": "upper_bound"
+      },
+      {
+        "nutrient": "phosphorus_mg",
+        "achieved": 0.0,
+        "required": 1120.0,
+        "full_req": 1400.0,
+        "deficit": 1120.0,
+        "classification": "structural",
+        "achieved_kind": "upper_bound"
+      },
+      {
+        "nutrient": "potassium_mg",
+        "achieved": 0.0,
+        "required": 5440.0,
+        "full_req": 6800.0,
+        "deficit": 5440.0,
+        "classification": "structural",
+        "achieved_kind": "upper_bound"
+      },
+      {
+        "nutrient": "selenium_ug",
+        "achieved": 0.0,
+        "required": 88.0,
+        "full_req": 110.0,
+        "deficit": 88.0,
+        "classification": "structural",
+        "achieved_kind": "upper_bound"
+      },
+      {
+        "nutrient": "sodium_mg",
+        "achieved": 0.0,
+        "required": 2400.0,
+        "full_req": 3000.0,
+        "deficit": 2400.0,
+        "classification": "structural",
+        "achieved_kind": "upper_bound"
+      },
+      {
+        "nutrient": "zinc_mg",
+        "achieved": 0.0,
+        "required": 17.6,
+        "full_req": 22.0,
+        "deficit": 17.6,
+        "classification": "structural",
+        "achieved_kind": "upper_bound"
+      },
+      {
+        "nutrient": "fiber_g",
+        "achieved": 0.0,
+        "required": 60.800000000000004,
+        "full_req": 76.0,
+        "deficit": 60.800000000000004,
+        "classification": "structural",
+        "achieved_kind": "upper_bound"
+      },
+      {
+        "nutrient": "omega_3_g",
+        "achieved": 0.0,
+        "required": 2.5600000000000005,
+        "full_req": 3.2,
+        "deficit": 2.5600000000000005,
+        "classification": "structural",
+        "achieved_kind": "upper_bound"
+      },
+      {
+        "nutrient": "omega_6_g",
+        "achieved": 0.0,
+        "required": 27.200000000000003,
+        "full_req": 34.0,
+        "deficit": 27.200000000000003,
+        "classification": "structural",
+        "achieved_kind": "upper_bound"
+      }
+    ],
+    "meal_type_summary": {
+      "matched": 2,
+      "mismatched": 0,
+      "unknown": 0,
+      "planner_only_mismatch_rate": 0.0
+    }
+  },
+  "goals": {
+    "daily_calories": 2400,
+    "daily_protein_g": 150.0,
+    "daily_fat_g_min": 50.0,
+    "daily_fat_g_max": 100.0,
+    "daily_carbs_g": 281.25
+  },
+  "plan_status": "partial"
+}

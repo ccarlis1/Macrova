@@ -1,0 +1,6 @@
+{
+  "error": {
+    "code": "BATCH_CONFLICT",
+    "message": "Slot conflict at day_index=0, slot_index=0"
+  }
+}

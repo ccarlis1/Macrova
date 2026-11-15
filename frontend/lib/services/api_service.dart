@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../models/ingredient_search.dart';
+import '../models/meal_prep_batch.dart';
 import '../models/models.dart';
 import '../models/nutrition_summary.dart';
 import '../models/recipe.dart';
@@ -255,6 +256,111 @@ class ApiService {
     }
 
     throw ApiException.fromResponse(res);
+  }
+
+  /// GET /api/v1/meal_prep_batches (`?active=false` lists every batch).
+  /// [client] is for tests.
+  static Future<List<MealPrepBatch>> listMealPrepBatches({
+    bool active = true,
+    http.Client? client,
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/v1/meal_prep_batches').replace(
+      queryParameters: {'active': '$active'},
+    );
+    final res = client == null ? await http.get(uri) : await client.get(uri);
+    if (res.statusCode == 200) {
+      return _parseOk(
+        res,
+        'Meal-prep list response',
+        MealPrepBatch.listFromResponse,
+      );
+    }
+    throw ApiException.fromResponse(res);
+  }
+
+  /// POST /api/v1/meal_prep_batches. [assignments] are 0-based
+  /// `(day_index, slot_index)` plan slots. Structured errors throw
+  /// [ApiException] with the server code: `RECIPE_NOT_FOUND` (404),
+  /// `RECIPE_NOT_BATCHABLE` (422), `BATCH_CONFLICT` (409, a slot is taken by
+  /// another active batch), `BATCH_INVALID` (400). [client] is for tests.
+  static Future<MealPrepBatch> createMealPrepBatch({
+    required String recipeId,
+    required int totalServings,
+    required String cookDate,
+    required List<MealPrepAssignment> assignments,
+    http.Client? client,
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/v1/meal_prep_batches');
+    final body = jsonEncode({
+      'recipe_id': recipeId,
+      'total_servings': totalServings,
+      'cook_date': cookDate,
+      'assignments': [for (final a in assignments) a.toRequestJson()],
+    });
+    final res = client == null
+        ? await http.post(uri, headers: _jsonHeaders, body: body)
+        : await client.post(uri, headers: _jsonHeaders, body: body);
+    if (res.statusCode == 200) {
+      return _parseOk(res, 'Meal-prep batch response', MealPrepBatch.fromJson);
+    }
+    throw ApiException.fromResponse(res);
+  }
+
+  /// DELETE /api/v1/meal_prep_batches/{id} (cancel). Returns the cancelled id;
+  /// an unknown id throws [ApiException] `NOT_FOUND`. [client] is for tests.
+  static Future<String> cancelMealPrepBatch(
+    String batchId, {
+    http.Client? client,
+  }) async {
+    final uri = Uri.parse(
+      '$baseUrl/api/v1/meal_prep_batches/${Uri.encodeComponent(batchId)}',
+    );
+    final res =
+        client == null ? await http.delete(uri) : await client.delete(uri);
+    if (res.statusCode == 200) {
+      return _parseOk(res, 'Meal-prep cancel response', (json) {
+        final id = json['cancelled_id'];
+        if (id is! String) {
+          throw const FormatException('cancel response has no cancelled_id');
+        }
+        return id;
+      });
+    }
+    throw ApiException.fromResponse(res);
+  }
+
+  /// Decodes a 200 JSON object with [parse]; a bad shape is `INVALID_RESPONSE`.
+  static T _parseOk<T>(
+    http.Response res,
+    String what,
+    T Function(Map<String, dynamic> json) parse,
+  ) {
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(res.body);
+    } on FormatException {
+      throw ApiException(
+        statusCode: 200,
+        code: 'INVALID_RESPONSE',
+        message: '$what was not JSON',
+      );
+    }
+    if (decoded is! Map) {
+      throw ApiException(
+        statusCode: 200,
+        code: 'INVALID_RESPONSE',
+        message: '$what was not a JSON object',
+      );
+    }
+    try {
+      return parse(Map<String, dynamic>.from(decoded));
+    } on FormatException catch (e) {
+      throw ApiException(
+        statusCode: 200,
+        code: 'INVALID_RESPONSE',
+        message: e.message,
+      );
+    }
   }
 
   /// GET /api/v1/ingredients/search

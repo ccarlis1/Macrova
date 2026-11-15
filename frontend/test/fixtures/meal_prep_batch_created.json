@@ -1,0 +1,25 @@
+{
+  "id": "bbd7defaac1442ea8dee5152c2311e89",
+  "recipe_id": "fe14-oat-bowl",
+  "total_servings": 3,
+  "assigned_servings": 2.0,
+  "remaining_servings": 1.0,
+  "cook_date": "2026-11-14",
+  "status": "active",
+  "assignments": [
+    {
+      "day_index": 0,
+      "slot_index": 0,
+      "servings": 1.0,
+      "date": "2026-11-14",
+      "slot_id": 0
+    },
+    {
+      "day_index": 1,
+      "slot_index": 0,
+      "servings": 1.0,
+      "date": "2026-11-15",
+      "slot_id": 0
+    }
+  ]
+}

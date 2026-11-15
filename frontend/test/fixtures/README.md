@@ -27,3 +27,23 @@ sprint2-wave2 BE-19 commit, with `MACROVA_DATA_DIR` pointing at an empty temp fo
 Used by `test/tag_registry_dto_test.dart`, `test/recipe_sync_payload_test.dart`,
 `test/providers/recipe_provider_server_tags_test.dart` and
 `test/widgets/recipe_builder_tags_test.dart`.
+
+## Meal-prep fixtures (FE-14)
+
+Captured in-process (FastAPI `TestClient`) from the committed backend at the
+sprint2-wave2 FE-13 commit (`7501f26`), with `MACROVA_DATA_DIR` pointing at a temp
+folder seeded with `data/recipes/recipes.json`. First `POST /api/v1/recipes/sync`
+of `fe14-oat-bowl` (`default_servings: 3`, `context: [breakfast, meal-prep]`) and
+`fe14-plain` (1 serving, no `meal-prep`), then, in order:
+
+| File | Request | Notes |
+| --- | --- | --- |
+| `meal_prep_error_not_batchable.json` | `POST /api/v1/meal_prep_batches` for `fe14-plain` | 422 `RECIPE_NOT_BATCHABLE` |
+| `meal_prep_batch_created.json` | `POST` `fe14-oat-bowl`, `total_servings: 3`, `cook_date: 2026-11-14`, assignments `(0,0)` and `(1,0)` | 200; `status: active`, assignment `date` = cook_date + day_index |
+| `meal_prep_error_conflict.json` | `POST` another batch at `(0,0)` | 409 `BATCH_CONFLICT` |
+| `meal_prep_batches_list.json` | `GET /api/v1/meal_prep_batches` | `{"batches": [...]}` |
+| `plan_with_meal_prep_batch.json` | `POST /api/v1/plan`, 2 days, request from `build_plan_request_from_profile(config/user_profile.yaml.example)` minus `active_batches` / `recipe_ids` | `partial` (FM-4); day 1 and day 2 `slot_index: 0` are `source: meal_prep_batch` with the batch id and `servings: 1.0` |
+
+Used by `test/meal_prep_api_test.dart` (DTO, client, index bases),
+`test/widgets/meal_prep_tray_test.dart`, `test/widgets/create_batch_sheet_test.dart`
+and `test/providers/meal_plan_provider_meal_prep_test.dart`.

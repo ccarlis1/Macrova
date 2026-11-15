@@ -567,10 +567,27 @@ class Meal {
   /// §4.3: whether the recipe is tagged for [mealType]; null when unknown.
   final bool? mealTypeMatch;
   final String? recipeId;
+
+  /// 0-based slot within the day (`PlannedMeal.slot_index`); a meal-prep
+  /// batch assignment at the same `slot_index` lands here.
   final int? slotIndex;
+
+  /// `PlannedMeal.source`: [sourceMealPrepBatch], [sourcePinnedAssignment] or
+  /// [sourcePlanner]; null on older servers.
   final String? source;
+
+  /// Meal-prep batch id when [source] is [sourceMealPrepBatch].
   final String? batchId;
+
+  /// Batch servings used by this slot (batch meals only).
   final double? servings;
+
+  static const sourceMealPrepBatch = 'meal_prep_batch';
+  static const sourcePinnedAssignment = 'pinned_assignment';
+  static const sourcePlanner = 'planner';
+
+  /// True when the server placed this meal from a meal-prep batch (FE-14).
+  bool get isMealPrepBatch => source == sourceMealPrepBatch;
 
   const Meal({
     required this.mealType,

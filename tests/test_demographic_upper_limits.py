@@ -135,3 +135,20 @@ def test_ul_module_has_one_loader_path():
     assert ul_module.upper_limits("lactation") == ul_module.resolve_upper_limits(
         ul_module.UpperLimitsLoader(str(UL_PATH)), demographic="lactation"
     )
+
+
+# --- BE-20: supplement-only ULs are not enforced against food (owner, 2026-11-15) ---
+
+
+@pytest.mark.parametrize("demographic", DEMOGRAPHICS)
+def test_magnesium_and_niacin_have_no_food_upper_limit(demographic):
+    import json
+
+    raw = json.loads(UL_PATH.read_text(encoding="utf-8"))["demographics"][demographic]
+    assert raw["magnesium_mg"] is None
+    assert raw["b3_niacin_mg"] is None
+    ul = upper_limits(demographic)
+    assert ul.magnesium_mg is None
+    assert ul.b3_niacin_mg is None
+    # The other ULs are still enforced.
+    assert ul.iron_mg == 45.0 and ul.zinc_mg == 40.0

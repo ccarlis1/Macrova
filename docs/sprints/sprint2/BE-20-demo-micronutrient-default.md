@@ -109,6 +109,12 @@ supplement-only ULs (magnesium; niacin's 35 mg UL is also supplement-only in the
 that's a reference-data review or a planner rule, neither of which BE-20 may change; (2) whether the default
 list may differ by demographic.
 
+### Owner decision (2026-11-15)
+
+Both questions above are decided (README → D-A addendum): magnesium and niacin ULs are set to `null` in
+`ul_by_demographic.json` for all four demographics (supplement-only, not enforced against food), and the
+default list may differ by demographic. The probe is re-run below with the real reference data.
+
 ## Out of scope
 
 - Reviewing DRI values (human-only).

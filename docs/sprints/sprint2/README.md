@@ -195,6 +195,10 @@ Options considered:
 
 Applies in BE-20.
 
+**D-A addendum (owner, 2026-11-15).** BE-20's probe re-run found that no goal list planned at all with the daily ULs on: the 350 mg magnesium UL rejected every day, even with no micronutrient floors (see the BE-20 probe record). Decided:
+1. **Supplement-only ULs are not enforced against food.** The IOM ULs for magnesium (350 mg) and niacin (35 mg) apply to supplemental/fortified intake only, so `data/reference/ul_by_demographic.json` sets `magnesium_mg` and `b3_niacin_mg` to `null` for all four demographics (as `sodium_mg` already is), with a note in the file. No other reference value changes.
+2. **The default list may differ by demographic.** Per-demographic lists, still defined in one place.
+
 ### D-B: MCP shorthand schedule default busyness — **resolved: 2/3/4**
 
 Options considered: (1) keep 2/3/3; (2) have the assistant ask; (3) 4/4/4.

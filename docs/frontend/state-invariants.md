@@ -50,6 +50,12 @@ On Today / Meal Plan View / meal cards driven by a plan, display **`meal.nutriti
 - `/plan` without `recipe_ids` (no Planner Config selection) plans with the whole server pool, imports included. With a selection, imports join the plan only once ticked there; the sheet's snackbar says so.
 - Entry points: Recipe Library empty state and header action, Today's no-plan state (while the library is empty), and the `EMPTY_POOL` failure row.
 
+## Demographic ULs (BE-17)
+
+- `UserProfile.demographicGroup` is one of `UserProfile.supportedDemographics` (`adult_male`, `adult_female`, `pregnancy`, `lactation`: the server's `demographic` literal) or `''` ("Not set"). `fromJson` / `fromRepoYamlMap` normalize anything else (a saved `teen_*`, `child`, `elderly_*`) to `''` via `UserProfile.normalizeDemographic`.
+- `UserProfile.planDemographic` (null when not set) is what requests send: `PlanRequest.demographic` from Planner Config, and `planFromTextBody(..., demographic:)` for the Agent pane. `PlanRequest.toJson` and `planFromTextBody` also drop unsupported values, so an unsupported value is never sent (the server would answer 400 `INVALID_REQUEST`).
+- The server enforces that demographic's daily ULs. It does not set micronutrient goals; `withPlanningMode` (and so `rerunLastRequest`) keeps the demographic.
+
 ## Toast / success snackbar
 
 Show a success toast for NL plan generation **only when** `plan.success == true` (see `agent_pane_screen.dart`). Partial/failed in-body plans still call `applyPlanResult` and navigate; they must not claim success via toast.

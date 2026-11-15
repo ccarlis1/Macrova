@@ -28,14 +28,16 @@ Follow-ups 8 and 6. AGENTS.md says "Daily upper limits (ULs) are enforced per-da
 - [x] `build_plan_request_from_profile` carries `demographic`, so BE-16's parity test also covers ULs. If BE-16 has merged, extend its parity test with a demographic.
 - [x] One UL resolution path: the API, CLI and MCP all call one helper. Move `daily_rdis`/`upper_limits` and the reference paths from `src/mcp_server/nutrients.py` to `src/data_layer/upper_limits.py` (or a sibling in `data_layer`), and make `mcp_server/nutrients.py` re-export or import them. Test: the existing `tests/mcp_server` tests still pass unchanged.
 - [x] OpenAPI regenerated (`python3 scripts/run_export_openapi.py`), `--check` green, `tests/test_api_v1_and_openapi.py` asserts `demographic` is in the `PlanRequest` schema.
-- [ ] Flutter (after P0): owned by frontend track
+- [x] Flutter (after P0): owned by frontend track
   - `PlanRequest` DTO (`frontend/lib/models/models.dart` ~line 182) gains `demographic` and serializes it only when non-empty.
   - `planner_config_screen.dart` (~line 345) passes `profile.demographicGroup`.
   - The Profile picker offers only the 4 supported values, plus "Not set". A saved unsupported value (`teen_*`, `child`) loads as "Not set" and isn't sent.
   - Tests: `test/plan_request_tag_contract_test.dart` (or a new `plan_request_demographic_test.dart`) for serialization, and `test/screens/profile_screen_test.dart` for the picker options.
+  - Done. `UserProfile.supportedDemographics` / `normalizeDemographic` / `planDemographic` (`frontend/lib/models/user_profile.dart`); `fromJson` and `fromRepoYamlMap` normalize unsupported values to "Not set". `PlanRequest.toJson` sends only a supported value; `withPlanningMode` carries it (`rerunLastRequest` test in `test/widgets/plan_failure_surfaces_test.dart`). Planner Config sends `profile.planDemographic`. The Agent pane's plan-from-text body is built in Flutter, so it sends it too (`planFromTextBody` in `agent_pane_screen.dart`). The old picker also had `elderly_male` / `elderly_female`; those are dropped and normalized like `teen_*` / `child`. Tests: `test/plan_request_demographic_test.dart` (serialization, OpenAPI enum match for both request schemas, normalization, plan-from-text body) and `test/screens/profile_screen_test.dart` (picker options, saved unsupported and supported values).
 - [x] `benchmark-audit`: 153/153, 0 regressions. The harness should not set a demographic; if it does, stop and report.
   - Run on d0a7968/c384493 (`--base main`): exact 153 -> 153, regressions 0, unmapped 0; probes P1 OK (valid), P2 FM-3, P3 OK (valid). The harness sends no `demographic`.
-- [ ] `cd frontend && flutter analyze && flutter test` green. Owned by frontend track.
+- [x] `cd frontend && flutter analyze && flutter test` green. Owned by frontend track.
+  - `flutter analyze`: no issues. `flutter test`: 313 passed (299 before + 14 new).
 
 ## Implementation notes
 

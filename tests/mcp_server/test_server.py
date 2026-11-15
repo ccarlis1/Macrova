@@ -97,7 +97,13 @@ def test_plan_succeeds_and_echoes_the_requested_targets():
     out = result.structured_content
     assert out["status"] == "success"
     assert out["failure"] is None
-    assert out["requested_targets"] == {**TARGETS, "max_daily_calories": None, "demographic": None}
+    assert out["requested_targets"] == {
+        **TARGETS,
+        "max_daily_calories": None,
+        "demographic": None,
+        "micronutrient_goals": None,
+        "micronutrient_weekly_min_fraction": None,
+    }
     assert [d["day"] for d in out["days"]] == [1, 2, 3]
     for day in out["days"]:
         assert [meal["meal"] for meal in day["meals"]] == [1, 2, 3]
@@ -179,8 +185,8 @@ def test_demographic_sets_micronutrient_targets():
 
 def test_weekly_micronutrients_use_plain_names():
     out = {"daily_plans": [{"totals": {"micronutrients": {"iron_mg": 20.0}}}, {"totals": {"micronutrients": {"iron_mg": 17.0}}}]}
-    targets = models.Targets(**TARGETS, demographic="adult_female")
-    progress = tools._weekly_micronutrients(out, targets, days=2)
+    goals = {"iron_mg": 18.0, "vitamin_c_mg": 75.0}
+    progress = tools._weekly_micronutrients(out, goals, days=2)
     assert progress["Iron (mg)"].model_dump() == {"total": 37.0, "target": 36.0, "met": True}
     assert progress["Vitamin C (mg)"].model_dump() == {"total": 0.0, "target": 150.0, "met": False}
     assert all("_" not in name for name in progress)
@@ -271,6 +277,141 @@ def test_list_tags_returns_registry_tags_only():
     assert by_slug["breakfast"] == {"slug": "breakfast", "type": "context", "description": "Breakfast", "can_require": True}
     # A nutrition claim can rank recipes but can't be required.
     assert by_slug["high-calcium"]["can_require"] is False
+
+
+# --- BE-20: demo micronutrient default (D-A), override, busyness 2/3/4 (D-B) -----
+
+DEMO_TARGETS = {"daily_calories": 2400, "daily_protein_g": 150, "daily_fat_g_min": 50, "daily_fat_g_max": 100}
+
+
+def _sample_plan(targets: Dict[str, Any], days: int = 7, **arguments):
+    return _call(
+        "macrova_plan_meals",
+        {"days": days, "targets": targets, "use_sample_recipes": True, "schedule": {"meals_per_day": 3}, **arguments},
+    )
+
+
+def test_sample_recipes_with_demographic_default_plan_seven_days():
+    """Failed before BE-20: all 25 RDIs at τ = 1.0 (FM-4)."""
+    result = _sample_plan({**DEMO_TARGETS, "demographic": "adult_male"})
+    assert result.is_error is False
+    out = result.structured_content
+    assert out["status"] == "success", out["failure"]
+    assert len(out["days"]) == 7
+    assert "Omega-3 (ALA) (g)" not in out["weekly_micronutrients"]
+    assert "Vitamin C (mg)" in out["weekly_micronutrients"]
+
+
+def test_default_warning_names_left_out_nutrients_and_the_override():
+    out = _sample_plan({**DEMO_TARGETS, "demographic": "adult_male"}).structured_content
+    warning = out["warnings"][0]
+    assert warning.startswith("The default micronutrient goals for adult_male leave out ")
+    assert "Omega-3 (ALA) (g) and Omega-6 (linoleic acid) (g)" in warning
+    assert "targets.micronutrient_goals" in warning
+    assert '"omega_3_g": <daily amount>' in warning
+
+
+@pytest.mark.parametrize("goals", [{}, {"iron_mg": 8}])
+def test_no_left_out_warning_when_the_user_sends_goals(goals):
+    out = _sample_plan({**DEMO_TARGETS, "demographic": "adult_male", "micronutrient_goals": goals}).structured_content
+    assert not any("leave out" in w for w in out["warnings"])
+
+
+def test_no_left_out_warning_without_a_demographic():
+    out = _sample_plan(DEMO_TARGETS, days=1).structured_content
+    assert not any("leave out" in w for w in out["warnings"])
+
+
+def test_override_restores_a_left_out_nutrient():
+    targets = models.Targets(**DEMO_TARGETS, demographic="adult_male", micronutrient_goals={"omega_3_g": 1.6})
+    goals, left_out = tools._micronutrient_goals(targets)
+    assert goals["omega_3_g"] == 1.6
+    assert goals["vitamin_c_mg"] == 90.0  # the rest of the default stays
+    assert left_out == ()
+    out = _sample_plan(
+        {**DEMO_TARGETS, "demographic": "adult_male", "micronutrient_goals": {"omega_3_g": 1.6}}, days=2
+    ).structured_content
+    # The sample recipes can't meet omega-3 at the full target; the failure says so.
+    assert out["status"] != "success"
+    assert "omega" in out["failure"]["explanation"].lower()
+
+
+def test_override_replaces_a_value_and_zero_removes_it():
+    targets = models.Targets(
+        **DEMO_TARGETS, demographic="adult_male", micronutrient_goals={"iron_mg": 12, "calcium_mg": 0}
+    )
+    goals, _ = tools._micronutrient_goals(targets)
+    assert goals["iron_mg"] == 12.0
+    assert "calcium_mg" not in goals
+    empty, _ = tools._micronutrient_goals(models.Targets(**DEMO_TARGETS, demographic="adult_male", micronutrient_goals={}))
+    assert empty == {}
+
+
+def test_override_lowers_tau(monkeypatch):
+    seen: Dict[str, Any] = {}
+    real = tools.run_planner
+
+    def _spy(profile, pool, days, **kwargs):
+        seen["tau"] = profile.micronutrient_weekly_min_fraction
+        return real(profile, pool, days, **kwargs)
+
+    monkeypatch.setattr(tools, "run_planner", _spy)
+    _sample_plan({**DEMO_TARGETS, "demographic": "adult_male", "micronutrient_weekly_min_fraction": 0.5}, days=1)
+    assert seen["tau"] == 0.5
+    _sample_plan({**DEMO_TARGETS, "demographic": "adult_male"}, days=1)
+    assert seen["tau"] == 1.0
+
+
+@pytest.mark.parametrize(
+    ("targets", "message"),
+    [
+        ({**DEMO_TARGETS, "micronutrient_goals": {"vitamin_z_mg": 5}}, "Unknown micronutrient 'vitamin_z_mg'"),
+        ({**DEMO_TARGETS, "micronutrient_goals": {"iron_mg": -1}}, "greater than or equal to 0"),
+        ({**DEMO_TARGETS, "micronutrient_weekly_min_fraction": 0}, "greater than 0"),
+        ({**DEMO_TARGETS, "micronutrient_weekly_min_fraction": 1.5}, "less than or equal to 1"),
+    ],
+)
+def test_bad_micronutrient_override_is_an_error(targets, message):
+    result = _sample_plan(targets, days=1)
+    assert result.is_error is True
+    assert message in result.content[0].text
+    if "Unknown" in message:
+        assert "Use these keys: vitamin_a_ug" in result.content[0].text
+
+
+def test_shorthand_default_busyness_is_2_3_4():
+    """Failed before BE-20: [2, 3, 3]."""
+    days = tools._schedule_days(models.ShorthandSchedule(meals_per_day=3), 2)
+    for day in days:
+        assert [m["busyness_level"] for m in day["meals"]] == [2, 3, 4]
+    omitted = tools._schedule_days(None, 1)
+    assert [m["busyness_level"] for m in omitted[0]["meals"]] == [2, 3, 4]
+
+
+@pytest.mark.parametrize(
+    ("meals", "levels"),
+    [(1, [2]), (2, [2, 4]), (3, [2, 3, 4]), (4, [2, 3, 3, 4]), (5, [2, 3, 3, 3, 4])],
+)
+def test_shorthand_default_busyness_rule_for_other_meal_counts(meals, levels):
+    (day,) = tools._schedule_days(models.ShorthandSchedule(meals_per_day=meals), 1)
+    assert [m["busyness_level"] for m in day["meals"]] == levels
+
+
+def test_explicit_shorthand_busyness_still_applies_to_every_meal():
+    (day,) = tools._schedule_days(models.ShorthandSchedule(meals_per_day=3, busyness=1), 1)
+    assert [m["busyness_level"] for m in day["meals"]] == [1, 1, 1]
+
+
+def test_tool_schema_describes_the_new_fields_and_2_3_4():
+    async def run():
+        async with Client(build_server()) as client:
+            return {t.name: t for t in (await client.list_tools()).tools}["macrova_plan_meals"]
+
+    plan = anyio.run(run)
+    assert "2/3/4" in plan.input_schema["properties"]["schedule"]["description"]
+    targets = plan.input_schema["$defs"]["Targets"]["properties"]
+    assert "micronutrient_goals" in targets and "micronutrient_weekly_min_fraction" in targets
+    assert "Targets" not in plan.input_schema["required"]
 
 
 # --- Transport -----------------------------------------------------------------

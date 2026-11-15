@@ -7,7 +7,7 @@ The SDK builds each tool's ``inputSchema`` from its parameters and its
 
 from __future__ import annotations
 
-from typing import Dict, List, Literal, Optional, Union
+from typing import Annotated, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -56,8 +56,29 @@ class Targets(_Input):
     demographic: Optional[Demographic] = Field(
         default=None,
         description=(
-            "Selects the recommended daily intakes (met as weekly totals) and the daily upper "
-            "limits for micronutrients. Omit to skip micronutrients."
+            "Selects the default micronutrient goals (that demographic's recommended daily "
+            "intakes, met as weekly totals, minus the few the sample recipes can't meet; the "
+            "result's warnings name those) and the daily upper limits. Omit to skip the default "
+            "goals and the upper limits."
+        ),
+    )
+    micronutrient_goals: Optional[Dict[str, Annotated[float, Field(ge=0)]]] = Field(
+        default=None,
+        description=(
+            "Optional daily micronutrient goals keyed like \"omega_3_g\" or \"vitamin_c_mg\" "
+            "(the keys of the demographic's recommended intakes). Each one replaces the "
+            "default for that nutrient and adds it back if the default leaves it out; 0 "
+            "removes that nutrient's goal. An empty map means no micronutrient goals. Omit "
+            "to use the default."
+        ),
+    )
+    micronutrient_weekly_min_fraction: Optional[float] = Field(
+        default=None,
+        gt=0,
+        le=1,
+        description=(
+            "Optional fraction of each weekly micronutrient goal the plan must reach "
+            "(0 < value ≤ 1). Omit for 1.0, the full goal."
         ),
     )
 
@@ -77,7 +98,10 @@ class ShorthandSchedule(_Input):
         default=None,
         ge=1,
         le=4,
-        description="Applied to every meal. If omitted: 2 for the first meal, 3 for the rest.",
+        description=(
+            "Applied to every meal. If omitted: 2 for the first meal, 4 for the last, 3 for any "
+            "in between (2/3/4 for 3 meals); a single meal gets 2."
+        ),
     )
 
 

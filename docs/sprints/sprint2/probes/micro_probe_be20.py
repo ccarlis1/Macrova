@@ -11,8 +11,8 @@ Differences from micro_probe.py (the D-A probe), as BE-20 asks:
 - τ = 1.0 throughout. Macros come from config/user_profile.yaml.example.
 
 Read-only: calls ``src.mcp_server.tools.plan_meals`` in-process; writes nothing.
-The goal list is injected by patching ``tools.daily_rdis`` so the probe works before
-the BE-20 override fields exist.
+The goal list under test goes in as ``targets.micronutrient_goals`` with every other
+nutrient set to 0 (an empty map means no goals), so every run plans exactly that list.
 
 Diagnostic only: ``PROBE_DROP_UL=magnesium_mg,b3_niacin_mg`` removes those daily ULs
 (in memory) to show what the goal list would be without them. The reference file is
@@ -27,6 +27,7 @@ from src.data_layer.upper_limits import DEMOGRAPHICS, daily_rdis, upper_limits_f
 from src.data_layer.user_profile import UserProfileLoader  # noqa: E402
 from src.mcp_server import models as m  # noqa: E402
 from src.mcp_server import tools  # noqa: E402
+from src.mcp_server.nutrients import NUTRIENT_KEYS  # noqa: E402
 
 DAYS = int(sys.argv[1]) if len(sys.argv) > 1 else 7
 DEMOS = sys.argv[2:] or list(DEMOGRAPHICS)
@@ -55,13 +56,15 @@ if DROP_UL:
 
 
 def run(demographic, goals):
-    tools.daily_rdis = lambda _demo: dict(goals)  # the goal list under test
     targets = m.Targets(
         daily_calories=int(prof.daily_calories),
         daily_protein_g=float(prof.daily_protein_g),
         daily_fat_g_min=float(prof.daily_fat_g[0]),
         daily_fat_g_max=float(prof.daily_fat_g[1]),
         demographic=demographic,
+        # Exactly this list: every other nutrient at 0 (overrides merge onto the default).
+        micronutrient_goals={k: goals.get(k, 0.0) for k in NUTRIENT_KEYS} if goals else {},
+        micronutrient_weekly_min_fraction=1.0,
     )
     result, _ = tools.plan_meals(days=DAYS, targets=targets, schedule=SCHEDULE, use_sample_recipes=True)
     code = result.failure.code if result.failure else None
@@ -86,5 +89,11 @@ for demo in DEMOS:
             print(f"   {key} alone -> {status} {code}")
     print(f"== {demo}: FAIL_ALONE@1.0 {fails}")
     rest = {k: v for k, v in full.items() if k not in fails}
-    print(f"== {demo}: all minus fails ({len(rest)})", run(demo, rest))
+    together = run(demo, rest)
+    print(f"== {demo}: all minus fails ({len(rest)})", together)
+    sys.stdout.flush()
+    if together[0] != "success":
+        # Together they still fail: try dropping one more, in reference order.
+        extra = [k for k in rest if run(demo, {x: v for x, v in rest.items() if x != k})[0] == "success"]
+        print(f"== {demo}: dropping any ONE of {extra} as well -> success")
     sys.stdout.flush()

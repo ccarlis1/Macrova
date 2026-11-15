@@ -88,7 +88,7 @@ def build_server() -> MCPServer:
         preferences: Optional[m.Preferences] = None,
         schedule: Annotated[
             Optional[m.Schedule],
-            Field(description="Either the shorthand or the full per-day schedule. If omitted: 3 meals per day, busyness 2/3/3."),
+            Field(description="Either the shorthand or the full per-day schedule. If omitted: 3 meals per day, busyness 2/3/4."),
         ] = None,
         recipes: Annotated[
             List[m.Recipe], Field(description="The recipe pool. Same shape as macrova_get_sample_recipes output.")

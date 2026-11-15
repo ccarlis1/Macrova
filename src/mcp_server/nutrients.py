@@ -1,9 +1,10 @@
 """Micronutrient names and daily targets at the MCP boundary.
 
 The planner keys micronutrients like ``vitamin_c_mg``. MCP tools show plain names
-with the unit, e.g. ``"Vitamin C (mg)"``. v1 takes no custom goals: the caller
-picks a demographic, which selects the daily RDIs (``rdi_by_demographic.json``)
-and upper limits (``ul_by_demographic.json``).
+with the unit, e.g. ``"Vitamin C (mg)"``. The caller
+picks a demographic, which selects the default goals (the daily RDIs from
+``rdi_by_demographic.json`` minus the nutrients BE-20 leaves out) and the upper
+limits (``ul_by_demographic.json``). ``targets.micronutrient_goals`` overrides them.
 """
 
 from __future__ import annotations
@@ -13,10 +14,13 @@ from typing import Dict, Mapping, Optional
 # Daily RDIs, upper limits, the reference paths and the demographic literal live in
 # the data layer, shared with the HTTP API and the CLI (Sprint 2 BE-17).
 from src.data_layer.upper_limits import (  # noqa: F401  (re-exported)
+    DEFAULT_MICRONUTRIENT_WEEKLY_MIN_FRACTION,
     RDI_PATH,
     UL_PATH,
     Demographic,
     daily_rdis,
+    default_micronutrient_goals,
+    default_micronutrient_left_out,
     upper_limits,
 )
 
@@ -49,6 +53,9 @@ _PLAIN_NAMES: Dict[str, str] = {
     "omega_6_g": "Omega-6 (linoleic acid)",
 }
 _UNITS = {"ug": "µg", "mg": "mg", "g": "g", "iu": "IU"}
+
+#: The micronutrient keys a goal may use (the planner's field names).
+NUTRIENT_KEYS = tuple(_PLAIN_NAMES)
 
 
 def plain_name(key: str) -> str:

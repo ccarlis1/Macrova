@@ -251,6 +251,36 @@ def daily_rdis(demographic: Demographic) -> Dict[str, float]:
     return {key: float(value) for key, value in _rdi_table()[demographic].items()}
 
 
+# --- New-user / demo micronutrient default (Sprint 2 BE-20, owner decision D-A) -------
+#
+# The ONE definition of the default. The default goals are the demographic's daily RDIs
+# (rdi_by_demographic.json) minus the nutrients listed here, at τ = 1.0. The left-out
+# nutrients are the ones the bundled sample recipes can't meet at τ = 1.0 over 7 days
+# with the MCP shorthand schedule (2/3/4) and the demographic's daily ULs on; see the
+# probe record in docs/sprints/sprint2/BE-20-demo-micronutrient-default.md.
+# It's a starting point, not a cap: MCP (targets.micronutrient_goals), the YAML profile
+# and the Flutter Profile screen all let the user change every value.
+DEFAULT_MICRONUTRIENT_LEFT_OUT: Dict[str, Tuple[str, ...]] = {
+    "adult_male": ("omega_3_g", "omega_6_g"),
+    "adult_female": ("omega_3_g", "omega_6_g"),
+    "pregnancy": ("vitamin_e_mg", "omega_3_g", "omega_6_g"),
+    "lactation": ("vitamin_e_mg", "omega_3_g", "omega_6_g"),
+}
+DEFAULT_MICRONUTRIENT_WEEKLY_MIN_FRACTION = 1.0
+
+
+def default_micronutrient_left_out(demographic: Demographic) -> Tuple[str, ...]:
+    """Nutrient keys the default leaves out for ``demographic`` (reference-table order)."""
+    left_out = set(DEFAULT_MICRONUTRIENT_LEFT_OUT[demographic])
+    return tuple(key for key in _rdi_table()[demographic] if key in left_out)
+
+
+def default_micronutrient_goals(demographic: Demographic) -> Dict[str, float]:
+    """The default daily micronutrient goals: the RDIs minus the left-out nutrients."""
+    left_out = set(DEFAULT_MICRONUTRIENT_LEFT_OUT[demographic])
+    return {key: value for key, value in daily_rdis(demographic).items() if key not in left_out}
+
+
 def upper_limits(demographic: Demographic) -> UpperLimits:
     """Daily upper limits for a demographic from the shared reference table.
 

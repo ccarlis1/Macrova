@@ -414,6 +414,8 @@ class TodayScreen extends StatelessWidget {
             carbsG: meal.nutrition.carbsG,
             fatG: meal.nutrition.fatG,
             timeLabel: time,
+            source: meal.source,
+            servings: meal.servings,
             slotState: recipeName.startsWith('Missing recipe')
                 ? MealSlotState.warn
                 : MealSlotState.ok,
@@ -476,6 +478,8 @@ class TodayScreen extends StatelessWidget {
               carbsG: meal.nutrition.carbsG,
               fatG: meal.nutrition.fatG,
               timeLabel: _preferredTimeForMeal(planProvider, i),
+              source: meal.source,
+              servings: meal.servings,
               slotState: isMissing ? MealSlotState.warn : MealSlotState.ok,
               warningText: isMissing ? 'Recipe unavailable' : null,
               isCooked: planProvider.isCooked(day, mealIndex),

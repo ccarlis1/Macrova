@@ -12,6 +12,7 @@ import '../widgets/failure_view_model.dart';
 import '../widgets/meal_card.dart';
 import '../widgets/meal_detail_sheet.dart';
 import '../widgets/meal_plan_calendar.dart';
+import '../widgets/meal_prep_tray.dart';
 import '../widgets/micronutrient_bar.dart';
 import '../widgets/section_header.dart';
 import '../widgets/segmented_control.dart';
@@ -28,6 +29,16 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
   bool _showCalendar = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Batches are server-owned: fetch the active ones for the tray.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<MealPlanProvider>().loadMealPrepBatches();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final tokens =
         Theme.of(context).extension<MacrovaTokens>() ?? MacrovaTokens.light;
@@ -36,7 +47,22 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
     final profile = context.watch<ProfileProvider>().profile;
 
     if (mealPlan == null) {
-      return _EmptyPlanState(tokens: tokens);
+      // The meal-prep tray is always visible, even before a plan exists.
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(MacrovaSpacing.xlAlt),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: Column(
+              children: [
+                const MealPrepTray(),
+                const SizedBox(height: MacrovaSpacing.sectionTop),
+                _EmptyPlanState(tokens: tokens),
+              ],
+            ),
+          ),
+        ),
+      );
     }
 
     final totalNutrition = mealPlan.totalNutrition;
@@ -70,6 +96,8 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
                   ),
                 ],
               ),
+              const SizedBox(height: MacrovaSpacing.xlAlt),
+              const MealPrepTray(),
               const SizedBox(height: MacrovaSpacing.xlAlt),
 
               if (_showCalendar) ...[
@@ -307,6 +335,8 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
               carbsG: meal.nutrition.carbsG,
               fatG: meal.nutrition.fatG,
               mealTypeMatch: meal.mealTypeMatch,
+              source: meal.source,
+              servings: meal.servings,
               slotState: isMissing ? MealSlotState.warn : MealSlotState.ok,
               warningText: isMissing ? 'Recipe unavailable' : null,
               isCooked: planProvider.isCooked(day, mealIndex),
@@ -363,6 +393,7 @@ class _EmptyPlanState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          const SizedBox(height: MacrovaSpacing.xxl),
           Icon(
             Icons.view_list_outlined,
             size: 64,

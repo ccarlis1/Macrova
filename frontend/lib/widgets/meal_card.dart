@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../models/meal_prep_batch.dart';
+import '../models/models.dart';
 import '../theme/tokens.dart';
 import 'macro_display.dart';
+import 'macrova_chip.dart';
 
 enum MealSlotState { ok, pinned, empty, warn, workout }
 
@@ -22,6 +25,19 @@ class MealCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onAdd;
 
+  /// `Meal.source` (`PlannedMeal.source`). [Meal.sourceMealPrepBatch] shows
+  /// the batch variant: a "Meal prep" badge plus [servings] when set. Other
+  /// values (planner, pinned, null) look unchanged.
+  final String? source;
+
+  /// Batch servings for this slot (`Meal.servings`); shown on batch meals only.
+  final double? servings;
+
+  static const mealPrepBadgeKey = Key('meal_card_meal_prep_badge');
+  static const mealPrepServingsKey = Key('meal_card_meal_prep_servings');
+
+  bool get isMealPrepBatch => source == Meal.sourceMealPrepBatch;
+
   const MealCard({
     super.key,
     required this.mealType,
@@ -37,6 +53,8 @@ class MealCard extends StatelessWidget {
     this.isCooked = false,
     this.onTap,
     this.onAdd,
+    this.source,
+    this.servings,
   });
 
   @override
@@ -126,6 +144,28 @@ class MealCard extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                        ],
+                      ),
+                    ],
+                    if (isMealPrepBatch) ...[
+                      const SizedBox(height: MacrovaSpacing.xs),
+                      Wrap(
+                        spacing: MacrovaSpacing.sm,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          const MacrovaChip(
+                            key: mealPrepBadgeKey,
+                            label: 'Meal prep',
+                            variant: MacrovaChipVariant.accent,
+                            leadingIcon: Icons.kitchen_outlined,
+                          ),
+                          if (servings != null)
+                            Text(
+                              servingsLabel(servings!),
+                              key: mealPrepServingsKey,
+                              style:
+                                  MacrovaTypography.caption(tokens.inkTertiary),
+                            ),
                         ],
                       ),
                     ],

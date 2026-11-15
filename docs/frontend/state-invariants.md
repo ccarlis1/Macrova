@@ -26,6 +26,14 @@ On Today / Meal Plan View / meal cards driven by a plan, display **`meal.nutriti
 
 `cuisine`, `cost_level`, `prep_time_bucket`, `dietary_flags` (plus `ingredient_source` / `planning_mode`) from `MealPlanProvider`.
 
+## Meal-prep batches (FE-14)
+
+- Batches are **server-owned** (`/api/v1/meal_prep_batches`). `MealPlanProvider` keeps only the last fetched active list (`mealPrepBatches`, `loadMealPrepBatches`) for the Meal Plan View tray and the create-batch sheet. There is no client batch store, and `PlanRequest` never carries `active_batches` (the server ignores them anyway and applies its own active batches to every `/plan`).
+- `createMealPrepBatch` POSTs, reloads the list, then re-sends `lastRequest` unchanged (no re-run for a plan-from-text result). `cancelMealPrepBatch` DELETEs and reloads; it does not re-run the plan.
+- Batch coordinates are 0-based `(day_index, slot_index)`; the plan shows them as `daily_plans[].day == day_index + 1` and `Meal.slotIndex == slot_index`. Meals placed from a batch have `Meal.source == "meal_prep_batch"` (`Meal.isMealPrepBatch`), `batchId` and `servings`; `MealCard` / `MealDetailSheet` show a "Meal prep" badge for them.
+- Batches persist across plans. A batch slot outside the requested horizon or schedule, two slots on the same day, or a batch recipe left out of a selected `recipe_ids` pool all fail the plan with FM-3 (pinned-assignment validation); the sheet offers one slot per day from the current plan and warns about the pool case.
+- Tray collapse is device-local (`StorageService` `meal_prep_tray_collapsed`, expanded by default).
+
 ## Toast / success snackbar
 
 Show a success toast for NL plan generation **only when** `plan.success == true` (see `agent_pane_screen.dart`). Partial/failed in-body plans still call `applyPlanResult` and navigate; they must not claim success via toast.

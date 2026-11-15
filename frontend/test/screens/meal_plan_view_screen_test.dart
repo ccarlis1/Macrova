@@ -4,6 +4,7 @@ import 'package:macrova/features/agent/llm_config_provider.dart';
 import 'package:macrova/models/models.dart';
 import 'package:macrova/providers/meal_plan_provider.dart';
 import 'package:macrova/providers/profile_provider.dart';
+import 'package:macrova/providers/recipe_provider.dart';
 import 'package:macrova/screens/meal_plan_view_screen.dart';
 import 'package:macrova/theme/app_theme.dart';
 import 'package:macrova/widgets/advisory_card.dart';
@@ -206,6 +207,7 @@ Widget _wrap(MealPlanProvider mealPlan) {
               LlmConfigProvider(context.read<ProfileProvider>()),
         ),
         ChangeNotifierProvider<MealPlanProvider>.value(value: mealPlan),
+        ChangeNotifierProvider<RecipeProvider>(create: (_) => RecipeProvider()),
       ],
       child: const Scaffold(body: MealPlanViewScreen()),
     ),

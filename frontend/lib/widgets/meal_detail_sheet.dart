@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../models/meal_prep_batch.dart';
 import '../models/models.dart';
 import '../theme/tokens.dart';
 import 'macro_display.dart';
+import 'macrova_chip.dart';
 import 'macrova_sheet.dart';
 import 'sticky_cta.dart';
 
@@ -11,6 +13,9 @@ import 'sticky_cta.dart';
 /// Explicitly omits Pin and Swap (out of scope for PR14).
 class MealDetailSheet {
   MealDetailSheet._();
+
+  /// Batch variant (FE-14): shown when `meal.source == meal_prep_batch`.
+  static const mealPrepKey = Key('meal_detail_meal_prep');
 
   static Future<void> show({
     required BuildContext context,
@@ -67,6 +72,29 @@ class _MealDetailBody extends StatelessWidget {
           recipeName,
           style: MacrovaTypography.subtitle(tokens.inkPrimary),
         ),
+        if (meal.isMealPrepBatch) ...[
+          const SizedBox(height: MacrovaSpacing.sm),
+          Row(
+            key: MealDetailSheet.mealPrepKey,
+            children: [
+              const MacrovaChip(
+                label: 'Meal prep',
+                variant: MacrovaChipVariant.accent,
+                leadingIcon: Icons.kitchen_outlined,
+              ),
+              const SizedBox(width: MacrovaSpacing.sm),
+              Expanded(
+                child: Text(
+                  meal.servings == null
+                      ? 'From a meal-prep batch'
+                      : 'From a meal-prep batch · '
+                          '${servingsLabel(meal.servings!)}',
+                  style: MacrovaTypography.caption(tokens.inkTertiary),
+                ),
+              ),
+            ],
+          ),
+        ],
         const SizedBox(height: MacrovaSpacing.md),
         MacroDisplay(
           calories: meal.nutrition.calories,

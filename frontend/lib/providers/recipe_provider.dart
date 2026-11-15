@@ -520,6 +520,10 @@ class RecipeProvider extends ChangeNotifier {
     final result = await _recipeSyncFn(batch);
     for (final r in batch) {
       _recipeSyncErrors.remove(r.id);
+      // The server recomputes stored tags (e.g. is_meal_prep_capable) on
+      // sync, so the loaded detail values are stale: reload on next need.
+      _serverTagsLoadedIds.remove(r.id);
+      _serverTagsAttemptedIds.remove(r.id);
     }
     _recipeSyncErrors.removeWhere((_, e) => e.recipeId == null);
     for (final e in result.errors) {

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../models/meal_prep_batch.dart';
 import '../models/models.dart';
 import '../models/recipe.dart';
 import '../models/recipe_sync_result.dart';
@@ -81,9 +82,58 @@ List<WorkoutSlot> legacyTimingToWorkouts(int mealCount, String timing) {
 /// Sends a plan request ([ApiService.plan] or a test fake).
 typedef PlanRequestFn = Future<MealPlan> Function(PlanRequest request);
 
+/// `GET /api/v1/meal_prep_batches` (active only) or a test fake.
+typedef MealPrepListFn = Future<List<MealPrepBatch>> Function();
+
+/// `POST /api/v1/meal_prep_batches` or a test fake.
+typedef MealPrepCreateFn = Future<MealPrepBatch> Function({
+  required String recipeId,
+  required int totalServings,
+  required String cookDate,
+  required List<MealPrepAssignment> assignments,
+});
+
+/// `DELETE /api/v1/meal_prep_batches/{id}` or a test fake.
+typedef MealPrepCancelFn = Future<String> Function(String batchId);
+
+/// A plan slot a meal-prep batch can be assigned to (create-batch sheet).
+/// [dayIndex] / [slotIndex] are 0-based, as in batch assignments and
+/// `PlanFailure`; the plan shows the slot as day `dayIndex + 1`.
+class PlanSlotOption {
+  final int dayIndex;
+  final int slotIndex;
+
+  /// The meal planned there (`Meal.mealType · name`), or null when the slot
+  /// only carries a slot failure.
+  final String? label;
+
+  const PlanSlotOption({
+    required this.dayIndex,
+    required this.slotIndex,
+    this.label,
+  });
+
+  int get day => dayIndex + 1;
+}
+
 class MealPlanProvider extends ChangeNotifier {
   final RecipeListSyncFn _recipeSyncFn;
   final PlanRequestFn _planFn;
+  final MealPrepListFn _mealPrepListFn;
+  final MealPrepCreateFn _mealPrepCreateFn;
+  final MealPrepCancelFn _mealPrepCancelFn;
+
+  /// Active meal-prep batches as last fetched from the server (FE-14). The
+  /// server owns them and applies them to every `/plan` itself; this list is
+  /// only for the tray and the create-batch sheet, never sent with a plan.
+  List<MealPrepBatch> _mealPrepBatches = const [];
+  bool _mealPrepLoading = false;
+  bool _mealPrepLoaded = false;
+  String? _mealPrepErrorCode;
+  String? _mealPrepErrorMessage;
+
+  /// Meal-prep tray collapsed (device-local convenience; expanded by default).
+  bool _mealPrepTrayCollapsed = false;
 
   MealPlan? _mealPlan;
   bool _loading = false;
@@ -137,8 +187,16 @@ class MealPlanProvider extends ChangeNotifier {
   MealPlanProvider({
     RecipeListSyncFn? recipeSyncFn,
     PlanRequestFn? planFn,
+    MealPrepListFn? mealPrepListFn,
+    MealPrepCreateFn? mealPrepCreateFn,
+    MealPrepCancelFn? mealPrepCancelFn,
   })  : _recipeSyncFn = recipeSyncFn ?? ApiService.syncRecipes,
-        _planFn = planFn ?? ApiService.plan {
+        _planFn = planFn ?? ApiService.plan,
+        _mealPrepListFn =
+            mealPrepListFn ?? (() => ApiService.listMealPrepBatches()),
+        _mealPrepCreateFn = mealPrepCreateFn ?? _apiCreateMealPrepBatch,
+        _mealPrepCancelFn = mealPrepCancelFn ??
+            ((id) => ApiService.cancelMealPrepBatch(id)) {
     _scheduleDays = List.generate(
       _days,
       (i) => buildDefaultDaySchedule(i + 1, 3),
@@ -191,10 +249,141 @@ class MealPlanProvider extends ChangeNotifier {
   int get mealsPerDaySummary =>
       _scheduleDays.isEmpty ? 3 : _scheduleDays.first.meals.length;
 
+  static Future<MealPrepBatch> _apiCreateMealPrepBatch({
+    required String recipeId,
+    required int totalServings,
+    required String cookDate,
+    required List<MealPrepAssignment> assignments,
+  }) =>
+      ApiService.createMealPrepBatch(
+        recipeId: recipeId,
+        totalServings: totalServings,
+        cookDate: cookDate,
+        assignments: assignments,
+      );
+
+  // ---------------------------------------------------------------------------
+  // Meal-prep batches (FE-14). Server-owned; see [mealPrepBatches].
+
+  /// Active batches from the last [loadMealPrepBatches] (server order).
+  List<MealPrepBatch> get mealPrepBatches =>
+      List.unmodifiable(_mealPrepBatches);
+  bool get mealPrepLoading => _mealPrepLoading;
+
+  /// True once a [loadMealPrepBatches] succeeded.
+  bool get mealPrepLoaded => _mealPrepLoaded;
+
+  /// Server `code` / message of the last failed list or cancel call.
+  String? get mealPrepErrorCode => _mealPrepErrorCode;
+  String? get mealPrepErrorMessage => _mealPrepErrorMessage;
+  bool get mealPrepTrayCollapsed => _mealPrepTrayCollapsed;
+
+  /// Fetches the active batches (`GET /meal_prep_batches?active=true`).
+  /// A failure keeps the previous list and sets [mealPrepErrorCode].
+  Future<void> loadMealPrepBatches() async {
+    _mealPrepLoading = true;
+    notifyListeners();
+    try {
+      _mealPrepBatches = await _mealPrepListFn();
+      _mealPrepLoaded = true;
+      _mealPrepErrorCode = null;
+      _mealPrepErrorMessage = null;
+    } catch (e) {
+      _setMealPrepError(e);
+    } finally {
+      _mealPrepLoading = false;
+      notifyListeners();
+    }
+  }
+
+  void _setMealPrepError(Object e) {
+    if (e is ApiException) {
+      _mealPrepErrorCode = e.code;
+      _mealPrepErrorMessage = e.message;
+    } else {
+      _mealPrepErrorCode = null;
+      _mealPrepErrorMessage = e.toString();
+    }
+  }
+
+  /// Creates a batch on the server, refreshes [mealPrepBatches], then re-runs
+  /// the request behind the current plan (same mode) so the batch's fixed
+  /// slots show up. A server rejection (`BATCH_CONFLICT`,
+  /// `RECIPE_NOT_BATCHABLE`, `BATCH_INVALID`, `RECIPE_NOT_FOUND`) throws
+  /// [ApiException] before anything else happens. Returns whether the plan
+  /// was re-run (false when the plan didn't come from [generatePlan]).
+  Future<bool> createMealPrepBatch({
+    required String recipeId,
+    required int totalServings,
+    required String cookDate,
+    required List<MealPrepAssignment> assignments,
+  }) async {
+    await _mealPrepCreateFn(
+      recipeId: recipeId,
+      totalServings: totalServings,
+      cookDate: cookDate,
+      assignments: assignments,
+    );
+    await loadMealPrepBatches();
+    final last = _lastRequest;
+    if (last == null) return false;
+    await generatePlan(last);
+    return true;
+  }
+
+  /// Cancels a batch (`DELETE`) and refreshes [mealPrepBatches]. Throws
+  /// [ApiException] on failure. The current plan is not re-run: its batch
+  /// meals stay until the next plan.
+  Future<void> cancelMealPrepBatch(String batchId) async {
+    await _mealPrepCancelFn(batchId);
+    await loadMealPrepBatches();
+  }
+
+  void setMealPrepTrayCollapsed(bool collapsed) {
+    if (collapsed == _mealPrepTrayCollapsed) return;
+    _mealPrepTrayCollapsed = collapsed;
+    notifyListeners();
+    unawaited(StorageService.saveMealPrepTrayCollapsed(collapsed));
+  }
+
+  /// Slots of the current plan a batch can take: every planned meal (its
+  /// `slot_index`, else its position) and every slot failure, by day then slot.
+  /// Empty without a plan.
+  List<PlanSlotOption> get planSlotOptions {
+    final plan = _mealPlan;
+    if (plan == null) return const [];
+    final byKey = <(int, int), PlanSlotOption>{};
+    for (final d in plan.dailyPlans) {
+      for (var i = 0; i < d.meals.length; i++) {
+        final m = d.meals[i];
+        final slot = m.slotIndex ?? i;
+        final name = m.recipe['name'] as String? ?? '';
+        byKey[(d.day - 1, slot)] = PlanSlotOption(
+          dayIndex: d.day - 1,
+          slotIndex: slot,
+          label: name.isEmpty ? m.mealType : '${m.mealType} · $name',
+        );
+      }
+    }
+    for (final f in plan.failures) {
+      if (!f.isSlotFailure) continue;
+      byKey.putIfAbsent(
+        (f.dayIndex!, f.slotIndex!),
+        () => PlanSlotOption(dayIndex: f.dayIndex!, slotIndex: f.slotIndex!),
+      );
+    }
+    final out = byKey.values.toList()
+      ..sort((a, b) => a.dayIndex != b.dayIndex
+          ? a.dayIndex.compareTo(b.dayIndex)
+          : a.slotIndex.compareTo(b.slotIndex));
+    return out;
+  }
+
   Future<void> load() async {
     _cookedSlots
       ..clear()
       ..addAll(await StorageService.loadCookedSlots());
+    _mealPrepTrayCollapsed = await StorageService.loadMealPrepTrayCollapsed();
 
     final raw = await StorageService.loadPlannerConfig();
     if (raw == null) {

@@ -47,10 +47,32 @@ void main() {
         }
         return make();
       },
+      recipeListFn: () async => const [],
     );
   }
 
   group('RecipeProvider server tag fields (FE-12)', () {
+    test(
+        'Given loaded server tags, When the recipe is saved (synced), Then '
+        'they are stale and reload on next need (FE-14: is_meal_prep_capable '
+        'is recomputed by the server)', () async {
+      await StorageService.saveRecipes([
+        const Recipe(id: 'a', name: 'A', ingredients: [_line]),
+      ]);
+      final calls = <String>[];
+      final p = provider({'a': () => _detail()}, calls);
+      await p.load();
+      await p.loadServerTags(['a']);
+      expect(p.hasServerTags('a'), isTrue);
+
+      await p.updateRecipe(p.getById('a')!.copyWith(servings: 2));
+
+      expect(p.hasServerTags('a'), isFalse);
+      await p.loadServerTags(['a']);
+      expect(calls, ['a', 'a']);
+      expect(p.getById('a')!.isMealPrepCapable, isTrue);
+    });
+
     test(
         'Given a remembered cuisine/cost, When the detail has its own, Then '
         'the server value wins', () async {

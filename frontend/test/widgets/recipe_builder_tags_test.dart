@@ -389,7 +389,7 @@ void main() {
         'cuisine wins over the remembered one', (tester) async {
       final h = _Harness(
         recipeListFn: () async => [
-          RecipeSummary(id: 'fe12-oat-bowl', name: 'Overnight Oat Bowl'),
+          const RecipeSummary(id: 'fe12-oat-bowl', name: 'Overnight Oat Bowl'),
         ],
       );
       final local = _untagged.copyWith(

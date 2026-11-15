@@ -30,21 +30,9 @@ When saved ingredients load, recipe lines whose per-100g macros are zero get the
 
 Imports are keyed by **`fdc_id`** (string) as **`Ingredient.id`**; existing rows with the same id are replaced.
 
-### Bundled user profile (repo `config/user_profile.yaml` shape)
+### Profile
 
-1. Asset path: **`assets/dev/user_profile.yaml`** — keep in sync with the repo when goals change:
-
-   `cp ../config/user_profile.yaml assets/dev/user_profile.yaml`
-
-2. Run with:
-
-   `flutter run -d chrome --dart-define=BUNDLE_USER_PROFILE=true`
-
-On startup (after loading saved prefs), the app **replaces** the profile with the bundled YAML, **writes it to** `SharedPreferences`, and clears API key fields in that snapshot (set keys in the Profile UI if needed). Macros match the Python loader: carbs are derived from calories, protein, and the fat range; `preferences.allergies` and `micronutrient_goals` are applied; `demographic` maps to demographic group.
-
-Combine with recipe/ingredient bundles as needed, e.g.:
-
-`flutter run -d chrome --dart-define=BUNDLE_USER_PROFILE=true --dart-define=BUNDLE_SERVER_RECIPES=true --dart-define=BUNDLE_CACHED_INGREDIENTS=true`
+The profile lives on the device (`SharedPreferences`, edited on the Profile screen). No profile ships in the app bundle: `assets/dev/user_profile.yaml` and `BUNDLE_USER_PROFILE` were removed in FE-16, and `test/bundle_assets_test.dart` fails if a YAML asset is listed in `pubspec.yaml` again.
 
 ### Web: `LateInitializationError: _handledContextLostEvent` after hot restart
 

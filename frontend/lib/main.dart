@@ -21,7 +21,6 @@ Future<void> main() async {
   final mealPlan = MealPlanProvider();
 
   await profile.load();
-  await profile.mergeBundledUserProfileIfEnabled();
   profile.addListener(llmGate.syncCredentialsFromProfile);
   await mealPlan.load();
   await llmGate.loadFromProfile();

@@ -34,6 +34,14 @@ On Today / Meal Plan View / meal cards driven by a plan, display **`meal.nutriti
 - Batches persist across plans. A batch slot outside the requested horizon or schedule, two slots on the same day, or a batch recipe left out of a selected `recipe_ids` pool all fail the plan with FM-3 (pinned-assignment validation); the sheet offers one slot per day from the current plan and warns about the pool case.
 - Tray collapse is device-local (`StorageService` `meal_prep_tray_collapsed`, expanded by default).
 
+## Pins (FE-15)
+
+- Pins are **server-owned** (`/api/v1/profile/pins`, kept in the server's profile YAML; the first write creates that file). `MealPlanProvider` keeps only the last fetched list (`pins`, `pinCount`, `pinAt`, `loadPins`, `pinsErrorCode`). There is no pins provider, and `PlanRequest` never carries pins: the server applies its own to every `/plan`.
+- Pin coordinates are 0-based `(day_index, slot_index)`, like batches. A planned meal's coordinate is `MealPlanProvider.pinSlotFor(day, mealIndex, meal)` = `(day - 1, meal.slotIndex ?? mealIndex)`. Flutter's request `MealSlot.index` (1-based) is not it.
+- `pinRecipe` / `unpinSlot` / `clearPins` change the server, then re-fetch `pins`. None re-runs the plan ("Applies next time you plan").
+- `MealCard(hasPin:)` shows "Pinned" for `Meal.source == pinned_assignment` and "Pinned · next plan" for a slot pinned since the plan; never on a batch meal. `MealDetailSheet` disables Pin on a batch slot ("Meal prep overrides pins for this meal"). Precedence: meal-prep batch → pin → required tags → preferred scoring.
+- A stored pin outside the requested schedule (a slot or day the request doesn't have) fails the plan with FM-3 (`PIN_OR_BATCH_CONFLICT`), shown through `FailurePanel`. The fix is to unpin it or use "Clear pins" (Planner Config).
+
 ## Toast / success snackbar
 
 Show a success toast for NL plan generation **only when** `plan.success == true` (see `agent_pane_screen.dart`). Partial/failed in-body plans still call `applyPlanResult` and navigate; they must not claim success via toast.

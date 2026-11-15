@@ -11,6 +11,9 @@ import 'package:macrova/widgets/macrova_chip.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../providers/profile_provider_defaults_test.dart'
+    show FakeMicronutrientDefaultsServer;
+
 Future<void> pumpProfileScreen(
   WidgetTester tester, {
   ProfileProvider? provider,
@@ -185,7 +188,8 @@ void main() {
         SharedPreferences.setMockInitialValues({
           'user_profile': jsonEncode({'demographic_group': 'lactation'}),
         });
-        final provider = ProfileProvider();
+        // No goals yet, so the screen fetches the lactation default (BE-20).
+        final provider = FakeMicronutrientDefaultsServer().provider();
         await provider.load();
 
         await pumpProfileScreen(tester, provider: provider);

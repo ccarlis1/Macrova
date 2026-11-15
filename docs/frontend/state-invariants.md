@@ -56,6 +56,14 @@ On Today / Meal Plan View / meal cards driven by a plan, display **`meal.nutriti
 - `UserProfile.planDemographic` (null when not set) is what requests send: `PlanRequest.demographic` from Planner Config, and `planFromTextBody(..., demographic:)` for the Agent pane. `PlanRequest.toJson` and `planFromTextBody` also drop unsupported values, so an unsupported value is never sent (the server would answer 400 `INVALID_REQUEST`).
 - The server enforces that demographic's daily ULs. It does not set micronutrient goals; `withPlanningMode` (and so `rerunLastRequest`) keeps the demographic.
 
+## Micronutrient default for new users (BE-20)
+
+- The default is **server-owned** (`GET /api/v1/micronutrient_defaults?demographic=...`, read-only, D-A). `ProfileProvider.loadMicronutrientDefaults` fetches it once per demographic and caches it (`micronutrientDefaultsFor`, `micronutrientDefaultsLoading`, `micronutrientDefaultsError`; a call after a failure retries). There is no client copy of the values, and the provider never writes them into `profile`.
+- The Profile screen fills the goal fields and τ from it only when the user has no goals of their own: every goal field is empty or zero, or still holds a default the user hasn't edited. That happens when the screen opens with a saved demographic and no goals, and when a demographic is picked. Goals the user typed or saved are never replaced, on any demographic change. "Not set" fetches nothing and leaves the fields as they are. A response that arrives after the user picked another demographic or typed a goal is not applied.
+- Saved goals count as the user's own, even if they came from the default. To start over from another demographic's default, clear the goal fields and pick it again.
+- While loading, the screen shows a hint; on failure, a notice with Retry, and the fields stay as they were (no fallback values). After applying, a line names the left-out nutrients (`micronutrientLabelForKey`) and says to enter a value to add one back.
+- Nothing reaches the server until the user saves and plans; `PlanRequest.micronutrient_goals` / `micronutrient_weekly_min_fraction` then carry the saved (possibly edited) values. `/api/v1/plan` itself never applies the default.
+
 ## Toast / success snackbar
 
 Show a success toast for NL plan generation **only when** `plan.success == true` (see `agent_pane_screen.dart`). Partial/failed in-body plans still call `applyPlanResult` and navigate; they must not claim success via toast.

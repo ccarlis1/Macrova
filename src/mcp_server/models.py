@@ -57,9 +57,10 @@ class Targets(_Input):
         default=None,
         description=(
             "Selects the default micronutrient goals (that demographic's recommended daily "
-            "intakes, met as weekly totals, minus the few the sample recipes can't meet; the "
-            "result's warnings name those) and the daily upper limits. Omit to skip the default "
-            "goals and the upper limits."
+            "intakes, met as weekly totals, minus the few the bundled sample recipes can't meet; "
+            "the result's warnings name those) and the daily upper limits. A goal whose "
+            "weekly fraction of the daily amount is above that nutrient's daily upper limit is "
+            "rejected. Omit to skip the default goals and the upper limits."
         ),
     )
     micronutrient_goals: Optional[Dict[str, Annotated[float, Field(ge=0)]]] = Field(
@@ -184,9 +185,15 @@ class PlannedDay(BaseModel):
 
 
 class NutrientProgress(BaseModel):
-    total: float
-    target: float
-    met: bool
+    total: float = Field(description="Amount the plan provides over all its days.")
+    target: float = Field(description="The full goal over the plan: daily goal × days.")
+    minimum: float = Field(
+        description=(
+            "The floor the planner enforces: target × micronutrient_weekly_min_fraction "
+            "(equal to target at 1.0)."
+        )
+    )
+    met: bool = Field(description="True when total reaches minimum (the planner's own floor).")
 
 
 class RecipeGap(BaseModel):

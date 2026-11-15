@@ -52,6 +52,7 @@ from src.mcp_server.nutrients import (
 from src.models.legacy_schedule_migration import merge_schedule_warnings_into_result
 from src.data_layer import user_data
 from src.nutrition.calculator import NutritionCalculator
+from src.planning.micronutrient_policy import is_below_weekly_minimum, weekly_minimum_total
 from src.planning.planner import plan_meals as run_planner
 from src.providers.summary_hybrid_provider import SummaryHybridIngredientProvider
 
@@ -420,13 +421,21 @@ def _planned_days(out: Mapping[str, Any], schedule_days: Sequence[Mapping[str, A
     return days
 
 
+def _tau(targets: m.Targets) -> float:
+    tau = targets.micronutrient_weekly_min_fraction
+    return DEFAULT_MICRONUTRIENT_WEEKLY_MIN_FRACTION if tau is None else tau
+
+
 def _micronutrient_goals(targets: m.Targets) -> Tuple[Dict[str, float], Tuple[str, ...]]:
     """The daily goals to plan with, and the nutrients the default left out (BE-20, D-A).
 
     Without ``targets.micronutrient_goals``: the demographic's default (none without a
     demographic). With it: each given value replaces the default for that nutrient (0
     removes it), and an empty map means no goals. Only the untouched default reports
-    left-out nutrients.
+    left-out nutrients. Goals come back in ``NUTRIENT_KEYS`` order, so the request's
+    JSON key order never changes the plan. With a demographic, a goal whose weekly
+    floor (τ × goal per day) is above that nutrient's daily upper limit is rejected:
+    no plan could meet it.
     """
     override = targets.micronutrient_goals
     if override is not None:
@@ -444,29 +453,59 @@ def _micronutrient_goals(targets: m.Targets) -> Tuple[Dict[str, float], Tuple[st
         base = default_micronutrient_goals(targets.demographic)
         left_out = default_micronutrient_left_out(targets.demographic)
     if override is None:
-        return base, left_out
-    if not override:
+        merged = base
+    elif not override:
         return {}, ()
-    merged = {**base, **{k: float(v) for k, v in override.items()}}
-    return {k: v for k, v in merged.items() if v > 0}, ()
+    else:
+        merged = {**base, **{k: float(v) for k, v in override.items()}}
+        left_out = ()
+    goals = {k: merged[k] for k in NUTRIENT_KEYS if merged.get(k, 0) > 0}
+    _check_goals_under_upper_limits(goals, targets.demographic, _tau(targets))
+    return goals, left_out
 
 
-def _left_out_warning(demographic: Optional[str], left_out: Sequence[str]) -> Optional[str]:
+def _check_goals_under_upper_limits(goals: Mapping[str, float], demographic: Optional[str], tau: float) -> None:
+    limits = upper_limits_for(demographic)
+    if limits is None:
+        return
+    for key, goal in goals.items():
+        limit = getattr(limits, key, None)
+        if limit is not None and tau * goal > limit:
+            raise InputError(
+                f"The {plain_name(key)} goal ({key}: {goal:g} per day) can't be met: at a weekly "
+                f"fraction of {tau:.1f} the plan would need {tau * goal:g} per day on average, above "
+                f"the daily upper limit of {limit:g} for {demographic}. Lower that goal in "
+                f"targets.micronutrient_goals (or set it to 0), or lower "
+                f"targets.micronutrient_weekly_min_fraction."
+            )
+
+
+def _left_out_warning(
+    demographic: Optional[str], left_out: Sequence[str], *, use_sample_recipes: bool
+) -> Optional[str]:
     if not left_out:
         return None
     names = [plain_name(k) for k in left_out]
     listed = names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
     example = ", ".join(f'"{k}": <daily amount>' for k in left_out)
+    if use_sample_recipes:
+        reason = (
+            f"The default micronutrient goals for {demographic} leave out {listed}: the bundled "
+            f"sample recipes can't meet them at the full weekly target."
+        )
+    else:
+        verb = "was" if len(names) == 1 else "were"
+        reason = f"{listed} {verb} left out of the default goals for {demographic}."
     return (
-        f"The default micronutrient goals for {demographic} leave out {listed}: the sample "
-        f"recipes can't meet them at the full weekly target. To plan for them anyway, add "
-        f"them to targets.micronutrient_goals, for example {{{example}}}."
+        f"{reason} To plan for them anyway, add them to targets.micronutrient_goals, "
+        f"for example {{{example}}}."
     )
 
 
 def _weekly_micronutrients(
-    out: Mapping[str, Any], goals: Mapping[str, float], days: int
+    out: Mapping[str, Any], goals: Mapping[str, float], days: int, tau: float = 1.0
 ) -> Dict[str, m.NutrientProgress]:
+    """Weekly totals against each goal. ``met`` uses the planner's own floor (τ × goal × days)."""
     if not goals or not out.get("daily_plans"):
         return {}
     totals: Dict[str, float] = {}
@@ -475,9 +514,13 @@ def _weekly_micronutrients(
             totals[key] = totals.get(key, 0.0) + float(value)
     progress = {}
     for key, daily in goals.items():
-        target = round(daily * days, 1)
-        total = round(totals.get(key, 0.0), 1)
-        progress[plain_name(key)] = m.NutrientProgress(total=total, target=target, met=total >= target)
+        total = totals.get(key, 0.0)
+        progress[plain_name(key)] = m.NutrientProgress(
+            total=round(total, 1),
+            target=round(daily * days, 1),
+            minimum=round(weekly_minimum_total(daily, days, tau), 1),
+            met=not is_below_weekly_minimum(total, daily, days, tau),
+        )
     return progress
 
 
@@ -518,7 +561,7 @@ def _markdown(result: m.PlanResult) -> str:
             lines.append(f"**Fix:** {result.failure.fix}")
     unmet = [name for name, p in result.weekly_micronutrients.items() if not p.met]
     if unmet:
-        lines.append(f"**Below target:** {', '.join(unmet)}")
+        lines.append(f"**Below the weekly minimum:** {', '.join(unmet)}")
     for warning in result.warnings:
         lines.append(f"- {warning}")
     return "\n".join(lines).strip()
@@ -542,7 +585,7 @@ def plan_meals(
     tag_data = _tag_data(pool)
     schedule_days = _schedule_days(schedule, days)
     goals, left_out = _micronutrient_goals(targets)
-    tau = targets.micronutrient_weekly_min_fraction
+    tau = _tau(targets)
 
     try:
         request = PlanRequest(
@@ -556,7 +599,7 @@ def plan_meals(
             liked_foods=preferences.liked_foods,
             allergies=preferences.excluded_ingredients,
             micronutrient_goals=goals or None,
-            micronutrient_weekly_min_fraction=DEFAULT_MICRONUTRIENT_WEEKLY_MIN_FRACTION if tau is None else tau,
+            micronutrient_weekly_min_fraction=tau,
             planning_mode="deterministic",
         )
         user_profile, schedule_warnings = api._build_user_profile(request)
@@ -596,11 +639,14 @@ def plan_meals(
         summary=_summary(status, planned, days, failure),
         requested_targets=targets,
         days=planned,
-        weekly_micronutrients=_weekly_micronutrients(out, goals, days),
+        weekly_micronutrients=_weekly_micronutrients(out, goals, days, tau),
         warnings=list(
             dict.fromkeys(
                 w
-                for w in (_left_out_warning(targets.demographic, left_out), *_plain_warnings(out.get("warnings") or {}))
+                for w in (
+                    _left_out_warning(targets.demographic, left_out, use_sample_recipes=use_sample_recipes),
+                    *_plain_warnings(out.get("warnings") or {}),
+                )
                 if w
             )
         ),

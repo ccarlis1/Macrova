@@ -187,8 +187,8 @@ def test_weekly_micronutrients_use_plain_names():
     out = {"daily_plans": [{"totals": {"micronutrients": {"iron_mg": 20.0}}}, {"totals": {"micronutrients": {"iron_mg": 17.0}}}]}
     goals = {"iron_mg": 18.0, "vitamin_c_mg": 75.0}
     progress = tools._weekly_micronutrients(out, goals, days=2)
-    assert progress["Iron (mg)"].model_dump() == {"total": 37.0, "target": 36.0, "met": True}
-    assert progress["Vitamin C (mg)"].model_dump() == {"total": 0.0, "target": 150.0, "met": False}
+    assert progress["Iron (mg)"].model_dump() == {"total": 37.0, "target": 36.0, "minimum": 36.0, "met": True}
+    assert progress["Vitamin C (mg)"].model_dump() == {"total": 0.0, "target": 150.0, "minimum": 150.0, "met": False}
     assert all("_" not in name for name in progress)
 
 
@@ -306,6 +306,7 @@ def test_default_warning_names_left_out_nutrients_and_the_override():
     out = _sample_plan({**DEMO_TARGETS, "demographic": "adult_male"}).structured_content
     warning = out["warnings"][0]
     assert warning.startswith("The default micronutrient goals for adult_male leave out ")
+    assert "the bundled sample recipes can't meet them" in warning
     assert "Omega-3 (ALA) (g) and Omega-6 (linoleic acid) (g)" in warning
     assert "targets.micronutrient_goals" in warning
     assert '"omega_3_g": <daily amount>' in warning
@@ -314,12 +315,12 @@ def test_default_warning_names_left_out_nutrients_and_the_override():
 @pytest.mark.parametrize("goals", [{}, {"iron_mg": 8}])
 def test_no_left_out_warning_when_the_user_sends_goals(goals):
     out = _sample_plan({**DEMO_TARGETS, "demographic": "adult_male", "micronutrient_goals": goals}).structured_content
-    assert not any("leave out" in w for w in out["warnings"])
+    assert not any("targets.micronutrient_goals" in w for w in out["warnings"])
 
 
 def test_no_left_out_warning_without_a_demographic():
     out = _sample_plan(DEMO_TARGETS, days=1).structured_content
-    assert not any("leave out" in w for w in out["warnings"])
+    assert not any("targets.micronutrient_goals" in w for w in out["warnings"])
 
 
 def test_override_restores_a_left_out_nutrient():
@@ -412,6 +413,94 @@ def test_tool_schema_describes_the_new_fields_and_2_3_4():
     targets = plan.input_schema["$defs"]["Targets"]["properties"]
     assert "micronutrient_goals" in targets and "micronutrient_weekly_min_fraction" in targets
     assert "Targets" not in plan.input_schema["required"]
+
+
+# --- BE-20 follow-ups (planner-invariant review) ---------------------------------
+
+
+def _targets(**extra) -> models.Targets:
+    return models.Targets(**DEMO_TARGETS, **extra)
+
+
+def test_goal_above_the_daily_upper_limit_is_an_error():
+    """tau × goal above the daily UL can never be met (adult iron UL is 45 mg)."""
+    with pytest.raises(tools.InputError) as err:
+        tools._micronutrient_goals(_targets(demographic="adult_male", micronutrient_goals={"iron_mg": 100}))
+    message = str(err.value)
+    for part in ("Iron (mg)", "iron_mg", "100", "1.0", "45"):
+        assert part in message, (part, message)
+    # Through the tool it's a plain-language error, not a failed plan.
+    result = _sample_plan({**DEMO_TARGETS, "demographic": "adult_male", "micronutrient_goals": {"iron_mg": 100}}, days=1)
+    assert result.is_error is True
+    assert "upper limit" in result.content[0].text
+
+
+def test_goal_under_the_upper_limit_after_tau_is_allowed():
+    goals, _ = tools._micronutrient_goals(
+        _targets(demographic="adult_male", micronutrient_goals={"iron_mg": 100}, micronutrient_weekly_min_fraction=0.4)
+    )
+    assert goals["iron_mg"] == 100.0  # 0.4 × 100 = 40 mg ≤ 45 mg
+
+
+def test_null_upper_limit_and_no_demographic_skip_the_check():
+    # Magnesium's UL is null (supplement-only); without a demographic there are no ULs.
+    goals, _ = tools._micronutrient_goals(_targets(demographic="adult_male", micronutrient_goals={"magnesium_mg": 5000}))
+    assert goals["magnesium_mg"] == 5000.0
+    goals, _ = tools._micronutrient_goals(_targets(micronutrient_goals={"iron_mg": 100}))
+    assert goals == {"iron_mg": 100.0}
+
+
+def test_default_goals_pass_the_upper_limit_check():
+    from src.data_layer.upper_limits import DEMOGRAPHICS, default_micronutrient_goals
+
+    for demographic in DEMOGRAPHICS:
+        goals, _ = tools._micronutrient_goals(_targets(demographic=demographic))
+        assert goals == default_micronutrient_goals(demographic)
+
+
+def test_weekly_progress_is_met_at_the_tau_minimum():
+    """Failed before: met compared against the full target, ignoring tau."""
+    out = {"daily_plans": [{"totals": {"micronutrients": {"iron_mg": 10.0}}}, {"totals": {"micronutrients": {"iron_mg": 9.0}}}]}
+    progress = tools._weekly_micronutrients(out, {"iron_mg": 18.0, "vitamin_c_mg": 75.0}, days=2, tau=0.5)
+    assert progress["Iron (mg)"].model_dump() == {"total": 19.0, "target": 36.0, "minimum": 18.0, "met": True}
+    assert progress["Vitamin C (mg)"].model_dump() == {"total": 0.0, "target": 150.0, "minimum": 75.0, "met": False}
+
+
+def test_successful_low_tau_plan_reports_every_goal_met():
+    result = _sample_plan({**DEMO_TARGETS, "demographic": "adult_male", "micronutrient_weekly_min_fraction": 0.5}, days=3)
+    out = result.structured_content
+    assert out["status"] == "success", out["failure"]
+    assert out["weekly_micronutrients"]
+    for name, progress in out["weekly_micronutrients"].items():
+        assert progress["met"] is True, name
+        assert progress["minimum"] == pytest.approx(0.5 * progress["target"], abs=0.1), name
+    assert "Below" not in result.content[0].text
+
+
+def test_goal_order_follows_nutrient_keys_not_json_order():
+    """Failed before: the merged dict kept the request's key order."""
+    a, _ = tools._micronutrient_goals(_targets(micronutrient_goals={"zinc_mg": 11, "iron_mg": 8, "vitamin_c_mg": 90}))
+    b, _ = tools._micronutrient_goals(_targets(micronutrient_goals={"vitamin_c_mg": 90, "zinc_mg": 11, "iron_mg": 8}))
+    assert list(a) == list(b) == ["vitamin_c_mg", "iron_mg", "zinc_mg"]
+    c, _ = tools._micronutrient_goals(
+        _targets(demographic="adult_male", micronutrient_goals={"omega_6_g": 17, "omega_3_g": 1.6, "calcium_mg": 1200})
+    )
+    assert list(c) == [k for k in tools.NUTRIENT_KEYS if k in c]
+    goals = lambda order: {k: {"zinc_mg": 11, "iron_mg": 8, "vitamin_c_mg": 90}[k] for k in order}  # noqa: E731
+    first = _plan(days=1, targets={**TARGETS, "micronutrient_goals": goals(["zinc_mg", "iron_mg", "vitamin_c_mg"])})
+    second = _plan(days=1, targets={**TARGETS, "micronutrient_goals": goals(["vitamin_c_mg", "iron_mg", "zinc_mg"])})
+    one, two = first.structured_content, second.structured_content
+    assert one["days"] == two["days"]
+    assert list(one["weekly_micronutrients"]) == list(two["weekly_micronutrients"])
+
+
+def test_left_out_warning_names_sample_recipes_only_when_they_are_used():
+    out = _plan(days=1, targets={**TARGETS, "demographic": "adult_male"}).structured_content
+    (warning,) = [w for w in out["warnings"] if "targets.micronutrient_goals" in w]
+    assert "sample recipes" not in warning
+    assert "Omega-3 (ALA) (g) and Omega-6 (linoleic acid) (g) were left out of the default goals for adult_male" in warning
+    assert "To plan for them anyway, add them to targets.micronutrient_goals" in warning
+    assert tools._left_out_warning("adult_male", (), use_sample_recipes=False) is None
 
 
 # --- Transport -----------------------------------------------------------------

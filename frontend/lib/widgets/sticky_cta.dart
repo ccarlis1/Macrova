@@ -9,10 +9,14 @@ class StickyCtaAction {
   final VoidCallback? onPressed;
   final bool isPrimary;
 
+  /// Key for the rendered button (tests / web automation).
+  final Key? key;
+
   const StickyCtaAction({
     required this.label,
     this.onPressed,
     this.isPrimary = false,
+    this.key,
   });
 }
 
@@ -83,10 +87,12 @@ class StickyCta extends StatelessWidget {
                 padding: const EdgeInsets.only(left: MacrovaSpacing.xs),
                 child: a.isPrimary
                     ? FilledButton(
+                        key: a.key,
                         onPressed: a.onPressed,
                         child: Text(a.label),
                       )
                     : OutlinedButton(
+                        key: a.key,
                         onPressed: a.onPressed,
                         child: Text(a.label),
                       ),
@@ -102,10 +108,12 @@ class StickyCta extends StatelessWidget {
             padding: const EdgeInsets.only(left: MacrovaSpacing.sm),
             child: a.isPrimary
                 ? FilledButton(
+                    key: a.key,
                     onPressed: a.onPressed,
                     child: Text(a.label),
                   )
                 : OutlinedButton(
+                    key: a.key,
                     onPressed: a.onPressed,
                     child: Text(a.label),
                   ),

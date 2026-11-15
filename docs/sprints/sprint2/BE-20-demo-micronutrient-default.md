@@ -62,6 +62,53 @@ The nutrient list comes from the re-run probe (expected: all except `omega_3_g`)
 - `benchmark-audit`: 153/153, 0 regressions
 - `cd frontend && flutter analyze && flutter test` if Flutter changed
 
+## Probe re-run (2026-11-14) — STOPPED, owner decision needed
+
+Run: `.venv/bin/python docs/sprints/sprint2/probes/micro_probe_be20.py 7 <demographic>` (a copy of
+`micro_probe.py` that goes through the MCP tool path: the 18 sample recipes via `use_sample_recipes`,
+7 days, 3 meals at busyness **2/3/4**, macros from `config/user_profile.yaml.example`
+(2400 kcal, 150 g protein, fat 50–100 g), τ = 1.0, the demographic's daily ULs enforced as BE-17 wires them).
+
+**Result: no goal list works, not even an empty one.** With the ULs on, every demographic fails before any
+micronutrient floor is added:
+
+| Demographic | No goals (ULs only) | All 25 | Each alone | All minus failing |
+|---|---|---|---|---|
+| adult_male | partial, FM-MACRO-INFEASIBLE | failed, FM-4 | all 25 fail | 0 left → FM-MACRO-INFEASIBLE |
+| adult_female | partial, FM-MACRO-INFEASIBLE | failed, FM-4 | all 25 fail | 0 left → FM-MACRO-INFEASIBLE |
+| pregnancy | partial, FM-MACRO-INFEASIBLE | failed, FM-4 | all 25 fail | 0 left → FM-MACRO-INFEASIBLE |
+| lactation | partial, FM-MACRO-INFEASIBLE | failed, FM-4 | all 25 fail | 0 left → FM-MACRO-INFEASIBLE |
+
+Cause: `ul_by_demographic.json` sets a **magnesium UL of 350 mg/day** for all four demographics, and the
+planner applies it to magnesium from food. (In the IOM DRIs that UL covers supplemental magnesium only.)
+No 3-meal day at 2400 kcal from these pools stays under 350 mg, so every day fails. For `adult_male`
+the magnesium RDI (400 mg) is also above that UL, so a magnesium floor can never be met. The same holds
+on the committed 32-recipe pool over HTTP: `config/user_profile.yaml.example` (`demographic: adult_male`),
+no micronutrient goals → `plan_status: partial`, FM-MACRO-INFEASIBLE at 1, 3 and 7 days; without the
+demographic it succeeds. Without micronutrient goals and without ULs, the sample pool succeeds at 1, 3
+and 7 days with both 2/3/3 and 2/3/4. The UL failure is also reported as FM-MACRO-INFEASIBLE ("no
+combination … meets your daily calorie and macro targets"), which points the user at the wrong fix.
+
+Diagnostic only (`PROBE_DROP_UL=magnesium_mg`, the magnesium UL removed in memory; the reference file is
+unchanged):
+
+| Demographic | No goals | All 25 | Fail alone at τ = 1.0 | All minus those |
+|---|---|---|---|---|
+| adult_male | success | FM-4 | omega_3_g, omega_6_g | 23 → success |
+| adult_female | success | FM-4 | omega_3_g, omega_6_g | 23 → success |
+| pregnancy | success | FM-4 | iron_mg, omega_3_g, omega_6_g | 22 → success |
+| lactation | success | FM-4 | vitamin_a_ug, vitamin_e_mg, omega_3_g, omega_6_g | 21 → success |
+
+So, if the magnesium UL question is settled, the default would be "all except omega_3_g and omega_6_g"
+for the adults, with pregnancy and lactation dropping one and two more. That differs by demographic,
+which this stub doesn't anticipate.
+
+**Final list: none chosen.** Implementation stopped here per the pre-implementation rule ("if the default
+list still fails on the samples, stop and report to the owner"). Owner decisions needed: (1) how the
+supplement-only ULs (magnesium; niacin's 35 mg UL is also supplement-only in the IOM tables) apply to food;
+that's a reference-data review or a planner rule, neither of which BE-20 may change; (2) whether the default
+list may differ by demographic.
+
 ## Out of scope
 
 - Reviewing DRI values (human-only).

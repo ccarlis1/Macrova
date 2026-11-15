@@ -6,6 +6,7 @@ import '../models/ingredient_search.dart';
 import '../models/meal_prep_batch.dart';
 import '../models/models.dart';
 import '../models/nutrition_summary.dart';
+import '../models/profile_pin.dart';
 import '../models/recipe.dart';
 import '../models/recipe_sync_result.dart';
 import '../models/tag.dart';
@@ -324,6 +325,76 @@ class ApiService {
           throw const FormatException('cancel response has no cancelled_id');
         }
         return id;
+      });
+    }
+    throw ApiException.fromResponse(res);
+  }
+
+  /// GET /api/v1/profile/pins. Pins live in the server's profile YAML; an
+  /// absent file lists no pins. [client] is for tests.
+  static Future<List<ProfilePin>> listPins({http.Client? client}) async {
+    final uri = Uri.parse('$baseUrl/api/v1/profile/pins');
+    final res = client == null ? await http.get(uri) : await client.get(uri);
+    if (res.statusCode == 200) {
+      return _parseOk(res, 'Pin list response', ProfilePin.listFromResponse);
+    }
+    throw ApiException.fromResponse(res);
+  }
+
+  /// PUT /api/v1/profile/pins/{day_index}/{slot_index} with `{recipe_id}`.
+  /// Indexes are the plan's 0-based slot coordinate. Upsert: re-pinning a slot
+  /// replaces its recipe. An unknown recipe throws [ApiException]
+  /// `RECIPE_NOT_FOUND` (404). [client] is for tests.
+  static Future<ProfilePin> pin(
+    int dayIndex,
+    int slotIndex,
+    String recipeId, {
+    http.Client? client,
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/v1/profile/pins/$dayIndex/$slotIndex');
+    final body = jsonEncode({'recipe_id': recipeId});
+    final res = client == null
+        ? await http.put(uri, headers: _jsonHeaders, body: body)
+        : await client.put(uri, headers: _jsonHeaders, body: body);
+    if (res.statusCode == 200) {
+      return _parseOk(res, 'Pin response', (json) {
+        final pin = json['pin'];
+        if (pin is! Map) throw const FormatException('pin response has no pin');
+        return ProfilePin.fromJson(Map<String, dynamic>.from(pin));
+      });
+    }
+    throw ApiException.fromResponse(res);
+  }
+
+  /// DELETE /api/v1/profile/pins/{day_index}/{slot_index}. Unpinning an
+  /// empty slot is not an error (`deleted: false`). [client] is for tests.
+  static Future<ProfilePinDeleteResult> unpin(
+    int dayIndex,
+    int slotIndex, {
+    http.Client? client,
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/v1/profile/pins/$dayIndex/$slotIndex');
+    final res =
+        client == null ? await http.delete(uri) : await client.delete(uri);
+    if (res.statusCode == 200) {
+      return _parseOk(res, 'Unpin response', ProfilePinDeleteResult.fromJson);
+    }
+    throw ApiException.fromResponse(res);
+  }
+
+  /// DELETE /api/v1/profile/pins. Returns `cleared_count`. [client] is for
+  /// tests.
+  static Future<int> clearPins({http.Client? client}) async {
+    final uri = Uri.parse('$baseUrl/api/v1/profile/pins');
+    final res =
+        client == null ? await http.delete(uri) : await client.delete(uri);
+    if (res.statusCode == 200) {
+      return _parseOk(res, 'Clear pins response', (json) {
+        final n = json['cleared_count'];
+        if (n is! num) {
+          throw const FormatException('clear response has no cleared_count');
+        }
+        return n.toInt();
       });
     }
     throw ApiException.fromResponse(res);

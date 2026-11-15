@@ -1,0 +1,14 @@
+{
+  "pins": [
+    {
+      "day_index": 0,
+      "slot_index": 1,
+      "recipe_id": "recipe_001"
+    },
+    {
+      "day_index": 1,
+      "slot_index": 0,
+      "recipe_id": "recipe_002"
+    }
+  ]
+}

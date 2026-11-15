@@ -47,3 +47,22 @@ of `fe14-oat-bowl` (`default_servings: 3`, `context: [breakfast, meal-prep]`) an
 Used by `test/meal_prep_api_test.dart` (DTO, client, index bases),
 `test/widgets/meal_prep_tray_test.dart`, `test/widgets/create_batch_sheet_test.dart`
 and `test/providers/meal_plan_provider_meal_prep_test.dart`.
+
+## Pin fixtures (FE-15)
+
+Captured in-process (FastAPI `TestClient`, run from the repo root on the
+sprint2-wave2 FE-14 commit `4c952e8`) with `NUTRITION_USER_PROFILE_PATH` pointing
+at a **non-existent** temp file and `MACROVA_DATA_DIR` at a temp copy of the
+committed `data/recipes/` (`git archive HEAD`). In order:
+
+| File | Request | Notes |
+| --- | --- | --- |
+| — | `GET /api/v1/profile/pins` | `{"pins": []}`; the YAML is still absent |
+| `profile_pin_created.json` | `PUT /api/v1/profile/pins/0/1` `{"recipe_id": "recipe_001"}` | 200 `{pin}`; creates the YAML holding only `pins:` |
+| `profile_pins_list.json` | `PUT …/1/0` `recipe_002`, then `GET /api/v1/profile/pins` | sorted by `(day_index, slot_index)` |
+| `profile_pin_error_not_found.json` | `PUT …/0/0` `{"recipe_id": "no-such-recipe"}` | 404 `RECIPE_NOT_FOUND` |
+| `plan_with_pin.json` | `POST /api/v1/plan`, 2 days, request from `build_plan_request_from_profile(config/user_profile.yaml.example)` minus `active_batches` / `recipe_ids` | `partial` (FM-4); day 1 `slot_index: 1` and day 2 `slot_index: 0` are `source: pinned_assignment` with the pinned recipes |
+| `profile_pin_deleted.json` | `DELETE /api/v1/profile/pins/0/1` | `{deleted: true, pin}` |
+| `profile_pins_cleared.json` | `DELETE /api/v1/profile/pins` | `{cleared_count: 1}` |
+
+Used by `test/profile_pin_api_test.dart` (DTO, client, index bases).

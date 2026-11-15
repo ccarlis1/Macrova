@@ -1,0 +1,6 @@
+{
+  "error": {
+    "code": "RECIPE_NOT_FOUND",
+    "message": "No recipe with id 'no-such-recipe'"
+  }
+}

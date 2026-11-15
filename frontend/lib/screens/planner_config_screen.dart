@@ -388,6 +388,7 @@ class PlannerConfigScreen extends StatelessWidget {
       dietaryFlags: planProvider.dietaryFlags.isEmpty
           ? null
           : List<String>.from(planProvider.dietaryFlags),
+      demographic: profile.planDemographic,
     );
 
     final shell = context.findAncestorStateOfType<AppShellState>();

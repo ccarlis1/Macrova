@@ -53,30 +53,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   bool _initialized = false;
 
+  /// "Not set" plus the demographics the server has UL data for (BE-17).
   static const _demographicOptions = [
     '',
-    'adult_male',
-    'adult_female',
-    'teen_male',
-    'teen_female',
-    'child',
-    'pregnancy',
-    'lactation',
-    'elderly_male',
-    'elderly_female',
+    ...UserProfile.supportedDemographics,
   ];
 
   static const _demographicLabels = {
-    '': 'Select demographic...',
+    '': 'Not set',
     'adult_male': 'Adult Male (19-50)',
     'adult_female': 'Adult Female (19-50)',
-    'teen_male': 'Teen Male (14-18)',
-    'teen_female': 'Teen Female (14-18)',
-    'child': 'Child (9-13)',
     'pregnancy': 'Pregnancy',
     'lactation': 'Lactation',
-    'elderly_male': 'Elderly Male (51+)',
-    'elderly_female': 'Elderly Female (51+)',
   };
 
   static const int _vitaminCount = 12;
@@ -144,7 +132,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         : 'openai_compatible';
     _calorieDeficitMode = profile.calorieDeficitMode;
     _maxDailyCaloriesCtrl.text = profile.maxDailyCalories?.toString() ?? '';
-    _demographicGroup = profile.demographicGroup;
+    _demographicGroup =
+        UserProfile.normalizeDemographic(profile.demographicGroup);
     _allergies = List.from(profile.allergies);
   }
 
@@ -621,7 +610,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: MacrovaSpacing.xs),
                     Text(
-                      'Used to calculate appropriate Upper Limits (UL) for micronutrients',
+                      'Plans enforce this group\'s daily Upper Limits (UL) for micronutrients. '
+                      'Teen, child and 51+ groups have no reference data yet.',
                       style: MacrovaTypography.caption(tokens.inkTertiary),
                     ),
                     const SizedBox(height: MacrovaSpacing.xlAlt),

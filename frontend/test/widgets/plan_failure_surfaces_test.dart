@@ -715,6 +715,23 @@ void main() {
       expect(provider.canRerunLastRequest, isFalse);
     });
 
+    test('keeps the demographic when re-sending with another mode', () async {
+      final provider = _FakePlanProvider()
+        ..debugSetLastRequest(const PlanRequest(
+          dailyCalories: 2000,
+          dailyProteinG: 150,
+          dailyFatGMin: 50,
+          dailyFatGMax: 70,
+          planningMode: 'deterministic',
+          demographic: 'adult_female',
+        ));
+      await provider.rerunLastRequest(planningMode: 'assisted');
+      expect(provider.requests, hasLength(1));
+      expect(provider.requests.single.planningMode, 'assisted');
+      expect(provider.requests.single.demographic, 'adult_female');
+      expect(provider.requests.single.toJson()['demographic'], 'adult_female');
+    });
+
     test('applyPlanResult and clearPlan drop the last request', () {
       final provider = _FakePlanProvider()..debugSetLastRequest(_request);
       expect(provider.canRerunLastRequest, isTrue);

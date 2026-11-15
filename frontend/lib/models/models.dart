@@ -1,4 +1,5 @@
 import 'micronutrient_metadata.dart';
+import 'user_profile.dart';
 
 /// Turn `/api/v1/plan` [warnings] (object or list) into user-facing lines.
 List<String> formatPlanApiWarnings(dynamic w) {
@@ -206,6 +207,10 @@ class PlanRequest {
   final String? prepTimeBucket;
   final List<String>? dietaryFlags;
   final String? recipeTagsPath;
+  /// BE-17: demographic whose daily upper limits the server enforces. Sent only
+  /// when it is one of [UserProfile.supportedDemographics]; does not set
+  /// micronutrient goals.
+  final String? demographic;
 
   const PlanRequest({
     required this.dailyCalories,
@@ -229,6 +234,7 @@ class PlanRequest {
     this.prepTimeBucket,
     this.dietaryFlags,
     this.recipeTagsPath,
+    this.demographic,
   });
 
   factory PlanRequest.fromJson(Map<String, dynamic> json) {
@@ -274,6 +280,7 @@ class PlanRequest {
           ?.map((e) => e as String)
           .toList(),
       recipeTagsPath: json['recipe_tags_path'] as String?,
+      demographic: json['demographic'] as String?,
     );
   }
 
@@ -330,6 +337,10 @@ class PlanRequest {
     if (recipeTagsPath != null && recipeTagsPath!.isNotEmpty) {
       map['recipe_tags_path'] = recipeTagsPath;
     }
+    final demo = UserProfile.normalizeDemographic(demographic);
+    if (demo.isNotEmpty) {
+      map['demographic'] = demo;
+    }
     return map;
   }
 
@@ -356,6 +367,7 @@ class PlanRequest {
         prepTimeBucket: prepTimeBucket,
         dietaryFlags: dietaryFlags,
         recipeTagsPath: recipeTagsPath,
+        demographic: demographic,
       );
 }
 

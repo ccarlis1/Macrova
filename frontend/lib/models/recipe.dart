@@ -1,3 +1,5 @@
+import 'ingredient.dart';
+
 class RecipeIngredientEntry {
   final String ingredientId;
   final String ingredientName;
@@ -28,11 +30,47 @@ class RecipeIngredientEntry {
     this.resolved = true,
   });
 
-  double get _grams {
-    if (unit == 'g') return quantity;
+  /// Grams for this line ([gramsForUnit]). Throws [UnknownUnitException] when
+  /// [unit] has no gram weight, so the nutrition getters below throw too:
+  /// check [hasGramWeight] first, or use the [Recipe] totals, which leave such
+  /// lines out.
+  double get _grams => gramsForUnit(
+        quantity: quantity,
+        unit: unit,
+        unitConversions: unitConversions,
+        ingredientName: ingredientName,
+      );
+
+  /// False when [unit] has no gram weight for this line (FE-13): its nutrition
+  /// is unknown and the Recipe Builder blocks saving.
+  bool get hasGramWeight {
+    try {
+      _grams;
+      return true;
+    } on UnknownUnitException {
+      return false;
+    }
+  }
+
+  /// Weight of one [unit] to send as `grams_per_unit` (BE-19): the line's
+  /// conversion for a non-`g` unit, or null when it has none.
+  double? get gramsPerUnitToSend {
+    if (unit == 'g') return null;
     final gramsPerUnit = unitConversions[unit];
-    if (gramsPerUnit == null) return quantity;
-    return quantity * gramsPerUnit;
+    return gramsPerUnit != null && gramsPerUnit > 0 ? gramsPerUnit : null;
+  }
+
+  /// `{name, quantity, unit, grams_per_unit?}`: the line shape shared by
+  /// `RecipeSyncIngredientLine` and `NutritionIngredientLine`, so the builder's
+  /// summary weighs a line the same way the planner will after sync.
+  Map<String, dynamic> toApiLine() {
+    final gramsPerUnit = gramsPerUnitToSend;
+    return {
+      'name': ingredientName,
+      'quantity': quantity,
+      'unit': unit,
+      if (gramsPerUnit != null) 'grams_per_unit': gramsPerUnit,
+    };
   }
 
   double get calories => caloriesPer100g * _grams / 100;
@@ -183,14 +221,31 @@ class Recipe {
 
   bool get hasMealPrepTag => contextSlugs.contains(mealPrepSlug);
 
-  double get totalCalories =>
-      ingredients.fold(0, (sum, e) => sum + e.calories);
-  double get totalProteinG =>
-      ingredients.fold(0, (sum, e) => sum + e.proteinG);
-  double get totalCarbsG =>
-      ingredients.fold(0, (sum, e) => sum + e.carbsG);
-  double get totalFatG =>
-      ingredients.fold(0, (sum, e) => sum + e.fatG);
+  /// Lines whose unit has no gram weight ([RecipeIngredientEntry.hasGramWeight]).
+  /// They are unresolved: left out of every total below, never summed as grams.
+  List<RecipeIngredientEntry> get linesWithoutGramWeight => [
+        for (final e in ingredients)
+          if (!e.hasGramWeight) e,
+      ];
+
+  /// Sums [value] over lines with a gram weight; an [UnknownUnitException]
+  /// line counts as unresolved (excluded) rather than a wrong number.
+  double _sumResolved(double Function(RecipeIngredientEntry e) value) {
+    var sum = 0.0;
+    for (final e in ingredients) {
+      try {
+        sum += value(e);
+      } on UnknownUnitException {
+        // Unresolved line: see [linesWithoutGramWeight].
+      }
+    }
+    return sum;
+  }
+
+  double get totalCalories => _sumResolved((e) => e.calories);
+  double get totalProteinG => _sumResolved((e) => e.proteinG);
+  double get totalCarbsG => _sumResolved((e) => e.carbsG);
+  double get totalFatG => _sumResolved((e) => e.fatG);
 
   double get perServingCalories =>
       servings > 0 ? totalCalories / servings : totalCalories;
@@ -204,6 +259,7 @@ class Recipe {
   Map<String, double> get totalMicronutrients {
     final result = <String, double>{};
     for (final entry in ingredients) {
+      if (!entry.hasGramWeight) continue; // unresolved line
       entry.scaledMicronutrients.forEach((key, value) {
         result[key] = (result[key] ?? 0) + value;
       });
@@ -366,21 +422,14 @@ class Recipe {
     };
   }
 
-  /// One `RecipeSyncIngredientLine`. `grams_per_unit` (BE-19) is the weight of
-  /// one [RecipeIngredientEntry.unit], sent when the unit isn't `g` and the
-  /// line carries a conversion for it (copied from `Ingredient.unitConversions`
-  /// or the detail's `unit_conversions`). The server uses it only when its own
-  /// ingredient record has no conversion for that unit.
-  static Map<String, dynamic> _syncLine(RecipeIngredientEntry e) {
-    final gramsPerUnit = e.unit == 'g' ? null : e.unitConversions[e.unit];
-    return {
-      'name': e.ingredientName,
-      'quantity': e.quantity,
-      'unit': e.unit,
-      if (gramsPerUnit != null && gramsPerUnit > 0)
-        'grams_per_unit': gramsPerUnit,
-    };
-  }
+  /// One `RecipeSyncIngredientLine` ([RecipeIngredientEntry.toApiLine]).
+  /// `grams_per_unit` (BE-19) is the weight of one unit, sent when the unit
+  /// isn't `g` and the line carries a conversion for it (copied from
+  /// `Ingredient.unitConversions` or the detail's `unit_conversions`). The
+  /// server uses it only when its own ingredient record has no conversion for
+  /// that unit.
+  static Map<String, dynamic> _syncLine(RecipeIngredientEntry e) =>
+      e.toApiLine();
 
   factory Recipe.fromJson(Map<String, dynamic> json) {
     return Recipe(

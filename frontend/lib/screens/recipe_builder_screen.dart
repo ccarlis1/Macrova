@@ -79,6 +79,8 @@ class RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
   static Key cuisineChipKey(String value) =>
       Key('recipe_builder_cuisine_$value');
   static Key costChipKey(String value) => Key('recipe_builder_cost_$value');
+  static const unresolvedTotalsNoteKey =
+      Key('recipe_builder_unresolved_totals_note');
 
   RecipeBuilderMode get _mode => _editingRecipeId == null
       ? RecipeBuilderMode.create
@@ -176,15 +178,8 @@ class RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
       _summaryError = null;
     });
     try {
-      final lines = draft.ingredients
-          .map(
-            (e) => {
-              'name': e.ingredientName,
-              'quantity': e.quantity,
-              'unit': e.unit,
-            },
-          )
-          .toList();
+      // Same per-line `grams_per_unit` as sync, so these totals match the planner.
+      final lines = draft.ingredients.map((e) => e.toApiLine()).toList();
       final summary = await ApiService.nutritionSummary(
         servings: draft.servings,
         ingredientLines: lines,
@@ -574,6 +569,8 @@ class RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
       );
       return;
     }
+    // Save is disabled while a line has no gram weight; guard anyway.
+    if (_ingredients.any((e) => !e.hasGramWeight)) return;
     final recipeProvider = context.read<RecipeProvider>();
     if (!_hasMealRole(recipeProvider)) {
       setState(() => _showMealRoleError = true);
@@ -704,6 +701,9 @@ class RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
         recipe.ingredients.isNotEmpty &&
         serverMatchesDraft &&
         _shouldTrustServerSummary(server, recipe);
+    // Lines with no gram weight are unresolved (FE-13): flagged inline, left
+    // out of client totals, and they block Save until the unit is fixed.
+    final unconvertible = recipe.linesWithoutGramWeight;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -836,6 +836,17 @@ class RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
                   style: MacrovaTypography.caption(tokens.accentDeep),
                 ),
               ),
+            if (unconvertible.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: MacrovaSpacing.md),
+                child: Text(
+                  'Totals leave out ${unconvertible.length} '
+                  '${unconvertible.length == 1 ? 'ingredient' : 'ingredients'} '
+                  'with no gram weight.',
+                  key: RecipeBuilderScreenState.unresolvedTotalsNoteKey,
+                  style: MacrovaTypography.caption(tokens.accentDeep),
+                ),
+              ),
             NutritionTotalsPanel(
               title: useServerTotals
                   ? 'Nutrition (server)'
@@ -887,7 +898,7 @@ class RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
             ),
             StickyCtaAction(
               label: _mode == RecipeBuilderMode.create ? 'Create' : 'Update',
-              onPressed: _save,
+              onPressed: unconvertible.isEmpty ? _save : null,
               isPrimary: true,
             ),
           ],
@@ -1144,6 +1155,7 @@ class _IngredientQuantityRowState extends State<_IngredientQuantityRow> {
     final tokens =
         Theme.of(context).extension<MacrovaTokens>() ?? MacrovaTokens.light;
     final ing = widget.entry;
+    final hasGramWeight = ing.hasGramWeight;
     return Container(
       key: ValueKey(widget.lineId),
       margin: const EdgeInsets.only(bottom: MacrovaSpacing.sm),
@@ -1167,6 +1179,15 @@ class _IngredientQuantityRowState extends State<_IngredientQuantityRow> {
                 ),
                 const SizedBox(height: MacrovaSpacing.sm),
                 _buildQtyUnitPill(tokens, ing),
+                if (!hasGramWeight)
+                  Padding(
+                    padding: const EdgeInsets.only(top: MacrovaSpacing.xs),
+                    child: Text(
+                      "No gram weight for '${ing.unit}'. "
+                      'Pick g or another unit to save.',
+                      style: MacrovaTypography.caption(tokens.accentDeep),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -1175,7 +1196,7 @@ class _IngredientQuantityRowState extends State<_IngredientQuantityRow> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '${ing.calories.round()} kcal',
+                hasGramWeight ? '${ing.calories.round()} kcal' : '— kcal',
                 style: MacrovaTypography.label(tokens.accent),
               ),
               IconButton(

@@ -252,6 +252,64 @@ def test_detail_unresolved_lines_are_returned_with_resolved_false(monkeypatch, t
     assert unknown["calories_per_100g"] == 0.0
 
 
+def _write_recipes(monkeypatch, tmp_path, recipes: list) -> None:
+    _configure_paths(monkeypatch, tmp_path)
+    (tmp_path / "recipes.json").write_text(json.dumps({"recipes": recipes}), encoding="utf-8")
+
+
+def test_detail_unit_conversions_include_calculator_serving_weight(monkeypatch, tmp_path):
+    """``eggs … large`` converts via ``BASE_SERVING_WEIGHTS``; detail sends that weight."""
+    from src.data_layer.models import Ingredient
+
+    rid = "r-be21-eggs"
+    _write_recipes(
+        monkeypatch,
+        tmp_path,
+        [
+            {
+                "id": rid,
+                "name": "Eggs fixture",
+                "ingredients": [{"name": "eggs", "quantity": 4, "unit": "large"}],
+                "cooking_time_minutes": 5,
+                "instructions": ["Cook."],
+            }
+        ],
+    )
+    (line,) = TestClient(app).get(f"/api/v1/recipes/{rid}").json()["ingredients"]
+    calculator = _plan_path_calculator()
+    expected = calculator.to_grams(
+        Ingredient(name="eggs", quantity=1.0, unit="large"), _record("eggs")
+    )
+    assert expected > 0
+    assert line["resolved"] is True
+    assert line["unit_conversions"]["large"] == pytest.approx(expected)
+
+
+def test_detail_unit_conversions_cover_every_starter_recipe_line(monkeypatch, tmp_path):
+    """Every measurable starter-pack line carries its own unit's weight (read-only example)."""
+    from pathlib import Path
+
+    example = Path(__file__).resolve().parents[2] / "data" / "recipes" / "recipes.json.example"
+    recipes = json.loads(example.read_text(encoding="utf-8"))["recipes"]
+    _write_recipes(monkeypatch, tmp_path, recipes)
+    client = TestClient(app)
+
+    missing = []
+    checked = 0
+    for recipe in recipes:
+        res = client.get(f"/api/v1/recipes/{recipe['id']}")
+        assert res.status_code == 200, res.text
+        for line in res.json()["ingredients"]:
+            if line["unit"] in ("g", "to taste"):
+                continue
+            checked += 1
+            grams = line["unit_conversions"].get(line["unit"])
+            if not (grams and grams > 0):
+                missing.append((recipe["id"], line["ingredient_name"], line["unit"]))
+    assert checked > 0
+    assert missing == []
+
+
 def test_detail_unexpected_calculator_error_is_500_envelope(monkeypatch, tmp_path):
     rid = _write_be21_recipe(monkeypatch, tmp_path)
 

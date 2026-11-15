@@ -24,7 +24,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, constr, model_validator
-from dataclasses import dataclass, fields as dc_fields
+from dataclasses import dataclass, fields as dc_fields, replace
 
 from src.ingestion.nutrient_mapper import MappedNutrition, NutrientMapper
 from src.ingestion.ingredient_cache import CachedIngredientLookup
@@ -903,7 +903,12 @@ def _flutter_ingredient_entries(
             entry["resolved"] = False
             continue
         entry["unit_conversions"] = NutritionCalculator.unit_conversions(info)
-        if ing.grams_per_unit is not None and calculator.record_grams(ing, info) is None:
+        # The line's own unit, as the calculator converts it (oz, aliases,
+        # BASE_SERVING_WEIGHTS such as eggs ``large``): grams for quantity 1.
+        unit_grams = calculator.record_grams(replace(ing, quantity=1.0), info)
+        if unit_grams is not None and unit_grams > 0:
+            entry["unit_conversions"].setdefault(ing.unit, float(unit_grams))
+        if ing.grams_per_unit is not None and unit_grams is None:
             # The line's own weight (BE-19); the record wins when it has the unit.
             entry["unit_conversions"][ing.unit] = float(ing.grams_per_unit)
         try:

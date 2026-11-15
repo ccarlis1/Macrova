@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/meal_prep_batch.dart';
 import '../models/models.dart';
+import '../models/profile_pin.dart';
 import '../models/recipe.dart';
 import '../models/recipe_sync_result.dart';
 import '../services/api_service.dart';
@@ -96,6 +97,25 @@ typedef MealPrepCreateFn = Future<MealPrepBatch> Function({
 /// `DELETE /api/v1/meal_prep_batches/{id}` or a test fake.
 typedef MealPrepCancelFn = Future<String> Function(String batchId);
 
+/// `GET /api/v1/profile/pins` or a test fake.
+typedef PinListFn = Future<List<ProfilePin>> Function();
+
+/// `PUT /api/v1/profile/pins/{day_index}/{slot_index}` or a test fake.
+typedef PinUpsertFn = Future<ProfilePin> Function(
+  int dayIndex,
+  int slotIndex,
+  String recipeId,
+);
+
+/// `DELETE /api/v1/profile/pins/{day_index}/{slot_index}` or a test fake.
+typedef PinDeleteFn = Future<ProfilePinDeleteResult> Function(
+  int dayIndex,
+  int slotIndex,
+);
+
+/// `DELETE /api/v1/profile/pins` (returns `cleared_count`) or a test fake.
+typedef PinClearFn = Future<int> Function();
+
 /// A plan slot a meal-prep batch can be assigned to (create-batch sheet).
 /// [dayIndex] / [slotIndex] are 0-based, as in batch assignments and
 /// `PlanFailure`; the plan shows the slot as day `dayIndex + 1`.
@@ -122,6 +142,19 @@ class MealPlanProvider extends ChangeNotifier {
   final MealPrepListFn _mealPrepListFn;
   final MealPrepCreateFn _mealPrepCreateFn;
   final MealPrepCancelFn _mealPrepCancelFn;
+  final PinListFn _pinListFn;
+  final PinUpsertFn _pinUpsertFn;
+  final PinDeleteFn _pinDeleteFn;
+  final PinClearFn _pinClearFn;
+
+  /// Pins as last fetched from the server (FE-15). The server owns them (its
+  /// profile YAML) and applies them to every `/plan`; plan requests never
+  /// carry pins. Keyed by the 0-based `(day_index, slot_index)`.
+  Map<(int, int), ProfilePin> _pins = const {};
+  bool _pinsLoading = false;
+  bool _pinsLoaded = false;
+  String? _pinsErrorCode;
+  String? _pinsErrorMessage;
 
   /// Active meal-prep batches as last fetched from the server (FE-14). The
   /// server owns them and applies them to every `/plan` itself; this list is
@@ -190,13 +223,21 @@ class MealPlanProvider extends ChangeNotifier {
     MealPrepListFn? mealPrepListFn,
     MealPrepCreateFn? mealPrepCreateFn,
     MealPrepCancelFn? mealPrepCancelFn,
+    PinListFn? pinListFn,
+    PinUpsertFn? pinUpsertFn,
+    PinDeleteFn? pinDeleteFn,
+    PinClearFn? pinClearFn,
   })  : _recipeSyncFn = recipeSyncFn ?? ApiService.syncRecipes,
         _planFn = planFn ?? ApiService.plan,
         _mealPrepListFn =
             mealPrepListFn ?? (() => ApiService.listMealPrepBatches()),
         _mealPrepCreateFn = mealPrepCreateFn ?? _apiCreateMealPrepBatch,
         _mealPrepCancelFn = mealPrepCancelFn ??
-            ((id) => ApiService.cancelMealPrepBatch(id)) {
+            ((id) => ApiService.cancelMealPrepBatch(id)),
+        _pinListFn = pinListFn ?? (() => ApiService.listPins()),
+        _pinUpsertFn = pinUpsertFn ?? ((d, s, r) => ApiService.pin(d, s, r)),
+        _pinDeleteFn = pinDeleteFn ?? ((d, s) => ApiService.unpin(d, s)),
+        _pinClearFn = pinClearFn ?? (() => ApiService.clearPins()) {
     _scheduleDays = List.generate(
       _days,
       (i) => buildDefaultDaySchedule(i + 1, 3),
@@ -344,6 +385,98 @@ class MealPlanProvider extends ChangeNotifier {
     _mealPrepTrayCollapsed = collapsed;
     notifyListeners();
     unawaited(StorageService.saveMealPrepTrayCollapsed(collapsed));
+  }
+
+  // ---------------------------------------------------------------------------
+  // Pins (FE-15). Server-owned; see [pins]. Pin/unpin/clear re-fetch the list
+  // but never re-run the plan: a pin applies the next time the user plans.
+
+  /// Pins from the last [loadPins], by day then slot.
+  List<ProfilePin> get pins => List.unmodifiable(_pins.values);
+  int get pinCount => _pins.length;
+  bool get pinsLoading => _pinsLoading;
+
+  /// True once a [loadPins] succeeded.
+  bool get pinsLoaded => _pinsLoaded;
+
+  /// Server `code` / message of the last failed [loadPins].
+  String? get pinsErrorCode => _pinsErrorCode;
+  String? get pinsErrorMessage => _pinsErrorMessage;
+
+  /// The pin at a 0-based plan slot, if any.
+  ProfilePin? pinAt(int dayIndex, int slotIndex) => _pins[(dayIndex, slotIndex)];
+
+  /// The pin coordinate of a planned [meal]: `(day - 1, meal.slotIndex)`,
+  /// where [day] is the 1-based `daily_plans[].day`. Falls back to the meal's
+  /// position [mealIndex] when the server sent no `slot_index` (as
+  /// [planSlotOptions] does).
+  static (int, int) pinSlotFor(int day, int mealIndex, Meal meal) =>
+      (day - 1, meal.slotIndex ?? mealIndex);
+
+  /// The pin for a planned [meal] (see [pinSlotFor]), if any.
+  ProfilePin? pinForMeal(int day, int mealIndex, Meal meal) {
+    final (d, s) = pinSlotFor(day, mealIndex, meal);
+    return pinAt(d, s);
+  }
+
+  /// Fetches the pins (`GET /profile/pins`). A failure keeps the previous
+  /// list and sets [pinsErrorCode].
+  Future<void> loadPins() async {
+    _pinsLoading = true;
+    notifyListeners();
+    try {
+      _pins = _pinMap(await _pinListFn());
+      _pinsLoaded = true;
+      _pinsErrorCode = null;
+      _pinsErrorMessage = null;
+    } catch (e) {
+      if (e is ApiException) {
+        _pinsErrorCode = e.code;
+        _pinsErrorMessage = e.message;
+      } else {
+        _pinsErrorCode = null;
+        _pinsErrorMessage = e.toString();
+      }
+    } finally {
+      _pinsLoading = false;
+      notifyListeners();
+    }
+  }
+
+  static Map<(int, int), ProfilePin> _pinMap(List<ProfilePin> pins) {
+    final sorted = [...pins]..sort((a, b) => a.dayIndex != b.dayIndex
+        ? a.dayIndex.compareTo(b.dayIndex)
+        : a.slotIndex.compareTo(b.slotIndex));
+    return {for (final p in sorted) (p.dayIndex, p.slotIndex): p};
+  }
+
+  /// Pins [recipeId] to a 0-based plan slot (`PUT`), then re-fetches [pins].
+  /// The plan is not re-run. A rejection (e.g. `RECIPE_NOT_FOUND`) throws
+  /// [ApiException] and changes nothing.
+  Future<ProfilePin> pinRecipe(
+    int dayIndex,
+    int slotIndex,
+    String recipeId,
+  ) async {
+    final pin = await _pinUpsertFn(dayIndex, slotIndex, recipeId);
+    await loadPins();
+    return pin;
+  }
+
+  /// Removes the pin at a 0-based plan slot (`DELETE`), then re-fetches
+  /// [pins]. The plan is not re-run. Throws [ApiException] on failure.
+  Future<bool> unpinSlot(int dayIndex, int slotIndex) async {
+    final result = await _pinDeleteFn(dayIndex, slotIndex);
+    await loadPins();
+    return result.deleted;
+  }
+
+  /// Removes every pin (`DELETE /profile/pins`), then re-fetches [pins].
+  /// Returns the server's `cleared_count`. Throws [ApiException] on failure.
+  Future<int> clearPins() async {
+    final n = await _pinClearFn();
+    await loadPins();
+    return n;
   }
 
   /// Slots of the current plan a batch can take: every planned meal (its

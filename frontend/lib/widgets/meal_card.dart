@@ -33,10 +33,32 @@ class MealCard extends StatelessWidget {
   /// Batch servings for this slot (`Meal.servings`); shown on batch meals only.
   final double? servings;
 
+  /// A server pin exists for this slot (`MealPlanProvider.pinForMeal`). When
+  /// the plan itself didn't place a pin here (it predates the pin), the card
+  /// shows "Pinned · next plan". Ignored on meal-prep batch meals: the batch
+  /// lock wins over a pin.
+  final bool hasPin;
+
   static const mealPrepBadgeKey = Key('meal_card_meal_prep_badge');
   static const mealPrepServingsKey = Key('meal_card_meal_prep_servings');
 
+  /// Pin badge (FE-15), on pinned meals and on slots pinned after this plan.
+  static const pinBadgeKey = Key('meal_card_pin_badge');
+
   bool get isMealPrepBatch => source == Meal.sourceMealPrepBatch;
+
+  /// The plan placed this meal from a pin (`source == pinned_assignment`).
+  bool get isPinnedAssignment => source == Meal.sourcePinnedAssignment;
+
+  /// Pin badge label, or null when no pin badge shows. Precedence: a batch
+  /// meal never shows one; a meal the plan pinned is "Pinned"; a slot pinned
+  /// since the plan ran is "Pinned · next plan".
+  String? get pinBadgeLabel {
+    if (isMealPrepBatch) return null;
+    if (isPinnedAssignment) return 'Pinned';
+    if (hasPin) return 'Pinned · next plan';
+    return null;
+  }
 
   const MealCard({
     super.key,
@@ -55,6 +77,7 @@ class MealCard extends StatelessWidget {
     this.onAdd,
     this.source,
     this.servings,
+    this.hasPin = false,
   });
 
   @override
@@ -80,6 +103,7 @@ class MealCard extends StatelessWidget {
 
     final isPinned = slotState == MealSlotState.pinned;
     final hasWarn = slotState == MealSlotState.warn;
+    final pinLabel = pinBadgeLabel;
 
     return Card(
       color: isPinned ? tokens.pinnedSoft : null,
@@ -167,6 +191,15 @@ class MealCard extends StatelessWidget {
                                   MacrovaTypography.caption(tokens.inkTertiary),
                             ),
                         ],
+                      ),
+                    ],
+                    if (pinLabel != null) ...[
+                      const SizedBox(height: MacrovaSpacing.xs),
+                      MacrovaChip(
+                        key: pinBadgeKey,
+                        label: pinLabel,
+                        variant: MacrovaChipVariant.pinned,
+                        leadingIcon: Icons.push_pin_outlined,
                       ),
                     ],
                     if (mealTypeMatch == false) ...[

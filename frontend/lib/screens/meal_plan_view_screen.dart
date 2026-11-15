@@ -31,10 +31,13 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
   @override
   void initState() {
     super.initState();
-    // Batches are server-owned: fetch the active ones for the tray.
+    // Batches and pins are server-owned: fetch the active batches for the
+    // tray and the pins for the meal cards' pin badges.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<MealPlanProvider>().loadMealPrepBatches();
+      final plan = context.read<MealPlanProvider>();
+      plan.loadMealPrepBatches();
+      plan.loadPins();
     });
   }
 
@@ -104,6 +107,8 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
                 MealPlanCalendar(
                   dailyPlans: mealPlan.dailyPlans,
                   isCooked: planProvider.isCooked,
+                  hasPin: (day, mealIndex, meal) =>
+                      planProvider.pinForMeal(day, mealIndex, meal) != null,
                   onMealTap: (day, mealIndex, meal) {
                     MealDetailSheet.show(
                       context: context,
@@ -337,6 +342,7 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
               mealTypeMatch: meal.mealTypeMatch,
               source: meal.source,
               servings: meal.servings,
+              hasPin: planProvider.pinForMeal(day, mealIndex, meal) != null,
               slotState: isMissing ? MealSlotState.warn : MealSlotState.ok,
               warningText: isMissing ? 'Recipe unavailable' : null,
               isCooked: planProvider.isCooked(day, mealIndex),

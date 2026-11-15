@@ -691,3 +691,34 @@ def test_line_without_any_conversion_is_dropped_with_nutrition_warning():
     _merge_nutrition_warnings(out, log)
     (warning,) = out["warnings"]["nutrition"]
     assert warning.startswith("Recipe 'r-be19-nogpu' removed from the pool")
+
+
+def test_detail_returns_cuisine_cost_level_and_dietary_flags_after_sync(monkeypatch, tmp_path):
+    """FE-12 backend: detail echoes the tag-store fields sync accepts, so Flutter can pre-select them."""
+    _configure_paths(monkeypatch, tmp_path)
+    client = TestClient(app)
+    item = _be19_item(
+        "r-fe12-detail",
+        cuisine="mexican",
+        cost_level="cheap",
+        dietary_flags=["vegetarian", "gluten_free"],
+    )
+    assert client.post("/api/v1/recipes/sync", json={"recipes": [item]}).status_code == 200
+    body = client.get("/api/v1/recipes/r-fe12-detail").json()
+    assert body["cuisine"] == "mexican"
+    assert body["cost_level"] == "cheap"
+    assert body["dietary_flags"] == ["vegetarian", "gluten_free"]
+
+    # An untagged app save gets the derived placeholder entry, which detail reports as such.
+    assert client.post("/api/v1/recipes/sync", json={"recipes": [_be19_item("r-fe12-plain")]}).status_code == 200
+    plain = client.get("/api/v1/recipes/r-fe12-plain").json()
+    assert (plain["cuisine"], plain["cost_level"], plain["dietary_flags"]) == ("unknown", "standard", [])
+
+
+def test_detail_tag_fields_are_null_without_a_tag_entry(monkeypatch, tmp_path):
+    rid = _write_be21_recipe(monkeypatch, tmp_path)
+    body = TestClient(app).get(f"/api/v1/recipes/{rid}").json()
+    assert body["cuisine"] is None
+    assert body["cost_level"] is None
+    assert body["dietary_flags"] is None
+    assert body["tag_slugs_by_type"] == {}

@@ -355,6 +355,18 @@ class RecipeDetailResponse(BaseModel):
     ingredients: List[Dict[str, Any]]
     tag_slugs_by_type: Dict[str, List[str]] = Field(default_factory=dict)
     is_meal_prep_capable: bool
+    cuisine: Optional[str] = Field(
+        default=None,
+        description="The recipe's cuisine from its tag store entry; null when the recipe has no entry.",
+    )
+    cost_level: Optional[str] = Field(
+        default=None,
+        description="The recipe's cost level from its tag store entry; null when the recipe has no entry.",
+    )
+    dietary_flags: Optional[List[str]] = Field(
+        default=None,
+        description="The recipe's dietary flags from its tag store entry; null when the recipe has no entry.",
+    )
 
 
 class StarterRecipe(BaseModel):
@@ -2152,6 +2164,11 @@ def get_recipe_detail(recipe_id: str) -> Any:
             "ingredients": ingredients_json,
             "tag_slugs_by_type": tag_slugs_by_type,
             "is_meal_prep_capable": is_meal_prep_capable,
+            "cuisine": recipe_tags.cuisine if recipe_tags else None,
+            "cost_level": recipe_tags.cost_level.value if recipe_tags else None,
+            "dietary_flags": (
+                [flag.value for flag in recipe_tags.dietary_flags] if recipe_tags else None
+            ),
         }
     except HTTPException:
         raise

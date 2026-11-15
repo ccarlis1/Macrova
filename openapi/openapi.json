@@ -1604,9 +1604,48 @@
             "title": "Cooking Time Minutes",
             "type": "integer"
           },
+          "cost_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The recipe's cost level from its tag store entry; null when the recipe has no entry.",
+            "title": "Cost Level"
+          },
+          "cuisine": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The recipe's cuisine from its tag store entry; null when the recipe has no entry.",
+            "title": "Cuisine"
+          },
           "default_servings": {
             "title": "Default Servings",
             "type": "integer"
+          },
+          "dietary_flags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The recipe's dietary flags from its tag store entry; null when the recipe has no entry.",
+            "title": "Dietary Flags"
           },
           "id": {
             "title": "Id",

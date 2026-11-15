@@ -17,12 +17,14 @@ Follow-ups 11 (Flutter half) and 7a.
 
 ## Acceptance criteria
 
-- [ ] `Ingredient.toGrams` and `RecipeIngredientEntry._grams` throw a typed `UnknownUnitException(unit, ingredientName)` for an unknown non-`g` unit. Callers that compute totals catch it and mark the line unresolved instead of summing a wrong number. Unit tests: `test/ingredient_to_grams_test.dart` (fails today: returns the quantity).
-- [ ] Recipe Builder shows an inline "No gram weight for '<unit>'" error on an unconvertible line and disables Save while any line is in that state. Choosing `g` or a known unit clears it. Widget test.
-- [ ] `ApiService.syncRecipes` returns a `RecipeSyncResult(syncedIds, errors)`. `RecipeProvider` keeps the latest errors, and Recipe Library shows them in an `AdvisoryCard` naming each rejected recipe. The redesign's existing sync banner is reused, not duplicated. Tests: provider test with a fake sync fn returning one error; widget test for the advisory.
-- [ ] `MealPlanProvider`'s pre-plan sync (~line 508) surfaces sync errors as a plan warning instead of ignoring them. Test with a fake.
-- [ ] Every existing caller of `syncRecipes` compiles against the new return type.
-- [ ] `cd frontend && flutter analyze && flutter test` green.
+- [x] `Ingredient.toGrams` and `RecipeIngredientEntry._grams` throw a typed `UnknownUnitException(unit, ingredientName)` for an unknown non-`g` unit. Callers that compute totals catch it and mark the line unresolved instead of summing a wrong number. Unit tests: `test/ingredient_to_grams_test.dart` (fails today: returns the quantity).
+- [x] Recipe Builder shows an inline "No gram weight for '<unit>'" error on an unconvertible line and disables Save while any line is in that state. Choosing `g` or a known unit clears it. Widget test.
+- [x] `ApiService.syncRecipes` returns a `RecipeSyncResult(syncedIds, errors)`. `RecipeProvider` keeps the latest errors, and Recipe Library shows them in an `AdvisoryCard` naming each rejected recipe. The redesign's existing sync banner is reused, not duplicated. Tests: provider test with a fake sync fn returning one error; widget test for the advisory.
+- [x] `MealPlanProvider`'s pre-plan sync (~line 508) surfaces sync errors as a plan warning instead of ignoring them. Test with a fake.
+- [x] Every existing caller of `syncRecipes` compiles against the new return type.
+- [x] `cd frontend && flutter analyze && flutter test` green.
+
+Delivered notes: strict grams follow the server's `record_grams` for the units it knows without a record (`g`/`gram(s)`, line conversions, `oz`/`ounce(s)` at 28.35 g, `to taste` = 0 g); anything else throws. Tests: `test/ingredient_to_grams_test.dart`, `test/widgets/recipe_builder_unit_guard_test.dart` (also checks the builder's `/nutrition/summary` lines carry `grams_per_unit`), `test/recipe_sync_result_test.dart`, `test/recipe_provider_sync_test.dart`, `test/widgets/recipe_library_screen_test.dart`, `test/providers/meal_plan_provider_sync_test.dart`. Sync rejections on a plan that fails or is partial sit in `MealPlan.warnings`, which Today / Meal Plan View show only on success, so there they are not visible yet. Not run: the manual fixture-server check.
 
 ## Implementation notes
 

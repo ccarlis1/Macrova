@@ -41,6 +41,8 @@ This uses the bundled ingredient database (no API key). For USDA API mode, see [
    cp data/recipes/recipes.json.example data/recipes/recipes.json
    cp data/ingredients/custom_ingredients.json.example data/ingredients/custom_ingredients.json
    ```
+   `config/user_profile.yaml` is your personal profile and is not shipped (`.gitignore` lists it); start from the example. Without it the CLI stops with "User profile file not found" and this same copy hint; the API server starts without it (no saved pins or schedule) and creates it on the first pin or schedule write. The example starts with the new-user micronutrient default (every recommended daily intake for `adult_male` except omega-3 and omega-6, at τ = 1.0); change any value.
+   To keep your recipes in a folder of your own with an empty starting pool, also run `python3 scripts/setup_user_data.py` and set `MACROVA_DATA_DIR` (see [QUICK_START.md](QUICK_START.md#-use-your-own-data-folder)).
 2. Edit `config/user_profile.yaml` with your goals, schedule, and preferences.
 3. **Run the planner:**
    ```bash

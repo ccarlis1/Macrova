@@ -62,12 +62,25 @@ Edit `config/user_profile.yaml` to adjust:
 
 ### Example Schedule
 ```yaml
-schedule:
-  "07:00": 2  # Breakfast: quick meal
-  "12:00": 3  # Lunch: weeknight meal
-  "18:00": 3  # Dinner: weeknight meal
-  "19:00": 1  # Optional: workout time
+schedule_days:
+  - day_index: 1
+    meals:
+      - { index: 1, busyness_level: 2, tags: ["breakfast"], preferred_time: "07:00" }
+      - { index: 2, busyness_level: 3, tags: ["lunch"], preferred_time: "12:00" }
+      - { index: 3, busyness_level: 3, tags: ["dinner"], preferred_time: "18:00" }
+    workouts:
+      - { after_meal_index: 3, type: PM }   # optional
 ```
+
+## 👤 Create Your Profile
+
+`config/user_profile.yaml` is personal and not shipped (`.gitignore` lists it). Copy the shipped default once:
+
+```bash
+cp config/user_profile.yaml.example config/user_profile.yaml
+```
+
+Without it, `plan_meals.py` stops and prints this copy hint.
 
 ## 📁 Use Your Own Data Folder
 

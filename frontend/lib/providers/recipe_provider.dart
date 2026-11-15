@@ -5,6 +5,7 @@ import '../models/ingredient.dart';
 import '../models/models.dart';
 import '../models/recipe.dart';
 import '../models/recipe_sync_result.dart';
+import '../models/starter_recipe.dart';
 import '../models/tag.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
@@ -14,6 +15,10 @@ const _uuid = Uuid();
 typedef RecipeDetailFn = Future<Recipe> Function(String id);
 typedef TagListFn = Future<List<TagMeta>> Function();
 typedef RecipeSummaryListFn = Future<List<RecipeSummary>> Function();
+typedef StarterListFn = Future<List<StarterRecipe>> Function();
+typedef StarterImportFn = Future<StarterImportResult> Function(
+  List<String> ids,
+);
 
 /// Resolves a recipe line label to a saved hub ingredient when the strings
 /// are not identical (e.g. "jasmine rice in unsalted water" vs "jasmine rice").
@@ -86,15 +91,29 @@ class RecipeProvider extends ChangeNotifier {
     RecipeDetailFn? recipeDetailFn,
     TagListFn? tagListFn,
     RecipeSummaryListFn? recipeListFn,
+    StarterListFn? starterListFn,
+    StarterImportFn? starterImportFn,
   })  : _recipeSyncFn = recipeSyncFn ?? ApiService.syncRecipes,
         _recipeDetailFn = recipeDetailFn ?? ApiService.getRecipe,
         _tagListFn = tagListFn ?? (() => ApiService.listTags()),
-        _recipeListFn = recipeListFn ?? ApiService.listRecipes;
+        _recipeListFn = recipeListFn ?? ApiService.listRecipes,
+        _starterListFn =
+            starterListFn ?? (() => ApiService.listStarterRecipes()),
+        _starterImportFn =
+            starterImportFn ?? ((ids) => ApiService.importStarterRecipes(ids));
 
   final RecipeListSyncFn _recipeSyncFn;
   final RecipeDetailFn _recipeDetailFn;
   final TagListFn _tagListFn;
   final RecipeSummaryListFn _recipeListFn;
+  final StarterListFn _starterListFn;
+  final StarterImportFn _starterImportFn;
+
+  /// `GET /api/v1/starter_recipes` (FE-16), fetched when the picker opens.
+  List<StarterRecipe>? _starterRecipes;
+  bool _starterLoading = false;
+  String? _starterError;
+  bool _starterImporting = false;
 
   /// `GET /api/v1/tags`, fetched once per session ([loadTagRegistry]).
   List<TagMeta>? _tagRegistry;
@@ -381,6 +400,55 @@ class RecipeProvider extends ChangeNotifier {
       if (r.id == id) return r;
     }
     return null;
+  }
+
+  /// The starter pack, or null until [loadStarterRecipes] succeeds.
+  List<StarterRecipe>? get starterRecipes =>
+      _starterRecipes == null ? null : List.unmodifiable(_starterRecipes!);
+  bool get starterLoading => _starterLoading;
+  String? get starterError => _starterError;
+  bool get starterImporting => _starterImporting;
+
+  /// Ids in the library: stored here or listed by the server pool. A starter
+  /// recipe with one of these ids shows as "In your library".
+  Set<String> get libraryRecipeIds => {
+        for (final r in _localRecipes) r.id,
+        for (final s in _remoteSummaries) s.id,
+      };
+
+  /// Lists the starter pack (FE-16). Refetches each call (the picker calls it
+  /// on open, and on retry); errors land in [starterError].
+  Future<void> loadStarterRecipes() async {
+    _starterLoading = true;
+    _starterError = null;
+    notifyListeners();
+    try {
+      _starterRecipes = await _starterListFn();
+    } catch (e) {
+      _starterError = e is ApiException ? e.message : e.toString();
+    } finally {
+      _starterLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Copies the picked starter recipes into the server pool
+  /// (`POST /api/v1/starter_recipes/import`), then refreshes the server list
+  /// so they show in [recipes] like any server recipe. Nothing is stored on
+  /// the device: `/plan` without `recipe_ids` reads the server pool, and the
+  /// Recipe Builder loads the detail (with its unit conversions) on open.
+  /// A whole-request failure throws; per-id skips are in the result.
+  Future<StarterImportResult> importStarterRecipes(List<String> ids) async {
+    _starterImporting = true;
+    notifyListeners();
+    try {
+      final result = await _starterImportFn(ids);
+      await syncSummariesFromApi();
+      return result;
+    } finally {
+      _starterImporting = false;
+      notifyListeners();
+    }
   }
 
   /// Fetches recipe id+name list from the API and merges into [recipes].

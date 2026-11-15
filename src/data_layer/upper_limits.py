@@ -258,6 +258,8 @@ def daily_rdis(demographic: Demographic) -> Dict[str, float]:
 # nutrients are the ones the bundled sample recipes can't meet at τ = 1.0 over 7 days
 # with the MCP shorthand schedule (2/3/4) and the demographic's daily ULs on; see the
 # probe record in docs/sprints/sprint2/BE-20-demo-micronutrient-default.md.
+# Re-probed after DATA-2 corrected vitamin D (2026-11-15): every list below still plans;
+# vitamin E for pregnancy/lactation is now meetable too (owner may restore it; see DATA-2).
 # It's a starting point, not a cap: MCP (targets.micronutrient_goals), the YAML profile
 # and the Flutter Profile screen all let the user change every value.
 DEFAULT_MICRONUTRIENT_LEFT_OUT: Dict[str, Tuple[str, ...]] = {

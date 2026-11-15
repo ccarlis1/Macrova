@@ -200,6 +200,8 @@ Applies in BE-20.
 2. **The default list may differ by demographic.** Per-demographic lists, still defined in one place.
 3. **A 1-day plan with the full default floors may fail** (owner, 2026-11-15); the default lists stay as they are. Weekly floors are met on the horizon total, so over several days a low day is offset by a high one; one day alone must hit every RDI at once. The example profile plans at 3 and 7 days and fails at 1 day on the committed pool (`partial`, FM-1). The CLI default stays `--days 1`, so the first-run docs (README, QUICK_START, USAGE) run `--days 3` and say what to do if a 1-day plan fails: plan 3+ days, or lower or remove goals.
 
+**Re-probed after DATA-2 (2026-11-15).** With vitamin D corrected (it was about 40x too high), the default lists above still plan for all four demographics at 7 days, and are unchanged: adult_male and adult_female leave out `omega_3_g`, `omega_6_g`; pregnancy and lactation also `vitamin_e_mg`. Vitamin E is now meetable for pregnancy and lactation too (owner option to restore it; the Flutter tests pin the current pregnancy list). The example profile now also plans at 1 day (CLI and HTTP, `TC-4`). Probe table: BE-20 stub, "Probe re-run … after DATA-2".
+
 ### D-B: MCP shorthand schedule default busyness — **resolved: 2/3/4**
 
 Options considered: (1) keep 2/3/3; (2) have the assistant ask; (3) 4/4/4.

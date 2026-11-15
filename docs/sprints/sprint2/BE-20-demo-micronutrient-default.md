@@ -156,6 +156,44 @@ demographic at 3 and 7 days, and fails at 1 day (FM-4). `config/user_profile.yam
 (adult_male default, ULs on) on the committed pool over HTTP and the CLI: 1 day fails (FM-1), 3 and 7 days
 succeed. The sample pool gives the same result.
 
+## Probe re-run (2026-11-15), after DATA-2 corrected vitamin D
+
+DATA-2 found `vitamin_d_iu` in the ingredient table about 40x too high (mapper bug) and corrected it
+from FDC. Same probe as above (18 sample recipes, 7 days, 2/3/4, τ = 1.0, daily ULs on, macros from the
+example: 2400 kcal, 150 g protein, fat 50–100 g), real reference data, run per demographic:
+`.venv/bin/python docs/sprints/sprint2/probes/micro_probe_be20.py 7 <demographic>`.
+
+| Demographic | No goals (ULs only) | All 25 | Fail alone at τ = 1.0 | All minus those | Extra drop that succeeds | Current default list |
+|---|---|---|---|---|---|---|
+| adult_male | success | failed, FM-4 | omega_3_g, omega_6_g | 23 → success | none needed | success |
+| adult_female | success | failed, FM-4 | omega_3_g | 24 → partial, FM-5 | `vitamin_d_iu` or `omega_6_g` | success |
+| pregnancy | success | failed, FM-4 | omega_3_g | 24 → partial, FM-5 | `omega_6_g` only | success |
+| lactation | success | failed, FM-4 | omega_3_g | 24 → partial, FM-5 | `omega_6_g` only (dropping `vitamin_d_iu` crashes, see below) | success |
+
+What changed: `omega_6_g` now passes alone for adult_female, pregnancy and lactation, and `vitamin_e_mg`
+no longer fails for lactation (the inflated vitamin D had pushed vitamin-D-rich recipes over the 4,000 IU
+UL, which removed them from the pool). Omega-6 is still needed as the extra drop in every demographic, so
+"omega_3_g + omega_6_g" plans for all four (checked directly: 23 goals → success for each).
+
+**Default lists: unchanged.** Every current list still plans at 7 days, nothing needs more than 3 left out
+and every demographic plans without goals, so `DEFAULT_MICRONUTRIENT_LEFT_OUT` stays as above.
+Owner option: pregnancy and lactation could now keep `vitamin_e_mg` (22 → 23 goals, also succeeds). It
+was not changed here because the Flutter tests pin "Left out: Vitamin E, Omega-3, Omega-6" for pregnancy
+(`frontend/test/screens/profile_screen_micronutrient_default_test.dart`,
+`frontend/test/providers/profile_provider_defaults_test.dart`), which DATA-2 may not edit.
+
+Example profile on the committed pool (adult_male, ULs on), CLI and HTTP: **1 day now succeeds**
+(`TC-4`; was partial / FM-1), 3 and 7 days succeed. `test_example_profile_one_day_outcome_is_pinned`
+pins the new result. MCP shorthand on the sample recipes with each demographic's default (2400 kcal)
+now succeeds at 1, 3 and 7 days (was FM-4 at 1 day). The first-run docs (README, QUICK_START, USAGE) keep
+their "a 1-day plan with the full default goals can fail" note as a general caution; with the bundled pools
+it no longer fails, so the owner may drop or soften it.
+
+Found by the probe: on lactation, goals = RDIs minus `omega_3_g` and `vitamin_d_iu` make
+`tools.plan_meals` raise `PlannerStateError: negative weekly micronutrient potassium_mg=-1.24e-09`
+(`src/planning/phase7_search.py::_validate_planner_state` via `_unwind_to`): floating-point drift when
+backtracking subtracts a tracker total. Planner bug, not data; not fixed here.
+
 ## Out of scope
 
 - Reviewing DRI values (human-only).

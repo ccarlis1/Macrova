@@ -16,6 +16,7 @@ const _uuid = Uuid();
 
 typedef RecipeDetailFn = Future<Recipe> Function(String id);
 typedef TagListFn = Future<List<TagMeta>> Function();
+typedef RecipeSummaryListFn = Future<List<RecipeSummary>> Function();
 
 /// Dev: `flutter run --dart-define=BUNDLE_SERVER_RECIPES=true`
 const _bundleServerRecipes = bool.fromEnvironment(
@@ -95,13 +96,16 @@ class RecipeProvider extends ChangeNotifier {
     RecipeListSyncFn? recipeSyncFn,
     RecipeDetailFn? recipeDetailFn,
     TagListFn? tagListFn,
+    RecipeSummaryListFn? recipeListFn,
   })  : _recipeSyncFn = recipeSyncFn ?? ApiService.syncRecipes,
         _recipeDetailFn = recipeDetailFn ?? ApiService.getRecipe,
-        _tagListFn = tagListFn ?? (() => ApiService.listTags());
+        _tagListFn = tagListFn ?? (() => ApiService.listTags()),
+        _recipeListFn = recipeListFn ?? ApiService.listRecipes;
 
   final RecipeListSyncFn _recipeSyncFn;
   final RecipeDetailFn _recipeDetailFn;
   final TagListFn _tagListFn;
+  final RecipeSummaryListFn _recipeListFn;
 
   /// `GET /api/v1/tags`, fetched once per session ([loadTagRegistry]).
   List<TagMeta>? _tagRegistry;
@@ -357,41 +361,104 @@ class RecipeProvider extends ChangeNotifier {
   }
 
   /// Loads full recipe JSON from [ApiService.getRecipe] and merges into local storage.
+  /// The detail's `cuisine` / `cost_level` / `dietary_flags` win over values
+  /// remembered here; those are kept only when the server has none.
   Future<Recipe> fetchRecipeDetail(String id) async {
     final fetched = await _recipeDetailFn(id);
-    // The detail doesn't return cuisine / cost_level: keep values set here.
     final prior = _localById(id);
     final recipe = prior == null
         ? fetched
-        : fetched.copyWith(cuisine: prior.cuisine, costLevel: prior.costLevel);
+        : fetched.copyWith(
+            cuisine: fetched.cuisine ?? prior.cuisine,
+            costLevel: fetched.costLevel ?? prior.costLevel,
+            dietaryFlags: fetched.dietaryFlags ?? prior.dietaryFlags,
+          );
     final idx = _localRecipes.indexWhere((r) => r.id == id);
     if (idx >= 0) {
       _localRecipes[idx] = recipe;
     } else {
       _localRecipes.add(recipe);
     }
+    _serverTagsLoadedIds.add(id);
     await StorageService.saveRecipes(_localRecipes);
     notifyListeners();
     return recipe;
   }
 
-  /// Refreshes [Recipe.tagSlugsByType] / [Recipe.isMealPrepCapable] of a stored
-  /// recipe from `GET /api/v1/recipes/{id}`, keeping its local lines. Use before
+  /// Refreshes the server-owned tag fields of a stored recipe from
+  /// `GET /api/v1/recipes/{id}`, keeping its local lines: [Recipe.tagSlugsByType],
+  /// [Recipe.isMealPrepCapable] and (server value wins when present)
+  /// [Recipe.cuisine] / [Recipe.costLevel] / [Recipe.dietaryFlags]. Use before
   /// editing a server recipe whose tags were never loaded, since a sync with
   /// `tag_slugs_by_type` replaces the stored non-`time` tags.
   Future<Recipe> refreshServerTags(Recipe recipe) async {
     final detail = await _recipeDetailFn(recipe.id);
-    final merged = recipe.copyWith(
-      tagSlugsByType: detail.tagSlugsByType,
-      isMealPrepCapable: detail.isMealPrepCapable,
-    );
+    final merged = recipe
+        .copyWith(
+          tagSlugsByType: detail.tagSlugsByType,
+          isMealPrepCapable: detail.isMealPrepCapable,
+        )
+        .withServerTagFields(detail);
     final idx = _localRecipes.indexWhere((r) => r.id == recipe.id);
     if (idx >= 0) {
       _localRecipes[idx] = merged;
       await StorageService.saveRecipes(_localRecipes);
     }
+    _serverTagsLoadedIds.add(recipe.id);
     notifyListeners();
     return merged;
+  }
+
+  /// Ids whose detail ([fetchRecipeDetail] / [refreshServerTags]) loaded this
+  /// session, so their [Recipe.cuisine] / [Recipe.costLevel] are the server's.
+  final Set<String> _serverTagsLoadedIds = {};
+
+  /// Ids [loadServerTags] already tried this session (loaded or failed).
+  final Set<String> _serverTagsAttemptedIds = {};
+  int _serverTagsInFlight = 0;
+
+  /// True when [id]'s tag fields came from the server this session.
+  bool hasServerTags(String id) => _serverTagsLoadedIds.contains(id);
+
+  /// Ids with server tag fields loaded this session ([hasServerTags]).
+  Set<String> get serverTagsLoadedIds => Set.unmodifiable(_serverTagsLoadedIds);
+
+  /// True while [loadServerTags] is fetching details.
+  bool get serverTagsLoading => _serverTagsInFlight > 0;
+
+  /// Loads the stored tag fields of [ids] from their details, once per session
+  /// each (a failed id isn't retried). A stored recipe with lines keeps them
+  /// ([refreshServerTags]); an id/name-only one is fetched in full
+  /// ([fetchRecipeDetail]). One detail call per id: callers pass only the
+  /// selected pool (Planner Config), never the whole library.
+  Future<void> loadServerTags(Iterable<String> ids) async {
+    final todo = [
+      for (final id in ids)
+        if (!_serverTagsLoadedIds.contains(id) &&
+            _serverTagsAttemptedIds.add(id))
+          id,
+    ];
+    if (todo.isEmpty) return;
+    _serverTagsInFlight++;
+    notifyListeners();
+    try {
+      for (final id in todo) {
+        final local = _localById(id);
+        try {
+          if (local != null && local.ingredients.isNotEmpty) {
+            await refreshServerTags(local);
+          } else {
+            await fetchRecipeDetail(id);
+          }
+        } catch (e) {
+          // Not on the server, or unreachable: the id stays unchecked.
+          debugPrint('loadServerTags($id): $e');
+        }
+      }
+    } finally {
+      _serverTagsInFlight--;
+      notifyListeners();
+    }
   }
 
   Recipe? _localById(String id) {
@@ -408,7 +475,7 @@ class RecipeProvider extends ChangeNotifier {
     _syncError = null;
     notifyListeners();
     try {
-      _remoteSummaries = await ApiService.listRecipes();
+      _remoteSummaries = await _recipeListFn();
       _syncError = null;
     } catch (e) {
       _syncError = e is ApiException ? e.message : e.toString();

@@ -162,7 +162,8 @@ void main() {
 
     test(
         'Given the captured recipe detail, Then fromJson reads '
-        'tag_slugs_by_type and is_meal_prep_capable', () {
+        'tag_slugs_by_type, is_meal_prep_capable and the stored cuisine, '
+        'cost_level and dietary_flags', () {
       final r = Recipe.fromJson(_detailFixture());
 
       expect(r.id, 'fe12-oat-bowl');
@@ -174,9 +175,9 @@ void main() {
       });
       expect(r.isMealPrepCapable, isTrue);
       expect(r.hasMealPrepTag, isTrue);
-      // The detail doesn't return cuisine / cost_level.
-      expect(r.cuisine, isNull);
-      expect(r.costLevel, isNull);
+      expect(r.cuisine, 'american');
+      expect(r.costLevel, 'cheap');
+      expect(r.dietaryFlags, isEmpty);
       // Re-syncing sends back every type the server returned, except time.
       expect(r.toSyncPayload()['tag_slugs_by_type'], {
         'context': ['breakfast', 'meal-prep'],
@@ -195,6 +196,32 @@ void main() {
       expect(r.isMealPrepCapable, isFalse);
     });
 
+    test(
+        'Given a detail for a recipe with no tag entry (null cuisine, '
+        'cost_level and dietary_flags), Then they stay unknown', () {
+      final json = _detailFixture()
+        ..['cuisine'] = null
+        ..['cost_level'] = null
+        ..['dietary_flags'] = null;
+
+      final r = Recipe.fromJson(json);
+
+      expect(r.cuisine, isNull);
+      expect(r.costLevel, isNull);
+      expect(r.dietaryFlags, isNull);
+      // Unknown values are never sent on sync, so the server keeps its own.
+      final p = r.toSyncPayload();
+      expect(p.containsKey('cuisine'), isFalse);
+      expect(p.containsKey('cost_level'), isFalse);
+      expect(p.containsKey('dietary_flags'), isFalse);
+    });
+
+    test('Given stored dietary_flags, Then they are never sent on sync', () {
+      final r = Recipe.fromJson(_detailFixture()..['dietary_flags'] = ['vegan']);
+      expect(r.dietaryFlags, ['vegan']);
+      expect(r.toSyncPayload().containsKey('dietary_flags'), isFalse);
+    });
+
     test('Given tags, cuisine and cost, Then local storage round-trips them',
         () {
       const r = Recipe(
@@ -207,6 +234,7 @@ void main() {
         isMealPrepCapable: true,
         cuisine: 'thai',
         costLevel: 'premium',
+        dietaryFlags: ['vegetarian'],
       );
 
       final back = Recipe.fromJson(
@@ -217,6 +245,7 @@ void main() {
       expect(back.isMealPrepCapable, isTrue);
       expect(back.cuisine, 'thai');
       expect(back.costLevel, 'premium');
+      expect(back.dietaryFlags, ['vegetarian']);
     });
   });
 }

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:macrova/features/agent/llm_config_provider.dart';
+import 'package:macrova/models/models.dart';
 import 'package:macrova/models/recipe.dart';
 import 'package:macrova/models/recipe_sync_result.dart';
 import 'package:macrova/models/tag.dart';
@@ -13,6 +14,7 @@ import 'package:macrova/providers/recipe_builder_coordinator.dart';
 import 'package:macrova/providers/recipe_provider.dart';
 import 'package:macrova/screens/recipe_builder_screen.dart';
 import 'package:macrova/services/api_service.dart';
+import 'package:macrova/services/storage_service.dart';
 import 'package:macrova/theme/app_theme.dart';
 import 'package:macrova/widgets/macrova_chip.dart';
 import 'package:provider/provider.dart';
@@ -41,7 +43,7 @@ const _untagged = Recipe(
 );
 
 class _Harness {
-  _Harness({TagListFn? tagListFn}) {
+  _Harness({TagListFn? tagListFn, RecipeSummaryListFn? recipeListFn}) {
     recipes = RecipeProvider(
       recipeSyncFn: (batch) async {
         synced.addAll(batch);
@@ -52,6 +54,7 @@ class _Harness {
         return Recipe.fromJson(_json('recipe_detail_meal_prep.json'));
       },
       tagListFn: tagListFn ?? () async => _registry(),
+      recipeListFn: recipeListFn ?? () async => const [],
     );
   }
 
@@ -353,6 +356,69 @@ void main() {
         'context': ['breakfast', 'meal-prep'],
         'nutrition': ['high-fiber'],
       });
+    });
+
+    testWidgets(
+        'Given an existing server recipe, When opened, Then its stored cuisine '
+        'and cost are pre-selected from the detail payload', (tester) async {
+      final h = _Harness();
+      await h.pump(tester);
+
+      await h.open(
+        tester,
+        Recipe.apiSummary(id: 'fe12-oat-bowl', name: 'Overnight Oat Bowl'),
+      );
+
+      expect(
+        _chipSelected(tester, RecipeBuilderScreenState.cuisineChipKey('american')),
+        isTrue,
+      );
+      expect(
+        _chipSelected(tester, RecipeBuilderScreenState.costChipKey('cheap')),
+        isTrue,
+      );
+
+      await h.save(tester);
+      expect(h.lastPayload['cuisine'], 'american');
+      expect(h.lastPayload['cost_level'], 'cheap');
+    });
+
+    testWidgets(
+        'Given a server recipe stored locally with lines and tags, When opened '
+        'in a new session, Then its tags are refreshed once and the server '
+        'cuisine wins over the remembered one', (tester) async {
+      final h = _Harness(
+        recipeListFn: () async => [
+          RecipeSummary(id: 'fe12-oat-bowl', name: 'Overnight Oat Bowl'),
+        ],
+      );
+      final local = _untagged.copyWith(
+        id: 'fe12-oat-bowl',
+        tagSlugsByType: {
+          'context': ['lunch'],
+        },
+        cuisine: 'thai',
+      );
+      await StorageService.saveRecipes([local]);
+      await h.pump(tester);
+      await h.recipes.syncSummariesFromApi();
+
+      await h.open(tester, local);
+
+      expect(h.detailCalls, ['fe12-oat-bowl']);
+      expect(
+        _chipSelected(tester, RecipeBuilderScreenState.cuisineChipKey('american')),
+        isTrue,
+      );
+      expect(
+        _chipSelected(tester, RecipeBuilderScreenState.cuisineChipKey('thai')),
+        isFalse,
+      );
+      // Local lines are kept.
+      expect(find.textContaining('oats'), findsWidgets);
+
+      await h.open(tester, h.recipes.getById('fe12-oat-bowl')!);
+      expect(h.detailCalls, ['fe12-oat-bowl']);
     });
 
     testWidgets(

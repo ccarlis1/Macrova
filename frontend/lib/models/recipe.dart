@@ -190,15 +190,23 @@ class Recipe {
   /// context tag). Read-only: never sent on sync; refreshed from the detail.
   final bool isMealPrepCapable;
 
-  /// Cuisine from the tagger's closed vocabulary ([kCuisineVocabulary]), set in
-  /// the Recipe Builder. Null when the app doesn't know it: the recipe detail
-  /// doesn't return the stored cuisine. Sent as sync `cuisine` only when set.
+  /// Cuisine from the tagger's closed vocabulary ([kCuisineVocabulary]), or
+  /// `unknown` (the server's "none"). Read from `GET /api/v1/recipes/{id}`
+  /// (`cuisine`, null when the recipe has no tag entry) or set in the Recipe
+  /// Builder. Null when the app doesn't know it. Sent as sync `cuisine` only
+  /// when set.
   final String? cuisine;
 
-  /// `cheap` | `standard` | `premium`, set in the Recipe Builder. Null when the
-  /// app doesn't know it (not returned by the detail). Sent as sync
-  /// `cost_level` only when set; the server stores `standard` otherwise.
+  /// `cheap` | `standard` | `premium`, from the detail's `cost_level` (null
+  /// when the recipe has no tag entry) or set in the Recipe Builder. Null when
+  /// the app doesn't know it. Sent as sync `cost_level` only when set; the
+  /// server stores `standard` otherwise.
   final String? costLevel;
+
+  /// Stored dietary flags from the detail's `dietary_flags`; null when the
+  /// recipe has no tag entry or the app never loaded them. Read-only: never
+  /// sent on sync (omitted keeps the server's flags).
+  final List<String>? dietaryFlags;
 
   const Recipe({
     required this.id,
@@ -211,6 +219,7 @@ class Recipe {
     this.isMealPrepCapable = false,
     this.cuisine,
     this.costLevel,
+    this.dietaryFlags,
   });
 
   /// Canonical `context` slug that marks a recipe as batchable (FE-12 switch).
@@ -278,6 +287,7 @@ class Recipe {
     bool? isMealPrepCapable,
     String? cuisine,
     String? costLevel,
+    List<String>? dietaryFlags,
   }) {
     return Recipe(
       id: id ?? this.id,
@@ -290,7 +300,26 @@ class Recipe {
       isMealPrepCapable: isMealPrepCapable ?? this.isMealPrepCapable,
       cuisine: cuisine ?? this.cuisine,
       costLevel: costLevel ?? this.costLevel,
+      dietaryFlags: dietaryFlags ?? this.dietaryFlags,
     );
+  }
+
+  /// This recipe with the tag-store fields of [detail] (a parsed
+  /// `GET /api/v1/recipes/{id}`): the server's `cuisine` / `cost_level` /
+  /// `dietary_flags` win when present, and a value remembered here is kept
+  /// only when the server has none (no tag entry).
+  Recipe withServerTagFields(Recipe detail) => copyWith(
+        cuisine: detail.cuisine,
+        costLevel: detail.costLevel,
+        dietaryFlags: detail.dietaryFlags,
+      );
+
+  static List<String>? _stringListOrNull(dynamic raw) {
+    if (raw is! List) return null;
+    return [
+      for (final s in raw)
+        if (s is String && s.trim().isNotEmpty) s.trim(),
+    ];
   }
 
   /// `tag_slugs_by_type` JSON → map of non-empty string lists (unknown shapes dropped).
@@ -400,6 +429,7 @@ class Recipe {
         'is_meal_prep_capable': isMealPrepCapable,
         if (cuisine != null) 'cuisine': cuisine,
         if (costLevel != null) 'cost_level': costLevel,
+        if (dietaryFlags != null) 'dietary_flags': dietaryFlags,
       };
 
   /// Body fragment for `POST /api/v1/recipes/sync` (server `RecipeSyncItem` shape).
@@ -447,6 +477,7 @@ class Recipe {
       isMealPrepCapable: json['is_meal_prep_capable'] == true,
       cuisine: _nonEmptyString(json['cuisine']),
       costLevel: _nonEmptyString(json['cost_level']),
+      dietaryFlags: _stringListOrNull(json['dietary_flags']),
     );
   }
 

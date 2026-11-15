@@ -244,13 +244,14 @@ class RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
   }
 
   /// Fetches full recipe from the API when [recipe] is id/name-only (no lines),
-  /// or only its tags when it is a server recipe whose tags were never loaded.
+  /// or only its tags (incl. stored cuisine / cost, pre-selected below) when it
+  /// is a server recipe whose tags weren't loaded this session.
   Future<void> loadRecipeWithHydration(
     Recipe recipe,
     RecipeProvider recipeProvider,
   ) async {
-    final needsTags = recipe.tagSlugsByType.isEmpty &&
-        recipeProvider.remoteRecipeIds.contains(recipe.id);
+    final needsTags = recipeProvider.remoteRecipeIds.contains(recipe.id) &&
+        !recipeProvider.hasServerTags(recipe.id);
     if (recipe.ingredients.isNotEmpty && !needsTags) {
       loadRecipe(recipe);
       return;

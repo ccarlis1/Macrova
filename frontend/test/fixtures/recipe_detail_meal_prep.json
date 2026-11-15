@@ -79,5 +79,8 @@
       "time-2"
     ]
   },
-  "is_meal_prep_capable": true
+  "is_meal_prep_capable": true,
+  "cuisine": "american",
+  "cost_level": "cheap",
+  "dietary_flags": []
 }

@@ -44,26 +44,59 @@ class TagPoolFilterSection extends StatelessWidget {
   /// when none is selected); used for the missing-value warnings.
   final List<Recipe> poolRecipes;
 
+  /// Pool recipes whose stored cuisine / cost were loaded from
+  /// `GET /api/v1/recipes/{id}` this session ([RecipeProvider.hasServerTags]).
+  /// Only these are counted; the others are reported as not checked.
+  final Set<String> checkedRecipeIds;
+
+  /// True when [poolRecipes] is an explicit selection (details are fetched
+  /// for it); false when it is the whole library (no details are fetched).
+  final bool poolIsSelection;
+
+  /// True while the selected pool's details are loading.
+  final bool checkingTags;
+
   const TagPoolFilterSection({
     super.key,
     required this.planProvider,
     this.poolRecipes = const [],
+    this.checkedRecipeIds = const {},
+    this.poolIsSelection = false,
+    this.checkingTags = false,
   });
 
   static const cuisineGapKey = Key('pool_filter_cuisine_gap');
   static const costGapKey = Key('pool_filter_cost_gap');
+  static const uncheckedKey = Key('pool_filter_tags_unchecked');
 
-  /// Pool recipes with no cuisine the app knows of (never set in the Recipe
-  /// Builder, or set to `unknown`). The recipe detail doesn't return the stored
-  /// cuisine, so this is the app's own record, not the server's.
-  static int countMissingCuisine(Iterable<Recipe> pool) => pool
-      .where((r) => r.cuisine == null || r.cuisine == kCuisineUnknown)
-      .length;
+  /// Checked pool recipes with no stored cuisine: no tag entry (null) or the
+  /// server's `unknown`. A cuisine filter drops them.
+  static int countMissingCuisine(
+    Iterable<Recipe> pool,
+    Set<String> checkedIds,
+  ) =>
+      pool
+          .where((r) => checkedIds.contains(r.id))
+          .where((r) => r.cuisine == null || r.cuisine == kCuisineUnknown)
+          .length;
 
-  /// Pool recipes with no cost the app knows of (the server stores them as
-  /// `standard`). Same caveat as [countMissingCuisine].
-  static int countMissingCost(Iterable<Recipe> pool) =>
-      pool.where((r) => r.costLevel == null).length;
+  /// Checked pool recipes a Cheap / Premium filter drops for want of a cost:
+  /// no tag entry (null), or `standard`, which is what the server stores when
+  /// no cost was set (an explicit Standard can't be told apart).
+  static int countMissingCost(
+    Iterable<Recipe> pool,
+    Set<String> checkedIds,
+  ) =>
+      pool
+          .where((r) => checkedIds.contains(r.id))
+          .where((r) => r.costLevel == null || r.costLevel == kCostLevelDefault)
+          .length;
+
+  /// Whether a filter is on that the warnings check (cuisine, Cheap/Premium).
+  static bool needsTagCheck(MealPlanProvider planProvider) =>
+      planProvider.cuisine.isNotEmpty ||
+      (planProvider.costLevel != null &&
+          planProvider.costLevel != kCostLevelDefault);
 
   static String _recipesHave(int n) =>
       n == 1 ? '1 recipe has' : '$n recipes have';
@@ -172,7 +205,7 @@ class TagPoolFilterSection extends StatelessWidget {
   List<Widget> _gapWarnings() {
     final out = <Widget>[];
     if (planProvider.cuisine.isNotEmpty) {
-      final n = countMissingCuisine(poolRecipes);
+      final n = countMissingCuisine(poolRecipes, checkedRecipeIds);
       if (n > 0) {
         out.add(
           AdvisoryCard(
@@ -181,26 +214,53 @@ class TagPoolFilterSection extends StatelessWidget {
             title: '${_recipesHave(n)} no cuisine set and will be left out.',
             description:
                 'A cuisine filter drops recipes without a cuisine. Set one in '
-                'the Recipe Builder to keep them. Counted from cuisines set in '
-                'this app; the server doesn\'t report stored cuisines yet.',
+                'the Recipe Builder to keep them. Counted from each recipe\'s '
+                'stored cuisine on the server.',
           ),
         );
       }
     }
     final cost = planProvider.costLevel;
     if (cost != null && cost != kCostLevelDefault) {
-      final n = countMissingCost(poolRecipes);
+      final n = countMissingCost(poolRecipes, checkedRecipeIds);
       if (n > 0) {
         out.add(
           AdvisoryCard(
             key: costGapKey,
             variant: AdvisoryVariant.warn,
-            title: '${_recipesHave(n)} no cost set and will be left out.',
+            title: n == 1
+                ? '1 recipe is Standard or has no cost set and will be left '
+                    'out.'
+                : '$n recipes are Standard or have no cost set and will be '
+                    'left out.',
             description:
                 'Recipes without a cost are stored as Standard, so the '
                 '${tagValueLabel(cost)} filter drops them. Set a cost in the '
-                'Recipe Builder to keep them. Counted from costs set in this '
-                'app; the server doesn\'t report stored costs yet.',
+                'Recipe Builder to keep them. Counted from each recipe\'s '
+                'stored cost on the server.',
+          ),
+        );
+      }
+    }
+    if (needsTagCheck(planProvider)) {
+      final unchecked =
+          poolRecipes.where((r) => !checkedRecipeIds.contains(r.id)).length;
+      if (unchecked > 0) {
+        out.add(
+          AdvisoryCard(
+            key: uncheckedKey,
+            variant: AdvisoryVariant.info,
+            title: checkingTags
+                ? 'Checking stored cuisine and cost…'
+                : 'Stored cuisine and cost not checked for $unchecked '
+                    '${unchecked == 1 ? 'recipe' : 'recipes'}',
+            description: !poolIsSelection
+                ? 'Select recipes in the pool to check which ones this filter '
+                    'will leave out. The whole library isn\'t loaded.'
+                : checkingTags
+                    ? 'Loading the selected recipes from the server.'
+                    : 'They couldn\'t be loaded from the server (recipes '
+                        'saved only on this device can\'t be checked).',
           ),
         );
       }

@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:macrova/features/agent/llm_config_provider.dart';
 import 'package:macrova/models/models.dart';
+import 'package:macrova/models/recipe.dart';
 import 'package:macrova/providers/meal_plan_provider.dart';
 import 'package:macrova/providers/profile_provider.dart';
 import 'package:macrova/providers/recipe_provider.dart';
 import 'package:macrova/screens/planner_config_screen.dart';
+import 'package:macrova/services/api_service.dart';
 import 'package:macrova/services/storage_service.dart';
 import 'package:macrova/theme/app_theme.dart';
 import 'package:macrova/widgets/macrova_chip.dart';
@@ -209,18 +211,39 @@ void main() {
   });
 
   group('Pool filter missing-value warnings (FE-12)', () {
+    // Local copies (with remembered values that the server's override).
     final pool = [
-      sampleRecipe.copyWith(id: 'a', name: 'A', cuisine: 'thai'),
-      sampleRecipe.copyWith(id: 'b', name: 'B', cuisine: 'unknown'),
+      sampleRecipe.copyWith(id: 'a', name: 'A', cuisine: 'italian'),
+      sampleRecipe.copyWith(id: 'b', name: 'B'),
       sampleRecipe.copyWith(id: 'c', name: 'C', costLevel: 'cheap'),
       sampleRecipe.copyWith(id: 'd', name: 'D'),
     ];
 
-    Future<RecipeProvider> loadPool() async {
+    /// Stored tag fields per `GET /api/v1/recipes/{id}`; `d` is not on the
+    /// server (404).
+    Recipe detail(String id) => switch (id) {
+          'a' => Recipe(id: id, name: 'A', cuisine: 'thai', costLevel: 'cheap'),
+          'b' => Recipe(
+              id: id, name: 'B', cuisine: 'unknown', costLevel: 'standard'),
+          'c' => Recipe(id: id, name: 'C'), // no tag entry: nulls
+          _ => throw const ApiException(
+              statusCode: 404,
+              code: 'RECIPE_NOT_FOUND',
+              message: 'not found',
+            ),
+        };
+
+    Future<(RecipeProvider, List<String>)> loadPool() async {
       await StorageService.saveRecipes(pool);
-      final recipes = RecipeProvider();
+      final calls = <String>[];
+      final recipes = RecipeProvider(
+        recipeDetailFn: (id) async {
+          calls.add(id);
+          return detail(id);
+        },
+      );
       await recipes.load();
-      return recipes;
+      return (recipes, calls);
     }
 
     void bigView(WidgetTester tester) {
@@ -230,75 +253,119 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
     }
 
+    MealPlanProvider selectAll() {
+      final mealPlan = MealPlanProvider()..setDays(1);
+      for (final id in ['a', 'b', 'c', 'd']) {
+        mealPlan.toggleRecipe(id);
+      }
+      return mealPlan;
+    }
+
+    Future<void> tapKey(WidgetTester tester, String key) async {
+      await tester.ensureVisible(find.byKey(Key(key)));
+      await tester.tap(find.byKey(Key(key)));
+      await tester.pumpAndSettle();
+    }
+
     testWidgets(
-      'Given recipes without a cuisine, When a cuisine filter is selected, '
-      'Then an AdvisoryCard counts them',
+      'Given a selected pool, When a cuisine filter is selected, Then the '
+      'stored cuisines are loaded and the AdvisoryCard counts the ones without',
       (tester) async {
         bigView(tester);
-        final mealPlan = MealPlanProvider();
-        mealPlan.setDays(1);
-        await _pumpScreen(tester, mealPlan: mealPlan, recipes: await loadPool());
+        final (recipes, calls) = await loadPool();
+        await _pumpScreen(tester, mealPlan: selectAll(), recipes: recipes);
 
+        expect(calls, isEmpty);
         expect(find.byKey(TagPoolFilterSection.cuisineGapKey), findsNothing);
 
-        await tester.ensureVisible(
-            find.byKey(const Key('pool_filter_cuisine_mexican')));
-        await tester.tap(find.byKey(const Key('pool_filter_cuisine_mexican')));
-        await tester.pumpAndSettle();
+        await tapKey(tester, 'pool_filter_cuisine_mexican');
 
+        expect(calls.toSet(), {'a', 'b', 'c', 'd'});
         expect(find.byKey(TagPoolFilterSection.cuisineGapKey), findsOneWidget);
+        // b is `unknown`, c has no tag entry; a's server value (thai) wins
+        // over its remembered italian; d isn't on the server.
         expect(
-          find.text('3 recipes have no cuisine set and will be left out.'),
+          find.text('2 recipes have no cuisine set and will be left out.'),
+          findsOneWidget,
+        );
+        expect(recipes.getById('a')!.cuisine, 'thai');
+        expect(find.byKey(TagPoolFilterSection.uncheckedKey), findsOneWidget);
+        expect(
+          find.text('Stored cuisine and cost not checked for 1 recipe'),
           findsOneWidget,
         );
       },
     );
 
     testWidgets(
-      'Given a selected pool, Then only selected recipes are counted',
+      'Given a selected pool, Then only selected recipes are fetched and '
+      'counted',
       (tester) async {
         bigView(tester);
-        final mealPlan = MealPlanProvider();
-        mealPlan.setDays(1);
+        final (recipes, calls) = await loadPool();
+        final mealPlan = MealPlanProvider()..setDays(1);
         mealPlan.toggleRecipe('a');
         mealPlan.toggleRecipe('b');
-        await _pumpScreen(tester, mealPlan: mealPlan, recipes: await loadPool());
+        await _pumpScreen(tester, mealPlan: mealPlan, recipes: recipes);
 
-        await tester.ensureVisible(
-            find.byKey(const Key('pool_filter_cuisine_mexican')));
-        await tester.tap(find.byKey(const Key('pool_filter_cuisine_mexican')));
-        await tester.pumpAndSettle();
+        await tapKey(tester, 'pool_filter_cuisine_mexican');
 
+        expect(calls.toSet(), {'a', 'b'});
         expect(
           find.text('1 recipe has no cuisine set and will be left out.'),
           findsOneWidget,
         );
+        expect(find.byKey(TagPoolFilterSection.uncheckedKey), findsNothing);
       },
     );
 
     testWidgets(
-      'Given recipes without a cost, When Cheap is selected, Then they are '
-      'counted; Standard (the stored default) shows no warning',
+      'Given no selection (whole library), When a cuisine filter is selected, '
+      'Then no details are fetched and the pool is reported unchecked',
       (tester) async {
         bigView(tester);
-        final mealPlan = MealPlanProvider();
-        mealPlan.setDays(1);
-        await _pumpScreen(tester, mealPlan: mealPlan, recipes: await loadPool());
+        final (recipes, calls) = await loadPool();
+        await _pumpScreen(
+          tester,
+          mealPlan: MealPlanProvider()..setDays(1),
+          recipes: recipes,
+        );
 
-        await tester.ensureVisible(
-            find.byKey(const Key('pool_filter_cost_cheap')));
-        await tester.tap(find.byKey(const Key('pool_filter_cost_cheap')));
-        await tester.pumpAndSettle();
+        await tapKey(tester, 'pool_filter_cuisine_mexican');
 
+        expect(calls, isEmpty);
+        // Locally remembered values are not counted.
+        expect(find.byKey(TagPoolFilterSection.cuisineGapKey), findsNothing);
         expect(
-          find.text('3 recipes have no cost set and will be left out.'),
+          find.text('Stored cuisine and cost not checked for 4 recipes'),
+          findsOneWidget,
+        );
+        expect(find.textContaining('Select recipes in the pool'),
+            findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'Given stored costs, When Cheap is selected, Then Standard / unset '
+      'recipes are counted; Standard (the stored default) shows no warning',
+      (tester) async {
+        bigView(tester);
+        final (recipes, _) = await loadPool();
+        await _pumpScreen(tester, mealPlan: selectAll(), recipes: recipes);
+
+        await tapKey(tester, 'pool_filter_cost_cheap');
+
+        // b is standard; c has no tag entry but keeps its remembered cheap.
+        expect(
+          find.text(
+              '1 recipe is Standard or has no cost set and will be left out.'),
           findsOneWidget,
         );
 
-        await tester.tap(find.byKey(const Key('pool_filter_cost_standard')));
-        await tester.pumpAndSettle();
+        await tapKey(tester, 'pool_filter_cost_standard');
 
         expect(find.byKey(TagPoolFilterSection.costGapKey), findsNothing);
+        expect(find.byKey(TagPoolFilterSection.uncheckedKey), findsNothing);
       },
     );
   });

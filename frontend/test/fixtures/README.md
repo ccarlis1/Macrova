@@ -22,7 +22,8 @@ sprint2-wave2 BE-19 commit, with `MACROVA_DATA_DIR` pointing at an empty temp fo
 | File | Request | Notes |
 | --- | --- | --- |
 | `tags_list_response.json` | `GET /api/v1/tags` | The seeded registry: 4 `context`/`meal_role`, `meal-prep` (`capability`), 3 `nutrition`, 1 `constraint`, 5 `time`; all `source: system`. |
-| `recipe_detail_meal_prep.json` | `POST /api/v1/recipes/sync` (`default_servings: 2`, `context: [breakfast, meal-prep]`, `nutrition: [high-fiber]`, `cuisine: american`, `cost_level: cheap`), then `GET /api/v1/recipes/fe12-oat-bowl` | Detail carries `tag_slugs_by_type` (with the server-derived `time`) and `is_meal_prep_capable: true`, but **not** `cuisine` / `cost_level`. |
+| `recipe_detail_meal_prep.json` | `POST /api/v1/recipes/sync` (`default_servings: 2`, `context: [breakfast, meal-prep]`, `nutrition: [high-fiber]`, `cuisine: american`, `cost_level: cheap`), then `GET /api/v1/recipes/fe12-oat-bowl` | Detail carries `tag_slugs_by_type` (with the server-derived `time`), `is_meal_prep_capable: true` and the stored `cuisine` / `cost_level` / `dietary_flags` (re-captured after commit 4593309; null when a recipe has no tag entry). |
 
-Used by `test/tag_registry_dto_test.dart`, `test/recipe_sync_payload_test.dart` and
+Used by `test/tag_registry_dto_test.dart`, `test/recipe_sync_payload_test.dart`,
+`test/providers/recipe_provider_server_tags_test.dart` and
 `test/widgets/recipe_builder_tags_test.dart`.

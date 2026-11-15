@@ -41,6 +41,23 @@ class PlannerConfigScreen extends StatelessWidget {
       });
     }
 
+    // Cuisine / cost warnings count stored values from each recipe's detail.
+    // Load them for the selected pool only (one call per recipe, once per
+    // session); the whole library is never fetched.
+    if (TagPoolFilterSection.needsTagCheck(planProvider) &&
+        planProvider.selectedRecipeIds.isNotEmpty) {
+      final unchecked = [
+        for (final id in planProvider.selectedRecipeIds)
+          if (!recipeProvider.hasServerTags(id)) id,
+      ];
+      if (unchecked.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!context.mounted) return;
+          context.read<RecipeProvider>().loadServerTags(unchecked);
+        });
+      }
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(MacrovaSpacing.xlAlt),
       child: Center(
@@ -228,6 +245,9 @@ class PlannerConfigScreen extends StatelessWidget {
                         for (final r in recipes)
                           if (planProvider.selectedRecipeIds.contains(r.id)) r,
                       ],
+                checkedRecipeIds: recipeProvider.serverTagsLoadedIds,
+                poolIsSelection: planProvider.selectedRecipeIds.isNotEmpty,
+                checkingTags: recipeProvider.serverTagsLoading,
               ),
               const SizedBox(height: MacrovaSpacing.xlAlt),
 

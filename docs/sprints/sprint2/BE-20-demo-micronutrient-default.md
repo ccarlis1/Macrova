@@ -1,6 +1,6 @@
 # BE-20 — Demo micronutrient default (D-A), user override, MCP busyness 2/3/4 (D-B)
 
-**Status:** blocked (owner decision: supplement-only magnesium/niacin ULs applied to food; see probe record below)  ·  **Complexity:** M  ·  **Depends on:** DATA-1
+**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** DATA-1
 
 ## Summary
 
@@ -31,20 +31,32 @@ Probe evidence (committed pool, 3 days): only `omega_3_g` fails alone at τ = 1.
 
 The nutrient list comes from the re-run probe (expected: all except `omega_3_g`). The structure is fixed:
 
-- [ ] The decided default lives in **one** place (a constant or reference-data entry next to `rdi_by_demographic.json`'s loader). MCP, the YAML example and Flutter's default are derived from it or match it. A test asserts the MCP path and the YAML example agree.
-- [ ] Re-run the D-A probe on the **sample recipes** after DATA-1, at τ = 1.0: 7 days, the MCP shorthand schedule at **2/3/4**, each of the 4 demographics. Drop every nutrient that fails, and record the table and the final list in this stub.
-- [ ] MCP test: `macrova_plan_meals` with `use_sample_recipes: true`, `demographic: "adult_male"`, 3 meals (default busyness), 7 days → `status: "success"`. Fails before the change (all 25 at τ = 1.0).
-- [ ] When the default leaves nutrients out, the plan result (MCP `warnings`; HTTP `warnings` when the default is applied) names them in plain language and says how to add them back (the override). No warning when the user supplied their own goals. Tests for both.
-- [ ] **User override (MCP):** add an optional `targets.micronutrient_goals` (map of nutrient key → daily amount) and an optional `targets.micronutrient_weekly_min_fraction` (0 < τ ≤ 1). When given, they replace the default for that nutrient or τ. An empty map means no floors. Unknown keys are rejected with a plain-language error. The change is additive: existing calls behave as before apart from the default list. Tests: an override restores `omega_3_g`, an override lowers τ, an unknown key fails. Each fails before the change because the fields don't exist.
-- [ ] **Busyness (D-B):** `_schedule_days` defaults to 2/3/4 for 3 meals, using the rule above for other counts. The `schedule` field description says 2/3/4. Test: shorthand `meals_per_day: 3` with no `busyness` gives `busyness_level`s `[2, 3, 4]`, and an explicit `busyness` still applies to every meal. Fails before the change (`[2, 3, 3]`).
+- [x] The decided default lives in **one** place (a constant or reference-data entry next to `rdi_by_demographic.json`'s loader). MCP, the YAML example and Flutter's default are derived from it or match it. A test asserts the MCP path and the YAML example agree.
+  - Done: `src/data_layer/upper_limits.py` → `DEFAULT_MICRONUTRIENT_LEFT_OUT` (per demographic), `DEFAULT_MICRONUTRIENT_WEEKLY_MIN_FRACTION = 1.0`, `default_micronutrient_goals()` / `default_micronutrient_left_out()`. Test: `tests/test_micronutrient_default.py::test_mcp_path_and_yaml_example_agree_on_the_default`. Flutter: no HTTP response exposes the default, so Flutter can only mirror it by copying the list (owned by the frontend track).
+- [x] Re-run the D-A probe on the **sample recipes** after DATA-1, at τ = 1.0: 7 days, the MCP shorthand schedule at **2/3/4**, each of the 4 demographics. Drop every nutrient that fails, and record the table and the final list in this stub.
+  - Done: see "Probe re-run (2026-11-15)" below.
+- [x] MCP test: `macrova_plan_meals` with `use_sample_recipes: true`, `demographic: "adult_male"`, 3 meals (default busyness), 7 days → `status: "success"`. Fails before the change (all 25 at τ = 1.0).
+  - `tests/mcp_server/test_server.py::test_sample_recipes_with_demographic_default_plan_seven_days`.
+- [x] When the default leaves nutrients out, the plan result (MCP `warnings`; HTTP `warnings` when the default is applied) names them in plain language and says how to add them back (the override). No warning when the user supplied their own goals. Tests for both.
+  - MCP: `test_default_warning_names_left_out_nutrients_and_the_override`, `test_no_left_out_warning_when_the_user_sends_goals`, `test_no_left_out_warning_without_a_demographic`. HTTP never applies the default (a request without `micronutrient_goals` still plans with no floors, as before; the CLI/YAML path sends the example's explicit goals), so there is no HTTP case to warn on.
+- [x] **User override (MCP):** add an optional `targets.micronutrient_goals` (map of nutrient key → daily amount) and an optional `targets.micronutrient_weekly_min_fraction` (0 < τ ≤ 1). When given, they replace the default for that nutrient or τ. An empty map means no floors. Unknown keys are rejected with a plain-language error. The change is additive: existing calls behave as before apart from the default list. Tests: an override restores `omega_3_g`, an override lowers τ, an unknown key fails. Each fails before the change because the fields don't exist.
+  - `test_override_restores_a_left_out_nutrient`, `test_override_replaces_a_value_and_zero_removes_it`, `test_override_lowers_tau`, `test_bad_micronutrient_override_is_an_error`. A value of 0 removes that nutrient's goal. `requested_targets` now echoes the two new fields (null when omitted), and `weekly_micronutrients` lists the goals in effect rather than all 25 RDIs.
+- [x] **Busyness (D-B):** `_schedule_days` defaults to 2/3/4 for 3 meals, using the rule above for other counts. The `schedule` field description says 2/3/4. Test: shorthand `meals_per_day: 3` with no `busyness` gives `busyness_level`s `[2, 3, 4]`, and an explicit `busyness` still applies to every meal. Fails before the change (`[2, 3, 3]`).
+  - `tools.default_busyness_levels`; tests `test_shorthand_default_busyness_is_2_3_4`, `test_shorthand_default_busyness_rule_for_other_meal_counts` (1 → [2], 2 → [2, 4], 4 → [2, 3, 3, 4]), `test_explicit_shorthand_busyness_still_applies_to_every_meal`, `test_tool_schema_describes_the_new_fields_and_2_3_4`. Owner to confirm the rule for counts other than 3 in the PR.
 - [ ] **Flutter:** a new user's Profile screen starts with the default goals for the chosen demographic, and every value stays editable. Editing one, saving and planning sends the edited value. That's a DTO and default change, which needs BE-17's demographic plumbing. Widget test: default shown, edit wins. If BE-17 is cut, record here that Flutter keeps all-zero defaults (no floors), and say so in the PR.
-- [ ] **Demo profile (W7):**
+  - Not done here: owned by the frontend track.
+- [ ] **Demo profile (W7):** (partly done; see the sub-items)
   - `config/user_profile.yaml.example` gets the D-A default, in canonical `schedule_days` form with 3 meals. Test: it loads, and planning on it succeeds for 1, 3 and 7 days with the committed pool.
+    - Done for 3 and 7 days (`tests/test_micronutrient_default.py`, HTTP with `demographic: adult_male` ULs on; the CLI gives the same). **1 day fails** (HTTP `partial`, FM-1 on meal 3; MCP FM-4): at D = 1 every floor must be met in one day. On the committed pool every nutrient passes alone, no single extra drop fixes it, and a greedy pass keeps 21 (drops `vitamin_e_mg` and `calcium_mg` as well); 2 days needs `calcium_mg` dropped. Not changed: it needs an owner call (a longer list of left-out nutrients, or accept that a 1-day plan with full daily floors may fail).
   - `git rm --cached config/user_profile.yaml`. The owner's local copy stays; check that `git status` shows it as ignored, not deleted.
+    - **Not done:** the repo's path-guard hook blocks the untrack command ("rm targeting config/user_profile.yaml"). The owner runs it. Tests no longer read, create or change that file (session guard in `tests/conftest.py`).
   - When `config/user_profile.yaml` is missing, the CLI and the server either fall back to the example or fail with a message saying to copy it. Pick whichever the code already does, and test it. Document the copy step in README's quick start, next to BE-22's data-folder setup step. Whichever task lands second rebases onto the first's wording.
+    - Done: the code already fails with a copy hint (CLI exit 1) and the server treats the file as empty (no pins, empty schedule; the first write creates it). Tests: `tests/test_profile_file_missing.py`. README step 1 and QUICK_START (next to "Use Your Own Data Folder").
   - Note in the PR: the personal settings stay in git history. Untracking stops future changes from shipping; it doesn't erase past ones.
-- [ ] `benchmark-audit`: 153/153, 0 regressions. Benchmark scenarios set their own micronutrient goals; if any read the example YAML, stop and report.
-- [ ] OpenAPI check green (no HTTP shape change expected; the MCP fields are additive). Update the MCP tool docs and `tests/mcp_server/` for the new optional fields.
+- [x] `benchmark-audit`: 153/153, 0 regressions. Benchmark scenarios set their own micronutrient goals; if any read the example YAML, stop and report.
+  - 153 → 153 exact, 0 regressed, `diff_results.py --base main` exit 0, after the UL change and again at the end. No scenario reads the example YAML.
+- [x] OpenAPI check green (no HTTP shape change expected; the MCP fields are additive). Update the MCP tool docs and `tests/mcp_server/` for the new optional fields.
+  - `--check` exit 0, no HTTP change. MCP docs are the tool's field descriptions (`models.py`, `server.py`).
 
 ## Implementation notes
 
@@ -62,7 +74,7 @@ The nutrient list comes from the re-run probe (expected: all except `omega_3_g`)
 - `benchmark-audit`: 153/153, 0 regressions
 - `cd frontend && flutter analyze && flutter test` if Flutter changed
 
-## Probe re-run (2026-11-14) — STOPPED, owner decision needed
+## Probe re-run (2026-11-14) — stopped, superseded by the 2026-11-15 run below
 
 Run: `.venv/bin/python docs/sprints/sprint2/probes/micro_probe_be20.py 7 <demographic>` (a copy of
 `micro_probe.py` that goes through the MCP tool path: the 18 sample recipes via `use_sample_recipes`,
@@ -114,6 +126,35 @@ list may differ by demographic.
 Both questions above are decided (README → D-A addendum): magnesium and niacin ULs are set to `null` in
 `ul_by_demographic.json` for all four demographics (supplement-only, not enforced against food), and the
 default list may differ by demographic. The probe is re-run below with the real reference data.
+
+## Probe re-run (2026-11-15), after the UL decision
+
+Same probe, real reference data (magnesium and niacin ULs now `null`), no in-memory changes. 18 sample
+recipes, 7 days, 2/3/4, τ = 1.0, daily ULs on, macros from the example (2400 kcal, 150 g protein,
+fat 50–100 g). The goal list under test goes in through `targets.micronutrient_goals`.
+
+| Demographic | No goals (ULs only) | All 25 | Fail alone at τ = 1.0 | All minus those | Extra drop needed |
+|---|---|---|---|---|---|
+| adult_male | success | failed, FM-4 | omega_3_g, omega_6_g | 23 → success | none |
+| adult_female | success | failed, FM-4 | omega_3_g, omega_6_g | 23 → success | none |
+| pregnancy | success | failed, FM-4 | omega_3_g, omega_6_g | 23 → partial, FM-5 | any one of vitamin_e_mg, iron_mg |
+| lactation | success | failed, FM-4 | vitamin_e_mg, omega_3_g, omega_6_g | 22 → success | none |
+
+Pregnancy: each nutrient passes alone, but the 23 together hit the search limit (FM-5). Dropping either
+`vitamin_e_mg` or `iron_mg` as well succeeds. The default drops `vitamin_e_mg` (first in reference order,
+and it keeps iron, which matters in pregnancy, tracked). Swap it for `iron_mg` in
+`DEFAULT_MICRONUTRIENT_LEFT_OUT` if the owner prefers.
+
+**Final default (τ = 1.0): each demographic's RDIs minus**
+- adult_male: `omega_3_g`, `omega_6_g` (23 goals)
+- adult_female: `omega_3_g`, `omega_6_g` (23 goals)
+- pregnancy: `vitamin_e_mg`, `omega_3_g`, `omega_6_g` (22 goals)
+- lactation: `vitamin_e_mg`, `omega_3_g`, `omega_6_g` (22 goals)
+
+With that default, MCP shorthand (3 meals, default busyness) on the sample recipes succeeds for every
+demographic at 3 and 7 days, and fails at 1 day (FM-4). `config/user_profile.yaml.example`
+(adult_male default, ULs on) on the committed pool over HTTP and the CLI: 1 day fails (FM-1), 3 and 7 days
+succeed. The sample pool gives the same result.
 
 ## Out of scope
 

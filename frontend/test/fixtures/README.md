@@ -81,6 +81,10 @@ folder made by `scripts/setup_user_data.py` (empty pool) and
 | `starter_import_already.json` | `POST …/import` `["recipe_001", "recipe_002"]` | 200; `recipe_002` imported, `recipe_001` `already_in_pool` |
 | `starter_import_error_invalid.json` | `POST …/import` `{}` | 400 `INVALID_REQUEST` |
 | `starter_recipe_detail_units.json` | `GET /api/v1/recipes/recipe_009` (after the imports) | `cup` / `tbsp` / `scoop` lines carry their `unit_conversions` |
+| `plan_empty_pool.json` | `POST /api/v1/plan` on a second fresh (empty) folder, 1 day, request from `build_plan_request_from_profile(config/user_profile.yaml.example)` minus `active_batches` / `recipe_ids` | `failed`, FM-1 at day 0 slot 0 (`cause: EMPTY_POOL`), `failure_cause: {cause: EMPTY_POOL, recipe_could_help: true}` |
 
-Used by `test/starter_recipe_api_test.dart` (DTO, client) and
-`test/providers/recipe_provider_starter_test.dart`.
+Used by `test/starter_recipe_api_test.dart` (DTO, client),
+`test/providers/recipe_provider_starter_test.dart`,
+`test/widgets/starter_import_flow_test.dart`,
+`test/widgets/starter_pack_sheet_test.dart` and
+`test/widgets/starter_pack_entry_points_test.dart`.

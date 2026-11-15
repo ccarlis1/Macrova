@@ -19,6 +19,7 @@ import '../widgets/meal_detail_sheet.dart';
 import '../widgets/recipe_card.dart';
 import '../widgets/section_header.dart';
 import '../widgets/stat_card.dart';
+import '../widgets/starter_pack_sheet.dart';
 import '../widgets/sticky_cta.dart';
 
 /// Home dashboard: Day 1 plan vs targets, composed from existing providers only.
@@ -27,6 +28,10 @@ class TodayScreen extends StatelessWidget {
 
   static const int _navPlanner = 5;
   static const int _navAgent = 7;
+
+  /// Empty-state link to the starter pack, shown while the library is empty
+  /// (FE-16).
+  static const starterPackKey = Key('today_starter_pack');
 
   void _go(BuildContext context, int index) {
     context.findAncestorStateOfType<AppShellState>()?.navigateTo(index);
@@ -95,6 +100,7 @@ class TodayScreen extends StatelessWidget {
         recipes: recipes.recipes,
         onOpenPlanner: () => _go(context, _navPlanner),
         onOpenAgent: () => _go(context, _navAgent),
+        onOpenStarterPack: () => StarterPackSheet.show(context),
       );
     }
 
@@ -547,6 +553,7 @@ class _EmptyToday extends StatelessWidget {
   final List<Recipe> recipes;
   final VoidCallback onOpenPlanner;
   final VoidCallback onOpenAgent;
+  final VoidCallback onOpenStarterPack;
 
   const _EmptyToday({
     required this.tokens,
@@ -557,6 +564,7 @@ class _EmptyToday extends StatelessWidget {
     required this.recipes,
     required this.onOpenPlanner,
     required this.onOpenAgent,
+    required this.onOpenStarterPack,
   });
 
   @override
@@ -595,6 +603,16 @@ class _EmptyToday extends StatelessWidget {
                           description: error!,
                         ),
                       const SizedBox(height: MacrovaSpacing.sectionTop),
+                    ],
+                    if (recipes.isEmpty) ...[
+                      EmptyState(
+                        key: TodayScreen.starterPackKey,
+                        icon: Icons.inventory_2_outlined,
+                        label: 'Your library is empty: start from the '
+                            'starter pack',
+                        onTap: onOpenStarterPack,
+                      ),
+                      const SizedBox(height: MacrovaSpacing.md),
                     ],
                     EmptyState(
                       icon: Icons.calendar_today_outlined,

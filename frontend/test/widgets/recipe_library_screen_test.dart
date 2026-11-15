@@ -37,12 +37,13 @@ void main() {
   group('RecipeLibraryScreen', () {
     testWidgets(
       'Given no recipes, When the library renders, Then the EmptyState '
-      'add affordance is shown',
+      'offers the starter pack and building a recipe',
       (tester) async {
         await pumpLibrary(tester);
 
-        expect(find.byType(EmptyState), findsOneWidget);
-        expect(find.text('Create your first recipe'), findsOneWidget);
+        expect(find.byType(EmptyState), findsNWidgets(2));
+        expect(find.text('Start from the starter pack'), findsOneWidget);
+        expect(find.text('Build a recipe'), findsOneWidget);
       },
     );
 
@@ -52,7 +53,7 @@ void main() {
       (tester) async {
         final coordinator = await pumpLibrary(tester);
 
-        await tester.tap(find.text('Create your first recipe'));
+        await tester.tap(find.text('Build a recipe'));
         await tester.pump();
 
         expect(

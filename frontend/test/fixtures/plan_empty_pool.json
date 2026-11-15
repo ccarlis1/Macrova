@@ -1,0 +1,62 @@
+{
+  "success": false,
+  "termination_code": "TC-2",
+  "days": 1,
+  "daily_plans": [],
+  "warnings": {
+    "exclusions": [
+      "Exclusion term 'brussels sprouts' matched no allergen class and no ingredient in the recipe pool.",
+      "Exclusion term 'liver' matched no allergen class and no ingredient in the recipe pool."
+    ]
+  },
+  "report": {
+    "failures": [
+      {
+        "code": "FM-1",
+        "message": "No feasible recipe candidates for this slot.",
+        "day_index": 0,
+        "slot_index": 0,
+        "slot_id": "day-1-slot-0",
+        "date": "day-1",
+        "details": {
+          "eligible_recipe_count": 0,
+          "blocking_constraints": [
+            "HC-1"
+          ]
+        },
+        "fix_hint": "No recipes satisfy hard constraints for this slot. Widen the recipe pool or relax slot constraints.",
+        "explanation": "No recipes were available to plan with.",
+        "fix": "Add your own recipes or import some from the starter pack, and check that your filters and excluded ingredients don't remove all of them.",
+        "cause": "EMPTY_POOL"
+      }
+    ],
+    "failure_cause": {
+      "cause": "EMPTY_POOL",
+      "recipe_could_help": true
+    },
+    "unfillable_slots": [
+      {
+        "day": 0,
+        "slot_index": 0,
+        "blocking_constraints": [
+          "HC-1"
+        ],
+        "eligible_recipe_count": 0
+      }
+    ],
+    "meal_type_summary": {
+      "matched": 0,
+      "mismatched": 0,
+      "unknown": 0,
+      "planner_only_mismatch_rate": 0.0
+    }
+  },
+  "goals": {
+    "daily_calories": 2400,
+    "daily_protein_g": 150.0,
+    "daily_fat_g_min": 50.0,
+    "daily_fat_g_max": 100.0,
+    "daily_carbs_g": 281.25
+  },
+  "plan_status": "failed"
+}

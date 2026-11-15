@@ -206,7 +206,8 @@ void main() {
 
         expect(find.text('No meal plan yet. Generate one from the Planner.'),
             findsOneWidget);
-        expect(find.byType(EmptyState), findsOneWidget);
+        // The library is empty too, so the starter-pack link shows (FE-16).
+        expect(find.byType(EmptyState), findsNWidgets(2));
         expect(find.text('Open Planner to generate a plan'), findsOneWidget);
         expect(find.text('Plan with words'), findsOneWidget);
         expect(find.text('Set up Agent'), findsOneWidget);

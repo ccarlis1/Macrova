@@ -7,6 +7,7 @@ import '../models/models.dart';
 import '../providers/meal_plan_provider.dart';
 import 'app_shell.dart';
 import 'failure_panel.dart';
+import 'starter_pack_sheet.dart';
 
 /// Maps structured [PlanFailure] / incomplete plan status into [FailurePanel] props.
 ///
@@ -27,6 +28,10 @@ class FailureViewModel {
   static const Key findRecipeKey = ValueKey('failure-find-recipe');
   static const Key setupAiKey = ValueKey('failure-setup-ai');
   static const Key recipeGapKey = ValueKey('failure-recipe-gap');
+  static const Key starterPackKey = ValueKey('failure-starter-pack');
+
+  /// `failure_cause.cause` for a plan with no recipes to plan with (BE-22).
+  static const String emptyPoolCause = 'EMPTY_POOL';
 
   /// Key of the inline row for a failure on 0-based [dayIndex] / [slotIndex].
   static Key slotKey(int dayIndex, int slotIndex) =>
@@ -292,14 +297,24 @@ class FailureViewModel {
   FailurePanel toHeroPanel(BuildContext context) {
     final llmReady = context.watch<LlmConfigProvider>().llmReady;
     final planProvider = context.watch<MealPlanProvider>();
-    final row = recipeHelpRow(
-      llmReady: llmReady,
-      canRerun: planProvider.canRerunLastRequest,
-      onFindRecipe: () => findRecipe(context),
-      onSetUpAi: () => context
-          .findAncestorStateOfType<AppShellState>()
-          ?.navigateTo(agentNavIndex),
-    );
+    // An empty pool needs recipes the user picks (FE-16); the server's
+    // assisted recovery declines to generate for an empty pool.
+    final row = failureCause?.cause == emptyPoolCause
+        ? FailureFixRow(
+            key: starterPackKey,
+            label: 'Start from the starter pack',
+            description: 'Pick recipes you would eat, import them, then plan '
+                'again.',
+            onTap: () => StarterPackSheet.show(context),
+          )
+        : recipeHelpRow(
+            llmReady: llmReady,
+            canRerun: planProvider.canRerunLastRequest,
+            onFindRecipe: () => findRecipe(context),
+            onSetUpAi: () => context
+                .findAncestorStateOfType<AppShellState>()
+                ?.navigateTo(agentNavIndex),
+          );
     return toPanel(key: heroKey, actions: [if (row != null) row]);
   }
 

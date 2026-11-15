@@ -44,7 +44,7 @@ from src.data_layer.models import NutritionProfile, MicronutrientProfile
 # ============================================================================
 
 # Bump when USDA_NUTRIENT_MAP semantics change so cache entries can be attributed to a mapper.
-MAPPER_VERSION = "1"
+MAPPER_VERSION = "2"  # 2: vitamin D ids fixed (IU from 1110, µg 1114 as fallback, never summed)
 
 USDA_NUTRIENT_MAP: Dict[int, Dict[str, Any]] = {
     # === MACRONUTRIENTS ===
@@ -88,20 +88,24 @@ USDA_NUTRIENT_MAP: Dict[int, Dict[str, Any]] = {
         "unit": "mg",
         "description": "Vitamin C, total ascorbic acid"
     },
-    # Vitamin D (IU) - some foods report in IU
-    1114: {
+    # Vitamin D. FDC reports it twice for most foods: id 1110 (nutrient number
+    # 324) in IU and id 1114 (nutrient number 328) in µg. Use the IU value when
+    # present; fall back to µg × 40 only when a food has no IU entry. The two
+    # are the same quantity, so they must never be added together (DATA-2:
+    # the ids were swapped and summed, which inflated vitamin D about 40x).
+    1110: {
         "field": "vitamin_d_iu",
         "category": "micro",
         "unit": "IU",
         "description": "Vitamin D (D2 + D3), International Units"
     },
-    # Vitamin D (mcg) - some foods report in mcg, needs conversion
-    1110: {
+    1114: {
         "field": "vitamin_d_iu",
         "category": "micro",
         "unit": "µg",
         "description": "Vitamin D (D2 + D3)",
-        "conversion": 40.0  # 1 mcg = 40 IU
+        "conversion": 40.0,  # 1 µg = 40 IU
+        "fallback": True,  # used only when id 1110 is absent
     },
     # Vitamin E
     1109: {
@@ -353,14 +357,21 @@ class NutrientMapper:
             "carbs_g": 0.0,
         }
         micros = {}
-        
+        fallback_micros: Dict[str, float] = {}
+
         # Extract foodNutrients array
         food_nutrients = raw_payload.get("foodNutrients", [])
-        
+
         # Process each nutrient
         for nutrient_data in food_nutrients:
-            self._process_nutrient(nutrient_data, macros, micros)
-        
+            self._process_nutrient(nutrient_data, macros, micros, fallback_micros)
+
+        # A fallback source (another unit of the same nutrient) applies only
+        # when the primary source is absent from the payload.
+        for field_name, amount in fallback_micros.items():
+            if field_name not in micros:
+                micros[field_name] = amount
+
         # Build MicronutrientProfile with defaults
         micronutrient_profile = MicronutrientProfile(**micros)
         
@@ -376,14 +387,17 @@ class NutrientMapper:
         self,
         nutrient_data: Dict[str, Any],
         macros: Dict[str, float],
-        micros: Dict[str, float]
+        micros: Dict[str, float],
+        fallback_micros: Dict[str, float],
     ) -> None:
         """Process a single nutrient entry from USDA payload.
-        
+
         Args:
             nutrient_data: Single entry from foodNutrients array
             macros: Dict to update with macronutrient values
             micros: Dict to update with micronutrient values
+            fallback_micros: Values from ``fallback`` mappings, applied by
+                ``map_nutrients`` only when the primary id is absent
         """
         # Extract nutrient ID
         nutrient_info = nutrient_data.get("nutrient", {})
@@ -413,11 +427,10 @@ class NutrientMapper:
         
         if category == "macro":
             macros[field_name] = amount
+        elif mapping.get("fallback"):
+            fallback_micros[field_name] = amount
         else:  # micro
-            # Handle potential duplicate mappings (e.g., Vitamin D in IU and mcg)
-            # Take the first non-zero value or sum them
-            current = micros.get(field_name, 0.0)
-            micros[field_name] = current + amount
+            micros[field_name] = amount
     
     def get_tracked_nutrient_ids(self) -> set:
         """Get set of USDA nutrient IDs that are tracked.

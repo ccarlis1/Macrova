@@ -47,15 +47,15 @@ Waves follow roadmap Part 3, which allows at most 5 tasks in flight. FE-11 moved
 | [DATA-1](./DATA-1-sample-recipe-portions.md) | FDC portion weights so all 18 sample recipes are plannable | M | — | 1 | done |
 | [BE-21](./BE-21-recipe-detail-nutrition.md) | Recipe detail returns real per-100 g nutrition and unit conversions (bug) | S | — | 1 | done |
 | [BE-22](./BE-22-user-data-folder-starter-pack.md) | User data folder, empty starting pool, starter-pack import (W6) | M | — | 1 | done |
-| [FE-11](./FE-11-plain-language-failures.md) | Plain-language failure panel per failing slot | M | P0 | 2 | todo |
-| [BE-17](./BE-17-plan-request-demographic-uls.md) | Optional `demographic` on PlanRequest enforces daily ULs | M | P0 | 2 | todo |
-| [BE-19](./BE-19-recipe-save-plannable.md) | Recipe saves are plannable: unit conversions, unit rejection, sync `errors`, derived time tags | M | P0, BE-18, BE-21, BE-22 | 2 | todo |
-| [FE-12](./FE-12-recipe-builder-tags.md) | Recipe builder: meal-role/cuisine/cost tags and meal-prep switch | M | P0, BE-19 | 2 | todo |
-| [FE-13](./FE-13-unit-guard-sync-errors.md) | Unknown units fail in Flutter; sync errors shown | S | BE-19, FE-12 | 2 | todo |
-| [FE-14](./FE-14-meal-prep-tray.md) | Meal-prep tray, batch meal cards and create-batch sheet | M | FE-12 | 2 | todo |
-| [FE-15](./FE-15-pins.md) | Pin and unpin a meal; pinned meal cards | S | FE-14 | 2 | todo |
-| [FE-16](./FE-16-starter-pack-picker.md) | Starter-pack picker; no personal profile in the app bundle | M | P0, BE-22 | 2 | todo |
-| [BE-20](./BE-20-demo-micronutrient-default.md) | Demo micronutrient default (D-A), user override, MCP busyness 2/3/4 (D-B), demo profile (W7) | M | DATA-1 | 2 | todo |
+| [FE-11](./FE-11-plain-language-failures.md) | Plain-language failure panel per failing slot | M | P0 | 2 | done |
+| [BE-17](./BE-17-plan-request-demographic-uls.md) | Optional `demographic` on PlanRequest enforces daily ULs | M | P0 | 2 | blocked: backend done, Flutter half held on the magnesium UL decision |
+| [BE-19](./BE-19-recipe-save-plannable.md) | Recipe saves are plannable: unit conversions, unit rejection, sync `errors`, derived time tags | M | P0, BE-18, BE-21, BE-22 | 2 | done |
+| [FE-12](./FE-12-recipe-builder-tags.md) | Recipe builder: meal-role/cuisine/cost tags and meal-prep switch | M | P0, BE-19 | 2 | done |
+| [FE-13](./FE-13-unit-guard-sync-errors.md) | Unknown units fail in Flutter; sync errors shown | S | BE-19, FE-12 | 2 | done |
+| [FE-14](./FE-14-meal-prep-tray.md) | Meal-prep tray, batch meal cards and create-batch sheet | M | FE-12 | 2 | done |
+| [FE-15](./FE-15-pins.md) | Pin and unpin a meal; pinned meal cards | S | FE-14 | 2 | done |
+| [FE-16](./FE-16-starter-pack-picker.md) | Starter-pack picker; no personal profile in the app bundle | M | P0, BE-22 | 2 | done |
+| [BE-20](./BE-20-demo-micronutrient-default.md) | Demo micronutrient default (D-A), user override, MCP busyness 2/3/4 (D-B), demo profile (W7) | M | DATA-1 | 2 | blocked: owner decision on supplement-only ULs (magnesium, niacin) |
 
 `P0` = PR #63 merged. Complexity: S ≈ half a day of agent work and one small PR; M ≈ one day and one PR. No task is L. If one grows past M during Phase 1 analysis, stop and split it.
 

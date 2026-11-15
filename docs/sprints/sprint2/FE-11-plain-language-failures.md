@@ -1,6 +1,6 @@
 # FE-11 — Plain-language failure panel per failing slot
 
-**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** P0 (PR #63 merged)
+**Status:** done  ·  **Complexity:** M  ·  **Depends on:** P0 (PR #63 merged)
 **Supersedes:** Sprint 1 FE-9 (failure surfaces)
 
 ## Summary

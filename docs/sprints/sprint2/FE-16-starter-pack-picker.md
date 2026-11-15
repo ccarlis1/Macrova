@@ -1,6 +1,6 @@
 # FE-16 — Starter-pack picker; no personal profile in the app bundle
 
-**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** P0, BE-22 (starter API); after DATA-1 is preferred (all 18 plannable)
+**Status:** done  ·  **Complexity:** M  ·  **Depends on:** P0, BE-22 (starter API); after DATA-1 is preferred (all 18 plannable)
 **Supersedes:** nothing. New from the owner's 2026-11-14 decision: users start from an empty pool and choose what to eat.
 
 ## Summary

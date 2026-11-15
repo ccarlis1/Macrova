@@ -1,6 +1,6 @@
 # FE-14 — Meal-prep tray, batch meal cards and create-batch sheet
 
-**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** FE-12 (`Recipe.isMealPrepCapable`); P0 transitively
+**Status:** done  ·  **Complexity:** M  ·  **Depends on:** FE-12 (`Recipe.isMealPrepCapable`); P0 transitively
 **Supersedes:** Sprint 1 FE-3 (meal-prep tray, carried) and FE-7 (meal-prep wizard, merged and reduced to one sheet). Also the `meal_prep_batch` card variant from Sprint 1 FE-1.
 
 ## Summary

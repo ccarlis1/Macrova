@@ -1,6 +1,6 @@
 # BE-19 — Recipe saves are plannable: unit conversions, unit rejection, sync `errors`, derived time tags
 
-**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** P0 (Flutter DTO line), BE-18 (same file: `recipe_sync.py`), BE-21 (same files: `server.py`, `calculator.py`), BE-22 (recipe-store paths now come from the `MACROVA_DATA_DIR` setting; write tests against a temp data folder, not the committed `recipes.json`)
+**Status:** done  ·  **Complexity:** M  ·  **Depends on:** P0 (Flutter DTO line), BE-18 (same file: `recipe_sync.py`), BE-21 (same files: `server.py`, `calculator.py`), BE-22 (recipe-store paths now come from the `MACROVA_DATA_DIR` setting; write tests against a temp data folder, not the committed `recipes.json`)
 
 ## Summary
 

@@ -1,6 +1,6 @@
 # FE-13 — Unknown units fail in Flutter; sync errors shown
 
-**Status:** todo  ·  **Complexity:** S  ·  **Depends on:** BE-19 (server validation and `errors`), FE-12 (same file: `recipe_builder_screen.dart`)
+**Status:** done  ·  **Complexity:** S  ·  **Depends on:** BE-19 (server validation and `errors`), FE-12 (same file: `recipe_builder_screen.dart`)
 **Supersedes:** the unit part of Sprint 1 FE-4.
 
 ## Summary

@@ -1,6 +1,6 @@
 # BE-17 — Optional `demographic` on PlanRequest enforces daily ULs
 
-**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** P0 (Flutter DTO part only)
+**Status:** blocked (backend done; Flutter half held until the magnesium UL decision, see BE-20)  ·  **Complexity:** M  ·  **Depends on:** P0 (Flutter DTO part only)
 
 ## Summary
 

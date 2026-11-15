@@ -1,6 +1,6 @@
 # FE-12 — Recipe builder: meal-role, cuisine and cost tags, and a meal-prep switch
 
-**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** P0 (PR #63 merged), BE-19 (sync accepts `cuisine`/`cost_level`)
+**Status:** done  ·  **Complexity:** M  ·  **Depends on:** P0 (PR #63 merged), BE-19 (sync accepts `cuisine`/`cost_level`)
 **Supersedes:** Sprint 1 FE-5 (tag chip picker, merged: reuse `MacrovaChip`) and the Tags section and meal-prep switch of Sprint 1 FE-4.
 
 ## Summary

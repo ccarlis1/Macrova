@@ -1,6 +1,6 @@
 # FE-15 — Pin and unpin a meal; pinned meal cards
 
-**Status:** todo  ·  **Complexity:** S  ·  **Depends on:** FE-14 (same files: `meal_card.dart`, `meal_detail_sheet.dart`)
+**Status:** done  ·  **Complexity:** S  ·  **Depends on:** FE-14 (same files: `meal_card.dart`, `meal_detail_sheet.dart`)
 **Supersedes:** the pin half of Sprint 1 FE-10 (forcing-mode UX). The tag-forcing half is deferred with Sprint 1 FE-8.
 
 ## Summary

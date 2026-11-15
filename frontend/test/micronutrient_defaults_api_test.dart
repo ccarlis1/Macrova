@@ -19,24 +19,26 @@ Map<String, dynamic> _json(String name) =>
 void main() {
   group('MicronutrientDefaults DTO', () {
     test(
-        'Given the captured adult_male default, Then 23 goals, omega-3/6 '
-        'left out and tau 1.0 parse', () {
+        'Given the captured adult_male default, Then 22 goals, vitamin D and '
+        'omega-3/6 left out and tau 1.0 parse', () {
       final d = MicronutrientDefaults.fromJson(
         _json('micronutrient_defaults_adult_male.json'),
       );
 
       expect(d.demographic, 'adult_male');
-      expect(d.goals, hasLength(23));
+      expect(d.goals, hasLength(22));
       expect(d.goals['vitamin_c_mg'], 90.0);
       expect(d.goals['b1_thiamine_mg'], 1.2);
       expect(d.goals['fiber_g'], 38.0);
       expect(d.goals.containsKey('omega_3_g'), isFalse);
-      expect(d.leftOut, ['omega_3_g', 'omega_6_g']);
+      expect(d.goals.containsKey('vitamin_d_iu'), isFalse);
+      expect(d.leftOut, ['vitamin_d_iu', 'omega_3_g', 'omega_6_g']);
       expect(d.weeklyMinFraction, 1.0);
 
       final goals = d.toGoals();
       expect(goals.vitaminCMg, 90.0);
       expect(goals.omega3G, 0);
+      expect(goals.vitaminDIu, 0);
       expect(goals.toPlanMicronutrientGoals(), d.goals);
     });
 
@@ -46,8 +48,11 @@ void main() {
         _json('micronutrient_defaults_pregnancy.json'),
       );
       expect(d.demographic, 'pregnancy');
-      expect(d.goals, hasLength(22));
-      expect(d.leftOut, ['vitamin_e_mg', 'omega_3_g', 'omega_6_g']);
+      expect(d.goals, hasLength(21));
+      expect(
+        d.leftOut,
+        ['vitamin_d_iu', 'vitamin_e_mg', 'omega_3_g', 'omega_6_g'],
+      );
       expect(d.goals.containsKey('vitamin_e_mg'), isFalse);
     });
 

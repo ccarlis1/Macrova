@@ -96,7 +96,8 @@ void main() {
 
   testWidgets(
       'Given a new user, When Adult Male is picked, Then the fields show its '
-      'default goals and tau, and the left-out line names Omega-3 and Omega-6',
+      'default goals and tau, and the left-out line names Vitamin D, Omega-3 '
+      'and Omega-6',
       (tester) async {
     final server = FakeMicronutrientDefaultsServer();
     final profile = server.provider();
@@ -110,6 +111,7 @@ void main() {
     expect(_field(tester, 'b1_thiamine_mg'), '1.2');
     expect(_field(tester, 'copper_mg'), '0.9');
     expect(_field(tester, 'fiber_g'), '38');
+    expect(_field(tester, 'vitamin_d_iu'), '');
     expect(_field(tester, 'omega_3_g'), '');
     expect(_field(tester, 'omega_6_g'), '');
     expect(_tau(tester), '1');
@@ -118,7 +120,7 @@ void main() {
         .widget<Text>(find.byKey(ProfileScreen.microDefaultsLeftOutKey))
         .data!;
     expect(line, contains('Adult Male (19-50)'));
-    expect(line, contains('Left out: Omega-3, Omega-6'));
+    expect(line, contains('Left out: Vitamin D, Omega-3, Omega-6'));
     expect(line, contains('enter a value'));
 
     // Nothing is stored until the user saves.
@@ -140,7 +142,7 @@ void main() {
       tester
           .widget<Text>(find.byKey(ProfileScreen.microDefaultsLeftOutKey))
           .data,
-      contains('Left out: Vitamin E, Omega-3, Omega-6'),
+      contains('Left out: Vitamin D, Vitamin E, Omega-3, Omega-6'),
     );
   });
 

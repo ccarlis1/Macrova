@@ -3,7 +3,6 @@
   "micronutrient_goals": {
     "vitamin_a_ug": 900.0,
     "vitamin_c_mg": 90.0,
-    "vitamin_d_iu": 600.0,
     "vitamin_e_mg": 15.0,
     "vitamin_k_ug": 120.0,
     "b1_thiamine_mg": 1.2,
@@ -26,6 +25,7 @@
     "fiber_g": 38.0
   },
   "left_out": [
+    "vitamin_d_iu",
     "omega_3_g",
     "omega_6_g"
   ],

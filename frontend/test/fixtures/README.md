@@ -92,15 +92,16 @@ Used by `test/starter_recipe_api_test.dart` (DTO, client),
 ## Micronutrient-default fixtures (BE-20)
 
 Captured in-process (FastAPI `TestClient`, run from the repo root with
-`PYTHONPATH=.` on the sprint2-wave2 commit `dba3bf1`) with `MACROVA_DATA_DIR`
+`PYTHONPATH=.` on the sprint2-wave2 commit `dba3bf1`; the two 200 responses re-captured
+on `87f0213`, after vitamin D left the default) with `MACROVA_DATA_DIR`
 pointing at an empty temp folder and `NUTRITION_USER_PROFILE_PATH` at a
 non-existent temp file. The endpoint reads neither; it is derived from
 `src/data_layer/upper_limits.py` and `data/reference/rdi_by_demographic.json`.
 
 | File | Request | Notes |
 | --- | --- | --- |
-| `micronutrient_defaults_adult_male.json` | `GET /api/v1/micronutrient_defaults?demographic=adult_male` | 23 goals; `left_out: [omega_3_g, omega_6_g]`; τ 1.0 |
-| `micronutrient_defaults_pregnancy.json` | `GET …?demographic=pregnancy` | 22 goals; `left_out: [vitamin_e_mg, omega_3_g, omega_6_g]` |
+| `micronutrient_defaults_adult_male.json` | `GET /api/v1/micronutrient_defaults?demographic=adult_male` | 22 goals; `left_out: [vitamin_d_iu, omega_3_g, omega_6_g]`; τ 1.0 |
+| `micronutrient_defaults_pregnancy.json` | `GET …?demographic=pregnancy` | 21 goals; `left_out: [vitamin_d_iu, vitamin_e_mg, omega_3_g, omega_6_g]` |
 | `micronutrient_defaults_error_invalid.json` | `GET …?demographic=teen_male` | 400 `INVALID_REQUEST` (a missing `demographic` returns the same body) |
 
 Used by `test/micronutrient_defaults_api_test.dart` (DTO, client),

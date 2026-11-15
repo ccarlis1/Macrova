@@ -4,6 +4,7 @@ import 'package:macrova/features/agent/agent_models.dart';
 import 'package:macrova/features/agent/agent_pane_screen.dart';
 import 'package:macrova/features/agent/agent_setup_screen.dart';
 import 'package:macrova/features/agent/llm_config_provider.dart';
+import 'package:macrova/models/recipe_sync_result.dart';
 import 'package:macrova/providers/meal_plan_provider.dart';
 import 'package:macrova/providers/profile_provider.dart';
 import 'package:macrova/providers/recipe_provider.dart';
@@ -43,7 +44,7 @@ Widget _wrapAgentPane({
           ChangeNotifierProvider<LlmConfigProvider>.value(value: llmGate),
           ChangeNotifierProvider.value(value: MealPlanProvider()),
           ChangeNotifierProvider.value(
-            value: RecipeProvider(recipeSyncFn: (_) async => []),
+            value: RecipeProvider(recipeSyncFn: (_) async => const RecipeSyncResult()),
           ),
         ],
         child: child,

@@ -6,6 +6,7 @@ import '../models/ingredient_search.dart';
 import '../models/models.dart';
 import '../models/nutrition_summary.dart';
 import '../models/recipe.dart';
+import '../models/recipe_sync_result.dart';
 import '../models/tag.dart';
 
 /// Thrown when the API returns a non-success status with a parseable body.
@@ -105,14 +106,22 @@ class ApiService {
       const {'Content-Type': 'application/json'};
 
   /// POST /api/v1/recipes/sync
-  static Future<List<String>> syncRecipes(List<Recipe> recipes) async {
-    final res = await http.post(
-      Uri.parse('$baseUrl/api/v1/recipes/sync'),
-      headers: _jsonHeaders,
-      body: jsonEncode({
-        'recipes': recipes.map((r) => r.toSyncPayload()).toList(),
-      }),
-    );
+  ///
+  /// HTTP 200 can still reject items: each one is left out of
+  /// [RecipeSyncResult.syncedIds] and reported in [RecipeSyncResult.errors]
+  /// (BE-19). A whole-request failure throws [ApiException]. [client] is for
+  /// tests.
+  static Future<RecipeSyncResult> syncRecipes(
+    List<Recipe> recipes, {
+    http.Client? client,
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/v1/recipes/sync');
+    final body = jsonEncode({
+      'recipes': recipes.map((r) => r.toSyncPayload()).toList(),
+    });
+    final res = client == null
+        ? await http.post(uri, headers: _jsonHeaders, body: body)
+        : await client.post(uri, headers: _jsonHeaders, body: body);
 
     if (res.statusCode == 200) {
       final decoded = jsonDecode(res.body);
@@ -123,16 +132,18 @@ class ApiService {
           message: 'Sync response was not a JSON object',
         );
       }
-      final body = Map<String, dynamic>.from(decoded);
-      final raw = body['synced_ids'];
-      if (raw is! List) {
-        throw const ApiException(
+      try {
+        return RecipeSyncResult.fromJson(
+          Map<String, dynamic>.from(decoded),
+          sent: recipes,
+        );
+      } on FormatException catch (e) {
+        throw ApiException(
           statusCode: 200,
           code: 'INVALID_RESPONSE',
-          message: 'Missing synced_ids in sync response',
+          message: e.message,
         );
       }
-      return raw.map((e) => e.toString()).toList();
     }
 
     throw ApiException.fromResponse(res);

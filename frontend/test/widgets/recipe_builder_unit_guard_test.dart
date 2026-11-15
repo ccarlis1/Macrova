@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:macrova/features/agent/llm_config_provider.dart';
 import 'package:macrova/models/recipe.dart';
+import 'package:macrova/models/recipe_sync_result.dart';
 import 'package:macrova/models/tag.dart';
 import 'package:macrova/providers/ingredient_provider.dart';
 import 'package:macrova/providers/profile_provider.dart';
@@ -43,14 +44,16 @@ const _recipe = Recipe(
   },
 );
 
-Future<RecipeProvider> _pump(WidgetTester tester, {Recipe recipe = _recipe}) async {
+Future<RecipeProvider> _pump(WidgetTester tester,
+    {Recipe recipe = _recipe}) async {
   tester.view.physicalSize = const Size(1200, 3200);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
 
   final recipes = RecipeProvider(
-    recipeSyncFn: (batch) async => [for (final r in batch) r.id],
+    recipeSyncFn: (batch) async =>
+        RecipeSyncResult(syncedIds: [for (final r in batch) r.id]),
     tagListFn: () async => _registry(),
   );
   await recipes.load();
@@ -110,7 +113,8 @@ void main() {
       expect(_updateButton(tester).onPressed, isNull);
     });
 
-    testWidgets('Given the error, When g is chosen, Then it clears and Save is '
+    testWidgets(
+        'Given the error, When g is chosen, Then it clears and Save is '
         'enabled', (tester) async {
       await _pump(tester);
 

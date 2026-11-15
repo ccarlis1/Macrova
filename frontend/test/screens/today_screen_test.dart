@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:macrova/features/agent/llm_config_provider.dart';
 import 'package:macrova/models/models.dart';
 import 'package:macrova/models/recipe.dart';
+import 'package:macrova/models/recipe_sync_result.dart';
 import 'package:macrova/providers/meal_plan_provider.dart';
 import 'package:macrova/providers/profile_provider.dart';
 import 'package:macrova/providers/recipe_provider.dart';
@@ -257,7 +258,7 @@ void main() {
         addTearDown(tester.view.resetDevicePixelRatio);
 
         final profile = ProfileProvider();
-        final recipes = RecipeProvider(recipeSyncFn: (_) async => []);
+        final recipes = RecipeProvider(recipeSyncFn: (_) async => const RecipeSyncResult());
         await recipes.addRecipe(
           const Recipe(
             id: 'lib-1',
@@ -367,7 +368,7 @@ void main() {
         addTearDown(tester.view.resetDevicePixelRatio);
 
         final profile = ProfileProvider();
-        final recipes = RecipeProvider(recipeSyncFn: (_) async => []);
+        final recipes = RecipeProvider(recipeSyncFn: (_) async => const RecipeSyncResult());
         await recipes.addRecipe(
           const Recipe(
             id: 'lib-shared',

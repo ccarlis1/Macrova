@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:macrova/features/agent/llm_config_provider.dart';
 import 'package:macrova/models/recipe.dart';
+import 'package:macrova/models/recipe_sync_result.dart';
 import 'package:macrova/models/tag.dart';
 import 'package:macrova/providers/ingredient_provider.dart';
 import 'package:macrova/providers/profile_provider.dart';
@@ -44,7 +45,7 @@ class _Harness {
     recipes = RecipeProvider(
       recipeSyncFn: (batch) async {
         synced.addAll(batch);
-        return batch.map((r) => r.id).toList();
+        return RecipeSyncResult(syncedIds: batch.map((r) => r.id).toList());
       },
       recipeDetailFn: (id) async {
         detailCalls.add(id);

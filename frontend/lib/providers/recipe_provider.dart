@@ -7,13 +7,13 @@ import 'package:uuid/uuid.dart';
 import '../models/ingredient.dart';
 import '../models/models.dart';
 import '../models/recipe.dart';
+import '../models/recipe_sync_result.dart';
 import '../models/tag.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
 
 const _uuid = Uuid();
 
-typedef RecipeListSyncFn = Future<List<String>> Function(List<Recipe> recipes);
 typedef RecipeDetailFn = Future<Recipe> Function(String id);
 typedef TagListFn = Future<List<TagMeta>> Function();
 
@@ -115,6 +115,10 @@ class RecipeProvider extends ChangeNotifier {
   bool _syncLoading = false;
   String? _syncError;
 
+  /// Per-recipe rejections from `POST /recipes/sync` (BE-19), by recipe id
+  /// (or the raw string when it names no recipe). See [recipeSyncErrors].
+  final Map<String, RecipeSyncError> _recipeSyncErrors = {};
+
   /// Device-local favorite recipe ids (not a planner tag / not synced).
   final Set<String> _favoriteRecipeIds = {};
 
@@ -194,6 +198,12 @@ class RecipeProvider extends ChangeNotifier {
   bool get loaded => _loaded;
   bool get syncLoading => _syncLoading;
   String? get syncError => _syncError;
+
+  /// Latest server rejection per recipe, from the last sync that sent it:
+  /// a later sync that stores the recipe (or [deleteRecipe]) clears it. These
+  /// recipes are saved on this device only and the planner can't use them.
+  List<RecipeSyncError> get recipeSyncErrors =>
+      List.unmodifiable(_recipeSyncErrors.values);
 
   /// Server ids from the last successful `GET /api/v1/recipes` (empty if never synced or error).
   Set<String> get remoteRecipeIds =>
@@ -408,17 +418,22 @@ class RecipeProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> addRecipe(Recipe recipe) async {
+  /// Saves [recipe] locally, then syncs it. The result's `errors` say whether
+  /// the server rejected it (also kept in [recipeSyncErrors]); a whole-request
+  /// failure throws after the local save.
+  Future<RecipeSyncResult> addRecipe(Recipe recipe) async {
     final withId =
         recipe.id.isEmpty ? recipe.copyWith(id: _uuid.v4()) : recipe;
     _localRecipes.add(withId);
     await StorageService.saveRecipes(_localRecipes);
     notifyListeners();
-    await _recipeSyncFn([withId]);
+    final result = await _syncAndRecord([withId]);
     await syncSummariesFromApi();
+    return result;
   }
 
-  Future<void> updateRecipe(Recipe recipe) async {
+  /// Like [addRecipe] for an existing recipe.
+  Future<RecipeSyncResult> updateRecipe(Recipe recipe) async {
     final index = _localRecipes.indexWhere((r) => r.id == recipe.id);
     if (index != -1) {
       _localRecipes[index] = recipe;
@@ -427,12 +442,29 @@ class RecipeProvider extends ChangeNotifier {
     }
     await StorageService.saveRecipes(_localRecipes);
     notifyListeners();
-    await _recipeSyncFn([recipe]);
+    final result = await _syncAndRecord([recipe]);
     await syncSummariesFromApi();
+    return result;
+  }
+
+  /// Runs [_recipeSyncFn] and replaces the stored rejections of the sent
+  /// recipes with this response's.
+  Future<RecipeSyncResult> _syncAndRecord(List<Recipe> batch) async {
+    final result = await _recipeSyncFn(batch);
+    for (final r in batch) {
+      _recipeSyncErrors.remove(r.id);
+    }
+    _recipeSyncErrors.removeWhere((_, e) => e.recipeId == null);
+    for (final e in result.errors) {
+      _recipeSyncErrors[e.recipeId ?? e.raw] = e;
+    }
+    notifyListeners();
+    return result;
   }
 
   Future<void> deleteRecipe(String id) async {
     _localRecipes.removeWhere((r) => r.id == id);
+    _recipeSyncErrors.remove(id);
     await StorageService.saveRecipes(_localRecipes);
     notifyListeners();
   }

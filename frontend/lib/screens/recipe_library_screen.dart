@@ -5,6 +5,7 @@ import '../models/recipe.dart';
 import '../providers/recipe_builder_coordinator.dart';
 import '../providers/recipe_provider.dart';
 import '../theme/tokens.dart';
+import '../widgets/advisory_card.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/recipe_card.dart';
@@ -12,6 +13,8 @@ import '../widgets/section_header.dart';
 
 class RecipeLibraryScreen extends StatelessWidget {
   const RecipeLibraryScreen({super.key});
+
+  static const syncRejectionsKey = Key('recipe_library_sync_rejections');
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +42,31 @@ class RecipeLibraryScreen extends StatelessWidget {
           _SyncErrorBanner(
             message: recipeProvider.syncError!,
             onRetry: recipeProvider.syncSummariesFromApi,
+          ),
+        // Per-recipe sync rejections (BE-19). Whole-request failures keep
+        // using the banner above.
+        if (recipeProvider.recipeSyncErrors.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              MacrovaSpacing.screenGutter,
+              MacrovaSpacing.md,
+              MacrovaSpacing.screenGutter,
+              0,
+            ),
+            child: AdvisoryCard(
+              key: syncRejectionsKey,
+              variant: AdvisoryVariant.warn,
+              title: recipeProvider.recipeSyncErrors.length == 1
+                  ? 'A recipe was not saved to the server'
+                  : '${recipeProvider.recipeSyncErrors.length} recipes were '
+                      'not saved to the server',
+              description: [
+                'Saved on this device only; the planner can\'t use '
+                    '${recipeProvider.recipeSyncErrors.length == 1 ? 'it' : 'them'} '
+                    'until fixed and saved again.',
+                for (final e in recipeProvider.recipeSyncErrors) e.displayText,
+              ].join('\n'),
+            ),
           ),
         Expanded(
           child: RefreshIndicator(

@@ -584,14 +584,20 @@ class RecipeBuilderScreenState extends State<RecipeBuilderScreen> {
     final recipe = _buildRecipe();
 
     try {
-      if (_editingRecipeId != null) {
-        await recipeProvider.updateRecipe(recipe);
-      } else {
-        await recipeProvider.addRecipe(recipe);
-      }
+      final result = _editingRecipeId != null
+          ? await recipeProvider.updateRecipe(recipe)
+          : await recipeProvider.addRecipe(recipe);
       if (!mounted) return;
+      final rejection = result.errors.isEmpty ? null : result.errors.first;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Recipe "${recipe.name}" saved')),
+        SnackBar(
+          content: Text(
+            rejection == null
+                ? 'Recipe "${recipe.name}" saved'
+                : 'Saved on this device, but the server rejected it: '
+                    '${rejection.message}',
+          ),
+        ),
       );
       if (_editingRecipeId == null) {
         _clear();

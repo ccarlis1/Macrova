@@ -8,6 +8,7 @@ import '../models/user_profile.dart';
 import '../providers/meal_plan_provider.dart';
 import '../providers/profile_provider.dart';
 import '../providers/recipe_provider.dart';
+import 'meal_plan_view_screen.dart' show syncWarningsCard;
 import '../theme/tokens.dart';
 import '../widgets/advisory_card.dart';
 import '../widgets/app_shell.dart';
@@ -142,6 +143,11 @@ class TodayScreen extends StatelessWidget {
                         mealPlan,
                         shownInline: (f) => f.dayIndex == todayIndex,
                       ).toHeroPanel(context),
+                      // Pre-plan sync rejections may be why the plan failed.
+                      if (mealPlan.syncWarnings.isNotEmpty) ...[
+                        const SizedBox(height: MacrovaSpacing.md),
+                        syncWarningsCard(mealPlan),
+                      ],
                       const SizedBox(height: MacrovaSpacing.sectionTop),
                     ] else if (mealPlan.warnings.isNotEmpty) ...[
                       const SectionHeader(title: 'Advisories'),

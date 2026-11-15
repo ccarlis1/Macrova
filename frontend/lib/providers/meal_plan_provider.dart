@@ -516,8 +516,8 @@ class MealPlanProvider extends ChangeNotifier {
   Future<void> generatePlan(PlanRequest request) =>
       _generatePlan(request);
 
-  /// [syncWarnings] (from [generatePlanWithRecipeSync]) are put ahead of the
-  /// plan's own warnings.
+  /// [syncWarnings] (from [generatePlanWithRecipeSync]) become the plan's
+  /// [MealPlan.syncWarnings], ahead of its own warnings.
   Future<void> _generatePlan(
     PlanRequest request, {
     List<String> syncWarnings = const [],
@@ -531,7 +531,7 @@ class MealPlanProvider extends ChangeNotifier {
       final plan = await _planFn(request);
       _mealPlan = syncWarnings.isEmpty
           ? plan
-          : plan.withWarnings([...syncWarnings, ...plan.warnings]);
+          : plan.withSyncWarnings(syncWarnings);
       await _clearCookedSlots();
     } catch (e) {
       _setError(e);

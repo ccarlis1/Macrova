@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:macrova/features/agent/llm_config_provider.dart';
 import 'package:macrova/models/models.dart';
+import 'package:macrova/models/recipe_sync_result.dart';
 import 'package:macrova/providers/meal_plan_provider.dart';
 import 'package:macrova/providers/profile_provider.dart';
 import 'package:macrova/providers/recipe_provider.dart';
@@ -605,6 +606,105 @@ void main() {
         },
       );
     }
+  });
+
+  group('Sync rejections on failed and partial plans (FE-13 follow-up)', () {
+    const rejected = RecipeSyncError(
+      raw: 'r9: UNRESOLVED_INGREDIENTS: no gram weight for cup',
+      recipeId: 'r9',
+      recipeName: 'Mystery Stew',
+      code: 'UNRESOLVED_INGREDIENTS',
+      message: 'no gram weight for cup',
+    );
+
+    /// A provider whose pre-plan sync rejects one recipe and whose plan is [plan].
+    Future<MealPlanProvider> planned(MealPlan plan) async {
+      final provider = MealPlanProvider(
+        recipeSyncFn: (_) async => const RecipeSyncResult(
+          syncedIds: [],
+          errors: [rejected],
+        ),
+        planFn: (_) async => plan,
+      );
+      await provider.generatePlanWithRecipeSync(
+        recipesToSync: const [],
+        request: _request,
+      );
+      return provider;
+    }
+
+    final screens = {
+      'Today': const TodayScreen(),
+      'Meal Plan View': const MealPlanViewScreen(),
+    };
+    final plans = {
+      'failed': () => _gapPlan(recipeCouldHelp: false),
+      'partial': () => _slotFailurePlan(),
+    };
+
+    for (final screen in screens.entries) {
+      for (final plan in plans.entries) {
+        testWidgets(
+          'Given a ${plan.key} plan after a sync rejection, When '
+          '${screen.key} renders, Then the FailurePanel and an AdvisoryCard '
+          'naming the rejected recipe both show',
+          (tester) async {
+            _bigView(tester);
+            final provider = await planned(plan.value());
+
+            await tester.pumpWidget(
+              _wrapScreen(screen: screen.value, mealPlan: provider),
+            );
+            await tester.pumpAndSettle();
+
+            expect(find.byKey(FailureViewModel.heroKey), findsOneWidget);
+            final card = find.byKey(syncWarningsCardKey);
+            expect(card, findsOneWidget);
+            expect(
+              find.descendant(
+                of: card,
+                matching: find.text(recipeSyncWarning(rejected)),
+              ),
+              findsOneWidget,
+            );
+            expect(find.text('A recipe was not synced'), findsOneWidget);
+          },
+        );
+      }
+
+      testWidgets(
+        'Given a successful plan after a sync rejection, When ${screen.key} '
+        'renders, Then the rejection is among the advisories and no '
+        'FailurePanel or separate sync card shows',
+        (tester) async {
+          _bigView(tester);
+          final provider = await planned(_successWithWarnings());
+
+          await tester.pumpWidget(
+            _wrapScreen(screen: screen.value, mealPlan: provider),
+          );
+          await tester.pumpAndSettle();
+
+          expect(find.byType(FailurePanel), findsNothing);
+          expect(find.byKey(syncWarningsCardKey), findsNothing);
+          expect(find.byType(AdvisoryCard), findsOneWidget);
+          expect(
+            find.textContaining(recipeSyncWarning(rejected)),
+            findsOneWidget,
+          );
+        },
+      );
+    }
+
+    test('the server warnings are not sync warnings', () async {
+      final provider = await planned(_successWithWarnings());
+      final plan = provider.mealPlan!;
+      expect(plan.syncWarnings, [recipeSyncWarning(rejected)]);
+      expect(plan.warnings, [
+        recipeSyncWarning(rejected),
+        'Sodium advisory: weekly total high',
+      ]);
+    });
   });
 
   group('MealPlanProvider.rerunLastRequest', () {

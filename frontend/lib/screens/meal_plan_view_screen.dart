@@ -113,6 +113,12 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
                   mealPlan,
                   shownInline: _showCalendar ? null : (_) => true,
                 ).toHeroPanel(context),
+                // Pre-plan sync rejections may be why the plan failed, so
+                // they show here too (the server's warnings stay success-only).
+                if (mealPlan.syncWarnings.isNotEmpty) ...[
+                  const SizedBox(height: MacrovaSpacing.md),
+                  syncWarningsCard(mealPlan),
+                ],
               ] else if (mealPlan.warnings.isNotEmpty) ...[
                 const SizedBox(height: MacrovaSpacing.sectionTop),
                 const SectionHeader(title: 'Advisories'),
@@ -331,6 +337,20 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
     );
   }
 }
+
+/// Key of the sync-rejection advisory on a failed or partial plan.
+const syncWarningsCardKey = Key('plan_sync_warnings');
+
+/// [AdvisoryCard] for [MealPlan.syncWarnings] next to the `FailurePanel`
+/// (Today and Meal Plan View).
+Widget syncWarningsCard(MealPlan plan) => AdvisoryCard(
+      key: syncWarningsCardKey,
+      variant: AdvisoryVariant.warn,
+      title: plan.syncWarnings.length == 1
+          ? 'A recipe was not synced'
+          : '${plan.syncWarnings.length} recipes were not synced',
+      description: plan.syncWarnings.join('\n'),
+    );
 
 class _EmptyPlanState extends StatelessWidget {
   final MacrovaTokens tokens;

@@ -54,6 +54,7 @@ If `plan_status != success` but `failures` is empty, use incomplete messaging fr
 - **Failures** → `FailurePanel` (user must act).
 - **Warnings** → `AdvisoryCard` advisories **only when** `plan_status == success`.
 - Do not treat success-with-warnings as a failure.
+- Exception: **pre-plan sync rejections** (`MealPlan.syncWarnings`, added by `MealPlanProvider.generatePlanWithRecipeSync` via `recipeSyncWarning`) also show on `partial` / `failed` plans, as an `AdvisoryCard` (key `plan_sync_warnings`) next to the `FailurePanel`, since a rejected recipe may be why the plan failed. On success they are part of the advisories (they head `warnings`). The server's own `warnings` stay success-only.
 
 ## HTTP `ApiException` (no in-body plan)
 

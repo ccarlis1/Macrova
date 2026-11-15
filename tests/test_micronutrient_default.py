@@ -89,18 +89,16 @@ def test_example_profile_plans_on_the_committed_pool_with_uls_on(days):
 
 
 def test_example_profile_one_day_outcome_is_pinned():
-    """Owner decision 2026-11-15: a 1-day plan with the full default floors may fail.
+    """The example profile's 1-day plan on the committed pool succeeds today.
 
-    Weekly floors are checked on the horizon total, so over 3+ days a low day can be
-    offset by a high one. A single-day plan can't average floors across days: that one
-    day must hit every RDI at once, which the committed pool can't do with 3 meals.
-    Today that is a partial plan, FM-1 on day 1's third meal. If this changes, update
-    BE-20's stub and the first-run docs (README, QUICK_START, USAGE), which use --days 3.
+    Owner decision 2026-11-15: a 1-day plan with the full default floors is allowed to
+    fail (one day can't average floors across days, so it must hit every goal at once).
+    It no longer does for the example: since DATA-2 corrected vitamin D (~40x too high)
+    the vitamin-D-rich recipes no longer break the 4,000 IU UL. Before: partial, TC-2,
+    FM-1 at day 0, slot 2. Vitamin D is also out of the default since BE-20's follow-up.
+    If this changes, update BE-20's stub and the first-run docs (README, QUICK_START, USAGE).
     """
     out = _plan_example(1)
-    # DATA-2: with vitamin D corrected (it was ~40x too high), the vitamin-D-rich recipes
-    # no longer break the 4,000 IU UL, and the 1-day plan on the committed pool succeeds.
-    # Before: partial, TC-2, FM-1 at day 0, slot 2.
     assert out["plan_status"] == "success"
     assert out["termination_code"] == "TC-4"  # single-day success
     assert out["report"].get("failures", []) == []

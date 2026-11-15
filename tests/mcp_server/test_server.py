@@ -301,6 +301,7 @@ def test_sample_recipes_with_demographic_default_plan_seven_days():
     assert out["status"] == "success", out["failure"]
     assert len(out["days"]) == 7
     assert "Omega-3 (ALA) (g)" not in out["weekly_micronutrients"]
+    assert "Vitamin D (IU)" not in out["weekly_micronutrients"]
     assert "Vitamin C (mg)" in out["weekly_micronutrients"]
 
 
@@ -309,9 +310,9 @@ def test_default_warning_names_left_out_nutrients_and_the_override():
     warning = out["warnings"][0]
     assert warning.startswith("The default micronutrient goals for adult_male leave out ")
     assert "the bundled sample recipes can't meet them" in warning
-    assert "Omega-3 (ALA) (g) and Omega-6 (linoleic acid) (g)" in warning
+    assert "Vitamin D (IU), Omega-3 (ALA) (g) and Omega-6 (linoleic acid) (g)" in warning
     assert "targets.micronutrient_goals" in warning
-    assert '"omega_3_g": <daily amount>' in warning
+    assert '"vitamin_d_iu": <daily amount>, "omega_3_g": <daily amount>' in warning
 
 
 @pytest.mark.parametrize("goals", [{}, {"iron_mg": 8}])
@@ -500,7 +501,10 @@ def test_left_out_warning_names_sample_recipes_only_when_they_are_used():
     out = _plan(days=1, targets={**TARGETS, "demographic": "adult_male"}).structured_content
     (warning,) = [w for w in out["warnings"] if "targets.micronutrient_goals" in w]
     assert "sample recipes" not in warning
-    assert "Omega-3 (ALA) (g) and Omega-6 (linoleic acid) (g) were left out of the default goals for adult_male" in warning
+    assert (
+        "Vitamin D (IU), Omega-3 (ALA) (g) and Omega-6 (linoleic acid) (g) were left out of the default goals"
+        " for adult_male" in warning
+    )
     assert "To plan for them anyway, add them to targets.micronutrient_goals" in warning
     assert tools._left_out_warning("adult_male", (), use_sample_recipes=False) is None
 

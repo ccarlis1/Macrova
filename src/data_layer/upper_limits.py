@@ -258,15 +258,18 @@ def daily_rdis(demographic: Demographic) -> Dict[str, float]:
 # nutrients are the ones the bundled sample recipes can't meet at τ = 1.0 over 7 days
 # with the MCP shorthand schedule (2/3/4) and the demographic's daily ULs on; see the
 # probe record in docs/sprints/sprint2/BE-20-demo-micronutrient-default.md.
-# Re-probed after DATA-2 corrected vitamin D (2026-11-15): every list below still plans;
+# Re-probed after DATA-2 corrected vitamin D (2026-11-15): every list plans on the probe;
 # vitamin E for pregnancy/lactation is now meetable too (owner may restore it; see DATA-2).
+# Vitamin D is left out for every demographic (owner, 2026-11-15, D-A option 4): after the
+# correction the 18 starter recipes can't meet the 600 IU/day floor at the Flutter
+# new-user targets (2000 kcal, fat 60-74 g), so demo step 2b failed with FM-5.
 # It's a starting point, not a cap: MCP (targets.micronutrient_goals), the YAML profile
 # and the Flutter Profile screen all let the user change every value.
 DEFAULT_MICRONUTRIENT_LEFT_OUT: Dict[str, Tuple[str, ...]] = {
-    "adult_male": ("omega_3_g", "omega_6_g"),
-    "adult_female": ("omega_3_g", "omega_6_g"),
-    "pregnancy": ("vitamin_e_mg", "omega_3_g", "omega_6_g"),
-    "lactation": ("vitamin_e_mg", "omega_3_g", "omega_6_g"),
+    "adult_male": ("vitamin_d_iu", "omega_3_g", "omega_6_g"),
+    "adult_female": ("vitamin_d_iu", "omega_3_g", "omega_6_g"),
+    "pregnancy": ("vitamin_d_iu", "vitamin_e_mg", "omega_3_g", "omega_6_g"),
+    "lactation": ("vitamin_d_iu", "vitamin_e_mg", "omega_3_g", "omega_6_g"),
 }
 DEFAULT_MICRONUTRIENT_WEEKLY_MIN_FRACTION = 1.0
 

@@ -5,9 +5,10 @@ Pins today's outcome so a change is noticed (README → Close-out results, row 2
 - without micronutrient goals, `demographic: adult_male` (daily ULs on) → success. Before
   DATA-2 corrected vitamin D (~40x too high) this was partial / FM-MACRO-INFEASIBLE: six
   starter recipes were over the 4,000 IU UL on their own.
-- with the default goals from GET /api/v1/micronutrient_defaults → partial / FM-5 (search
-  budget). The 600 IU/day vitamin D floor binds: with it removed the plan succeeds, and with
-  only that floor it still hits FM-5. Not tuned away here: it is an owner decision.
+- with the default goals from GET /api/v1/micronutrient_defaults → success, for each of the
+  four demographics (its own defaults and ULs). After DATA-2 this was partial / FM-5 (search
+  budget) for adult_male: the 600 IU/day vitamin D floor bound. Owner decision 2026-11-15
+  (D-A option 4): the default leaves vitamin D out, and the plan warns it is left out.
 """
 
 from __future__ import annotations
@@ -58,15 +59,17 @@ def test_all_starters_adult_male_without_goals_succeeds(client):
     assert (body["plan_status"], body["termination_code"], _codes(body)) == ("success", "TC-1", [])
 
 
-def test_all_starters_adult_male_with_default_goals_hits_the_search_budget(client):
-    defaults = client.get("/api/v1/micronutrient_defaults", params={"demographic": "adult_male"}).json()
+@pytest.mark.parametrize("demographic", ["adult_male", "adult_female", "pregnancy", "lactation"])
+def test_all_starters_with_each_demographics_default_goals_succeeds(client, demographic):
+    defaults = client.get("/api/v1/micronutrient_defaults", params={"demographic": demographic}).json()
+    assert "vitamin_d_iu" in defaults["left_out"]
     body = client.post(
         "/api/v1/plan",
         json={
             **REQUEST,
+            "demographic": demographic,
             "micronutrient_goals": defaults["micronutrient_goals"],
             "micronutrient_weekly_min_fraction": defaults["micronutrient_weekly_min_fraction"],
         },
     ).json()
-    assert (body["plan_status"], body["termination_code"], _codes(body)) == ("partial", "TC-3", ["FM-5"])
-    assert body["report"]["failure_cause"]["cause"] == "SEARCH_BUDGET"
+    assert (body["plan_status"], body["termination_code"], _codes(body)) == ("success", "TC-1", [])

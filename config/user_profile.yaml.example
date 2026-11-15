@@ -74,16 +74,16 @@ demographic: "adult_male"
 
 # Daily micronutrient goals, met as weekly totals (daily × days × τ).
 # This is the new-user default for adult_male (Sprint 2 D-A): every recommended daily intake
-# in data/reference/rdi_by_demographic.json except omega_3_g and omega_6_g, which the
-# bundled sample recipes can't meet at τ = 1.0. It's a starting point: change, remove or add
-# any value. To track the left-out ones, add for example:
+# in data/reference/rdi_by_demographic.json except vitamin_d_iu, omega_3_g and omega_6_g, which
+# the bundled starter recipes can't meet at τ = 1.0 at every new-user target. It's a starting
+# point: change, remove or add any value. To track the left-out ones, add for example:
+#   vitamin_d_iu: 600
 #   omega_3_g: 1.6
 #   omega_6_g: 17
 # The default is defined once, in src/data_layer/upper_limits.py (default_micronutrient_goals).
 micronutrient_goals:
   vitamin_a_ug: 900
   vitamin_c_mg: 90
-  vitamin_d_iu: 600
   vitamin_e_mg: 15
   vitamin_k_ug: 120
   b1_thiamine_mg: 1.2

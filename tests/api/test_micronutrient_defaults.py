@@ -52,10 +52,11 @@ def test_defaults_match_the_helpers_and_the_mcp_default(demographic):
     assert list(left_out) == body["left_out"]
 
 
-def test_adult_male_leaves_out_the_omegas():
+def test_adult_male_leaves_out_vitamin_d_and_the_omegas():
     body = _get(demographic="adult_male").json()
-    assert body["left_out"] == ["omega_3_g", "omega_6_g"]
-    assert len(body["micronutrient_goals"]) == 23
+    assert body["left_out"] == ["vitamin_d_iu", "omega_3_g", "omega_6_g"]
+    assert len(body["micronutrient_goals"]) == 22
+    assert "vitamin_d_iu" not in body["micronutrient_goals"]
     assert body["micronutrient_goals"]["vitamin_c_mg"] == 90.0
 
 

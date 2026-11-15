@@ -45,6 +45,7 @@ UX branching uses **`plan_status`** (`success` | `partial` | `failed`), not `suc
   - `LlmConfigProvider.llmReady` and the plan came from `MealPlanProvider.generatePlan`: **Find a recipe** re-runs that request with `planning_mode: "assisted"` (`MealPlanProvider.rerunLastRequest`), which runs the server's diagnosed recovery loop. The saved planner mode is unchanged. A failed assisted call revokes the LLM gate, as in Planner Config.
   - Gate not ready: **Set up AI help** opens Agent Setup.
   - Gate ready but no request to re-run (plan from the Agent pane's plan-from-text): the gap summary only.
+- `cause == "EMPTY_POOL"` (no recipes to plan with; BE-22 sets `recipe_could_help: true`): the row is **Start from the starter pack** (`FailureViewModel.starterPackKey`), which opens `StarterPackSheet` (FE-16), in place of the AI rows above. The server's assisted recovery declines an empty pool, so it is not offered.
 - `recipe_could_help == false` or `failure_cause` null: no recipe row.
 
 If `plan_status != success` but `failures` is empty, use incomplete messaging from `plan_status_message` (label `Incomplete plan`).

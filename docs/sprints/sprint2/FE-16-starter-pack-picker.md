@@ -19,26 +19,27 @@ A new user's recipe library starts empty. The app offers the starter pack (the 1
 
 ## Acceptance criteria
 
-- [ ] `ApiService` gains `listStarterRecipes()` and `importStarterRecipes(List<String> ids)`, with a `StarterRecipe` DTO (`id, name, cookingTimeMinutes, caloriesPerServing, proteinGPerServing, tagSlugsByType`) and an import result DTO. Tests with fixture JSON, including a partial `skipped`.
-- [ ] **Picker sheet** (`MacrovaSheet`):
+- [x] `ApiService` gains `listStarterRecipes()` and `importStarterRecipes(List<String> ids)`, with a `StarterRecipe` DTO (`id, name, cookingTimeMinutes, caloriesPerServing, proteinGPerServing, tagSlugsByType`) and an import result DTO. Tests with fixture JSON, including a partial `skipped`.
+- [x] **Picker sheet** (`MacrovaSheet`):
   - lists the starter recipes with name, kcal and protein per serving, cooking time and meal-role chips;
   - each row has a checkbox; nothing is pre-selected; "Select all" exists;
   - Import is disabled at 0 selected;
   - recipes already in the library show as "In your library" and can't be ticked.
 
   Widget tests: nothing pre-selected; import disabled at 0; already-imported rows disabled.
-- [ ] **After import:** the imported recipes appear in the Recipe Library as normal, editable recipes, with no "sample" badge needed. Then the next plan uses them.
+- [x] **After import:** the imported recipes appear in the Recipe Library as normal, editable recipes, with no "sample" badge needed. Then the next plan uses them.
   `REQUIRES_VERIFICATION` first: whether Flutter's plan request restricts the pool to local recipe ids (`recipe_ids` / `_filter_recipes_by_ids`). If it does, the imported recipes must be added to the local store (fetch them, `Recipe.fromServerRecipeMap`); otherwise a refresh of the server list is enough. Test the chosen path with a fake API: import 3 → library has 3 → the plan request includes them.
-- [ ] **Entry points:**
+  Done with the refresh path (see Findings). Caveat: 6 starter recipes with a `large` line can't be re-saved from the Recipe Builder until a backend fix (Findings, "Known gap").
+- [x] **Entry points:**
   - the Recipe Library empty state offers "Start from the starter pack" and "Build a recipe";
   - Today's empty state, and `FailurePanel` when `failure_cause.cause == "EMPTY_POOL"`, link to the same sheet;
   - the library app bar has a "Starter pack" action for adding more later.
 
   Widget test per entry point.
-- [ ] **No personal data in the bundle:** `assets/dev/user_profile.yaml` is removed, or replaced with the content of `config/user_profile.yaml.example` (after BE-20's defaults, if BE-20 has landed). `mergeBundledUserProfileIfEnabled` still works with the flag on. Test: the bundled asset's targets equal the example's, or the asset is gone and the flag path is removed with its test.
-- [ ] `assets/dev/server_recipes.json`: decide in Phase 1 whether `hydrateBundledServerRecipesFromAsset` is still needed now that recipes come from the server. If it is, regenerate the asset from `data/recipes/recipes.json.example` (the starter pack), not the full dev pool, and document the regeneration command. If it isn't, remove the asset and both calls. Either way, record the decision in this stub.
-- [ ] Add `Key`s on the picker's rows and Import button (cheap groundwork for W8).
-- [ ] `cd frontend && flutter analyze && flutter test` green.
+- [x] **No personal data in the bundle:** `assets/dev/user_profile.yaml` is removed, or replaced with the content of `config/user_profile.yaml.example` (after BE-20's defaults, if BE-20 has landed). `mergeBundledUserProfileIfEnabled` still works with the flag on. Test: the bundled asset's targets equal the example's, or the asset is gone and the flag path is removed with its test.
+- [x] `assets/dev/server_recipes.json`: decide in Phase 1 whether `hydrateBundledServerRecipesFromAsset` is still needed now that recipes come from the server. If it is, regenerate the asset from `data/recipes/recipes.json.example` (the starter pack), not the full dev pool, and document the regeneration command. If it isn't, remove the asset and both calls. Either way, record the decision in this stub.
+- [x] Add `Key`s on the picker's rows and Import button (cheap groundwork for W8).
+- [x] `cd frontend && flutter analyze && flutter test` green.
 
 ## Implementation notes
 
@@ -69,3 +70,18 @@ A new user's recipe library starts empty. The app offers the starter pack (the 1
 - Choosing which recipes are in the starter pack (owner's call).
 - Removing personal data from git history (the PR notes that removed files stay in history).
 - Recipe recommendations, or "you might like" ranking.
+
+## Findings and decisions (implementation, 2026-11-14)
+
+Checked against `sprint2-wave2` at `d788976` (FE-15) with BE-22 merged. Backend shapes confirmed in `src/api/server.py` (`StarterRecipe`, `StarterImportRequest` / `StarterImportResponse`, routes ~2028–2110) and `openapi/openapi.json`. Fixtures were captured in-process with `MACROVA_DATA_DIR` and `NUTRITION_USER_PROFILE_PATH` on temp paths (`frontend/test/fixtures/README.md`). The server also sends `ready_for_planning` and `unresolved`; the DTO reads both (the sheet notes a recipe the planner would skip; all 18 are ready today).
+
+- **Pre-analysis 1, the `recipe_ids` pool question.** Flutter sends `recipe_ids` only when Planner Config has recipes ticked (`planner_config_screen.dart::_generate`, `selectedRecipeIds`); otherwise the field is omitted and `_filter_recipes_by_ids` returns the whole server pool. So the default path is **not** restricted, and **a refresh of the server list is enough**: `RecipeProvider.importStarterRecipes` posts the import, then re-runs `syncSummariesFromApi`. Nothing is copied to device storage (not `fromServerRecipeMap` either: its lines carry no unit conversions, so FE-13 would flag `cup` / `tbsp` lines as unresolved). Opening an import in the Recipe Builder loads `GET /recipes/{id}`, whose lines carry `unit_conversions`. With a Planner Config selection, imports appear in the pool list unticked, and the import snackbar says to tick them there. Tests: `test/widgets/starter_import_flow_test.dart` (import 3 → library has 3 → the plan request omits `recipe_ids`, so the server pool holding the 3 is used; ticked → `recipe_ids` lists them and their details sync first; an imported cup/tbsp/scoop recipe opens with no flagged line and Update enabled) and `test/providers/recipe_provider_starter_test.dart`.
+- **Known gap (backend, not fixed here).** 6 of the 18 starter recipes (recipe_005, 006, 008, 012, 013, 017) have an `eggs` / `bananas` line in `large`. The server weighs it from `BASE_SERVING_WEIGHTS` but doesn't export that weight in the detail's `unit_conversions` (`server.py::_flutter_ingredient_entries` uses `NutritionCalculator.unit_conversions`, which holds record weights only). Flutter's `gramsForUnit` then has no weight for `large`, so the Recipe Builder flags that line and blocks saving until the unit is changed. Planning is unaffected, since the server resolves the line. This predates FE-16 (it affects any server recipe with such a unit). The fix is server-side (export the line's resolved grams per unit in the detail) and needs a BE follow-up.
+- **Pre-analysis 2, file overlap.** FE-11/12/13 have merged. Edits in their files are limited to the entry links: `failure_view_model.dart::toHeroPanel` (EMPTY_POOL row), `recipe_library_screen.dart` (empty state, header action) and `today_screen.dart` (empty-state link). For `EMPTY_POOL` the hero row is "Start from the starter pack" **instead of** "Find a recipe" / "Set up AI help": BE-22 sets `recipe_could_help: true`, but the assisted recovery declines an empty pool, so the AI row would offer a fix that can't work.
+- **Pre-analysis 3, who relies on `assets/dev`.** No test or script read `user_profile.yaml` or `server_recipes.json`: only `frontend/README.md`, a comment in `docs/frontend/design/data.js`, and the code paths below. The cached-ingredients export script writes `cached_ingredients.json`, which isn't personal data and stays.
+- **`server_recipes.json` decision: removed**, with `hydrateBundledServerRecipesFromAsset`, `mergeBundledServerRecipesIfEnabled`, `BUNDLE_SERVER_RECIPES` and the provider's bundled fallback. Recipes come from the server now, and the drifted asset actively broke imports: it held `recipe_001`…`018`, so `_withBundledFallback` replaced the id+name rows of imported starter recipes with asset lines that carry no unit conversions or nutrition.
+- **`user_profile.yaml` decision: removed**, with `BUNDLE_USER_PROFILE` and `ProfileProvider.mergeBundledUserProfileIfEnabled` (it had no test). Removing it, rather than shipping a copy of `config/user_profile.yaml.example`, means no personal data in the bundle and no copy to re-sync when BE-20 changes the example's defaults. `test/bundle_assets_test.dart` fails if `pubspec.yaml` lists a profile or recipe asset (or any YAML) again. The removed files stay in git history (out of scope).
+- **Entry points.** The Recipe Library has no `AppBar` (the shell has none), so its "Starter pack" action sits in the library's `SectionHeader`, next to "New". Today shows its starter-pack link only while the library is empty. Tests: `test/widgets/starter_pack_entry_points_test.dart` (one per entry point, plus Meal Plan View's EMPTY_POOL panel and a non-EMPTY_POOL control).
+- **Keys.** `StarterPackSheet.rowKey(id)`, `checkboxKey(id)`, `importKey`, `selectAllKey`; `RecipeLibraryScreen.starterPackKey` / `emptyStarterPackKey` / `emptyBuildKey`; `TodayScreen.starterPackKey`; `FailureViewModel.starterPackKey`. `StickyCtaAction` gained an optional `key`.
+- **Validation.** `flutter analyze`: no issues. `flutter test`: 299 passed (baseline 265).
+- **Not done:** the manual run against a local API with a fresh `MACROVA_DATA_DIR` (pick 5 → import → plan) and the PR screenshot.

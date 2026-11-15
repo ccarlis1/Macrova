@@ -42,6 +42,14 @@ On Today / Meal Plan View / meal cards driven by a plan, display **`meal.nutriti
 - `MealCard(hasPin:)` shows "Pinned" for `Meal.source == pinned_assignment` and "Pinned · next plan" for a slot pinned since the plan; never on a batch meal. `MealDetailSheet` disables Pin on a batch slot ("Meal prep overrides pins for this meal"). Precedence: meal-prep batch → pin → required tags → preferred scoring.
 - A stored pin outside the requested schedule (a slot or day the request doesn't have) fails the plan with FM-3 (`PIN_OR_BATCH_CONFLICT`), shown through `FailurePanel`. The fix is to unpin it or use "Clear pins" (Planner Config).
 
+## Starter pack (FE-16)
+
+- The starter pack is **server-owned** (`GET /api/v1/starter_recipes`, built from `data/recipes/recipes.json.example`). `RecipeProvider` keeps only the last fetched list (`starterRecipes`, `loadStarterRecipes`, `starterError`); there is no client copy and no bundled recipe asset.
+- `RecipeProvider.importStarterRecipes(ids)` POSTs `/api/v1/starter_recipes/import`, then refreshes `GET /api/v1/recipes`. Imported recipes are ordinary server recipes (id + name rows until opened); nothing is written to device storage, so the pre-plan sync doesn't resend them. Per-id skips (`already_in_pool`, `not_a_starter_recipe`) come back in the result; a whole-request failure throws.
+- Nothing is imported without the user's tap: the sheet pre-selects nothing, and recipes already in the library (`libraryRecipeIds`: local or server ids) can't be ticked.
+- `/plan` without `recipe_ids` (no Planner Config selection) plans with the whole server pool, imports included. With a selection, imports join the plan only once ticked there; the sheet's snackbar says so.
+- Entry points: Recipe Library empty state and header action, Today's no-plan state (while the library is empty), and the `EMPTY_POOL` failure row.
+
 ## Toast / success snackbar
 
 Show a success toast for NL plan generation **only when** `plan.success == true` (see `agent_pane_screen.dart`). Partial/failed in-body plans still call `applyPlanResult` and navigate; they must not claim success via toast.

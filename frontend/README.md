@@ -10,6 +10,10 @@ A new Flutter project.
 - **`GET /api/v1/recipes/{id}`** returns a full recipe for hydration / planner sync.
 - **Meal planning** (`POST /api/v1/plan`) uses the whole **server** pool unless Planner Config has recipes ticked; then it sends those ids as `recipe_ids`. Before each plan the app syncs every locally stored full recipe, so local edits reach the server first.
 
+### Starter pack (FE-16)
+
+A new user's pool (a fresh `MACROVA_DATA_DIR`) is empty. The Recipe Library (empty state and its **Starter pack** action), Today's empty state, and the `EMPTY_POOL` plan failure open a picker sheet over `GET /api/v1/starter_recipes`; **Import** sends the ticked ids to `POST /api/v1/starter_recipes/import`, then refreshes `GET /api/v1/recipes`. The imported recipes are ordinary server recipes: opening one in the Recipe Builder loads its detail. The app keeps no copy of the starter pack and imports nothing on its own.
+
 There is no bundled recipe asset any more (`assets/dev/server_recipes.json` and `BUNDLE_SERVER_RECIPES` were removed in FE-16): recipes come from the API.
 
 ### Bundled cached ingredients (USDA disk cache → Saved)

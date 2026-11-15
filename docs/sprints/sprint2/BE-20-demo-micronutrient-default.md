@@ -1,6 +1,6 @@
 # BE-20 — Demo micronutrient default (D-A), user override, MCP busyness 2/3/4 (D-B)
 
-**Status:** todo  ·  **Complexity:** M  ·  **Depends on:** DATA-1
+**Status:** done  ·  **Complexity:** M  ·  **Depends on:** DATA-1
 
 ## Summary
 

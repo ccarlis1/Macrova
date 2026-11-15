@@ -179,7 +179,9 @@ def test_demographic_sets_micronutrient_targets():
     out = result.structured_content
     assert out["requested_targets"]["demographic"] == "adult_female"
     assert out["status"] == "failed"
-    assert "vitamin D" in out["failure"]["explanation"]
+    # Vitamin D was named here until DATA-2 corrected its ~40x inflation: the
+    # salmon, tuna and egg recipes then sat above the 4,000 IU UL and were lost.
+    assert "vitamin E" in out["failure"]["explanation"]
     assert out["weekly_micronutrients"] == {}
 
 

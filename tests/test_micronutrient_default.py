@@ -98,7 +98,9 @@ def test_example_profile_one_day_outcome_is_pinned():
     BE-20's stub and the first-run docs (README, QUICK_START, USAGE), which use --days 3.
     """
     out = _plan_example(1)
-    assert out["plan_status"] == "partial"
-    assert out["termination_code"] == "TC-2"
-    failures = [(f["code"], f.get("day_index"), f.get("slot_index")) for f in out["report"]["failures"]]
-    assert failures == [("FM-1", 0, 2)]
+    # DATA-2: with vitamin D corrected (it was ~40x too high), the vitamin-D-rich recipes
+    # no longer break the 4,000 IU UL, and the 1-day plan on the committed pool succeeds.
+    # Before: partial, TC-2, FM-1 at day 0, slot 2.
+    assert out["plan_status"] == "success"
+    assert out["termination_code"] == "TC-4"  # single-day success
+    assert out["report"].get("failures", []) == []

@@ -760,7 +760,7 @@
         "slice": 28.0
       },
       "name": "cheddar cheese natural 50% reduced fat",
-      "notes": "grams_per_unit slice 28.0 g = FDC 173439 foodPortions '1 slice (1 oz)'.",
+      "notes": "grams_per_unit slice 28.0 g = FDC 173439 foodPortions '1 slice (1 oz)'. vitamin_d_iu: 200.1 -> 5.0 IU/100 g, FDC 173439 nutrient 1110 (number 324, IU) = 5; nutrient 1114 = 0.1 µg (DATA-2, 2026-11-15; old value was IU x 40 + µg from the mapper bug).",
       "per_100g": {
         "b12_cobalamin_ug": 0.49,
         "b1_thiamine_mg": 0.012,
@@ -787,7 +787,7 @@
         "sodium_mg": 873.0,
         "vitamin_a_ug": 60.0,
         "vitamin_c_mg": 0.0,
-        "vitamin_d_iu": 200.1,
+        "vitamin_d_iu": 5.0,
         "vitamin_e_mg": 0.06,
         "vitamin_k_ug": 0.6,
         "zinc_mg": 1.82
@@ -900,7 +900,7 @@
         "oz": 28.35
       },
       "name": "chicken breast",
-      "notes": "SR Legacy raw breast meat only; not deli roll 174608.",
+      "notes": "SR Legacy raw breast meat only; not deli roll 174608. vitamin_d_iu: 40.0 -> 1.0 IU/100 g, FDC 171077 nutrient 1110 (number 324, IU) = 1; nutrient 1114 = 0 µg (DATA-2, 2026-11-15; old value was IU x 40 + µg from the mapper bug).",
       "per_100g": {
         "b12_cobalamin_ug": 0.21,
         "b1_thiamine_mg": 0.094,
@@ -927,7 +927,7 @@
         "sodium_mg": 45.0,
         "vitamin_a_ug": 9.0,
         "vitamin_c_mg": 0.0,
-        "vitamin_d_iu": 40.0,
+        "vitamin_d_iu": 1.0,
         "vitamin_e_mg": 0.56,
         "vitamin_k_ug": 0.0,
         "zinc_mg": 0.68
@@ -946,7 +946,7 @@
         "g": 1.0
       },
       "name": "chicken thigh skin removed",
-      "notes": "",
+      "notes": "vitamin_d_iu: 40.0 -> 1.0 IU/100 g, FDC 173627 nutrient 1110 (number 324, IU) = 1; nutrient 1114 = 0 µg (DATA-2, 2026-11-15; old value was IU x 40 + µg from the mapper bug).",
       "per_100g": {
         "b12_cobalamin_ug": 0.61,
         "b1_thiamine_mg": 0.088,
@@ -973,7 +973,7 @@
         "sodium_mg": 95.0,
         "vitamin_a_ug": 7.0,
         "vitamin_c_mg": 0.0,
-        "vitamin_d_iu": 40.0,
+        "vitamin_d_iu": 1.0,
         "vitamin_e_mg": 0.18,
         "vitamin_k_ug": 2.9,
         "zinc_mg": 1.58
@@ -1274,7 +1274,7 @@
         "large": 17.0
       },
       "name": "egg yolk",
-      "notes": "SR Legacy egg yolk raw (matches cache fdc); mapping channel compares remap vs cache values. grams_per_unit large 17.0 g = FDC 172184 foodPortions '1 large'.",
+      "notes": "SR Legacy egg yolk raw (matches cache fdc); mapping channel compares remap vs cache values. grams_per_unit large 17.0 g = FDC 172184 foodPortions '1 large'. vitamin_d_iu: 8725.4 -> 218.0 IU/100 g, FDC 172184 nutrient 1110 (number 324, IU) = 218; nutrient 1114 = 5.4 µg (DATA-2, 2026-11-15; old value was IU x 40 + µg from the mapper bug).",
       "per_100g": {
         "b12_cobalamin_ug": 1.95,
         "b1_thiamine_mg": 0.176,
@@ -1301,7 +1301,7 @@
         "sodium_mg": 48.0,
         "vitamin_a_ug": 381.0,
         "vitamin_c_mg": 0.0,
-        "vitamin_d_iu": 8725.4,
+        "vitamin_d_iu": 218.0,
         "vitamin_e_mg": 2.58,
         "vitamin_k_ug": 0.7,
         "zinc_mg": 2.3
@@ -1320,7 +1320,7 @@
         "g": 1.0
       },
       "name": "eggs",
-      "notes": "SR Legacy 'Egg, whole, raw, fresh'; not Bread, egg.",
+      "notes": "SR Legacy 'Egg, whole, raw, fresh'; not Bread, egg. vitamin_d_iu: 3282.0 -> 82.0 IU/100 g, FDC 171287 nutrient 1110 (number 324, IU) = 82; nutrient 1114 = 2 µg (DATA-2, 2026-11-15; old value was IU x 40 + µg from the mapper bug).",
       "per_100g": {
         "b12_cobalamin_ug": 0.89,
         "b1_thiamine_mg": 0.04,
@@ -1347,7 +1347,7 @@
         "sodium_mg": 142.0,
         "vitamin_a_ug": 160.0,
         "vitamin_c_mg": 0.0,
-        "vitamin_d_iu": 3282.0,
+        "vitamin_d_iu": 82.0,
         "vitamin_e_mg": 1.05,
         "vitamin_k_ug": 0.3,
         "zinc_mg": 1.29
@@ -1366,7 +1366,7 @@
         "g": 1.0
       },
       "name": "feta cheese reduced fat",
-      "notes": "",
+      "notes": "vitamin_d_iu: 640.4 -> 16.0 IU/100 g, FDC 173420 nutrient 1110 (number 324, IU) = 16; nutrient 1114 = 0.4 µg (DATA-2, 2026-11-15; old value was IU x 40 + µg from the mapper bug).",
       "per_100g": {
         "b12_cobalamin_ug": 1.69,
         "b1_thiamine_mg": 0.154,
@@ -1393,7 +1393,7 @@
         "sodium_mg": 1139.0,
         "vitamin_a_ug": 125.0,
         "vitamin_c_mg": 0.0,
-        "vitamin_d_iu": 640.4,
+        "vitamin_d_iu": 16.0,
         "vitamin_e_mg": 0.18,
         "vitamin_k_ug": 1.8,
         "zinc_mg": 2.88
@@ -1507,7 +1507,7 @@
         "oz": 28.35
       },
       "name": "hamburger or beef 90%",
-      "notes": "",
+      "notes": "vitamin_d_iu: 120.1 -> 3.0 IU/100 g, FDC 174030 nutrient 1110 (number 324, IU) = 3; nutrient 1114 = 0.1 µg (DATA-2, 2026-11-15; old value was IU x 40 + µg from the mapper bug).",
       "per_100g": {
         "b12_cobalamin_ug": 2.21,
         "b1_thiamine_mg": 0.042,
@@ -1534,7 +1534,7 @@
         "sodium_mg": 66.0,
         "vitamin_a_ug": 4.0,
         "vitamin_c_mg": 0.0,
-        "vitamin_d_iu": 120.1,
+        "vitamin_d_iu": 3.0,
         "vitamin_e_mg": 0.17,
         "vitamin_k_ug": 0.8,
         "zinc_mg": 4.79
@@ -1554,7 +1554,7 @@
         "oz": 28.35
       },
       "name": "hamburger or beef 95%",
-      "notes": "",
+      "notes": "vitamin_d_iu: 120.1 -> 3.0 IU/100 g, FDC 173110 nutrient 1110 (number 324, IU) = 3; nutrient 1114 = 0.1 µg (DATA-2, 2026-11-15; old value was IU x 40 + µg from the mapper bug).",
       "per_100g": {
         "b12_cobalamin_ug": 2.23,
         "b1_thiamine_mg": 0.041,
@@ -1581,7 +1581,7 @@
         "sodium_mg": 66.0,
         "vitamin_a_ug": 4.0,
         "vitamin_c_mg": 0.0,
-        "vitamin_d_iu": 120.1,
+        "vitamin_d_iu": 3.0,
         "vitamin_e_mg": 0.17,
         "vitamin_k_ug": 0.5,
         "zinc_mg": 4.97
@@ -1931,7 +1931,7 @@
         "ml": 1.03
       },
       "name": "milk",
-      "notes": "",
+      "notes": "vitamin_d_iu: 1680.0 -> 42.0 IU/100 g, FDC 1909132 nutrient 1110 (number 324, IU) = 42 (DATA-2, 2026-11-15; old value was IU x 40 + µg from the mapper bug).",
       "per_100g": {
         "b12_cobalamin_ug": 0.0,
         "b1_thiamine_mg": 0.0,
@@ -1958,7 +1958,7 @@
         "sodium_mg": 55.0,
         "vitamin_a_ug": 0.0,
         "vitamin_c_mg": 1.0,
-        "vitamin_d_iu": 1680.0,
+        "vitamin_d_iu": 42.0,
         "vitamin_e_mg": 0.0,
         "vitamin_k_ug": 0.0,
         "zinc_mg": 0.0
@@ -1977,7 +1977,7 @@
         "g": 1.0
       },
       "name": "milk 1% fat lowfat",
-      "notes": "SR Legacy Milk, lowfat, fluid, 1% milkfat, with vitamins; not cottage cheese.",
+      "notes": "SR Legacy Milk, lowfat, fluid, 1% milkfat, with vitamins; not cottage cheese. vitamin_d_iu: 1921.2 -> 48.0 IU/100 g, FDC 170872 nutrient 1110 (number 324, IU) = 48; nutrient 1114 = 1.2 µg (DATA-2, 2026-11-15; old value was IU x 40 + µg from the mapper bug).",
       "per_100g": {
         "b12_cobalamin_ug": 0.47,
         "b1_thiamine_mg": 0.02,
@@ -2004,7 +2004,7 @@
         "sodium_mg": 44.0,
         "vitamin_a_ug": 58.0,
         "vitamin_c_mg": 0.0,
-        "vitamin_d_iu": 1921.2,
+        "vitamin_d_iu": 48.0,
         "vitamin_e_mg": 0.01,
         "vitamin_k_ug": 0.1,
         "zinc_mg": 0.42
@@ -2165,7 +2165,7 @@
         "tbsp, grated": 6.0
       },
       "name": "parmesan cheese hard",
-      "notes": "tbsp, grated: 6 g, Cronometer NCCDB serving, user-supplied 2026-11-14; FDC 170848 has only cubic inch, oz, package.",
+      "notes": "tbsp, grated: 6 g, Cronometer NCCDB serving, user-supplied 2026-11-14; FDC 170848 has only cubic inch, oz, package. vitamin_d_iu: 760.5 -> 19.0 IU/100 g, FDC 170848 nutrient 1110 (number 324, IU) = 19; nutrient 1114 = 0.5 µg (DATA-2, 2026-11-15; old value was IU x 40 + µg from the mapper bug).",
       "per_100g": {
         "b12_cobalamin_ug": 1.2,
         "b1_thiamine_mg": 0.039,
@@ -2192,7 +2192,7 @@
         "sodium_mg": 1175.0,
         "vitamin_a_ug": 207.0,
         "vitamin_c_mg": 0.0,
-        "vitamin_d_iu": 760.5,
+        "vitamin_d_iu": 19.0,
         "vitamin_e_mg": 0.22,
         "vitamin_k_ug": 1.7,
         "zinc_mg": 2.75
@@ -2212,7 +2212,7 @@
         "tbsp, grated": 5.0
       },
       "name": "parmesan grated",
-      "notes": "grams_per_unit 'tbsp, grated' 5.0 g = FDC 171247 foodPortions '1 tbsp'.",
+      "notes": "grams_per_unit 'tbsp, grated' 5.0 g = FDC 171247 foodPortions '1 tbsp'. vitamin_d_iu: 840.5 -> 21.0 IU/100 g, FDC 171247 nutrient 1110 (number 324, IU) = 21; nutrient 1114 = 0.5 µg (DATA-2, 2026-11-15; old value was IU x 40 + µg from the mapper bug).",
       "per_100g": {
         "b12_cobalamin_ug": 1.4,
         "b1_thiamine_mg": 0.026,
@@ -2239,7 +2239,7 @@
         "sodium_mg": 1804.0,
         "vitamin_a_ug": 262.0,
         "vitamin_c_mg": 0.0,
-        "vitamin_d_iu": 840.5,
+        "vitamin_d_iu": 21.0,
         "vitamin_e_mg": 0.53,
         "vitamin_k_ug": 1.7,
         "zinc_mg": 4.2
@@ -2537,7 +2537,7 @@
         "medium slice": 13.8
       },
       "name": "roast beef lunchmeat",
-      "notes": "medium slice: 13.8 g, FDC 174570 foodPortions id 94596 (undetermined slice rectangle); near match: FDC has slice rectangle 13.8 g and slice oval 9.3 g, the rectangle is used for medium slice.",
+      "notes": "medium slice: 13.8 g, FDC 174570 foodPortions id 94596 (undetermined slice rectangle); near match: FDC has slice rectangle 13.8 g and slice oval 9.3 g, the rectangle is used for medium slice. vitamin_d_iu: 40.0 -> 1.0 IU/100 g, FDC 174570 nutrient 1110 (number 324, IU) = 1; nutrient 1114 = 0 µg (DATA-2, 2026-11-15; old value was IU x 40 + µg from the mapper bug).",
       "per_100g": {
         "b12_cobalamin_ug": 2.04,
         "b1_thiamine_mg": 0.043,
@@ -2564,7 +2564,7 @@
         "sodium_mg": 853.0,
         "vitamin_a_ug": 3.0,
         "vitamin_c_mg": 0.0,
-        "vitamin_d_iu": 40.0,
+        "vitamin_d_iu": 1.0,
         "vitamin_e_mg": 0.49,
         "vitamin_k_ug": 1.6,
         "zinc_mg": 3.2
@@ -2677,7 +2677,7 @@
         "small can": 92.0
       },
       "name": "salmon canned",
-      "notes": "SR Legacy sockeye canned (matches cache fdc); mapping channel compares remap vs cache values. small can: 92 g, Cronometer NCCDB serving, user-supplied 2026-11-14; FDC 175174 has only the 417 g whole can.",
+      "notes": "SR Legacy sockeye canned (matches cache fdc); mapping channel compares remap vs cache values. small can: 92 g, Cronometer NCCDB serving, user-supplied 2026-11-14; FDC 175174 has only the 417 g whole can. vitamin_d_iu: 30459.0 -> 761.0 IU/100 g, FDC 175174 nutrient 1110 (number 324, IU) = 761; nutrient 1114 = 19 µg (DATA-2, 2026-11-15; old value was IU x 40 + µg from the mapper bug).",
       "per_100g": {
         "b12_cobalamin_ug": 0.4,
         "b1_thiamine_mg": 0.02,
@@ -2704,7 +2704,7 @@
         "sodium_mg": 433.0,
         "vitamin_a_ug": 39.0,
         "vitamin_c_mg": 0.0,
-        "vitamin_d_iu": 30459.0,
+        "vitamin_d_iu": 761.0,
         "vitamin_e_mg": 1.88,
         "vitamin_k_ug": 0.1,
         "zinc_mg": 0.67
@@ -2864,7 +2864,7 @@
         "g": 1.0
       },
       "name": "sharp cheddar cheese",
-      "notes": "",
+      "notes": "vitamin_d_iu: 1641.0 -> 41.0 IU/100 g, FDC 170899 nutrient 1110 (number 324, IU) = 41; nutrient 1114 = 1 µg (DATA-2, 2026-11-15; old value was IU x 40 + µg from the mapper bug).",
       "per_100g": {
         "b12_cobalamin_ug": 0.88,
         "b1_thiamine_mg": 0.027,
@@ -2891,7 +2891,7 @@
         "sodium_mg": 644.0,
         "vitamin_a_ug": 263.0,
         "vitamin_c_mg": 0.0,
-        "vitamin_d_iu": 1641.0,
+        "vitamin_d_iu": 41.0,
         "vitamin_e_mg": 0.78,
         "vitamin_k_ug": 2.4,
         "zinc_mg": 3.74
@@ -3190,7 +3190,7 @@
         "g": 1.0
       },
       "name": "tilapia",
-      "notes": "",
+      "notes": "vitamin_d_iu: 4963.1 -> 124.0 IU/100 g, FDC 175176 nutrient 1110 (number 324, IU) = 124; nutrient 1114 = 3.1 µg (DATA-2, 2026-11-15; old value was IU x 40 + µg from the mapper bug).",
       "per_100g": {
         "b12_cobalamin_ug": 1.58,
         "b1_thiamine_mg": 0.041,
@@ -3217,7 +3217,7 @@
         "sodium_mg": 52.0,
         "vitamin_a_ug": 0.0,
         "vitamin_c_mg": 0.0,
-        "vitamin_d_iu": 4963.1,
+        "vitamin_d_iu": 124.0,
         "vitamin_e_mg": 0.4,
         "vitamin_k_ug": 1.4,
         "zinc_mg": 0.33
@@ -3378,7 +3378,7 @@
         "oz": 28.35
       },
       "name": "tuna sashimi",
-      "notes": "",
+      "notes": "vitamin_d_iu: 2761.7 -> 69.0 IU/100 g, FDC 175159 nutrient 1110 (number 324, IU) = 69; nutrient 1114 = 1.7 µg (DATA-2, 2026-11-15; old value was IU x 40 + µg from the mapper bug).",
       "per_100g": {
         "b12_cobalamin_ug": 2.08,
         "b1_thiamine_mg": 0.118,
@@ -3405,7 +3405,7 @@
         "sodium_mg": 45.0,
         "vitamin_a_ug": 18.0,
         "vitamin_c_mg": 0.0,
-        "vitamin_d_iu": 2761.7,
+        "vitamin_d_iu": 69.0,
         "vitamin_e_mg": 0.24,
         "vitamin_k_ug": 0.1,
         "zinc_mg": 0.37
@@ -3425,7 +3425,7 @@
         "slice": 16.0
       },
       "name": "turkey breast lunchmeat reduced fat",
-      "notes": "grams_per_unit slice 16.0 g = FDC 172941 foodPortions '1 slice'.",
+      "notes": "grams_per_unit slice 16.0 g = FDC 172941 foodPortions '1 slice'. vitamin_d_iu: 240.2 -> 6.0 IU/100 g, FDC 172941 nutrient 1110 (number 324, IU) = 6; nutrient 1114 = 0.2 µg (DATA-2, 2026-11-15; old value was IU x 40 + µg from the mapper bug).",
       "per_100g": {
         "b12_cobalamin_ug": 0.37,
         "b1_thiamine_mg": 0.038,
@@ -3452,7 +3452,7 @@
         "sodium_mg": 898.0,
         "vitamin_a_ug": 0.0,
         "vitamin_c_mg": 0.0,
-        "vitamin_d_iu": 240.2,
+        "vitamin_d_iu": 6.0,
         "vitamin_e_mg": 0.13,
         "vitamin_k_ug": 0.0,
         "zinc_mg": 0.94

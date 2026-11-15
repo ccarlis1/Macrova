@@ -1,0 +1,11 @@
+{
+  "imported": [
+    "recipe_002"
+  ],
+  "skipped": [
+    {
+      "id": "recipe_001",
+      "reason": "already_in_pool"
+    }
+  ]
+}

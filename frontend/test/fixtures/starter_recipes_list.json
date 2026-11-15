@@ -1,0 +1,328 @@
+{
+  "recipes": [
+    {
+      "id": "recipe_001",
+      "name": "Carb Heavy",
+      "cooking_time_minutes": 15,
+      "calories_per_serving": 802.1,
+      "protein_g_per_serving": 30.0,
+      "tag_slugs_by_type": {
+        "context": [
+          "lunch",
+          "dinner"
+        ],
+        "time": [
+          "time-2"
+        ]
+      },
+      "ready_for_planning": true,
+      "unresolved": []
+    },
+    {
+      "id": "recipe_002",
+      "name": "Spaghetti Squash",
+      "cooking_time_minutes": 45,
+      "calories_per_serving": 509.6,
+      "protein_g_per_serving": 45.6,
+      "tag_slugs_by_type": {
+        "context": [
+          "lunch",
+          "dinner"
+        ],
+        "time": [
+          "time-4"
+        ]
+      },
+      "ready_for_planning": true,
+      "unresolved": []
+    },
+    {
+      "id": "recipe_003",
+      "name": "Poke Bowl, Tuna",
+      "cooking_time_minutes": 25,
+      "calories_per_serving": 896.3,
+      "protein_g_per_serving": 70.2,
+      "tag_slugs_by_type": {
+        "context": [
+          "lunch",
+          "dinner"
+        ],
+        "time": [
+          "time-3"
+        ]
+      },
+      "ready_for_planning": true,
+      "unresolved": []
+    },
+    {
+      "id": "recipe_004",
+      "name": "Bolognese",
+      "cooking_time_minutes": 40,
+      "calories_per_serving": 863.8,
+      "protein_g_per_serving": 55.4,
+      "tag_slugs_by_type": {
+        "context": [
+          "lunch",
+          "dinner"
+        ],
+        "time": [
+          "time-4"
+        ]
+      },
+      "ready_for_planning": true,
+      "unresolved": []
+    },
+    {
+      "id": "recipe_005",
+      "name": "Fried Rice",
+      "cooking_time_minutes": 25,
+      "calories_per_serving": 1021.4,
+      "protein_g_per_serving": 66.2,
+      "tag_slugs_by_type": {
+        "context": [
+          "lunch",
+          "dinner"
+        ],
+        "time": [
+          "time-3"
+        ]
+      },
+      "ready_for_planning": true,
+      "unresolved": []
+    },
+    {
+      "id": "recipe_006",
+      "name": "Mexican Egg Skillet",
+      "cooking_time_minutes": 30,
+      "calories_per_serving": 1016.7,
+      "protein_g_per_serving": 83.2,
+      "tag_slugs_by_type": {
+        "context": [
+          "breakfast",
+          "lunch"
+        ],
+        "time": [
+          "time-3"
+        ]
+      },
+      "ready_for_planning": true,
+      "unresolved": []
+    },
+    {
+      "id": "recipe_007",
+      "name": "Canned Salmon Wrap",
+      "cooking_time_minutes": 10,
+      "calories_per_serving": 400.9,
+      "protein_g_per_serving": 33.5,
+      "tag_slugs_by_type": {
+        "context": [
+          "lunch",
+          "dinner"
+        ],
+        "time": [
+          "time-2"
+        ]
+      },
+      "ready_for_planning": true,
+      "unresolved": []
+    },
+    {
+      "id": "recipe_008",
+      "name": "Shakshuka",
+      "cooking_time_minutes": 30,
+      "calories_per_serving": 966.0,
+      "protein_g_per_serving": 58.1,
+      "tag_slugs_by_type": {
+        "context": [
+          "breakfast",
+          "lunch"
+        ],
+        "time": [
+          "time-3"
+        ]
+      },
+      "ready_for_planning": true,
+      "unresolved": []
+    },
+    {
+      "id": "recipe_009",
+      "name": "Greek Yogurt Protein Bowl",
+      "cooking_time_minutes": 5,
+      "calories_per_serving": 585.9,
+      "protein_g_per_serving": 47.3,
+      "tag_slugs_by_type": {
+        "context": [
+          "breakfast",
+          "snack"
+        ],
+        "time": [
+          "time-1"
+        ]
+      },
+      "ready_for_planning": true,
+      "unresolved": []
+    },
+    {
+      "id": "recipe_010",
+      "name": "Dense Bean Salad",
+      "cooking_time_minutes": 15,
+      "calories_per_serving": 899.8,
+      "protein_g_per_serving": 45.4,
+      "tag_slugs_by_type": {
+        "context": [
+          "lunch",
+          "dinner"
+        ],
+        "time": [
+          "time-2"
+        ]
+      },
+      "ready_for_planning": true,
+      "unresolved": []
+    },
+    {
+      "id": "recipe_011",
+      "name": "Greek Yogurt Balance",
+      "cooking_time_minutes": 5,
+      "calories_per_serving": 451.9,
+      "protein_g_per_serving": 31.8,
+      "tag_slugs_by_type": {
+        "context": [
+          "breakfast",
+          "snack"
+        ],
+        "time": [
+          "time-1"
+        ]
+      },
+      "ready_for_planning": true,
+      "unresolved": []
+    },
+    {
+      "id": "recipe_012",
+      "name": "Pre Workout 1",
+      "cooking_time_minutes": 5,
+      "calories_per_serving": 392.9,
+      "protein_g_per_serving": 21.1,
+      "tag_slugs_by_type": {
+        "context": [
+          "snack",
+          "breakfast"
+        ],
+        "time": [
+          "time-1"
+        ]
+      },
+      "ready_for_planning": true,
+      "unresolved": []
+    },
+    {
+      "id": "recipe_013",
+      "name": "Pre Workout 2",
+      "cooking_time_minutes": 2,
+      "calories_per_serving": 383.9,
+      "protein_g_per_serving": 20.3,
+      "tag_slugs_by_type": {
+        "context": [
+          "snack",
+          "breakfast"
+        ],
+        "time": [
+          "time-1"
+        ]
+      },
+      "ready_for_planning": true,
+      "unresolved": []
+    },
+    {
+      "id": "recipe_014",
+      "name": "Power Shake",
+      "cooking_time_minutes": 5,
+      "calories_per_serving": 803.7,
+      "protein_g_per_serving": 49.9,
+      "tag_slugs_by_type": {
+        "context": [
+          "snack",
+          "breakfast"
+        ],
+        "time": [
+          "time-1"
+        ]
+      },
+      "ready_for_planning": true,
+      "unresolved": []
+    },
+    {
+      "id": "recipe_015",
+      "name": "Slop Bowl",
+      "cooking_time_minutes": 30,
+      "calories_per_serving": 1270.5,
+      "protein_g_per_serving": 78.4,
+      "tag_slugs_by_type": {
+        "context": [
+          "lunch",
+          "dinner"
+        ],
+        "time": [
+          "time-3"
+        ]
+      },
+      "ready_for_planning": true,
+      "unresolved": []
+    },
+    {
+      "id": "recipe_016",
+      "name": "Sweet Potato Bowl",
+      "cooking_time_minutes": 35,
+      "calories_per_serving": 681.6,
+      "protein_g_per_serving": 54.2,
+      "tag_slugs_by_type": {
+        "context": [
+          "lunch",
+          "dinner"
+        ],
+        "time": [
+          "time-4"
+        ]
+      },
+      "ready_for_planning": true,
+      "unresolved": []
+    },
+    {
+      "id": "recipe_017",
+      "name": "Power Omelette",
+      "cooking_time_minutes": 15,
+      "calories_per_serving": 650.2,
+      "protein_g_per_serving": 57.3,
+      "tag_slugs_by_type": {
+        "context": [
+          "breakfast",
+          "lunch"
+        ],
+        "time": [
+          "time-2"
+        ]
+      },
+      "ready_for_planning": true,
+      "unresolved": []
+    },
+    {
+      "id": "recipe_018",
+      "name": "Roast Beef Sandwich",
+      "cooking_time_minutes": 5,
+      "calories_per_serving": 314.6,
+      "protein_g_per_serving": 33.4,
+      "tag_slugs_by_type": {
+        "context": [
+          "lunch",
+          "dinner"
+        ],
+        "time": [
+          "time-1"
+        ]
+      },
+      "ready_for_planning": true,
+      "unresolved": []
+    }
+  ]
+}

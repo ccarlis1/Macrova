@@ -66,3 +66,21 @@ committed `data/recipes/` (`git archive HEAD`). In order:
 | `profile_pins_cleared.json` | `DELETE /api/v1/profile/pins` | `{cleared_count: 1}` |
 
 Used by `test/profile_pin_api_test.dart` (DTO, client, index bases).
+
+## Starter-pack fixtures (FE-16)
+
+Captured in-process (FastAPI `TestClient`, run from the repo root on the
+sprint2-wave2 FE-15 commit `d788976`) with `MACROVA_DATA_DIR` pointing at a temp
+folder made by `scripts/setup_user_data.py` (empty pool) and
+`NUTRITION_USER_PROFILE_PATH` at a non-existent temp file. In order:
+
+| File | Request | Notes |
+| --- | --- | --- |
+| `starter_recipes_list.json` | `GET /api/v1/starter_recipes` | 18 recipes, all `ready_for_planning: true`, nutrition > 0 |
+| `starter_import_partial.json` | `POST /api/v1/starter_recipes/import` `{"recipe_ids": ["recipe_001", "recipe_009", "recipe_017", "not-a-starter"]}` | 200; 3 imported, `not_a_starter_recipe` skipped |
+| `starter_import_already.json` | `POST …/import` `["recipe_001", "recipe_002"]` | 200; `recipe_002` imported, `recipe_001` `already_in_pool` |
+| `starter_import_error_invalid.json` | `POST …/import` `{}` | 400 `INVALID_REQUEST` |
+| `starter_recipe_detail_units.json` | `GET /api/v1/recipes/recipe_009` (after the imports) | `cup` / `tbsp` / `scoop` lines carry their `unit_conversions` |
+
+Used by `test/starter_recipe_api_test.dart` (DTO, client) and
+`test/providers/recipe_provider_starter_test.dart`.

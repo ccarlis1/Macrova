@@ -9,6 +9,7 @@ import '../models/nutrition_summary.dart';
 import '../models/profile_pin.dart';
 import '../models/recipe.dart';
 import '../models/recipe_sync_result.dart';
+import '../models/starter_recipe.dart';
 import '../models/tag.dart';
 
 /// Thrown when the API returns a non-success status with a parseable body.
@@ -396,6 +397,46 @@ class ApiService {
         }
         return n.toInt();
       });
+    }
+    throw ApiException.fromResponse(res);
+  }
+
+  /// GET /api/v1/starter_recipes: the optional starter pack (BE-22) a user
+  /// picks from. [client] is for tests.
+  static Future<List<StarterRecipe>> listStarterRecipes({
+    http.Client? client,
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/v1/starter_recipes');
+    final res = client == null ? await http.get(uri) : await client.get(uri);
+    if (res.statusCode == 200) {
+      return _parseOk(
+        res,
+        'Starter recipe list response',
+        StarterRecipe.listFromResponse,
+      );
+    }
+    throw ApiException.fromResponse(res);
+  }
+
+  /// POST /api/v1/starter_recipes/import with `{recipe_ids}`. Copies the
+  /// chosen starter recipes and their tags into the user's pool. Partial
+  /// success is HTTP 200: ids already in the pool or not in the pack come back
+  /// in [StarterImportResult.skipped]. [client] is for tests.
+  static Future<StarterImportResult> importStarterRecipes(
+    List<String> ids, {
+    http.Client? client,
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/v1/starter_recipes/import');
+    final body = jsonEncode({'recipe_ids': ids});
+    final res = client == null
+        ? await http.post(uri, headers: _jsonHeaders, body: body)
+        : await client.post(uri, headers: _jsonHeaders, body: body);
+    if (res.statusCode == 200) {
+      return _parseOk(
+        res,
+        'Starter import response',
+        StarterImportResult.fromJson,
+      );
     }
     throw ApiException.fromResponse(res);
   }

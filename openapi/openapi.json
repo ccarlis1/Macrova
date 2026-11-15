@@ -594,6 +594,51 @@
         "title": "MealSlot",
         "type": "object"
       },
+      "MicronutrientDefaultsResponse": {
+        "description": "The new-user default micronutrient goals for one demographic (Sprint 2 BE-20, D-A).\n\nRead-only. Derived from ``src/data_layer/upper_limits.py``, the one definition the MCP\nserver also applies. ``/api/v1/plan`` never applies it: a plan request without\n``micronutrient_goals`` still plans with no floors.",
+        "properties": {
+          "demographic": {
+            "description": "The demographic these defaults are for.",
+            "enum": [
+              "adult_male",
+              "adult_female",
+              "pregnancy",
+              "lactation"
+            ],
+            "title": "Demographic",
+            "type": "string"
+          },
+          "left_out": {
+            "description": "Nutrient keys the default leaves out because the bundled sample recipes can't meet them at the full weekly target, in reference-table order. A user may still add them back as goals.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Left Out",
+            "type": "array"
+          },
+          "micronutrient_goals": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "Default daily goals, nutrient key (e.g. 'vitamin_c_mg') -> daily amount: the demographic's daily RDIs (data/reference/rdi_by_demographic.json) minus the nutrients in left_out. Send them (edited or not) as PlanRequest.micronutrient_goals.",
+            "title": "Micronutrient Goals",
+            "type": "object"
+          },
+          "micronutrient_weekly_min_fraction": {
+            "description": "Default \u03c4: the fraction of each weekly goal a plan must reach (PlanRequest.micronutrient_weekly_min_fraction).",
+            "title": "Micronutrient Weekly Min Fraction",
+            "type": "number"
+          }
+        },
+        "required": [
+          "demographic",
+          "micronutrient_goals",
+          "left_out",
+          "micronutrient_weekly_min_fraction"
+        ],
+        "title": "MicronutrientDefaultsResponse",
+        "type": "object"
+      },
       "NutritionIngredientLine": {
         "properties": {
           "grams_per_unit": {
@@ -3122,6 +3167,64 @@
         "tags": [
           "meal_prep_batches"
         ]
+      }
+    },
+    "/api/v1/micronutrient_defaults": {
+      "get": {
+        "description": "The new-user default micronutrient goals for a demographic (read-only, BE-20).\n\nThe same default the MCP server applies when ``targets.demographic`` is set. Planning\nover HTTP is unchanged: ``/api/v1/plan`` applies goals only when the request sends them.",
+        "operationId": "get_micronutrient_defaults_api_v1_micronutrient_defaults_get",
+        "parameters": [
+          {
+            "description": "Demographic whose default micronutrient goals to return.",
+            "in": "query",
+            "name": "demographic",
+            "required": true,
+            "schema": {
+              "description": "Demographic whose default micronutrient goals to return.",
+              "enum": [
+                "adult_male",
+                "adult_female",
+                "pregnancy",
+                "lactation"
+              ],
+              "title": "Demographic",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MicronutrientDefaultsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "INVALID_REQUEST: demographic missing or not one of the supported values."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Micronutrient Defaults"
       }
     },
     "/api/v1/nutrition/summary": {

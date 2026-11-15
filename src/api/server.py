@@ -39,7 +39,13 @@ from src.data_layer.models import (
     MicronutrientProfile,
 )
 from src.data_layer.recipe_db import RecipeDB
-from src.data_layer.upper_limits import Demographic, upper_limits_for
+from src.data_layer.upper_limits import (
+    DEFAULT_MICRONUTRIENT_WEEKLY_MIN_FRACTION,
+    Demographic,
+    default_micronutrient_goals,
+    default_micronutrient_left_out,
+    upper_limits_for,
+)
 from src.data_layer import user_data
 from src.data_layer.nutrition_db import NutritionDB
 from src.data_layer.meal_prep import MealPrepBatchRepository
@@ -402,6 +408,40 @@ class StarterImportSkipped(BaseModel):
 class StarterImportResponse(BaseModel):
     imported: List[str]
     skipped: List[StarterImportSkipped]
+
+
+class MicronutrientDefaultsResponse(BaseModel):
+    """The new-user default micronutrient goals for one demographic (Sprint 2 BE-20, D-A).
+
+    Read-only. Derived from ``src/data_layer/upper_limits.py``, the one definition the MCP
+    server also applies. ``/api/v1/plan`` never applies it: a plan request without
+    ``micronutrient_goals`` still plans with no floors.
+    """
+
+    demographic: Demographic = Field(..., description="The demographic these defaults are for.")
+    micronutrient_goals: Dict[str, float] = Field(
+        ...,
+        description=(
+            "Default daily goals, nutrient key (e.g. 'vitamin_c_mg') -> daily amount: the "
+            "demographic's daily RDIs (data/reference/rdi_by_demographic.json) minus the "
+            "nutrients in left_out. Send them (edited or not) as PlanRequest.micronutrient_goals."
+        ),
+    )
+    left_out: List[str] = Field(
+        ...,
+        description=(
+            "Nutrient keys the default leaves out because the bundled sample recipes can't "
+            "meet them at the full weekly target, in reference-table order. A user may still "
+            "add them back as goals."
+        ),
+    )
+    micronutrient_weekly_min_fraction: float = Field(
+        ...,
+        description=(
+            "Default τ: the fraction of each weekly goal a plan must reach "
+            "(PlanRequest.micronutrient_weekly_min_fraction)."
+        ),
+    )
 
 
 class PlanFailure(BaseModel):
@@ -2057,6 +2097,38 @@ def list_starter_recipes() -> Any:
                 )
             )
         return StarterRecipesResponse(recipes=out)
+    except Exception as exc:
+        status_code, payload = map_exception_to_api_error(exc)
+        return JSONResponse(status_code=status_code, content=payload)
+
+
+@app.get(
+    "/api/v1/micronutrient_defaults",
+    response_model=MicronutrientDefaultsResponse,
+    responses={
+        400: {
+            "model": ApiErrorResponse,
+            "description": "INVALID_REQUEST: demographic missing or not one of the supported values.",
+        }
+    },
+)
+def get_micronutrient_defaults(
+    demographic: Demographic = Query(
+        ..., description="Demographic whose default micronutrient goals to return."
+    ),
+) -> Any:
+    """The new-user default micronutrient goals for a demographic (read-only, BE-20).
+
+    The same default the MCP server applies when ``targets.demographic`` is set. Planning
+    over HTTP is unchanged: ``/api/v1/plan`` applies goals only when the request sends them.
+    """
+    try:
+        return MicronutrientDefaultsResponse(
+            demographic=demographic,
+            micronutrient_goals=default_micronutrient_goals(demographic),
+            left_out=list(default_micronutrient_left_out(demographic)),
+            micronutrient_weekly_min_fraction=DEFAULT_MICRONUTRIENT_WEEKLY_MIN_FRACTION,
+        )
     except Exception as exc:
         status_code, payload = map_exception_to_api_error(exc)
         return JSONResponse(status_code=status_code, content=payload)

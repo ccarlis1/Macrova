@@ -66,6 +66,17 @@ Sprint 2 BE-17. On both `/plan` (`PlanRequest`) and `/plan-from-text` (`PlanFrom
 - **Failure code:** there is no UL-specific code. A UL prunes candidates during search (FC-3); when that leaves a day unable to meet its targets the plan fails like any other target miss, typically `FM-MACRO-INFEASIBLE` (`cause: macro_gap`).
 - The CLI reads the same value from the profile YAML's `demographic`, and `build_plan_request_from_profile` carries it. The API, CLI and MCP server all resolve ULs through `src/data_layer/upper_limits.py` (`upper_limits` / `upper_limits_for`).
 
+## Default micronutrient goals: `GET /api/v1/micronutrient_defaults` (read-only)
+
+Sprint 2 BE-20. Query parameter `demographic` (required; `adult_male`, `adult_female`, `pregnancy`, `lactation`). Any other or missing value is 400 `INVALID_REQUEST` (`{"error": {"code", "message"}}`). Response `MicronutrientDefaultsResponse`:
+
+- `demographic`: echoed.
+- `micronutrient_goals`: nutrient key → daily amount; the demographic's RDIs minus `left_out` (`default_micronutrient_goals`).
+- `left_out`: nutrient keys the default drops, in reference-table order (`default_micronutrient_left_out`).
+- `micronutrient_weekly_min_fraction`: the default τ (`DEFAULT_MICRONUTRIENT_WEEKLY_MIN_FRACTION`, 1.0).
+
+All four come from `src/data_layer/upper_limits.py`, the same default the MCP server applies for `targets.demographic`. The route does not change planning: `/plan` applies micronutrient floors only when the request sends `micronutrient_goals`, with or without `demographic`. A client that wants the default sends these goals itself.
+
 ## Recipe sync: `default_servings`
 
 `POST /api/v1/recipes/sync` items include `default_servings` (see `RecipeDetailResponse` / sync models in `server.py`). Flutter `Recipe.toSyncPayload()` sends `default_servings` from local `servings`.

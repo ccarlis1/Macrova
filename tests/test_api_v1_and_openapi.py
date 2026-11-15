@@ -59,6 +59,7 @@ def test_openapi_includes_v1_contract_paths():
         "/api/v1/meal_prep_batches/{batch_id}",
         "/api/v1/starter_recipes",
         "/api/v1/starter_recipes/import",
+        "/api/v1/micronutrient_defaults",
     ]
     missing = [p for p in required if p not in paths]
     assert not missing, f"missing paths: {missing}"
@@ -216,6 +217,25 @@ def test_openapi_plan_requests_have_demographic():
         assert "demographic" not in components[name].get("required", [])
         enums = [b.get("enum") for b in props["demographic"]["anyOf"] if "enum" in b]
         assert enums == [["adult_male", "adult_female", "pregnancy", "lactation"]]
+
+
+def test_openapi_micronutrient_defaults_contract():
+    """Sprint 2 BE-20: read-only per-demographic default micronutrient goals."""
+    schema = app.openapi()
+    get = schema["paths"]["/api/v1/micronutrient_defaults"]["get"]
+    assert set(schema["paths"]["/api/v1/micronutrient_defaults"]) == {"get"}
+    (param,) = get["parameters"]
+    assert (param["name"], param["in"], param["required"]) == ("demographic", "query", True)
+    assert param["schema"]["enum"] == ["adult_male", "adult_female", "pregnancy", "lactation"]
+    ok = get["responses"]["200"]["content"]["application/json"]["schema"]
+    assert _schema_ref_name(ok) == "MicronutrientDefaultsResponse"
+    bad = get["responses"]["400"]["content"]["application/json"]["schema"]
+    assert _schema_ref_name(bad) == "ApiErrorResponse"
+    model = _openapi_components()["MicronutrientDefaultsResponse"]
+    expected = {"demographic", "micronutrient_goals", "left_out", "micronutrient_weekly_min_fraction"}
+    assert set(model["properties"]) == expected
+    assert set(model["required"]) == expected
+    assert all(model["properties"][name].get("description") for name in expected)
 
 
 def test_openapi_plan_response_includes_failure_codes():

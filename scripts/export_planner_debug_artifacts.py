@@ -55,6 +55,7 @@ if _env_file.exists():
 
 from src.data_layer.nutrition_db import NutritionDB
 from src.data_layer.recipe_db import RecipeDB
+from src.data_layer.upper_limits import upper_limits_for
 from src.data_layer.user_profile import UserProfileLoader
 from src.ingestion.ingredient_cache import CachedIngredientLookup
 from src.ingestion.usda_client import USDAClient
@@ -192,7 +193,10 @@ def _run_planner(
     calculator = NutritionCalculator(provider)
     recipe_pool = convert_recipes(all_recipes, calculator)
 
-    result = plan_meals(planning_profile, recipe_pool, days)
+    # Same ULs as the HTTP body's ``demographic`` (BE-17); none when unset, as in src/cli.py.
+    resolved_ul = upper_limits_for(user.demographic)
+    ul_kwargs = {"resolved_ul": resolved_ul} if resolved_ul is not None else {}
+    result = plan_meals(planning_profile, recipe_pool, days, **ul_kwargs)
     return {
         "ingredient_source": ingredient_source,
         "success": result.success,

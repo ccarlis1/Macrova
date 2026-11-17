@@ -45,6 +45,7 @@ FIELD_ALLOWLIST = {"nutrition_source", "nutrient_source", "tag_type", "nutrition
 #: Models whose nutrition-shaped fields are legitimately not LLM nutrition output.
 CLASS_ALLOWLIST = {
     "PlannerTargets": "user targets parsed from natural language, not LLM-asserted nutrition",
+    "PlannerConstraints": "user limits and goals parsed from natural language, not LLM-asserted nutrition",
 }
 
 

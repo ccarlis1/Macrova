@@ -61,7 +61,7 @@ All commands run from the repo root, except Flutter.
 4. Tests never change committed or personal data. Enforced by `tests/conftest.py::_guard_committed_recipe_data` and `tests/conftest.py::_guard_personal_profile`.
 5. The OpenAPI snapshot matches the code, and changes are additive. Guarded by CI's `--check` and `.claude/hooks/check_contract.py`.
 6. The planner stays deterministic. Guarded by `.claude/hooks/check_determinism.py` (static) and the hash-seed rerun in `.claude/hooks/verify_stop.py::_run_backend_gates`.
-7. LLM output schemas carry no nutrition numbers (`PlannerTargets` exempt). Enforced by `.claude/hooks/check_llm_lane.py`.
+7. LLM output schemas carry no nutrition numbers (`PlannerTargets` and `PlannerConstraints` exempt). Enforced by `.claude/hooks/check_llm_lane.py`.
 
 ## Depends on / used by
 `evaluation/harness/run_benchmark.py` imports `src.api.server`, `src.planning.planner`, the converters, the meal-prep repository and `src.llm.tag_repository`. `evaluation/harness/compare.py` imports the tag repository, `src/planning/phase4_scoring.py::MEAL_ROLE_SLUGS` and oracle helpers. The oracle, build and library modules use only the standard library. The data-track and LLM-overhaul harnesses import `src/`. Hooks import only `.claude/hooks/_common.py` and shell out to .venv/bin/python.

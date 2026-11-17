@@ -84,11 +84,6 @@ def load_allergen_classes(path: Optional[str] = None) -> Dict[str, object]:
     }
 
 
-def clear_allergen_cache() -> None:
-    """Test helper: drop the cached table."""
-    load_allergen_classes.cache_clear()
-
-
 def is_classified(name: str, *, path: Optional[str] = None) -> bool:
     """True if the ingredient name appears in a class members list or no_major_allergen."""
     table = load_allergen_classes(path)

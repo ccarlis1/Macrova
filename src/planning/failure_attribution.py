@@ -17,7 +17,6 @@ from src.data_layer.models import MicronutrientProfile, NutritionProfile, UpperL
 from src.data_layer.upper_limits import validate_daily_upper_limits
 
 from src.planning.micronutrient_policy import (
-    is_below_weekly_minimum,
     tau_from_profile,
     weekly_minimum_total,
 )
@@ -785,24 +784,3 @@ def weekly_tracker_from_best_micro(
         days_remaining=0,
         carryover_needs={},
     )
-
-
-def is_below_any_weekly_floor(
-    weekly_tracker: WeeklyTracker,
-    profile: PlanningUserProfile,
-    D: int,
-) -> bool:
-    """True if any tracked micronutrient is below τ × RDI × D."""
-    tracked = profile.micronutrient_targets or {}
-    if not tracked:
-        return False
-    tau = tau_from_profile(profile)
-    micro = micronutrient_profile_to_dict(
-        getattr(weekly_tracker.weekly_totals, "micronutrients", None)
-    )
-    for n, daily_rdi in tracked.items():
-        if daily_rdi <= 0:
-            continue
-        if is_below_weekly_minimum(micro.get(n, 0.0), daily_rdi, D, tau):
-            return True
-    return False

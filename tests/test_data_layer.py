@@ -10,7 +10,6 @@ from src.data_layer.models import (
     Recipe,
     NutritionProfile,
     UserProfile,
-    NutritionGoals,
 )
 from src.data_layer.recipe_db import RecipeDB
 from src.data_layer.ingredient_db import IngredientDB

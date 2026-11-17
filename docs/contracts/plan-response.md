@@ -57,6 +57,35 @@ On both `/plan` (`PlanRequest`) and `/plan-from-text` (`PlanFromTextRequest`):
 - `dietary_flags` (optional)
 - `recipe_tags_path` (optional)
 
+## Daily upper limits: `demographic` (request)
+
+Sprint 2 BE-17. On both `/plan` (`PlanRequest`) and `/plan-from-text` (`PlanFromTextRequest`), optional `demographic` is one of `adult_male`, `adult_female`, `pregnancy`, `lactation` (the demographics `data/reference/ul_by_demographic.json` and `rdi_by_demographic.json` carry). Any other value is 400 `INVALID_REQUEST`.
+
+- **Set:** the planner enforces that demographic's daily ULs, per day, in deterministic and assisted modes (`plan_meals(..., resolved_ul=...)`, threaded through `plan_with_llm_feedback`). It does **not** set `micronutrient_goals`.
+- **Omitted:** no ULs; the request plans exactly as before the field existed.
+- **Failure code:** there is no UL-specific code. A UL prunes candidates during search (FC-3); when that leaves a day unable to meet its targets the plan fails like any other target miss, typically `FM-MACRO-INFEASIBLE` (`cause: macro_gap`).
+- The CLI reads the same value from the profile YAML's `demographic`, and `build_plan_request_from_profile` carries it. The API, CLI and MCP server all resolve ULs through `src/data_layer/upper_limits.py` (`upper_limits` / `upper_limits_for`).
+
+## Default micronutrient goals: `GET /api/v1/micronutrient_defaults` (read-only)
+
+Sprint 2 BE-20. Query parameter `demographic` (required; `adult_male`, `adult_female`, `pregnancy`, `lactation`). Any other or missing value is 400 `INVALID_REQUEST` (`{"error": {"code", "message"}}`). Response `MicronutrientDefaultsResponse`:
+
+- `demographic`: echoed.
+- `micronutrient_goals`: nutrient key → daily amount; the demographic's RDIs minus `left_out` (`default_micronutrient_goals`).
+- `left_out`: nutrient keys the default drops, in reference-table order (`default_micronutrient_left_out`).
+- `micronutrient_weekly_min_fraction`: the default τ (`DEFAULT_MICRONUTRIENT_WEEKLY_MIN_FRACTION`, 1.0).
+
+All four come from `src/data_layer/upper_limits.py`, the same default the MCP server applies for `targets.demographic`. The route does not change planning: `/plan` applies micronutrient floors only when the request sends `micronutrient_goals`, with or without `demographic`. A client that wants the default sends these goals itself.
+
 ## Recipe sync: `default_servings`
 
 `POST /api/v1/recipes/sync` items include `default_servings` (see `RecipeDetailResponse` / sync models in `server.py`). Flutter `Recipe.toSyncPayload()` sends `default_servings` from local `servings`.
+
+## Recipe saves are plannable (sync, create, update)
+
+Sprint 2 BE-19. A recipe saved through `POST /api/v1/recipes/sync`, `POST /api/v1/recipes` or `PUT /api/v1/recipes/{id}` is either plannable or rejected; it never drops out of the pool later.
+
+- **Line weights.** An ingredient line may send `grams_per_unit` (> 0): the weight of one `unit` of that line. It is stored on the line in `recipes.json` (only when set) and used by `NutritionCalculator.to_grams` only after mass units and the ingredient record's own conversions. It is never written to `data/reference/ingredient_nutrition.json`. Recipe detail shows it in that line's `unit_conversions` when the record has no conversion for the unit.
+- **Save-time check.** Each line must resolve against the **local** ingredient table (no USDA calls at save) and convert to grams. Create/update return HTTP 400 `UNIT_NOT_CONVERTIBLE` or `INGREDIENT_UNRESOLVED`, both with `details: {ingredient, unit}`. Sync skips the item (not stored, not in `synced_ids`) and appends `"<recipe id>: <CODE>: <message>"` to `errors`; the other items still sync. A nutrient-bearing `to taste` line is still a whole-request 422 `INGREDIENT_QUANTITY_REQUIRED` (BE-18).
+- **Tags.** Every saved recipe gets a `tags_by_id` entry (merged into the tag store): `prep_time_bucket` and the `time` slug are derived from `cooking_time_minutes`; client `tag_slugs_by_type` replace the other types (omitted keeps the stored ones). Optional item fields `cuisine` (the tagger's closed vocabulary), `cost_level` and `dietary_flags` are written when sent; when omitted the stored value is kept, else `"unknown"`, `"standard"`, `[]`. An out-of-vocabulary value is 400 `INVALID_REQUEST`.
+- The starter-pack import (`/api/v1/starter_recipes/import`) copies shipped recipes and tags as-is and does not run these checks.

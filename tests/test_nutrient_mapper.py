@@ -45,9 +45,13 @@ class TestUSDANutrientMap:
         assert 1162 in USDA_NUTRIENT_MAP
         assert USDA_NUTRIENT_MAP[1162]["field"] == "vitamin_c_mg"
         
-        # Vitamin D (IU)
-        assert 1114 in USDA_NUTRIENT_MAP
+        # Vitamin D: 1110 is the IU entry (number 324), 1114 the µg entry (328)
+        assert USDA_NUTRIENT_MAP[1110]["field"] == "vitamin_d_iu"
+        assert USDA_NUTRIENT_MAP[1110]["unit"] == "IU"
+        assert USDA_NUTRIENT_MAP[1110].get("conversion") is None
         assert USDA_NUTRIENT_MAP[1114]["field"] == "vitamin_d_iu"
+        assert USDA_NUTRIENT_MAP[1114]["unit"] == "µg"
+        assert USDA_NUTRIENT_MAP[1114]["conversion"] == 40.0
         
         # Vitamin E
         assert 1109 in USDA_NUTRIENT_MAP
@@ -125,7 +129,7 @@ class TestNutrientMapper:
                 {"nutrient": {"id": 1005}, "amount": 20},       # Carbs (required)
                 {"nutrient": {"id": 1106}, "amount": 6.0},      # Vitamin A (µg)
                 {"nutrient": {"id": 1162}, "amount": 1.6},      # Vitamin C (mg)
-                {"nutrient": {"id": 1114}, "amount": 5.0},      # Vitamin D (IU)
+                {"nutrient": {"id": 1110}, "amount": 5.0},      # Vitamin D (IU)
                 {"nutrient": {"id": 1109}, "amount": 0.26},     # Vitamin E (mg)
                 {"nutrient": {"id": 1185}, "amount": 0.3},      # Vitamin K (µg)
             ]
@@ -316,11 +320,7 @@ class TestNutrientMapper:
     # === Unit Conversion Tests ===
 
     def test_vitamin_d_mcg_to_iu_conversion(self, mapper):
-        """Test Vitamin D conversion from mcg to IU when needed.
-        
-        USDA may report Vitamin D in mcg (nutrient ID 1110) instead of IU.
-        1 mcg Vitamin D = 40 IU
-        """
+        """Vitamin D only in µg (FDC id 1114, number 328): 1 µg = 40 IU."""
         raw_payload = {
             "fdcId": 171705,
             "foodNutrients": [
@@ -328,17 +328,17 @@ class TestNutrientMapper:
                 {"nutrient": {"id": 1003}, "amount": 10},
                 {"nutrient": {"id": 1004}, "amount": 5},
                 {"nutrient": {"id": 1005}, "amount": 20},
-                {"nutrient": {"id": 1110}, "amount": 0.1},  # Vitamin D in mcg
+                {"nutrient": {"id": 1114}, "amount": 0.1},  # Vitamin D in µg
             ]
         }
         
         result = mapper.map_nutrients(raw_payload)
         
-        # 0.1 mcg * 40 = 4 IU
-        assert result.micronutrients.vitamin_d_iu == 4.0
+        # 0.1 µg * 40 = 4 IU
+        assert result.micronutrients.vitamin_d_iu == pytest.approx(4.0)
 
     def test_vitamin_d_iu_direct(self, mapper):
-        """Test Vitamin D when provided directly in IU."""
+        """Vitamin D only in IU (FDC id 1110, number 324): used as is."""
         raw_payload = {
             "fdcId": 171705,
             "foodNutrients": [
@@ -346,13 +346,76 @@ class TestNutrientMapper:
                 {"nutrient": {"id": 1003}, "amount": 10},
                 {"nutrient": {"id": 1004}, "amount": 5},
                 {"nutrient": {"id": 1005}, "amount": 20},
-                {"nutrient": {"id": 1114}, "amount": 10.0},  # Vitamin D in IU
+                {"nutrient": {"id": 1110}, "amount": 10.0},  # Vitamin D in IU
             ]
         }
         
         result = mapper.map_nutrients(raw_payload)
         
         assert result.micronutrients.vitamin_d_iu == 10.0
+
+    @pytest.mark.parametrize("order", ["iu_first", "ug_first"])
+    def test_vitamin_d_both_units_uses_iu_not_x40_not_sum(self, mapper, order):
+        """DATA-2 regression: FDC reports vitamin D in IU and in µg.
+
+        Shaped like FDC 171287 (Egg, whole, raw, fresh), nutrient objects as the
+        /food/{fdcId} endpoint returns them. The result must be the IU value
+        (82), not IU × 40 (3280) and not IU × 40 + µg (3282, the old bug).
+        """
+        iu = {
+            "type": "FoodNutrient",
+            "nutrient": {
+                "id": 1110,
+                "number": "324",
+                "name": "Vitamin D (D2 + D3), International Units",
+                "unitName": "IU",
+            },
+            "amount": 82.0,
+        }
+        ug = {
+            "type": "FoodNutrient",
+            "nutrient": {
+                "id": 1114,
+                "number": "328",
+                "name": "Vitamin D (D2 + D3)",
+                "unitName": "µg",
+            },
+            "amount": 2.0,
+        }
+        d3 = {
+            "type": "FoodNutrient",
+            "nutrient": {
+                "id": 1112,
+                "number": "326",
+                "name": "Vitamin D3 (cholecalciferol)",
+                "unitName": "µg",
+            },
+            "amount": 2.0,
+        }
+        vitamin_d = [iu, ug, d3] if order == "iu_first" else [d3, ug, iu]
+        raw_payload = {
+            "fdcId": 171287,
+            "dataType": "SR Legacy",
+            "description": "Egg, whole, raw, fresh",
+            "foodNutrients": [
+                {"nutrient": {"id": 1008, "unitName": "kcal"}, "amount": 143.0},
+                {"nutrient": {"id": 1003, "unitName": "g"}, "amount": 12.56},
+                {"nutrient": {"id": 1004, "unitName": "g"}, "amount": 9.51},
+                {"nutrient": {"id": 1005, "unitName": "g"}, "amount": 0.72},
+                *vitamin_d,
+            ],
+        }
+
+        result = mapper.map_nutrients(raw_payload)
+
+        assert result.micronutrients.vitamin_d_iu == 82.0
+
+    def test_no_tracked_field_is_fed_by_two_primary_ids(self):
+        """Only an explicit ``fallback`` id may share a field with another id."""
+        primary_fields = [
+            m["field"] for m in USDA_NUTRIENT_MAP.values() if not m.get("fallback")
+        ]
+        assert len(primary_fields) == len(set(primary_fields))
 
     # === Data Integrity Tests ===
 

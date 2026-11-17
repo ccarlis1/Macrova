@@ -15,6 +15,8 @@ class StorageService {
   static const _cookedSlotsKey = 'cooked_slots';
   /// Local-only favorite recipe ids. Not a planner tag / not synced.
   static const _favoriteRecipeIdsKey = 'favorite_recipe_ids';
+  /// Local-only: whether the Meal Plan View meal-prep tray is collapsed.
+  static const _mealPrepTrayCollapsedKey = 'meal_prep_tray_collapsed';
 
   static Future<void> saveProfile(UserProfile profile) async {
     final prefs = await SharedPreferences.getInstance();
@@ -97,5 +99,17 @@ class StorageService {
     final list = prefs.getStringList(_favoriteRecipeIdsKey);
     if (list == null) return {};
     return list.where((id) => id.isNotEmpty).toSet();
+  }
+
+  /// Persists the meal-prep tray collapse state (device-local only).
+  static Future<void> saveMealPrepTrayCollapsed(bool collapsed) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_mealPrepTrayCollapsedKey, collapsed);
+  }
+
+  /// False (expanded) until the user collapses the tray.
+  static Future<bool> loadMealPrepTrayCollapsed() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_mealPrepTrayCollapsedKey) ?? false;
   }
 }

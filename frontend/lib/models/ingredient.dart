@@ -2,6 +2,52 @@ import 'package:uuid/uuid.dart';
 
 enum IngredientSource { saved, api, custom }
 
+/// A line's [unit] has no gram weight for [ingredientName]: no entry in its
+/// unit conversions and not a mass unit. Its nutrition is unknown, so callers
+/// mark the line unresolved instead of using the quantity as grams.
+class UnknownUnitException implements Exception {
+  final String unit;
+  final String ingredientName;
+
+  const UnknownUnitException(this.unit, this.ingredientName);
+
+  @override
+  String toString() =>
+      "UnknownUnitException: no gram weight for '$unit' ($ingredientName)";
+}
+
+/// Grams for [quantity] of [unit], with the same rules as the server's
+/// `NutritionCalculator.record_grams` for units it can know without a
+/// per-ingredient record: `g` (and `gram`/`grams`), the [unitConversions]
+/// entry for the unit, `oz` (and `ounce`/`ounces`) at 28.35 g, and
+/// `to taste` as 0 g (excluded from nutrition). Anything else throws
+/// [UnknownUnitException]: no density guesses, no "treat as grams".
+double gramsForUnit({
+  required double quantity,
+  required String unit,
+  required Map<String, double> unitConversions,
+  required String ingredientName,
+}) {
+  final raw = unit.trim().toLowerCase();
+  if (raw == 'to taste') return 0;
+  final canonical = _unitAliases[raw] ?? raw;
+  if (canonical == 'g') return quantity;
+  final gramsPerUnit = unitConversions[unit] ?? unitConversions[canonical];
+  if (gramsPerUnit != null && gramsPerUnit > 0) return quantity * gramsPerUnit;
+  if (canonical == 'oz') return quantity * _ozToGrams;
+  throw UnknownUnitException(unit, ingredientName);
+}
+
+/// Server `NutritionCalculator.OZ_TO_GRAMS` (mass, valid for any ingredient).
+const _ozToGrams = 28.35;
+
+const _unitAliases = {
+  'gram': 'g',
+  'grams': 'g',
+  'ounce': 'oz',
+  'ounces': 'oz',
+};
+
 // ignore: prefer_const_constructors
 final _resolveIdUuid = Uuid();
 
@@ -59,13 +105,16 @@ class Ingredient {
   double carbsForGrams(double grams) => carbsPer100g * grams / 100;
   double fatForGrams(double grams) => fatPer100g * grams / 100;
 
-  /// Convert a quantity in the given unit to grams using unitConversions.
-  double toGrams(double quantity, String unit) {
-    if (unit == 'g') return quantity;
-    final gramsPerUnit = unitConversions[unit];
-    if (gramsPerUnit == null) return quantity;
-    return quantity * gramsPerUnit;
-  }
+  /// Convert a quantity in the given unit to grams using [unitConversions].
+  ///
+  /// Throws [UnknownUnitException] when [unit] has no gram weight (see
+  /// [gramsForUnit]); the quantity is never treated as grams.
+  double toGrams(double quantity, String unit) => gramsForUnit(
+        quantity: quantity,
+        unit: unit,
+        unitConversions: unitConversions,
+        ingredientName: name,
+      );
 
   Map<String, dynamic> toJson() => {
         'id': id,

@@ -24,7 +24,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, constr, model_validator
-from dataclasses import dataclass, fields as dc_fields
+from dataclasses import dataclass, fields as dc_fields, replace
 
 from src.ingestion.nutrient_mapper import MappedNutrition, NutrientMapper
 from src.ingestion.ingredient_cache import CachedIngredientLookup
@@ -39,6 +39,13 @@ from src.data_layer.models import (
     MicronutrientProfile,
 )
 from src.data_layer.recipe_db import RecipeDB
+from src.data_layer.upper_limits import (
+    DEFAULT_MICRONUTRIENT_WEEKLY_MIN_FRACTION,
+    Demographic,
+    default_micronutrient_goals,
+    default_micronutrient_left_out,
+    upper_limits_for,
+)
 from src.data_layer import user_data
 from src.data_layer.nutrition_db import NutritionDB
 from src.data_layer.meal_prep import MealPrepBatchRepository
@@ -151,6 +158,20 @@ class ApiErrorResponse(BaseModel):
 
 #: Error responses shared by the recipe save routes (sync, create, update).
 RECIPE_SAVE_ERROR_RESPONSES: Dict[Any, Dict[str, Any]] = {
+    400: {
+        "model": ApiErrorResponse,
+        "description": (
+            "UNIT_NOT_CONVERTIBLE (create/update): a line's unit has no gram conversion "
+            "(not a mass unit, not on the ingredient record, no line grams_per_unit). "
+            "INGREDIENT_UNRESOLVED (create/update): a line's ingredient isn't in the local "
+            "ingredient table. Both carry details {ingredient, unit}; sync instead skips "
+            "the item and reports '<recipe id>: <CODE>: <message>' in errors. "
+            "INVALID_REQUEST: schema validation (e.g. cuisine outside the vocabulary; "
+            "whole request, sync too), or (create/update) a sent dietary flag an "
+            "ingredient line contradicts, e.g. 'vegan' with honey; sync instead skips "
+            "that item and reports '<recipe id>: INVALID_REQUEST: <message>' in errors."
+        ),
+    },
     422: {
         "model": ApiErrorResponse,
         "description": (
@@ -182,6 +203,15 @@ class PlanRequest(BaseModel):
     micronutrient_weekly_min_fraction: float = Field(default=1.0, gt=0.0, le=1.0)
     # HC-5 hard daily ceiling. May be below daily_calories; the planner reports FM-2.
     max_daily_calories: Optional[int] = Field(default=None, gt=0)
+    # Daily upper limits (BE-17). Unset => no ULs (unchanged behavior).
+    demographic: Optional[Demographic] = Field(
+        default=None,
+        description=(
+            "Optional demographic whose daily upper limits (ULs) the planner enforces per day "
+            "(data/reference/ul_by_demographic.json). Omit for no ULs. Does not set "
+            "micronutrient goals."
+        ),
+    )
 
     # Optional tag-based recipe pool filtering (deterministic).
     cuisine: Optional[List[str]] = None
@@ -254,6 +284,16 @@ class PlanFromTextRequest(BaseModel):
         Literal["deterministic", "assisted", "assisted_cached", "assisted_live"]
     ] = None
 
+    # Daily upper limits (BE-17). Unset => no ULs (unchanged behavior).
+    demographic: Optional[Demographic] = Field(
+        default=None,
+        description=(
+            "Optional demographic whose daily upper limits (ULs) the planner enforces per day "
+            "(data/reference/ul_by_demographic.json). Omit for no ULs. Does not set "
+            "micronutrient goals."
+        ),
+    )
+
 
 class ProfileScheduleWriteResponse(BaseModel):
     schedule_days: List[Dict[str, Any]]
@@ -321,6 +361,18 @@ class RecipeDetailResponse(BaseModel):
     ingredients: List[Dict[str, Any]]
     tag_slugs_by_type: Dict[str, List[str]] = Field(default_factory=dict)
     is_meal_prep_capable: bool
+    cuisine: Optional[str] = Field(
+        default=None,
+        description="The recipe's cuisine from its tag store entry; null when the recipe has no entry.",
+    )
+    cost_level: Optional[str] = Field(
+        default=None,
+        description="The recipe's cost level from its tag store entry; null when the recipe has no entry.",
+    )
+    dietary_flags: Optional[List[str]] = Field(
+        default=None,
+        description="The recipe's dietary flags from its tag store entry; null when the recipe has no entry.",
+    )
 
 
 class StarterRecipe(BaseModel):
@@ -356,6 +408,40 @@ class StarterImportSkipped(BaseModel):
 class StarterImportResponse(BaseModel):
     imported: List[str]
     skipped: List[StarterImportSkipped]
+
+
+class MicronutrientDefaultsResponse(BaseModel):
+    """The new-user default micronutrient goals for one demographic (Sprint 2 BE-20, D-A).
+
+    Read-only. Derived from ``src/data_layer/upper_limits.py``, the one definition the MCP
+    server also applies. ``/api/v1/plan`` never applies it: a plan request without
+    ``micronutrient_goals`` still plans with no floors.
+    """
+
+    demographic: Demographic = Field(..., description="The demographic these defaults are for.")
+    micronutrient_goals: Dict[str, float] = Field(
+        ...,
+        description=(
+            "Default daily goals, nutrient key (e.g. 'vitamin_c_mg') -> daily amount: the "
+            "demographic's daily RDIs (data/reference/rdi_by_demographic.json) minus the "
+            "nutrients in left_out. Send them (edited or not) as PlanRequest.micronutrient_goals."
+        ),
+    )
+    left_out: List[str] = Field(
+        ...,
+        description=(
+            "Nutrient keys the default leaves out because the bundled sample recipes can't "
+            "meet them at the full weekly target, in reference-table order. A user may still "
+            "add them back as goals."
+        ),
+    )
+    micronutrient_weekly_min_fraction: float = Field(
+        ...,
+        description=(
+            "Default τ: the fraction of each weekly goal a plan must reach "
+            "(PlanRequest.micronutrient_weekly_min_fraction)."
+        ),
+    )
 
 
 class PlanFailure(BaseModel):
@@ -857,6 +943,14 @@ def _flutter_ingredient_entries(
             entry["resolved"] = False
             continue
         entry["unit_conversions"] = NutritionCalculator.unit_conversions(info)
+        # The line's own unit, as the calculator converts it (oz, aliases,
+        # BASE_SERVING_WEIGHTS such as eggs ``large``): grams for quantity 1.
+        unit_grams = calculator.record_grams(replace(ing, quantity=1.0), info)
+        if unit_grams is not None and unit_grams > 0:
+            entry["unit_conversions"].setdefault(ing.unit, float(unit_grams))
+        if ing.grams_per_unit is not None and unit_grams is None:
+            # The line's own weight (BE-19); the record wins when it has the unit.
+            entry["unit_conversions"][ing.unit] = float(ing.grams_per_unit)
         try:
             grams = calculator.to_grams(ing, info)
             prof = calculator.calculate_ingredient_nutrition(ing)
@@ -935,6 +1029,15 @@ def _local_ingredient_to_resolve_payload(data: Dict[str, Any]) -> Dict[str, Any]
     }
 
 
+def _resolved_ul_kwargs(user_profile: UserProfile) -> Dict[str, Any]:
+    """``{"resolved_ul": ...}`` for the profile's demographic, or ``{}`` when unset (BE-17).
+
+    Empty when unset, so planner calls are exactly what they were before ULs were wired.
+    """
+    resolved_ul = upper_limits_for(getattr(user_profile, "demographic", None))
+    return {"resolved_ul": resolved_ul} if resolved_ul is not None else {}
+
+
 def _build_user_profile(
     request: PlanRequest,
     *,
@@ -988,6 +1091,7 @@ def _build_user_profile(
         max_daily_calories=request.max_daily_calories,
         schedule_days=schedule_days,
         pins=list(persisted_pins or []),
+        demographic=request.demographic,
     )
     return profile, warnings
 
@@ -1092,6 +1196,15 @@ class NutritionIngredientLine(BaseModel):
     name: constr(strip_whitespace=True, min_length=1)  # type: ignore[valid-type]
     quantity: float = Field(..., ge=0)
     unit: str = Field(..., min_length=1)
+    grams_per_unit: Optional[float] = Field(
+        None,
+        gt=0,
+        description=(
+            "Weight in grams of one `unit` of this line (e.g. the Ingredient Hub's cup "
+            "weight), as on recipe sync lines. Used only when the ingredient record has "
+            "no conversion for the unit."
+        ),
+    )
 
 
 class NutritionSummaryRequest(BaseModel):
@@ -1224,6 +1337,9 @@ def _nutrition_line_to_data_ingredient(line: NutritionIngredientLine) -> DataIng
         is_to_taste=is_tt,
         normalized_unit=unit,
         normalized_quantity=qty,
+        # Line weight (BE-19): the calculator uses it only when the record has no
+        # conversion for the unit.
+        grams_per_unit=None if is_tt else line.grams_per_unit,
     )
 
 
@@ -1325,8 +1441,9 @@ async def plan_meals_endpoint(
             # Omitted => deterministic regardless of LLM env (assisted modes are explicit-only).
             effective_mode = "deterministic"
 
+        ul_kwargs = _resolved_ul_kwargs(user_profile)
         if effective_mode == "deterministic":
-            result = plan_meals(planning_profile, recipe_pool, plan_request.days)
+            result = plan_meals(planning_profile, recipe_pool, plan_request.days, **ul_kwargs)
         else:
             if not llm_settings.enabled:
                 raise LLMPlanningModeError(
@@ -1371,6 +1488,7 @@ async def plan_meals_endpoint(
                 deterministic_strict_override=deterministic_strict_override,
                 use_feedback_cache=use_feedback_cache,
                 force_live_generation=force_live_generation,
+                **ul_kwargs,
             )
 
             # Ensure formatter sees any recipes persisted by the feedback loop.
@@ -1445,6 +1563,7 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
                 ) from e
 
             user_profile = user_profile_from_planner_config(cfg)
+            user_profile.demographic = request.demographic
             days = int(cfg.days)
             # Deterministic mode only allows explicit request fields for recipe-pool filtering;
             # never infer cuisine/cost from the prompt.
@@ -1464,6 +1583,7 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
             client = build_llm_client()
             cfg = parse_nl_config(client, request.prompt)
             user_profile = user_profile_from_planner_config(cfg)
+            user_profile.demographic = request.demographic
             days = int(cfg.days)
 
             # LLM overhaul Stage 8: cuisine/budget inferred from the prompt are soft preferences
@@ -1529,8 +1649,9 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
         recipe_by_id = inputs.recipe_by_id
         planning_profile = inputs.planning_profile
 
+        ul_kwargs = _resolved_ul_kwargs(user_profile)
         if effective_mode == "deterministic":
-            result = plan_meals(planning_profile, recipe_pool, days)
+            result = plan_meals(planning_profile, recipe_pool, days, **ul_kwargs)
         else:
             llm_client = build_llm_client()
             validation_provider = build_usda_provider()
@@ -1566,6 +1687,7 @@ def plan_from_text_endpoint(request: PlanFromTextRequest) -> Dict[str, Any]:
                 deterministic_strict_override=deterministic_strict_override,
                 use_feedback_cache=use_feedback_cache,
                 force_live_generation=force_live_generation,
+                **ul_kwargs,
             )
 
             # Ensure formatter sees any recipes persisted by the feedback loop.
@@ -1868,6 +1990,15 @@ def ingredient_resolve_endpoint(request: IngredientResolveRequest) -> Any:
         return JSONResponse(status_code=status_code, content=payload)
 
 
+def _save_time_calculator() -> NutritionCalculator:
+    """Calculator for save-time checks: the local provider the plan endpoint builds.
+
+    Local only, never USDA: a recipe whose ingredient exists only via
+    ``ingredient_source=api`` is rejected at save (``INGREDIENT_UNRESOLVED``).
+    """
+    return NutritionCalculator(LocalIngredientProvider(NutritionDB(ingredients_path)))
+
+
 @app.post("/api/v1/recipes/sync", response_model=RecipeSyncResponse, responses=RECIPE_SAVE_ERROR_RESPONSES)
 @app.post("/api/recipes/sync", response_model=RecipeSyncResponse, responses=RECIPE_SAVE_ERROR_RESPONSES)
 def sync_recipes_endpoint(body: RecipeSyncRequest) -> Any:
@@ -1875,12 +2006,15 @@ def sync_recipes_endpoint(body: RecipeSyncRequest) -> Any:
     try:
         if not body.recipes:
             return RecipeSyncResponse(synced_ids=[])
+        errors: List[str] = []
         synced_ids = atomic_upsert_recipes_by_id(
             path=recipes_path,
             items=body.recipes,
             tag_path=DEFAULT_TAG_PATH,
+            calculator=_save_time_calculator(),
+            errors=errors,
         )
-        return RecipeSyncResponse(synced_ids=synced_ids)
+        return RecipeSyncResponse(synced_ids=synced_ids, errors=errors)
     except HTTPException:
         raise
     except Exception as exc:
@@ -1897,6 +2031,7 @@ def create_recipe_endpoint(item: RecipeSyncItem) -> Any:
             path=recipes_path,
             items=[item],
             tag_path=DEFAULT_TAG_PATH,
+            calculator=_save_time_calculator(),
         )
         return RecipeSyncResponse(synced_ids=synced_ids)
     except HTTPException:
@@ -1925,6 +2060,7 @@ def put_recipe_endpoint(recipe_id: str, item: RecipeSyncItem) -> Any:
             path=recipes_path,
             items=[item],
             tag_path=DEFAULT_TAG_PATH,
+            calculator=_save_time_calculator(),
         )
         return RecipeSyncResponse(synced_ids=synced_ids)
     except HTTPException:
@@ -1961,6 +2097,38 @@ def list_starter_recipes() -> Any:
                 )
             )
         return StarterRecipesResponse(recipes=out)
+    except Exception as exc:
+        status_code, payload = map_exception_to_api_error(exc)
+        return JSONResponse(status_code=status_code, content=payload)
+
+
+@app.get(
+    "/api/v1/micronutrient_defaults",
+    response_model=MicronutrientDefaultsResponse,
+    responses={
+        400: {
+            "model": ApiErrorResponse,
+            "description": "INVALID_REQUEST: demographic missing or not one of the supported values.",
+        }
+    },
+)
+def get_micronutrient_defaults(
+    demographic: Demographic = Query(
+        ..., description="Demographic whose default micronutrient goals to return."
+    ),
+) -> Any:
+    """The new-user default micronutrient goals for a demographic (read-only, BE-20).
+
+    The same default the MCP server applies when ``targets.demographic`` is set. Planning
+    over HTTP is unchanged: ``/api/v1/plan`` applies goals only when the request sends them.
+    """
+    try:
+        return MicronutrientDefaultsResponse(
+            demographic=demographic,
+            micronutrient_goals=default_micronutrient_goals(demographic),
+            left_out=list(default_micronutrient_left_out(demographic)),
+            micronutrient_weekly_min_fraction=DEFAULT_MICRONUTRIENT_WEEKLY_MIN_FRACTION,
+        )
     except Exception as exc:
         status_code, payload = map_exception_to_api_error(exc)
         return JSONResponse(status_code=status_code, content=payload)
@@ -2073,6 +2241,11 @@ def get_recipe_detail(recipe_id: str) -> Any:
             "ingredients": ingredients_json,
             "tag_slugs_by_type": tag_slugs_by_type,
             "is_meal_prep_capable": is_meal_prep_capable,
+            "cuisine": recipe_tags.cuisine if recipe_tags else None,
+            "cost_level": recipe_tags.cost_level.value if recipe_tags else None,
+            "dietary_flags": (
+                [flag.value for flag in recipe_tags.dietary_flags] if recipe_tags else None
+            ),
         }
     except HTTPException:
         raise

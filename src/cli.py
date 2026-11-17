@@ -29,7 +29,7 @@ from src.providers.api_provider import APIIngredientProvider, IngredientResoluti
 from src.config.llm_settings import load_llm_settings
 from src.llm.client import LLMClient
 from src.llm.pipeline import generate_validate_persist_recipes
-from src.data_layer.upper_limits import UpperLimitsLoader, resolve_upper_limits
+from src.data_layer.upper_limits import upper_limits_for
 from src.llm.tag_filtering_service import apply_tag_filtering
 from src.llm.recipe_tagger import tag_recipes
 from src.llm.tag_repository import load_recipe_tags, upsert_recipe_tags
@@ -441,9 +441,9 @@ def main():
         )
         planning_profile.batch_locks = parity_ctx.batch_locks
 
-
-        loader = UpperLimitsLoader("data/reference/ul_by_demographic.json")
-        resolved_ul = resolve_upper_limits(loader, demographic="adult_male", overrides=None)
+        # Daily ULs for the YAML ``demographic`` (BE-17); none when it is unset.
+        resolved_ul = upper_limits_for(user_profile.demographic)
+        ul_kwargs = {"resolved_ul": resolved_ul} if resolved_ul is not None else {}
 
         print("Planning meals...", file=sys.stderr)
         llm_settings = load_llm_settings()
@@ -454,7 +454,7 @@ def main():
         )
 
         if effective_mode == "deterministic":
-            result = plan_meals(planning_profile, recipe_pool, args.days)
+            result = plan_meals(planning_profile, recipe_pool, args.days, **ul_kwargs)
         else:
             if not llm_settings.enabled:
                 raise ValueError(
@@ -492,6 +492,7 @@ def main():
                 deterministic_strict_override=deterministic_strict_override,
                 use_feedback_cache=use_feedback_cache,
                 force_live_generation=force_live_generation,
+                **ul_kwargs,
             )
 
             # Formatter must see any recipes persisted by the feedback loop.

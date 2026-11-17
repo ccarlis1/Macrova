@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../models/meal_prep_batch.dart';
+import '../models/models.dart';
 import '../theme/tokens.dart';
 import 'macro_display.dart';
+import 'macrova_chip.dart';
 
 enum MealSlotState { ok, pinned, empty, warn, workout }
 
@@ -22,6 +25,41 @@ class MealCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onAdd;
 
+  /// `Meal.source` (`PlannedMeal.source`). [Meal.sourceMealPrepBatch] shows
+  /// the batch variant: a "Meal prep" badge plus [servings] when set. Other
+  /// values (planner, pinned, null) look unchanged.
+  final String? source;
+
+  /// Batch servings for this slot (`Meal.servings`); shown on batch meals only.
+  final double? servings;
+
+  /// A server pin exists for this slot (`MealPlanProvider.pinForMeal`). When
+  /// the plan itself didn't place a pin here (it predates the pin), the card
+  /// shows "Pinned · next plan". Ignored on meal-prep batch meals: the batch
+  /// lock wins over a pin.
+  final bool hasPin;
+
+  static const mealPrepBadgeKey = Key('meal_card_meal_prep_badge');
+  static const mealPrepServingsKey = Key('meal_card_meal_prep_servings');
+
+  /// Pin badge (FE-15), on pinned meals and on slots pinned after this plan.
+  static const pinBadgeKey = Key('meal_card_pin_badge');
+
+  bool get isMealPrepBatch => source == Meal.sourceMealPrepBatch;
+
+  /// The plan placed this meal from a pin (`source == pinned_assignment`).
+  bool get isPinnedAssignment => source == Meal.sourcePinnedAssignment;
+
+  /// Pin badge label, or null when no pin badge shows. Precedence: a batch
+  /// meal never shows one; a meal the plan pinned is "Pinned"; a slot pinned
+  /// since the plan ran is "Pinned · next plan".
+  String? get pinBadgeLabel {
+    if (isMealPrepBatch) return null;
+    if (isPinnedAssignment) return 'Pinned';
+    if (hasPin) return 'Pinned · next plan';
+    return null;
+  }
+
   const MealCard({
     super.key,
     required this.mealType,
@@ -37,6 +75,9 @@ class MealCard extends StatelessWidget {
     this.isCooked = false,
     this.onTap,
     this.onAdd,
+    this.source,
+    this.servings,
+    this.hasPin = false,
   });
 
   @override
@@ -62,6 +103,7 @@ class MealCard extends StatelessWidget {
 
     final isPinned = slotState == MealSlotState.pinned;
     final hasWarn = slotState == MealSlotState.warn;
+    final pinLabel = pinBadgeLabel;
 
     return Card(
       color: isPinned ? tokens.pinnedSoft : null,
@@ -127,6 +169,37 @@ class MealCard extends StatelessWidget {
                             ),
                           ),
                         ],
+                      ),
+                    ],
+                    if (isMealPrepBatch) ...[
+                      const SizedBox(height: MacrovaSpacing.xs),
+                      Wrap(
+                        spacing: MacrovaSpacing.sm,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          const MacrovaChip(
+                            key: mealPrepBadgeKey,
+                            label: 'Meal prep',
+                            variant: MacrovaChipVariant.accent,
+                            leadingIcon: Icons.kitchen_outlined,
+                          ),
+                          if (servings != null)
+                            Text(
+                              servingsLabel(servings!),
+                              key: mealPrepServingsKey,
+                              style:
+                                  MacrovaTypography.caption(tokens.inkTertiary),
+                            ),
+                        ],
+                      ),
+                    ],
+                    if (pinLabel != null) ...[
+                      const SizedBox(height: MacrovaSpacing.xs),
+                      MacrovaChip(
+                        key: pinBadgeKey,
+                        label: pinLabel,
+                        variant: MacrovaChipVariant.pinned,
+                        leadingIcon: Icons.push_pin_outlined,
                       ),
                     ],
                     if (mealTypeMatch == false) ...[

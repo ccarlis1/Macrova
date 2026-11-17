@@ -10,13 +10,25 @@ data/reference/ul_by_demographic.json, merged with user overrides.
 
 import json
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Literal, Optional, List, Tuple, get_args
 
 from src.data_layer.models import UpperLimits, MicronutrientProfile
 
 # Spec Section 2.3: default path for UL reference data
 DEFAULT_UL_REFERENCE_PATH = "data/reference/ul_by_demographic.json"
+
+# Reference tables, resolved from the repo root so callers work from any cwd.
+# Shared by the HTTP API, the CLI and the MCP server (Sprint 2 BE-17).
+_REFERENCE_DIR = Path(__file__).resolve().parents[2] / "data" / "reference"
+RDI_PATH = _REFERENCE_DIR / "rdi_by_demographic.json"
+UL_PATH = _REFERENCE_DIR / "ul_by_demographic.json"
+
+# The demographics both reference tables carry. One definition: the API, CLI and
+# MCP server all type against this literal.
+Demographic = Literal["adult_male", "adult_female", "pregnancy", "lactation"]
+DEMOGRAPHICS: Tuple[str, ...] = get_args(Demographic)
 
 
 @dataclass
@@ -226,3 +238,70 @@ def validate_daily_upper_limits(
             ))
     
     return violations
+
+
+@lru_cache(maxsize=None)
+def _rdi_table() -> Dict[str, Dict[str, float]]:
+    with open(RDI_PATH, encoding="utf-8") as f:
+        return json.load(f)["demographics"]
+
+
+def daily_rdis(demographic: Demographic) -> Dict[str, float]:
+    """Daily recommended intakes for a demographic, keyed like ``vitamin_c_mg``."""
+    return {key: float(value) for key, value in _rdi_table()[demographic].items()}
+
+
+# --- New-user / demo micronutrient default (Sprint 2 BE-20, owner decision D-A) -------
+#
+# The ONE definition of the default. The default goals are the demographic's daily RDIs
+# (rdi_by_demographic.json) minus the nutrients listed here, at τ = 1.0. The left-out
+# nutrients are the ones the bundled sample recipes can't meet at τ = 1.0 over 7 days
+# with the MCP shorthand schedule (2/3/4) and the demographic's daily ULs on; see the
+# probe record in docs/sprints/sprint2/BE-20-demo-micronutrient-default.md.
+# Re-probed after DATA-2 corrected vitamin D (2026-11-15): every list plans on the probe;
+# vitamin E for pregnancy/lactation is now meetable too (owner may restore it; see DATA-2).
+# Vitamin D is left out for every demographic (owner, 2026-11-15, D-A option 4): after the
+# correction the 18 starter recipes can't meet the 600 IU/day floor at the Flutter
+# new-user targets (2000 kcal, fat 60-74 g), so demo step 2b failed with FM-5.
+# It's a starting point, not a cap: MCP (targets.micronutrient_goals), the YAML profile
+# and the Flutter Profile screen all let the user change every value.
+DEFAULT_MICRONUTRIENT_LEFT_OUT: Dict[str, Tuple[str, ...]] = {
+    "adult_male": ("vitamin_d_iu", "omega_3_g", "omega_6_g"),
+    "adult_female": ("vitamin_d_iu", "omega_3_g", "omega_6_g"),
+    "pregnancy": ("vitamin_d_iu", "vitamin_e_mg", "omega_3_g", "omega_6_g"),
+    "lactation": ("vitamin_d_iu", "vitamin_e_mg", "omega_3_g", "omega_6_g"),
+}
+DEFAULT_MICRONUTRIENT_WEEKLY_MIN_FRACTION = 1.0
+
+
+def default_micronutrient_left_out(demographic: Demographic) -> Tuple[str, ...]:
+    """Nutrient keys the default leaves out for ``demographic`` (reference-table order)."""
+    left_out = set(DEFAULT_MICRONUTRIENT_LEFT_OUT[demographic])
+    return tuple(key for key in _rdi_table()[demographic] if key in left_out)
+
+
+def default_micronutrient_goals(demographic: Demographic) -> Dict[str, float]:
+    """The default daily micronutrient goals: the RDIs minus the left-out nutrients."""
+    left_out = set(DEFAULT_MICRONUTRIENT_LEFT_OUT[demographic])
+    return {key: value for key, value in daily_rdis(demographic).items() if key not in left_out}
+
+
+def upper_limits(demographic: Demographic) -> UpperLimits:
+    """Daily upper limits for a demographic from the shared reference table.
+
+    The one UL resolution path for the HTTP API, the CLI and the MCP server.
+    The planner enforces the result per day (``plan_meals(..., resolved_ul=...)``).
+    """
+    return resolve_upper_limits(UpperLimitsLoader(str(UL_PATH)), demographic=demographic)
+
+
+def upper_limits_for(demographic: Optional[str]) -> Optional[UpperLimits]:
+    """``upper_limits(demographic)``, or None (no ULs) when no demographic is set.
+
+    Callers pass the result to ``plan_meals(..., resolved_ul=...)`` only when it is
+    not None, so an unset demographic plans exactly as before ULs were wired.
+    Raises KeyError for a demographic the reference table doesn't carry.
+    """
+    if not demographic:
+        return None
+    return upper_limits(demographic)  # type: ignore[arg-type]

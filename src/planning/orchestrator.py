@@ -23,7 +23,7 @@ from src.ingestion.ingredient_cache import CachedIngredientLookup
 from src.ingestion.usda_client import USDAClient
 from src.llm.types import ValidatedRecipeForPersistence
 from src.nutrition.calculator import NutritionCalculator
-from src.data_layer.models import ProfilePin
+from src.data_layer.models import ProfilePin, UpperLimits
 from src.planning.phase0_models import PlanningBatchLock, PlanningRecipe, PlanningUserProfile
 from src.planning.phase10_reporting import MealPlanResult
 from src.planning.converters import _expand_schedule_days, convert_recipes, extract_ingredient_names
@@ -186,6 +186,9 @@ def build_plan_request_from_profile(
     }
     if getattr(profile, "daily_micronutrient_targets", None):
         payload["micronutrient_goals"] = dict(profile.daily_micronutrient_targets)
+    if getattr(profile, "demographic", None):
+        # Daily ULs travel with the request, so CLI and HTTP enforce the same ones (BE-17).
+        payload["demographic"] = str(profile.demographic)
     if seed is not None:
         payload["seed"] = int(seed)
     return payload
@@ -453,6 +456,7 @@ def plan_with_llm_feedback(
     deterministic_strict_override: Optional[bool] = None,
     use_feedback_cache: bool = True,
     force_live_generation: bool = False,
+    resolved_ul: Optional[UpperLimits] = None,
 ) -> MealPlanResult:
     """Deterministic planner first; bounded, diagnosed, validated LLM recovery second.
 
@@ -467,9 +471,12 @@ def plan_with_llm_feedback(
     - the deterministic planner result is never replaced by an LLM-layer exception;
     - the request's pool is never rebuilt from disk.
     ``DeterministicCacheMissError`` still escapes in ``assisted_cached`` mode (caller contract).
+    ``resolved_ul`` (daily upper limits) is passed to every planner run, first and retried.
     """
 
-    result: MealPlanResult = plan_meals(profile, recipe_pool, days)
+    # Only pass ULs when set, so the no-demographic call is unchanged.
+    ul_kwargs: Dict[str, Any] = {"resolved_ul": resolved_ul} if resolved_ul is not None else {}
+    result: MealPlanResult = plan_meals(profile, recipe_pool, days, **ul_kwargs)
     if result.success:
         return _attach_outcome(
             result, RecoveryOutcome(state=RecoveryState.NOT_ATTEMPTED, reason="planner_succeeded"), [], max_feedback_retries
@@ -645,7 +652,7 @@ def plan_with_llm_feedback(
             # Nothing new to plan over; the next attempt sees the rejection reasons.
             continue
 
-        result = plan_meals(profile, candidate_pool, days)
+        result = plan_meals(profile, candidate_pool, days, **ul_kwargs)
         outcome.planner_runs += 1
         record["planner_code_after"] = "OK" if result.success else result.failure_mode
 

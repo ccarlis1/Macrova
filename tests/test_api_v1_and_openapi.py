@@ -59,6 +59,7 @@ def test_openapi_includes_v1_contract_paths():
         "/api/v1/meal_prep_batches/{batch_id}",
         "/api/v1/starter_recipes",
         "/api/v1/starter_recipes/import",
+        "/api/v1/micronutrient_defaults",
     ]
     missing = [p for p in required if p not in paths]
     assert not missing, f"missing paths: {missing}"
@@ -207,6 +208,36 @@ def test_openapi_plan_request_has_max_daily_calories():
     assert "max_daily_calories" in props
 
 
+def test_openapi_plan_requests_have_demographic():
+    """Sprint 2 BE-17: optional ``demographic`` (daily ULs) on both plan request schemas."""
+    components = _openapi_components()
+    for name in ("PlanRequest", "PlanFromTextRequest"):
+        props = components[name]["properties"]
+        assert "demographic" in props, name
+        assert "demographic" not in components[name].get("required", [])
+        enums = [b.get("enum") for b in props["demographic"]["anyOf"] if "enum" in b]
+        assert enums == [["adult_male", "adult_female", "pregnancy", "lactation"]]
+
+
+def test_openapi_micronutrient_defaults_contract():
+    """Sprint 2 BE-20: read-only per-demographic default micronutrient goals."""
+    schema = app.openapi()
+    get = schema["paths"]["/api/v1/micronutrient_defaults"]["get"]
+    assert set(schema["paths"]["/api/v1/micronutrient_defaults"]) == {"get"}
+    (param,) = get["parameters"]
+    assert (param["name"], param["in"], param["required"]) == ("demographic", "query", True)
+    assert param["schema"]["enum"] == ["adult_male", "adult_female", "pregnancy", "lactation"]
+    ok = get["responses"]["200"]["content"]["application/json"]["schema"]
+    assert _schema_ref_name(ok) == "MicronutrientDefaultsResponse"
+    bad = get["responses"]["400"]["content"]["application/json"]["schema"]
+    assert _schema_ref_name(bad) == "ApiErrorResponse"
+    model = _openapi_components()["MicronutrientDefaultsResponse"]
+    expected = {"demographic", "micronutrient_goals", "left_out", "micronutrient_weekly_min_fraction"}
+    assert set(model["properties"]) == expected
+    assert set(model["required"]) == expected
+    assert all(model["properties"][name].get("description") for name in expected)
+
+
 def test_openapi_plan_response_includes_failure_codes():
     schema = app.openapi()
     components = schema["components"]["schemas"]
@@ -342,6 +373,48 @@ def test_nutrition_summary_totals_match_local_db():
     assert body["protein_g"] == 6.3
 
 
+def _summary_calories(line: dict) -> float:
+    resp = TestClient(app).post(
+        "/api/v1/nutrition/summary", json={"servings": 1, "ingredients": [line]}
+    )
+    assert resp.status_code == 200, resp.text
+    return resp.json()["calories"]
+
+
+def test_nutrition_summary_counts_line_grams_per_unit():
+    """BE-19 follow-up: a line that converts only via its own weight is counted."""
+    # almonds: 579 kcal/100 g; the record has no ``cup`` conversion.
+    assert _summary_calories({"name": "almonds", "quantity": 1, "unit": "cup"}) == 0.0
+    calories = _summary_calories(
+        {"name": "almonds", "quantity": 1, "unit": "cup", "grams_per_unit": 143}
+    )
+    assert abs(calories - 579.0 * 1.43) < 1e-6
+
+
+def test_nutrition_summary_record_conversion_wins_over_line_weight():
+    # almond butter unsalted: record tbsp = 16 g, 614 kcal/100 g.
+    base = {"name": "almond butter unsalted", "quantity": 2, "unit": "tbsp"}
+    without = _summary_calories(base)
+    with_line = _summary_calories({**base, "grams_per_unit": 999})
+    assert abs(without - 614.0 * 0.32) < 1e-6
+    assert with_line == without
+
+
+def test_nutrition_summary_rejects_non_positive_line_weight():
+    resp = TestClient(app).post(
+        "/api/v1/nutrition/summary",
+        json={"ingredients": [{"name": "almonds", "quantity": 1, "unit": "cup", "grams_per_unit": 0}]},
+    )
+    assert resp.status_code == 400
+    assert resp.json()["error"]["code"] == "INVALID_REQUEST"
+
+
+def test_openapi_nutrition_line_has_grams_per_unit():
+    props = _openapi_components()["NutritionIngredientLine"]["properties"]
+    assert "grams_per_unit" in props
+    assert props["grams_per_unit"].get("description")
+
+
 def test_plan_request_model_accepts_recipe_ids():
     r = PlanRequest(
         daily_calories=2000,
@@ -358,6 +431,8 @@ def test_recipe_sync_writes_json_and_plan_sees_recipe(tmp_path, monkeypatch):
     recipes_file = tmp_path / "recipes.json"
     recipes_file.write_text('{"recipes": []}', encoding="utf-8")
     monkeypatch.setattr("src.api.server.recipes_path", str(recipes_file))
+    # Sync always writes a tags_by_id entry (BE-19): keep it out of the committed tag store.
+    monkeypatch.setattr("src.api.server.DEFAULT_TAG_PATH", str(tmp_path / "recipe_tags.json"))
 
     client = TestClient(app)
     rid = "00000000-0000-4000-8000-000000000001"
@@ -495,3 +570,37 @@ def test_openapi_recipe_save_routes_document_ingredient_quantity_required():
             assert "INGREDIENT_QUANTITY_REQUIRED" in resp["description"]
             ref = resp["content"]["application/json"]["schema"]["$ref"]
             assert ref == "#/components/schemas/ApiErrorResponse"
+
+
+def test_openapi_recipe_save_line_grams_per_unit_and_unit_error_codes():
+    """Sprint 2 BE-19: line ``grams_per_unit``, sync item tag fields and the 400 save codes."""
+    import json as _json
+    from pathlib import Path as _Path
+
+    for schema in (app.openapi(), _json.loads(_Path("openapi/openapi.json").read_text(encoding="utf-8"))):
+        comps = schema["components"]["schemas"]
+        line = comps["RecipeSyncIngredientLine"]["properties"]
+        assert "grams_per_unit" in line
+        assert "grams_per_unit" not in comps["RecipeSyncIngredientLine"].get("required", [])
+        item = comps["RecipeSyncItem"]
+        for field in ("cuisine", "cost_level", "dietary_flags"):
+            assert field in item["properties"]
+            assert field not in item.get("required", [])
+        assert "errors" in comps["RecipeSyncResponse"]["properties"]
+        for path, method in (
+            ("/api/v1/recipes/sync", "post"),
+            ("/api/v1/recipes", "post"),
+            ("/api/v1/recipes/{recipe_id}", "put"),
+        ):
+            resp = schema["paths"][path][method]["responses"]["400"]
+            assert "UNIT_NOT_CONVERTIBLE" in resp["description"]
+            assert "INGREDIENT_UNRESOLVED" in resp["description"]
+            assert resp["content"]["application/json"]["schema"]["$ref"] == "#/components/schemas/ApiErrorResponse"
+
+
+def test_openapi_sync_item_tag_slugs_description_says_time_is_derived():
+    """BE-19 follow-up: the ``time`` type is derived from cooking time; a client value is ignored."""
+    prop = _openapi_components()["RecipeSyncItem"]["properties"]["tag_slugs_by_type"]
+    description = prop.get("description", "")
+    assert "time" in description and "cooking_time_minutes" in description
+    assert "ignored" in description

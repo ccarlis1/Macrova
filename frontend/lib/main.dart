@@ -21,7 +21,6 @@ Future<void> main() async {
   final mealPlan = MealPlanProvider();
 
   await profile.load();
-  await profile.mergeBundledUserProfileIfEnabled();
   profile.addListener(llmGate.syncCredentialsFromProfile);
   await mealPlan.load();
   await llmGate.loadFromProfile();
@@ -33,8 +32,6 @@ Future<void> main() async {
   await ingredients.mergeBundledCachedIngredientsIfEnabled();
 
   await recipes.load();
-  await recipes.hydrateBundledServerRecipesFromAsset();
-  await recipes.mergeBundledServerRecipesIfEnabled();
   await recipes.applyIngredientNutritionFromSavedIngredients(
     ingredients.ingredients,
   );

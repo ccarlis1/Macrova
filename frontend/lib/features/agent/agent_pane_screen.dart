@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../models/user_profile.dart';
 import '../../providers/meal_plan_provider.dart';
+import '../../providers/profile_provider.dart';
 import '../../providers/recipe_provider.dart';
 import '../../services/api_service.dart';
 import '../../theme/tokens.dart';
@@ -145,6 +147,29 @@ class AgentGenerationResultsSection extends StatelessWidget {
   }
 }
 
+/// `/api/v1/plan-from-text` body: the prompt plus the same pool filters as
+/// `/plan` from [meal], and the Profile's [demographic] (BE-17: the server
+/// enforces its daily ULs), sent only when it is a supported value.
+@visibleForTesting
+Map<String, dynamic> planFromTextBody({
+  required String prompt,
+  required MealPlanProvider meal,
+  String? demographic,
+}) {
+  final demo = UserProfile.normalizeDemographic(demographic);
+  return {
+    'prompt': prompt,
+    'ingredient_source': meal.ingredientSource,
+    'planning_mode': 'assisted',
+    if (meal.cuisine.isNotEmpty) 'cuisine': List<String>.from(meal.cuisine),
+    if (meal.costLevel != null) 'cost_level': meal.costLevel,
+    if (meal.prepTimeBucket != null) 'prep_time_bucket': meal.prepTimeBucket,
+    if (meal.dietaryFlags.isNotEmpty)
+      'dietary_flags': List<String>.from(meal.dietaryFlags),
+    if (demo.isNotEmpty) 'demographic': demo,
+  };
+}
+
 /// Primary surface for NL plan, ingredient match, and validated recipe generation.
 class AgentPaneScreen extends StatefulWidget {
   const AgentPaneScreen({super.key});
@@ -208,17 +233,13 @@ class _AgentPaneScreenState extends State<AgentPaneScreen> {
       _sectionError = null;
     });
     try {
-      final plan = await AgentApi.planFromText({
-        'prompt': prompt,
-        'ingredient_source': meal.ingredientSource,
-        'planning_mode': 'assisted',
-        if (meal.cuisine.isNotEmpty) 'cuisine': List<String>.from(meal.cuisine),
-        if (meal.costLevel != null) 'cost_level': meal.costLevel,
-        if (meal.prepTimeBucket != null)
-          'prep_time_bucket': meal.prepTimeBucket,
-        if (meal.dietaryFlags.isNotEmpty)
-          'dietary_flags': List<String>.from(meal.dietaryFlags),
-      });
+      final plan = await AgentApi.planFromText(
+        planFromTextBody(
+          prompt: prompt,
+          meal: meal,
+          demographic: context.read<ProfileProvider>().profile.planDemographic,
+        ),
+      );
       if (!mounted) return;
       context.read<MealPlanProvider>().applyPlanResult(plan);
       if (plan.success) {

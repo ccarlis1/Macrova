@@ -8,23 +8,13 @@ A new Flutter project.
 
 - **`RecipeProvider.syncSummariesFromApi`** merges those API rows with local recipes **by id**. If you have a full local recipe with the same id, the local copy wins; otherwise the UI shows an **`Recipe.apiSummary`** placeholder (no ingredients, no macros).
 - **`GET /api/v1/recipes/{id}`** returns a full recipe for hydration / planner sync.
-- **Meal planning** sends `recipe_ids` to `POST /api/v1/plan`. Only ids that exist in the **server** recipe pool affect the solver unless you sync local recipes first.
+- **Meal planning** (`POST /api/v1/plan`) uses the whole **server** pool unless Planner Config has recipes ticked; then it sends those ids as `recipe_ids`. Before each plan the app syncs every locally stored full recipe, so local edits reach the server first.
 
-### Bundled server recipes (offline / dev)
+### Starter pack (FE-16)
 
-When the API is unreachable, you can still load the same shape as `data/recipes/recipes.json` from a bundled asset:
+A new user's pool (a fresh `MACROVA_DATA_DIR`) is empty. The Recipe Library (empty state and its **Starter pack** action), Today's empty state, and the `EMPTY_POOL` plan failure open a picker sheet over `GET /api/v1/starter_recipes`; **Import** sends the ticked ids to `POST /api/v1/starter_recipes/import`, then refreshes `GET /api/v1/recipes`. The imported recipes are ordinary server recipes: opening one in the Recipe Builder loads its detail. The app keeps no copy of the starter pack and imports nothing on its own.
 
-1. Asset path: **`assets/dev/server_recipes.json`** (keep in sync with the repo file when recipes change):
-
-   `cp ../data/recipes/recipes.json assets/dev/server_recipes.json`
-
-2. Run with:
-
-   `flutter run -d chrome --dart-define=BUNDLE_SERVER_RECIPES=true`
-
-This merges bundled recipes into **`SharedPreferences`** (by `id`, overwriting existing entries with the same id). Ingredient lines have **quantities and names** but **macro fields are zero** until you use nutrition tooling or API-backed resolution.
-
-**Automatic ingredient lines:** On startup the app always tries to load **`assets/dev/server_recipes.json`**. If the file exists (ships with the repo copy), recipe rows that only had **id + name** from `GET /api/v1/recipes` are shown with **full ingredient lines** from that JSON (no dart-define required). When **saved** ingredients load (including **`BUNDLE_CACHED_INGREDIENTS`**), matching lines get **per-100g macros** where the ingredient **name** matches (case-insensitive).
+There is no bundled recipe asset any more (`assets/dev/server_recipes.json` and `BUNDLE_SERVER_RECIPES` were removed in FE-16): recipes come from the API.
 
 ### Bundled cached ingredients (USDA disk cache → Saved)
 
@@ -40,27 +30,13 @@ Python writes resolved foods to **`.cache/ingredients/*.json`**. To import them 
 
    `flutter run -d chrome --dart-define=BUNDLE_CACHED_INGREDIENTS=true`
 
-You can combine both dev bundles:
-
-`flutter run -d chrome --dart-define=BUNDLE_SERVER_RECIPES=true --dart-define=BUNDLE_CACHED_INGREDIENTS=true`
+When saved ingredients load, recipe lines whose per-100g macros are zero get them from a saved ingredient whose **name** matches (case-insensitive).
 
 Imports are keyed by **`fdc_id`** (string) as **`Ingredient.id`**; existing rows with the same id are replaced.
 
-### Bundled user profile (repo `config/user_profile.yaml` shape)
+### Profile
 
-1. Asset path: **`assets/dev/user_profile.yaml`** — keep in sync with the repo when goals change:
-
-   `cp ../config/user_profile.yaml assets/dev/user_profile.yaml`
-
-2. Run with:
-
-   `flutter run -d chrome --dart-define=BUNDLE_USER_PROFILE=true`
-
-On startup (after loading saved prefs), the app **replaces** the profile with the bundled YAML, **writes it to** `SharedPreferences`, and clears API key fields in that snapshot (set keys in the Profile UI if needed). Macros match the Python loader: carbs are derived from calories, protein, and the fat range; `preferences.allergies` and `micronutrient_goals` are applied; `demographic` maps to demographic group.
-
-Combine with recipe/ingredient bundles as needed, e.g.:
-
-`flutter run -d chrome --dart-define=BUNDLE_USER_PROFILE=true --dart-define=BUNDLE_SERVER_RECIPES=true --dart-define=BUNDLE_CACHED_INGREDIENTS=true`
+The profile lives on the device (`SharedPreferences`, edited on the Profile screen). No profile ships in the app bundle: `assets/dev/user_profile.yaml` and `BUNDLE_USER_PROFILE` were removed in FE-16, and `test/bundle_assets_test.dart` fails if a YAML asset is listed in `pubspec.yaml` again.
 
 ### Web: `LateInitializationError: _handledContextLostEvent` after hot restart
 

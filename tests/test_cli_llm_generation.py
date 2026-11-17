@@ -102,7 +102,7 @@ def test_cli_llm_generate_validated_success(monkeypatch, capsys):
             [
                 "cli.py",
                 "--profile",
-                "config/user_profile.yaml",
+                "config/user_profile.yaml.example",
                 "--recipes",
                 str(recipes_path),
                 "--llm-generate-validated",
@@ -143,7 +143,7 @@ def test_cli_llm_generate_validated_missing_settings(monkeypatch, capsys):
             [
                 "cli.py",
                 "--profile",
-                "config/user_profile.yaml",
+                "config/user_profile.yaml.example",
                 "--recipes",
                 str(recipes_path),
                 "--llm-generate-validated",
@@ -182,7 +182,7 @@ def test_cli_llm_generate_validated_invalid_context(monkeypatch):
             [
                 "cli.py",
                 "--profile",
-                "config/user_profile.yaml",
+                "config/user_profile.yaml.example",
                 "--recipes",
                 str(recipes_path),
                 "--llm-generate-validated",
@@ -231,7 +231,7 @@ def test_cli_llm_generate_validated_deterministic_ids(monkeypatch):
             sys_argv = [
                 "cli.py",
                 "--profile",
-                "config/user_profile.yaml",
+                "config/user_profile.yaml.example",
                 "--recipes",
                 str(recipes_path),
                 "--llm-generate-validated",

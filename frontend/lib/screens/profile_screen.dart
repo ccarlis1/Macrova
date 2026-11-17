@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/micronutrient_defaults.dart';
 import '../models/micronutrient_metadata.dart';
 import '../models/user_profile.dart';
 import '../features/agent/llm_config_provider.dart';
@@ -12,6 +13,17 @@ import '../widgets/segmented_control.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  // BE-20 micronutrient-default widgets.
+  static const microDefaultsLoadingKey = Key('micronutrient_defaults_loading');
+  static const microDefaultsErrorKey = Key('micronutrient_defaults_error');
+  static const microDefaultsRetryKey = Key('micronutrient_defaults_retry');
+  static const microDefaultsLeftOutKey = Key('micronutrient_defaults_left_out');
+  static const microTauFieldKey = Key('micronutrient_tau_field');
+  static const demographicFieldKey = Key('profile_demographic_field');
+
+  /// Key of the goal field for nutrient [key] (e.g. `vitamin_c_mg`).
+  static Key microFieldKey(String key) => Key('micronutrient_goal_$key');
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -53,30 +65,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   bool _initialized = false;
 
+  /// True while the micronutrient fields hold a server default the user
+  /// hasn't edited since (BE-20). Such fields may be replaced by another
+  /// demographic's default; a user's own goals never are.
+  bool _microFromDefault = false;
+
+  /// The default last filled into the fields, for the left-out line.
+  MicronutrientDefaults? _appliedDefault;
+
+  /// "Not set" plus the demographics the server has UL data for (BE-17).
   static const _demographicOptions = [
     '',
-    'adult_male',
-    'adult_female',
-    'teen_male',
-    'teen_female',
-    'child',
-    'pregnancy',
-    'lactation',
-    'elderly_male',
-    'elderly_female',
+    ...UserProfile.supportedDemographics,
   ];
 
   static const _demographicLabels = {
-    '': 'Select demographic...',
+    '': 'Not set',
     'adult_male': 'Adult Male (19-50)',
     'adult_female': 'Adult Female (19-50)',
-    'teen_male': 'Teen Male (14-18)',
-    'teen_female': 'Teen Female (14-18)',
-    'child': 'Child (9-13)',
     'pregnancy': 'Pregnancy',
     'lactation': 'Lactation',
-    'elderly_male': 'Elderly Male (51+)',
-    'elderly_female': 'Elderly Female (51+)',
   };
 
   static const int _vitaminCount = 12;
@@ -103,6 +111,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _initialized = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
+        _maybeApplyDefault();
         final err = UserProfile.macroTargetsErrorFor(
           double.tryParse(_caloriesCtrl.text.trim()) ?? 0,
           double.tryParse(_proteinGCtrl.text.trim()) ?? 0,
@@ -144,8 +153,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
         : 'openai_compatible';
     _calorieDeficitMode = profile.calorieDeficitMode;
     _maxDailyCaloriesCtrl.text = profile.maxDailyCalories?.toString() ?? '';
-    _demographicGroup = profile.demographicGroup;
+    _demographicGroup =
+        UserProfile.normalizeDemographic(profile.demographicGroup);
     _allergies = List.from(profile.allergies);
+    _microFromDefault = false;
+    _appliedDefault = null;
+  }
+
+  /// No goal field holds a positive number: the user has no goals of their own.
+  bool _microGoalsEmpty() => _microCtrls.values
+      .every((c) => (double.tryParse(c.text.trim()) ?? 0) <= 0);
+
+  /// The default may fill the fields: they are empty, or hold an unedited
+  /// default. Goals the user entered (or saved) are never replaced.
+  bool _canApplyDefault() => _microFromDefault || _microGoalsEmpty();
+
+  /// Fills the goal fields and τ with the selected demographic's server
+  /// default (BE-20) when [_canApplyDefault]. "Not set" fetches nothing and
+  /// leaves the fields as they are. Nothing is saved until the user saves.
+  Future<void> _maybeApplyDefault() async {
+    final demographic = _demographicGroup;
+    if (demographic.isEmpty || !_canApplyDefault()) return;
+    final defaults = await context
+        .read<ProfileProvider>()
+        .loadMicronutrientDefaults(demographic);
+    // Re-check: the user may have picked another demographic or started
+    // typing goals while the request ran.
+    if (!mounted ||
+        defaults == null ||
+        _demographicGroup != demographic ||
+        !_canApplyDefault()) {
+      return;
+    }
+    setState(() {
+      for (final e in kMicronutrientsInDisplayOrder) {
+        _microCtrls[e.key]!.text = _nonZeroNum(defaults.goals[e.key] ?? 0);
+      }
+      _micronutrientTauCtrl.text = _formatDecimal(defaults.weeklyMinFraction);
+      _microFromDefault = true;
+      _appliedDefault = defaults;
+    });
+  }
+
+  /// A goal or τ was typed: the fields are the user's own from now on.
+  void _onMicroEdited(String _) {
+    setState(() => _microFromDefault = false);
   }
 
   void _recomputeDerivedCarbs() {
@@ -319,6 +371,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() {
       _initialized = true;
     });
+    _maybeApplyDefault();
   }
 
   String? _requiredNumber(String? value) {
@@ -375,13 +428,79 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _microField(MicronutrientFieldDisplay m) {
     return TextFormField(
+      key: ProfileScreen.microFieldKey(m.key),
       controller: _microCtrls[m.key],
       decoration: InputDecoration(
         labelText: m.label,
         suffixText: m.unit,
       ),
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      onChanged: _onMicroEdited,
     );
+  }
+
+  /// Loading hint, fetch-failure notice with Retry, and the left-out line for
+  /// the server default (BE-20). Empty when none applies.
+  List<Widget> _microDefaultStatus(MacrovaTokens tokens) {
+    final provider = context.watch<ProfileProvider>();
+    final d = _demographicGroup;
+    final label = _demographicLabels[d] ?? d;
+    final caption = MacrovaTypography.caption(tokens.inkTertiary);
+    final out = <Widget>[];
+    if (d.isNotEmpty && _canApplyDefault()) {
+      if (provider.micronutrientDefaultsLoading(d)) {
+        out.add(Text(
+          'Loading the default goals for $label…',
+          key: ProfileScreen.microDefaultsLoadingKey,
+          style: caption,
+        ));
+      } else {
+        final error = provider.micronutrientDefaultsError(d);
+        if (error != null) {
+          out.add(Row(
+            key: ProfileScreen.microDefaultsErrorKey,
+            children: [
+              Expanded(
+                child: Text(
+                  'Couldn\'t load the default goals for $label, so your '
+                  'goals are unchanged. $error',
+                  style: caption,
+                ),
+              ),
+              const SizedBox(width: MacrovaSpacing.sm),
+              TextButton(
+                key: ProfileScreen.microDefaultsRetryKey,
+                onPressed: _maybeApplyDefault,
+                child: const Text('Retry'),
+              ),
+            ],
+          ));
+        }
+      }
+    }
+    final applied = _appliedDefault;
+    if (applied != null) {
+      final appliedLabel =
+          _demographicLabels[applied.demographic] ?? applied.demographic;
+      final leftOut = applied.leftOut.map(micronutrientLabelForKey).toList();
+      final text = leftOut.isEmpty
+          ? 'Started from the default goals for $appliedLabel. '
+              'Every value can be changed.'
+          : 'Started from the default goals for $appliedLabel. Left out: '
+              '${leftOut.join(', ')}, because the sample recipes can\'t meet '
+              '${leftOut.length == 1 ? 'it' : 'them'} at the full weekly '
+              'target. To add '
+              '${leftOut.length == 1 ? 'it' : 'one'} back, enter a value. '
+              'Every value can be changed.';
+      out.add(Text(
+        text,
+        key: ProfileScreen.microDefaultsLeftOutKey,
+        style: caption,
+      ));
+    }
+    return [
+      for (final w in out) ...[w, const SizedBox(height: MacrovaSpacing.sm)],
+    ];
   }
 
   Widget _microSection(String title, List<MicronutrientFieldDisplay> items) {
@@ -606,6 +725,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     // User Demographics
                     const SectionHeader(title: 'User Demographics'),
                     DropdownButtonFormField<String>(
+                      key: ProfileScreen.demographicFieldKey,
                       initialValue: _demographicGroup,
                       decoration: const InputDecoration(
                         labelText: 'Demographic Group',
@@ -616,12 +736,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 child: Text(_demographicLabels[v] ?? v),
                               ))
                           .toList(),
-                      onChanged: (v) =>
-                          setState(() => _demographicGroup = v ?? ''),
+                      onChanged: (v) {
+                        setState(() => _demographicGroup = v ?? '');
+                        _maybeApplyDefault();
+                      },
                     ),
                     const SizedBox(height: MacrovaSpacing.xs),
                     Text(
-                      'Used to calculate appropriate Upper Limits (UL) for micronutrients',
+                      'Plans enforce this group\'s daily Upper Limits (UL) for micronutrients. '
+                      'If you have no micronutrient goals yet, they start from '
+                      'this group\'s defaults. '
+                      'Teen, child and 51+ groups have no reference data yet.',
                       style: MacrovaTypography.caption(tokens.inkTertiary),
                     ),
                     const SizedBox(height: MacrovaSpacing.xlAlt),
@@ -669,6 +794,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     // Micronutrient Goals (parity with config/user_profile.yaml)
                     const SectionHeader(title: 'Micronutrient Goals (daily)'),
+                    ..._microDefaultStatus(tokens),
                     const SizedBox(height: MacrovaSpacing.lg),
                     _microSection('Vitamins', vitamins),
                     const SizedBox(height: MacrovaSpacing.xl),
@@ -677,7 +803,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _microSection('Other', other),
                     const SizedBox(height: MacrovaSpacing.lg),
                     TextFormField(
+                      key: ProfileScreen.microTauFieldKey,
                       controller: _micronutrientTauCtrl,
+                      onChanged: _onMicroEdited,
                       decoration: const InputDecoration(
                         labelText: 'Micronutrient weekly min fraction (τ)',
                       ),

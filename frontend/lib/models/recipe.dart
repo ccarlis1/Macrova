@@ -1,3 +1,5 @@
+import 'ingredient.dart';
+
 class RecipeIngredientEntry {
   final String ingredientId;
   final String ingredientName;
@@ -28,11 +30,47 @@ class RecipeIngredientEntry {
     this.resolved = true,
   });
 
-  double get _grams {
-    if (unit == 'g') return quantity;
+  /// Grams for this line ([gramsForUnit]). Throws [UnknownUnitException] when
+  /// [unit] has no gram weight, so the nutrition getters below throw too:
+  /// check [hasGramWeight] first, or use the [Recipe] totals, which leave such
+  /// lines out.
+  double get _grams => gramsForUnit(
+        quantity: quantity,
+        unit: unit,
+        unitConversions: unitConversions,
+        ingredientName: ingredientName,
+      );
+
+  /// False when [unit] has no gram weight for this line (FE-13): its nutrition
+  /// is unknown and the Recipe Builder blocks saving.
+  bool get hasGramWeight {
+    try {
+      _grams;
+      return true;
+    } on UnknownUnitException {
+      return false;
+    }
+  }
+
+  /// Weight of one [unit] to send as `grams_per_unit` (BE-19): the line's
+  /// conversion for a non-`g` unit, or null when it has none.
+  double? get gramsPerUnitToSend {
+    if (unit == 'g') return null;
     final gramsPerUnit = unitConversions[unit];
-    if (gramsPerUnit == null) return quantity;
-    return quantity * gramsPerUnit;
+    return gramsPerUnit != null && gramsPerUnit > 0 ? gramsPerUnit : null;
+  }
+
+  /// `{name, quantity, unit, grams_per_unit?}`: the line shape shared by
+  /// `RecipeSyncIngredientLine` and `NutritionIngredientLine`, so the builder's
+  /// summary weighs a line the same way the planner will after sync.
+  Map<String, dynamic> toApiLine() {
+    final gramsPerUnit = gramsPerUnitToSend;
+    return {
+      'name': ingredientName,
+      'quantity': quantity,
+      'unit': unit,
+      if (gramsPerUnit != null) 'grams_per_unit': gramsPerUnit,
+    };
   }
 
   double get calories => caloriesPer100g * _grams / 100;
@@ -140,6 +178,36 @@ class Recipe {
   final int cookingTimeMinutes;
   final List<String> instructions;
 
+  /// Canonical tag slugs by tag type (`context`, `time`, `nutrition`,
+  /// `constraint`), as returned by `GET /api/v1/recipes/{id}` and edited in the
+  /// Recipe Builder (`context` only). The server always derives `time` from
+  /// [cookingTimeMinutes]; it is kept here for display but never sent on sync.
+  /// This is the planner-facing tag source; the legacy `Recipe.tags` projection
+  /// is not read by the app.
+  final Map<String, List<String>> tagSlugsByType;
+
+  /// Server-computed (`default_servings >= 2` and a hard-eligible `meal-prep`
+  /// context tag). Read-only: never sent on sync; refreshed from the detail.
+  final bool isMealPrepCapable;
+
+  /// Cuisine from the tagger's closed vocabulary ([kCuisineVocabulary]), or
+  /// `unknown` (the server's "none"). Read from `GET /api/v1/recipes/{id}`
+  /// (`cuisine`, null when the recipe has no tag entry) or set in the Recipe
+  /// Builder. Null when the app doesn't know it. Sent as sync `cuisine` only
+  /// when set.
+  final String? cuisine;
+
+  /// `cheap` | `standard` | `premium`, from the detail's `cost_level` (null
+  /// when the recipe has no tag entry) or set in the Recipe Builder. Null when
+  /// the app doesn't know it. Sent as sync `cost_level` only when set; the
+  /// server stores `standard` otherwise.
+  final String? costLevel;
+
+  /// Stored dietary flags from the detail's `dietary_flags`; null when the
+  /// recipe has no tag entry or the app never loaded them. Read-only: never
+  /// sent on sync (omitted keeps the server's flags).
+  final List<String>? dietaryFlags;
+
   const Recipe({
     required this.id,
     required this.name,
@@ -147,16 +215,46 @@ class Recipe {
     this.servings = 1,
     this.cookingTimeMinutes = 0,
     this.instructions = const [],
+    this.tagSlugsByType = const {},
+    this.isMealPrepCapable = false,
+    this.cuisine,
+    this.costLevel,
+    this.dietaryFlags,
   });
 
-  double get totalCalories =>
-      ingredients.fold(0, (sum, e) => sum + e.calories);
-  double get totalProteinG =>
-      ingredients.fold(0, (sum, e) => sum + e.proteinG);
-  double get totalCarbsG =>
-      ingredients.fold(0, (sum, e) => sum + e.carbsG);
-  double get totalFatG =>
-      ingredients.fold(0, (sum, e) => sum + e.fatG);
+  /// Canonical `context` slug that marks a recipe as batchable (FE-12 switch).
+  static const mealPrepSlug = 'meal-prep';
+
+  /// `context` slugs (meal roles, `meal-prep`, user context tags).
+  List<String> get contextSlugs => tagSlugsByType['context'] ?? const [];
+
+  bool get hasMealPrepTag => contextSlugs.contains(mealPrepSlug);
+
+  /// Lines whose unit has no gram weight ([RecipeIngredientEntry.hasGramWeight]).
+  /// They are unresolved: left out of every total below, never summed as grams.
+  List<RecipeIngredientEntry> get linesWithoutGramWeight => [
+        for (final e in ingredients)
+          if (!e.hasGramWeight) e,
+      ];
+
+  /// Sums [value] over lines with a gram weight; an [UnknownUnitException]
+  /// line counts as unresolved (excluded) rather than a wrong number.
+  double _sumResolved(double Function(RecipeIngredientEntry e) value) {
+    var sum = 0.0;
+    for (final e in ingredients) {
+      try {
+        sum += value(e);
+      } on UnknownUnitException {
+        // Unresolved line: see [linesWithoutGramWeight].
+      }
+    }
+    return sum;
+  }
+
+  double get totalCalories => _sumResolved((e) => e.calories);
+  double get totalProteinG => _sumResolved((e) => e.proteinG);
+  double get totalCarbsG => _sumResolved((e) => e.carbsG);
+  double get totalFatG => _sumResolved((e) => e.fatG);
 
   double get perServingCalories =>
       servings > 0 ? totalCalories / servings : totalCalories;
@@ -170,6 +268,7 @@ class Recipe {
   Map<String, double> get totalMicronutrients {
     final result = <String, double>{};
     for (final entry in ingredients) {
+      if (!entry.hasGramWeight) continue; // unresolved line
       entry.scaledMicronutrients.forEach((key, value) {
         result[key] = (result[key] ?? 0) + value;
       });
@@ -184,6 +283,11 @@ class Recipe {
     int? servings,
     int? cookingTimeMinutes,
     List<String>? instructions,
+    Map<String, List<String>>? tagSlugsByType,
+    bool? isMealPrepCapable,
+    String? cuisine,
+    String? costLevel,
+    List<String>? dietaryFlags,
   }) {
     return Recipe(
       id: id ?? this.id,
@@ -192,8 +296,57 @@ class Recipe {
       servings: servings ?? this.servings,
       cookingTimeMinutes: cookingTimeMinutes ?? this.cookingTimeMinutes,
       instructions: instructions ?? this.instructions,
+      tagSlugsByType: tagSlugsByType ?? this.tagSlugsByType,
+      isMealPrepCapable: isMealPrepCapable ?? this.isMealPrepCapable,
+      cuisine: cuisine ?? this.cuisine,
+      costLevel: costLevel ?? this.costLevel,
+      dietaryFlags: dietaryFlags ?? this.dietaryFlags,
     );
   }
+
+  /// This recipe with the tag-store fields of [detail] (a parsed
+  /// `GET /api/v1/recipes/{id}`): the server's `cuisine` / `cost_level` /
+  /// `dietary_flags` win when present, and a value remembered here is kept
+  /// only when the server has none (no tag entry).
+  Recipe withServerTagFields(Recipe detail) => copyWith(
+        cuisine: detail.cuisine,
+        costLevel: detail.costLevel,
+        dietaryFlags: detail.dietaryFlags,
+      );
+
+  static List<String>? _stringListOrNull(dynamic raw) {
+    if (raw is! List) return null;
+    return [
+      for (final s in raw)
+        if (s is String && s.trim().isNotEmpty) s.trim(),
+    ];
+  }
+
+  /// `tag_slugs_by_type` JSON → map of non-empty string lists (unknown shapes dropped).
+  static Map<String, List<String>> _tagSlugsFromJson(dynamic raw) {
+    if (raw is! Map) return const {};
+    final out = <String, List<String>>{};
+    raw.forEach((key, value) {
+      if (key is! String || value is! List) return;
+      final slugs = [
+        for (final s in value)
+          if (s is String && s.trim().isNotEmpty) s.trim(),
+      ];
+      if (slugs.isNotEmpty) out[key] = slugs;
+    });
+    return out;
+  }
+
+  static String? _nonEmptyString(dynamic raw) =>
+      raw is String && raw.trim().isNotEmpty ? raw.trim() : null;
+
+  /// Sync `tag_slugs_by_type`: every type except the server-derived `time`.
+  /// The server replaces the stored non-`time` types with what is sent, so the
+  /// types read from the detail (nutrition, constraint) are sent back as-is.
+  Map<String, List<String>> get _syncTagSlugsByType => {
+        for (final e in tagSlugsByType.entries)
+          if (e.key != 'time' && e.value.isNotEmpty) e.key: List.of(e.value),
+      };
 
   static List<String> _instructionsFromJson(dynamic raw) {
     if (raw is! List) return const [];
@@ -272,25 +425,41 @@ class Recipe {
         'servings': servings,
         'cooking_time_minutes': cookingTimeMinutes,
         'instructions': instructions,
+        'tag_slugs_by_type': tagSlugsByType,
+        'is_meal_prep_capable': isMealPrepCapable,
+        if (cuisine != null) 'cuisine': cuisine,
+        if (costLevel != null) 'cost_level': costLevel,
+        if (dietaryFlags != null) 'dietary_flags': dietaryFlags,
       };
 
   /// Body fragment for `POST /api/v1/recipes/sync` (server `RecipeSyncItem` shape).
-  Map<String, dynamic> toSyncPayload() => {
-        'id': id,
-        'name': name,
-        'cooking_time_minutes': cookingTimeMinutes,
-        'instructions': instructions,
-        'default_servings': servings,
-        'ingredients': ingredients
-            .map(
-              (e) => {
-                'name': e.ingredientName,
-                'quantity': e.quantity,
-                'unit': e.unit,
-              },
-            )
-            .toList(),
-      };
+  ///
+  /// Tag fields are sent only when known, since the server keeps its stored
+  /// value for an omitted field: `tag_slugs_by_type` when non-empty (minus
+  /// `time`), `cuisine` / `cost_level` when set.
+  Map<String, dynamic> toSyncPayload() {
+    final tags = _syncTagSlugsByType;
+    return {
+      'id': id,
+      'name': name,
+      'cooking_time_minutes': cookingTimeMinutes,
+      'instructions': instructions,
+      'default_servings': servings,
+      'ingredients': ingredients.map(_syncLine).toList(),
+      if (tags.isNotEmpty) 'tag_slugs_by_type': tags,
+      if (cuisine != null) 'cuisine': cuisine,
+      if (costLevel != null) 'cost_level': costLevel,
+    };
+  }
+
+  /// One `RecipeSyncIngredientLine` ([RecipeIngredientEntry.toApiLine]).
+  /// `grams_per_unit` (BE-19) is the weight of one unit, sent when the unit
+  /// isn't `g` and the line carries a conversion for it (copied from
+  /// `Ingredient.unitConversions` or the detail's `unit_conversions`). The
+  /// server uses it only when its own ingredient record has no conversion for
+  /// that unit.
+  static Map<String, dynamic> _syncLine(RecipeIngredientEntry e) =>
+      e.toApiLine();
 
   factory Recipe.fromJson(Map<String, dynamic> json) {
     return Recipe(
@@ -304,6 +473,11 @@ class Recipe {
       servings: json['servings'] as int? ?? 1,
       cookingTimeMinutes: _cookingMinutesFromJson(json),
       instructions: _instructionsFromJson(json['instructions']),
+      tagSlugsByType: _tagSlugsFromJson(json['tag_slugs_by_type']),
+      isMealPrepCapable: json['is_meal_prep_capable'] == true,
+      cuisine: _nonEmptyString(json['cuisine']),
+      costLevel: _nonEmptyString(json['cost_level']),
+      dietaryFlags: _stringListOrNull(json['dietary_flags']),
     );
   }
 

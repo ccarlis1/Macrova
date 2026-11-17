@@ -1,4 +1,4 @@
-// Macrova mock data — derived from frontend/lib/models + assets/dev/server_recipes.json
+// Macrova mock data — derived from frontend/lib/models + the old bundled recipe asset (assets/dev/server_recipes.json, removed in FE-16)
 
 window.MACROVA_DATA = (function() {
   const recipes = [

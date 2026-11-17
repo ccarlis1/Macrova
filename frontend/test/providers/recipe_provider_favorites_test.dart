@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:macrova/models/recipe_sync_result.dart';
 import 'package:macrova/providers/recipe_provider.dart';
 import 'package:macrova/services/storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,7 +14,7 @@ void main() {
       'Given a favorite toggle, When persisted and reloaded, Then isFavorite reflects it',
       () async {
         final provider = RecipeProvider(
-          recipeSyncFn: (_) async => const [],
+          recipeSyncFn: (_) async => const RecipeSyncResult(),
         );
         await provider.load();
 
@@ -22,7 +23,7 @@ void main() {
         expect(provider.isFavorite('r1'), isTrue);
 
         final reloaded = RecipeProvider(
-          recipeSyncFn: (_) async => const [],
+          recipeSyncFn: (_) async => const RecipeSyncResult(),
         );
         await reloaded.load();
         expect(reloaded.isFavorite('r1'), isTrue);
@@ -34,7 +35,7 @@ void main() {
       'Given a favorited id, When toggled again, Then it is removed',
       () async {
         final provider = RecipeProvider(
-          recipeSyncFn: (_) async => const [],
+          recipeSyncFn: (_) async => const RecipeSyncResult(),
         );
         await provider.load();
         await provider.toggleFavorite('r1');

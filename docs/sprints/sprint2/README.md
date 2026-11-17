@@ -47,15 +47,16 @@ Waves follow roadmap Part 3, which allows at most 5 tasks in flight. FE-11 moved
 | [DATA-1](./DATA-1-sample-recipe-portions.md) | FDC portion weights so all 18 sample recipes are plannable | M | — | 1 | done |
 | [BE-21](./BE-21-recipe-detail-nutrition.md) | Recipe detail returns real per-100 g nutrition and unit conversions (bug) | S | — | 1 | done |
 | [BE-22](./BE-22-user-data-folder-starter-pack.md) | User data folder, empty starting pool, starter-pack import (W6) | M | — | 1 | done |
-| [FE-11](./FE-11-plain-language-failures.md) | Plain-language failure panel per failing slot | M | P0 | 2 | todo |
-| [BE-17](./BE-17-plan-request-demographic-uls.md) | Optional `demographic` on PlanRequest enforces daily ULs | M | P0 | 2 | todo |
-| [BE-19](./BE-19-recipe-save-plannable.md) | Recipe saves are plannable: unit conversions, unit rejection, sync `errors`, derived time tags | M | P0, BE-18, BE-21, BE-22 | 2 | todo |
-| [FE-12](./FE-12-recipe-builder-tags.md) | Recipe builder: meal-role/cuisine/cost tags and meal-prep switch | M | P0, BE-19 | 2 | todo |
-| [FE-13](./FE-13-unit-guard-sync-errors.md) | Unknown units fail in Flutter; sync errors shown | S | BE-19, FE-12 | 2 | todo |
-| [FE-14](./FE-14-meal-prep-tray.md) | Meal-prep tray, batch meal cards and create-batch sheet | M | FE-12 | 2 | todo |
-| [FE-15](./FE-15-pins.md) | Pin and unpin a meal; pinned meal cards | S | FE-14 | 2 | todo |
-| [FE-16](./FE-16-starter-pack-picker.md) | Starter-pack picker; no personal profile in the app bundle | M | P0, BE-22 | 2 | todo |
-| [BE-20](./BE-20-demo-micronutrient-default.md) | Demo micronutrient default (D-A), user override, MCP busyness 2/3/4 (D-B), demo profile (W7) | M | DATA-1 | 2 | todo |
+| [FE-11](./FE-11-plain-language-failures.md) | Plain-language failure panel per failing slot | M | P0 | 2 | done |
+| [BE-17](./BE-17-plan-request-demographic-uls.md) | Optional `demographic` on PlanRequest enforces daily ULs | M | P0 | 2 | done |
+| [BE-19](./BE-19-recipe-save-plannable.md) | Recipe saves are plannable: unit conversions, unit rejection, sync `errors`, derived time tags | M | P0, BE-18, BE-21, BE-22 | 2 | done |
+| [FE-12](./FE-12-recipe-builder-tags.md) | Recipe builder: meal-role/cuisine/cost tags and meal-prep switch | M | P0, BE-19 | 2 | done |
+| [FE-13](./FE-13-unit-guard-sync-errors.md) | Unknown units fail in Flutter; sync errors shown | S | BE-19, FE-12 | 2 | done |
+| [FE-14](./FE-14-meal-prep-tray.md) | Meal-prep tray, batch meal cards and create-batch sheet | M | FE-12 | 2 | done |
+| [FE-15](./FE-15-pins.md) | Pin and unpin a meal; pinned meal cards | S | FE-14 | 2 | done |
+| [FE-16](./FE-16-starter-pack-picker.md) | Starter-pack picker; no personal profile in the app bundle | M | P0, BE-22 | 2 | done |
+| [BE-20](./BE-20-demo-micronutrient-default.md) | Demo micronutrient default (D-A), user override, MCP busyness 2/3/4 (D-B), demo profile (W7) | M | DATA-1 | 2 | done |
+| [DATA-2](./DATA-2-vitamin-d-correction.md) | Correct the ~40x vitamin D values (mapper bug) and re-probe the default lists | M | BE-20 | close-out | done |
 
 `P0` = PR #63 merged. Complexity: S ≈ half a day of agent work and one small PR; M ≈ one day and one PR. No task is L. If one grows past M during Phase 1 analysis, stop and split it.
 
@@ -195,13 +196,22 @@ Options considered:
 
 Applies in BE-20.
 
+**D-A addendum (owner, 2026-11-15).** BE-20's probe re-run found that no goal list planned at all with the daily ULs on: the 350 mg magnesium UL rejected every day, even with no micronutrient floors (see the BE-20 probe record). Decided:
+1. **Supplement-only ULs are not enforced against food.** The IOM ULs for magnesium (350 mg) and niacin (35 mg) apply to supplemental/fortified intake only, so `data/reference/ul_by_demographic.json` sets `magnesium_mg` and `b3_niacin_mg` to `null` for all four demographics (as `sodium_mg` already is), with a note in the file. No other reference value changes.
+2. **The default list may differ by demographic.** Per-demographic lists, still defined in one place.
+3. **A 1-day plan with the full default floors may fail** (owner, 2026-11-15); the default lists stay as they are. Weekly floors are met on the horizon total, so over several days a low day is offset by a high one; one day alone must hit every RDI at once. When this was decided the example profile failed at 1 day on the committed pool (`partial`, FM-1); since DATA-2 it plans at 1, 3 and 7 days (see below). The CLI default stays `--days 1`; the first-run docs (README, QUICK_START, USAGE) run `--days 3`, say the example plans at 1, 3 and 7 days, and say what to do if a short plan fails on your own goals or recipes: plan more days, or lower or remove goals.
+
+**Re-probed after DATA-2 (2026-11-15).** With vitamin D corrected (it was about 40x too high), the default lists above still plan for all four demographics at 7 days, and are unchanged: adult_male and adult_female leave out `omega_3_g`, `omega_6_g`; pregnancy and lactation also `vitamin_e_mg`. Vitamin E is now meetable for pregnancy and lactation too (owner option to restore it; the Flutter tests pin the current pregnancy list). The example profile now also plans at 1 day (CLI and HTTP, `TC-4`). Probe table: BE-20 stub, "Probe re-run … after DATA-2".
+
+**Vitamin D left out of the default (owner, 2026-11-15).** After the correction, the 18 starter recipes can't meet the 600 IU/day vitamin D floor at the Flutter new-user targets (2000 kcal, 150 g protein, fat 60–74 g): demo step 2b failed with `partial` / FM-5. Following option 4, `vitamin_d_iu` is now left out for all four demographics and named in the warning; users can add it back. Lists: adult_male and adult_female leave out `vitamin_d_iu`, `omega_3_g`, `omega_6_g` (22 goals); pregnancy and lactation also `vitamin_e_mg` (21 goals; vitamin E is still not decided). Each default plans at 7 days on the sample recipes (MCP), the example profile at 1, 3 and 7 days (CLI and HTTP), and step 2b now succeeds for all four demographics. Record: BE-20 stub, "Vitamin D left out of the default".
+
 ### D-B: MCP shorthand schedule default busyness — **resolved: 2/3/4**
 
 Options considered: (1) keep 2/3/3; (2) have the assistant ask; (3) 4/4/4.
 
 **Decision: 2/3/4.** The first meal is ≤ 15 min, the second ≤ 30 min, and the third has no cooking-time limit, which frees at least one slot from cooking-time constraints.
 - Today `src/mcp_server/tools.py::_schedule_days` builds `[2] + [3] * (n - 1)`, and the `schedule` field description in `src/mcp_server/server.py` says "busyness 2/3/3".
-- **For `meals_per_day` other than 3** the owner gave no rule. BE-20 uses: first meal 2, last meal 4, any others 3, and a single meal stays 2. Confirm this in the BE-20 PR.
+- **For `meals_per_day` other than 3** the owner gave no rule. BE-20 uses: one meal 2; two meals 2/4; four or more first 2, last 4, others 3. Confirmed by the owner (2026-11-15).
 
 Applies in BE-20; the demo script and BE-20's probe use 2/3/4.
 
@@ -217,7 +227,7 @@ These come from the owner's draft spec "a cloud agent can use Macrova like a new
 | W4  | Example data (**a**: hand-written `examples/` with `expected.json`)                                                                                         | No task. The demo script's inputs (new-user profile, 7-day request) would fit there.                                                                                                                                       | Sprint 3; consider for the demo inputs                                                                     |
 | W5  | Check strictness (**a**: outcomes and tolerances, not exact recipe ids)                                                                                     | The demo script already checks outcomes (`status`, matching codes)                                                                                                                                                         | Already followed; can decide now                                                                           |
 | W6 | Keep a session from changing committed data | **Decided 2026-11-14:** a `MACROVA_DATA_DIR` setting, with one change from option a: the user folder starts with an **empty** recipe pool instead of a copy of `data/`. The 18 sample recipes become an optional starter pack the user picks from. | Applied in BE-22, FE-16 |
-| W7 | Default profile | **Decided 2026-11-14: option a.** `config/user_profile.yaml.example` is the shipped default and gets the D-A defaults (BE-20). `config/user_profile.yaml` holds the owner's personal settings: BE-20 removes it from git with `git rm --cached` (the local copy stays), as `.gitignore` already intends. A fresh clone copies the example. BE-16, the probes and demo step 3 use the example. | Applied in BE-16, BE-20 |
+| W7 | Default profile | **Decided 2026-11-14: option a.** `config/user_profile.yaml.example` is the shipped default and gets the D-A defaults (BE-20). `config/user_profile.yaml` holds the owner's personal settings: The owner removed it from git with `git rm --cached` in 94c7c42 (the local copy stays, ignored), as `.gitignore` already intends. A fresh clone copies the example. BE-16, the probes and demo step 3 use the example. | Applied in BE-16, BE-20 |
 | W8  | Flutter web tier (**a**: spec it after the core passes: semantics flag, `Semantics`/`Key` labels, Linux setup doc, `make web`)                              | FE-11, FE-14 and FE-15 build the screens W8 would label (failure panel, tray, pins)                                                                                                                                        | Sprint 3+; adding `Key`s in those FE tasks now is cheap                                                    |
 
 The spec's fresh-clone findings that are already covered here:
@@ -277,13 +287,41 @@ Not covered (Sprint 3):
 
 ## Definition of done
 
-- [ ] Every stub in this folder is `done`, or re-statused `blocked`/`parked` with a one-line reason.
-- [ ] `python3 scripts/run_pytest.py` green; `python3 scripts/run_export_openapi.py --check` green.
-- [ ] `benchmark-audit`: 153/153, 0 regressions against `main` (`diff_results.py --base main` exits 0) after the last planner- or nutrition-touching task.
-- [ ] `cd frontend && flutter analyze && flutter test` green.
+- [x] Every stub in this folder is `done`, or re-statused `blocked`/`parked` with a one-line reason.
+- [x] `python3 scripts/run_pytest.py` green; `python3 scripts/run_export_openapi.py --check` green.
+- [x] `benchmark-audit`: 153/153, 0 regressions against `main` (`diff_results.py --base main` exits 0) after the last planner- or nutrition-touching task.
+- [x] `cd frontend && flutter analyze && flutter test` green.
 - [ ] **Demo script** passes on a fresh clone with no `.env`, and results are recorded here:
   1. MCP stdio: `macrova_plan_meals` with `use_sample_recipes: true`, a demographic, 3 meals with the default shorthand busyness (2/3/4, D-B), 7 days → `status: "success"`, with a warning naming any nutrient left out of the default (needs DATA-1 + BE-20).
   2. HTTP API with `MACROVA_DATA_DIR` set to a fresh folder (BE-22). An empty pool gives the empty-pool message. After importing a chosen subset of the starter pack, the Flutter new-user default profile for 7 days → `plan_status: "success"`, and `git status` stays clean.
   3. CLI and API on `config/user_profile.yaml.example` report the same `termination_code` and failure codes (BE-16).
   4. Flutter: an induced failure (an impossible calorie ceiling) shows explanation, fix and code on the failing slot (FE-11). A batch created in the tray appears as batch meals in the next plan (FE-14). A pinned meal stays put on re-plan (FE-15). A new user starts with an empty library, picks recipes from the starter pack, and plans with only those (FE-16).
-- [ ] The Sprint 1 dispositions above are applied (DOC-1).
+- [x] The Sprint 1 dispositions above are applied (DOC-1).
+
+## Close-out results (2026-11-15, branch `sprint2-wave2` @ `5c68bef`)
+
+Validation, re-run on the branch head:
+- backend tests: 1,490 passed;
+- OpenAPI snapshot check: exit 0;
+- `flutter analyze` clean, `flutter test` 333 passed;
+- benchmark: 153/153 `MATCH`, 0 regressed, 0 unmapped (`diff_results.py --base main` exit 0).
+
+Demo script, steps 1–3, run from a `git archive HEAD` export (no `.env`, no `config/user_profile.yaml`) with `MACROVA_DATA_DIR` and the profile path on temp folders. Step 3 ran from the repo root, so the repo's `.env` was present; the runs were deterministic with local ingredients.
+
+| Step | Result |
+|---|---|
+| 1. MCP stdio, `use_sample_recipes`, 3 meals (2/3/4), 7 days, each of the 4 demographics | **Pass.** `status: "success"` for all four, with the warning naming the left-out nutrients (omega-3 and omega-6; plus vitamin E for pregnancy and lactation). Since vitamin D left the default (2026-11-15) the warning names vitamin D too; all four still succeed at 7 days. |
+| 2a. HTTP, fresh data folder, empty pool | **Pass.** `plan_status: failed`, `FM-1`, `cause: EMPTY_POOL`; the fix text points at the starter pack. `recipe_could_help` is still `true` (finding 13). |
+| 2b. Import from the starter pack, then the Flutter new-user default profile for 7 days | **Pass (all 18 starters), after vitamin D left the default (2026-11-15).** Same in-process run, all 18 imported, goals and τ from `GET /api/v1/micronutrient_defaults` for each demographic, that demographic's ULs on: adult_male, adult_female, pregnancy and lactation → `success` / `TC-1`, with and without the default goals. Subset of 8 unchanged for all four: `partial` / `FM-MACRO-INFEASIBLE` without goals, `failed` / `FM-4` with them. Pinned by `tests/api/test_demo_new_user_default.py` (all four demographics). History, **fail (default goals) after the DATA-2 correction:** before DATA-2: with all 18 imported and `demographic: adult_male`, `partial` / `FM-MACRO-INFEASIBLE` (no goals) or `failed` / `FM-4` (default goals). Re-run 2026-11-15 after DATA-2 (in-process, fresh data folder, 2000 kcal, 150 g protein, fat 60–74 g, 3 meals 2/3/4 tagged breakfast/lunch/dinner, goals and τ from `GET /api/v1/micronutrient_defaults?demographic=adult_male`): all 18, no goals → **success** with or without the demographic; default goals → `partial` / `TC-3` / **`FM-5`** (search budget) with or without the demographic. The 600 IU/day vitamin D floor binds: without it the plan succeeds; with only that floor it is still FM-5, also at 500,000 attempts (10x); at 300 IU it succeeds. Subset of 8 (`recipe_007, 009, 011, 017, 003, 010, 002, 016`): `partial` / `FM-MACRO-INFEASIBLE` without goals, `failed` / `FM-4` with them. |
+| 2c. `git status` unchanged by the run | **Pass.** |
+| 3. CLI and API on `config/user_profile.yaml.example` | **Pass.** Identical `termination_code` and failure codes at 1, 3 and 7 days: success at 3 and 7; `partial` / `FM-1` at 1 day (accepted, D-A addendum). Re-run after DATA-2 and after vitamin D left the default: success at 1 (`TC-4`), 3 and 7 days, CLI and HTTP. |
+| 4. Flutter UI checks | **Not run** (human-checked). |
+
+**Finding from step 2b, vitamin D (corrected in [DATA-2](./DATA-2-vitamin-d-correction.md)).** `vitamin_d_iu` in `data/reference/ingredient_nutrition.json` was about 40 times too high (eggs 3,282 IU per 100 g against 82 IU in FDC, milk 1,680, canned salmon 30,459): the USDA nutrient mapper had the IU and µg vitamin D ids swapped and summed them, so every food got IU × 40 + µg. Six of the 18 starter recipes were then over the 4,000 IU daily UL on their own, so any request with a demographic lost them and the Flutter default targets became infeasible. DATA-2 fixed the mapper and set all 18 affected entries from their own FDC records (with the owner's approval, 2026-11-15). Step 2b still fails with the default goals, now for a different reason: with the Flutter macros (2,000 kcal, fat 60–74 g) the 18 starters can't be shown to reach the 600 IU/day vitamin D floor over 7 days (FM-5, search budget; the example profile's 2,400 kcal / fat 50–100 g plans fine). Owner decision needed: leave `vitamin_d_iu` out of the default, lower it, or accept the failure for these macros. **Decided (owner, 2026-11-15): leave it out** (D-A option 4; D-A addendum above). `vitamin_d_iu` is now in `DEFAULT_MICRONUTRIENT_LEFT_OUT` for all four demographics, the MCP warning names it, and step 2b succeeds with each demographic's defaults.
+
+Other open items carried out of Wave 2:
+- A binding upper limit, and a 1-day micronutrient-floor failure, are reported as macro or slot failures (`FM-MACRO-INFEASIBLE` / `FM-1`) with the wrong fix text.
+- LLM recovery diagnosis ignores upper limits.
+- `cuisine` acts as a hard pool filter, against the tag-semantics contract.
+- A line's `grams_per_unit` has no upper bound.
+- The manual checks in each FE stub were not run.

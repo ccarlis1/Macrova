@@ -19,7 +19,7 @@ The Nutrition Agent is a modular system that generates personalized meal recomme
 - **Nutrition Database**: Comprehensive nutrition values (macros + micros) per ingredient/recipe
 - **User Profile**: Personal preferences, goals, constraints, meal prep plans
   - Includes optional `max_daily_calories` for Calorie Deficit Mode (hard constraint)
-  - Includes optional `demographic` for UL lookup (e.g., `adult_male`)
+  - Includes optional `demographic` for UL lookup (`adult_male`, `adult_female`, `pregnancy`, `lactation`); unset means no ULs. Sent as `PlanRequest.demographic` over HTTP, read from the YAML by the CLI, `Targets.demographic` in the MCP server
   - Includes optional `upper_limits` overrides for clinician-specified limits
 - **Upper Limits Reference**: Daily tolerable upper intake limits by demographic
   - Stored in `data/reference/ul_by_demographic.json`
@@ -53,7 +53,7 @@ The Nutrition Agent is a modular system that generates personalized meal recomme
 - **LLM Reasoner**: Use LLM to understand context and make nuanced decisions (Phase 5.1: post-MVP)
 - **Constraint Checker**: Validate recipes against cooking time, satiety, taste preferences, calorie limits
 - **UL Validator**: Post-plan validation of daily micronutrient intake against upper tolerable limits
-  - Loads reference ULs from `data/reference/ul_by_demographic.json`
+  - Loads reference ULs from `data/reference/ul_by_demographic.json` through one helper, `src/data_layer/upper_limits.py::upper_limits_for`, shared by the API, CLI and MCP server
   - Merges with user overrides from `upper_limits` in user profile
   - Enforced per-day (not averaged over week) — exceeding any daily UL marks plan invalid
 

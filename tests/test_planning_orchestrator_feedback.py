@@ -294,3 +294,27 @@ def test_pool_update_failure_is_typed_and_never_rebuilds_pool(tmp_path, monkeypa
     rec = out.report["llm_recovery"]
     assert out.success is False and rec["state"] == RecoveryState.SYSTEM_ERROR.value and rec["reason"] == "pool_update_failed"
     assert rec["planner_runs"] == 1
+
+
+def test_resolved_ul_reaches_first_and_retried_planner_runs(tmp_path, monkeypatch):
+    """BE-17: the real loop passes the request's daily ULs to the retry ``plan_meals`` too."""
+    import src.planning.orchestrator as orchestrator
+    from src.data_layer.upper_limits import upper_limits
+
+    seen = []
+    real_plan_meals = orchestrator.plan_meals
+
+    def _spy(profile_, pool_, days_, **kwargs):
+        seen.append(kwargs.get("resolved_ul"))
+        return real_plan_meals(profile_, pool_, days_, **kwargs)
+
+    monkeypatch.setattr(orchestrator, "plan_meals", _spy)
+    ul = upper_limits("adult_male")
+    prof = _target_for_two_fits()
+    pool = [R("small_a", 100, 5, 2, 10), R("small_b", 120, 6, 2, 12), R("small_c", 110, 5, 3, 11)]
+    client = Client([{"drafts": [FIT, FIT2, TINY]}])
+    out = plan_with_llm_feedback(prof, pool, 1, recipes_path=str(tmp_path / "r.json"), client=client, provider=Provider(),
+                                 use_feedback_cache=False, force_live_generation=True, recipes_to_generate_per_attempt=3,
+                                 resolved_ul=ul)
+    assert out.success is True and out.report["llm_recovery"]["planner_runs"] == 2
+    assert len(seen) == 2 and all(s is ul for s in seen)

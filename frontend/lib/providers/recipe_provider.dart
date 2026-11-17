@@ -1,26 +1,24 @@
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/ingredient.dart';
 import '../models/models.dart';
 import '../models/recipe.dart';
+import '../models/recipe_sync_result.dart';
+import '../models/starter_recipe.dart';
+import '../models/tag.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
 
 const _uuid = Uuid();
 
-typedef RecipeListSyncFn = Future<List<String>> Function(List<Recipe> recipes);
-
-/// Dev: `flutter run --dart-define=BUNDLE_SERVER_RECIPES=true`
-const _bundleServerRecipes = bool.fromEnvironment(
-  'BUNDLE_SERVER_RECIPES',
-  defaultValue: false,
+typedef RecipeDetailFn = Future<Recipe> Function(String id);
+typedef TagListFn = Future<List<TagMeta>> Function();
+typedef RecipeSummaryListFn = Future<List<RecipeSummary>> Function();
+typedef StarterListFn = Future<List<StarterRecipe>> Function();
+typedef StarterImportFn = Future<StarterImportResult> Function(
+  List<String> ids,
 );
-
-const _bundledRecipesAsset = 'assets/dev/server_recipes.json';
 
 /// Resolves a recipe line label to a saved hub ingredient when the strings
 /// are not identical (e.g. "jasmine rice in unsalted water" vs "jasmine rice").
@@ -88,10 +86,40 @@ Ingredient? _matchSavedIngredient(
 }
 
 class RecipeProvider extends ChangeNotifier {
-  RecipeProvider({RecipeListSyncFn? recipeSyncFn})
-      : _recipeSyncFn = recipeSyncFn ?? ApiService.syncRecipes;
+  RecipeProvider({
+    RecipeListSyncFn? recipeSyncFn,
+    RecipeDetailFn? recipeDetailFn,
+    TagListFn? tagListFn,
+    RecipeSummaryListFn? recipeListFn,
+    StarterListFn? starterListFn,
+    StarterImportFn? starterImportFn,
+  })  : _recipeSyncFn = recipeSyncFn ?? ApiService.syncRecipes,
+        _recipeDetailFn = recipeDetailFn ?? ApiService.getRecipe,
+        _tagListFn = tagListFn ?? (() => ApiService.listTags()),
+        _recipeListFn = recipeListFn ?? ApiService.listRecipes,
+        _starterListFn =
+            starterListFn ?? (() => ApiService.listStarterRecipes()),
+        _starterImportFn =
+            starterImportFn ?? ((ids) => ApiService.importStarterRecipes(ids));
 
   final RecipeListSyncFn _recipeSyncFn;
+  final RecipeDetailFn _recipeDetailFn;
+  final TagListFn _tagListFn;
+  final RecipeSummaryListFn _recipeListFn;
+  final StarterListFn _starterListFn;
+  final StarterImportFn _starterImportFn;
+
+  /// `GET /api/v1/starter_recipes` (FE-16), fetched when the picker opens.
+  List<StarterRecipe>? _starterRecipes;
+  bool _starterLoading = false;
+  String? _starterError;
+  bool _starterImporting = false;
+
+  /// `GET /api/v1/tags`, fetched once per session ([loadTagRegistry]).
+  List<TagMeta>? _tagRegistry;
+  bool _tagRegistryLoading = false;
+  String? _tagRegistryError;
+  Future<void>? _tagRegistryInFlight;
 
   List<Recipe> _localRecipes = [];
   List<RecipeSummary> _remoteSummaries = [];
@@ -99,21 +127,14 @@ class RecipeProvider extends ChangeNotifier {
   bool _syncLoading = false;
   String? _syncError;
 
+  /// Per-recipe rejections from `POST /recipes/sync` (BE-19), by recipe id
+  /// (or the raw string when it names no recipe). See [recipeSyncErrors].
+  final Map<String, RecipeSyncError> _recipeSyncErrors = {};
+
   /// Device-local favorite recipe ids (not a planner tag / not synced).
   final Set<String> _favoriteRecipeIds = {};
 
-  /// In-memory full recipes from [assets/dev/server_recipes.json] (by backend id).
-  Map<String, Recipe>? _bundledById;
-  bool _bundledAssetHydrateAttempted = false;
-
   int _ingredientEnrichmentSignature = 0;
-
-  Recipe _withBundledFallback(Recipe r) {
-    if (r.ingredients.isNotEmpty) return r;
-    final full = _bundledById?[r.id];
-    if (full != null && full.ingredients.isNotEmpty) return full;
-    return r;
-  }
 
   /// Stored recipes with at least one ingredient line (for `/recipes/sync` before planning).
   List<Recipe> get localFullRecipesForSync => List.unmodifiable(
@@ -131,7 +152,7 @@ class RecipeProvider extends ChangeNotifier {
         () => Recipe.apiSummary(id: s.id, name: s.name),
       );
     }
-    final merged = map.values.map(_withBundledFallback).toList()
+    final merged = map.values.toList()
       ..sort(
         (a, b) =>
             a.name.toLowerCase().compareTo(b.name.toLowerCase()),
@@ -139,9 +160,51 @@ class RecipeProvider extends ChangeNotifier {
     return List.unmodifiable(merged);
   }
 
+  /// Registry tags, or null until [loadTagRegistry] succeeds.
+  List<TagMeta>? get tagRegistry =>
+      _tagRegistry == null ? null : List.unmodifiable(_tagRegistry!);
+  bool get tagRegistryLoading => _tagRegistryLoading;
+  String? get tagRegistryError => _tagRegistryError;
+
+  /// Offerable `context` tags with `semantic_class == meal_role`, registry order.
+  List<TagMeta> get mealRoleTags => [
+        for (final t in _tagRegistry ?? const <TagMeta>[])
+          if (t.isMealRole && t.isOfferable) t,
+      ];
+
+  /// Fetches the tag registry once per session; [force] refetches (retry).
+  Future<void> loadTagRegistry({bool force = false}) {
+    if (!force && _tagRegistry != null) return Future.value();
+    final inFlight = _tagRegistryInFlight;
+    if (inFlight != null) return inFlight;
+    final f = _fetchTagRegistry();
+    _tagRegistryInFlight = f;
+    return f.whenComplete(() => _tagRegistryInFlight = null);
+  }
+
+  Future<void> _fetchTagRegistry() async {
+    _tagRegistryLoading = true;
+    _tagRegistryError = null;
+    notifyListeners();
+    try {
+      _tagRegistry = await _tagListFn();
+    } catch (e) {
+      _tagRegistryError = e is ApiException ? e.message : e.toString();
+    } finally {
+      _tagRegistryLoading = false;
+      notifyListeners();
+    }
+  }
+
   bool get loaded => _loaded;
   bool get syncLoading => _syncLoading;
   String? get syncError => _syncError;
+
+  /// Latest server rejection per recipe, from the last sync that sent it:
+  /// a later sync that stores the recipe (or [deleteRecipe]) clears it. These
+  /// recipes are saved on this device only and the planner can't use them.
+  List<RecipeSyncError> get recipeSyncErrors =>
+      List.unmodifiable(_recipeSyncErrors.values);
 
   /// Server ids from the last successful `GET /api/v1/recipes` (empty if never synced or error).
   Set<String> get remoteRecipeIds =>
@@ -172,38 +235,6 @@ class RecipeProvider extends ChangeNotifier {
     await StorageService.saveFavoriteRecipeIds(_favoriteRecipeIds);
   }
 
-  /// Loads bundled `server_recipes.json` into [_bundledById] and patches [_localRecipes]
-  /// rows that have no ingredients. Does not require [BUNDLE_SERVER_RECIPES].
-  Future<void> hydrateBundledServerRecipesFromAsset() async {
-    if (_bundledAssetHydrateAttempted) return;
-    _bundledAssetHydrateAttempted = true;
-    try {
-      final raw = await rootBundle.loadString(_bundledRecipesAsset);
-      final list = Recipe.fromServerRecipesJsonRoot(
-        jsonDecode(raw) as Map<String, dynamic>,
-      );
-      _bundledById = {for (final r in list) r.id: r};
-      var changed = false;
-      for (var i = 0; i < _localRecipes.length; i++) {
-        final r = _localRecipes[i];
-        if (r.ingredients.isEmpty) {
-          final full = _bundledById![r.id];
-          if (full != null && full.ingredients.isNotEmpty) {
-            _localRecipes[i] = full;
-            changed = true;
-          }
-        }
-      }
-      if (changed) {
-        await StorageService.saveRecipes(_localRecipes);
-      }
-      notifyListeners();
-    } catch (e, st) {
-      _bundledById = {};
-      debugPrint('hydrateBundledServerRecipesFromAsset: $e\n$st');
-    }
-  }
-
   /// Match recipe lines to [Ingredient.name] (lowercase) and copy per-100g data.
   Future<void> applyIngredientNutritionFromSavedIngredients(
     List<Ingredient> ingredients,
@@ -228,16 +259,6 @@ class RecipeProvider extends ChangeNotifier {
       if (!identical(e, r)) changed = true;
       return e;
     }).toList();
-
-    if (_bundledById != null && _bundledById!.isNotEmpty) {
-      final next = <String, Recipe>{};
-      for (final e in _bundledById!.entries) {
-        final r = _enrichRecipeLinesFromIngredients(e.value, byName);
-        if (!identical(r, e.value)) changed = true;
-        next[e.key] = r;
-      }
-      _bundledById = next;
-    }
 
     if (changed) {
       await StorageService.saveRecipes(_localRecipes);
@@ -273,39 +294,161 @@ class RecipeProvider extends ChangeNotifier {
     return any ? r.copyWith(ingredients: lines) : r;
   }
 
-  /// Merges [assets/dev/server_recipes.json] (copy of repo `data/recipes/recipes.json`)
-  /// into local storage when [BUNDLE_SERVER_RECIPES] is true. Same id → replaced.
-  Future<void> mergeBundledServerRecipesIfEnabled() async {
-    if (!_bundleServerRecipes) return;
-    try {
-      final raw = await rootBundle.loadString(_bundledRecipesAsset);
-      final bundled = Recipe.fromServerRecipesJsonRoot(
-        jsonDecode(raw) as Map<String, dynamic>,
-      );
-      final byId = {for (final r in _localRecipes) r.id: r};
-      for (final r in bundled) {
-        byId[r.id] = r;
-      }
-      _localRecipes = byId.values.toList();
-      await StorageService.saveRecipes(_localRecipes);
-      notifyListeners();
-    } catch (e, st) {
-      debugPrint('mergeBundledServerRecipesIfEnabled failed: $e\n$st');
-    }
-  }
-
   /// Loads full recipe JSON from [ApiService.getRecipe] and merges into local storage.
+  /// The detail's `cuisine` / `cost_level` / `dietary_flags` win over values
+  /// remembered here; those are kept only when the server has none.
   Future<Recipe> fetchRecipeDetail(String id) async {
-    final recipe = await ApiService.getRecipe(id);
+    final fetched = await _recipeDetailFn(id);
+    final prior = _localById(id);
+    final recipe = prior == null
+        ? fetched
+        : fetched.copyWith(
+            cuisine: fetched.cuisine ?? prior.cuisine,
+            costLevel: fetched.costLevel ?? prior.costLevel,
+            dietaryFlags: fetched.dietaryFlags ?? prior.dietaryFlags,
+          );
     final idx = _localRecipes.indexWhere((r) => r.id == id);
     if (idx >= 0) {
       _localRecipes[idx] = recipe;
     } else {
       _localRecipes.add(recipe);
     }
+    _serverTagsLoadedIds.add(id);
     await StorageService.saveRecipes(_localRecipes);
     notifyListeners();
     return recipe;
+  }
+
+  /// Refreshes the server-owned tag fields of a stored recipe from
+  /// `GET /api/v1/recipes/{id}`, keeping its local lines: [Recipe.tagSlugsByType],
+  /// [Recipe.isMealPrepCapable] and (server value wins when present)
+  /// [Recipe.cuisine] / [Recipe.costLevel] / [Recipe.dietaryFlags]. Use before
+  /// editing a server recipe whose tags were never loaded, since a sync with
+  /// `tag_slugs_by_type` replaces the stored non-`time` tags.
+  Future<Recipe> refreshServerTags(Recipe recipe) async {
+    final detail = await _recipeDetailFn(recipe.id);
+    final merged = recipe
+        .copyWith(
+          tagSlugsByType: detail.tagSlugsByType,
+          isMealPrepCapable: detail.isMealPrepCapable,
+        )
+        .withServerTagFields(detail);
+    final idx = _localRecipes.indexWhere((r) => r.id == recipe.id);
+    if (idx >= 0) {
+      _localRecipes[idx] = merged;
+      await StorageService.saveRecipes(_localRecipes);
+    }
+    _serverTagsLoadedIds.add(recipe.id);
+    notifyListeners();
+    return merged;
+  }
+
+  /// Ids whose detail ([fetchRecipeDetail] / [refreshServerTags]) loaded this
+  /// session, so their [Recipe.cuisine] / [Recipe.costLevel] are the server's.
+  final Set<String> _serverTagsLoadedIds = {};
+
+  /// Ids [loadServerTags] already tried this session (loaded or failed).
+  final Set<String> _serverTagsAttemptedIds = {};
+  int _serverTagsInFlight = 0;
+
+  /// True when [id]'s tag fields came from the server this session.
+  bool hasServerTags(String id) => _serverTagsLoadedIds.contains(id);
+
+  /// Ids with server tag fields loaded this session ([hasServerTags]).
+  Set<String> get serverTagsLoadedIds => Set.unmodifiable(_serverTagsLoadedIds);
+
+  /// True while [loadServerTags] is fetching details.
+  bool get serverTagsLoading => _serverTagsInFlight > 0;
+
+  /// Loads the stored tag fields of [ids] from their details, once per session
+  /// each (a failed id isn't retried). A stored recipe with lines keeps them
+  /// ([refreshServerTags]); an id/name-only one is fetched in full
+  /// ([fetchRecipeDetail]). One detail call per id: callers pass only the
+  /// selected pool (Planner Config), never the whole library.
+  Future<void> loadServerTags(Iterable<String> ids) async {
+    final todo = [
+      for (final id in ids)
+        if (!_serverTagsLoadedIds.contains(id) &&
+            _serverTagsAttemptedIds.add(id))
+          id,
+    ];
+    if (todo.isEmpty) return;
+    _serverTagsInFlight++;
+    notifyListeners();
+    try {
+      for (final id in todo) {
+        final local = _localById(id);
+        try {
+          if (local != null && local.ingredients.isNotEmpty) {
+            await refreshServerTags(local);
+          } else {
+            await fetchRecipeDetail(id);
+          }
+        } catch (e) {
+          // Not on the server, or unreachable: the id stays unchecked.
+          debugPrint('loadServerTags($id): $e');
+        }
+      }
+    } finally {
+      _serverTagsInFlight--;
+      notifyListeners();
+    }
+  }
+
+  Recipe? _localById(String id) {
+    for (final r in _localRecipes) {
+      if (r.id == id) return r;
+    }
+    return null;
+  }
+
+  /// The starter pack, or null until [loadStarterRecipes] succeeds.
+  List<StarterRecipe>? get starterRecipes =>
+      _starterRecipes == null ? null : List.unmodifiable(_starterRecipes!);
+  bool get starterLoading => _starterLoading;
+  String? get starterError => _starterError;
+  bool get starterImporting => _starterImporting;
+
+  /// Ids in the library: stored here or listed by the server pool. A starter
+  /// recipe with one of these ids shows as "In your library".
+  Set<String> get libraryRecipeIds => {
+        for (final r in _localRecipes) r.id,
+        for (final s in _remoteSummaries) s.id,
+      };
+
+  /// Lists the starter pack (FE-16). Refetches each call (the picker calls it
+  /// on open, and on retry); errors land in [starterError].
+  Future<void> loadStarterRecipes() async {
+    _starterLoading = true;
+    _starterError = null;
+    notifyListeners();
+    try {
+      _starterRecipes = await _starterListFn();
+    } catch (e) {
+      _starterError = e is ApiException ? e.message : e.toString();
+    } finally {
+      _starterLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Copies the picked starter recipes into the server pool
+  /// (`POST /api/v1/starter_recipes/import`), then refreshes the server list
+  /// so they show in [recipes] like any server recipe. Nothing is stored on
+  /// the device: `/plan` without `recipe_ids` reads the server pool, and the
+  /// Recipe Builder loads the detail (with its unit conversions) on open.
+  /// A whole-request failure throws; per-id skips are in the result.
+  Future<StarterImportResult> importStarterRecipes(List<String> ids) async {
+    _starterImporting = true;
+    notifyListeners();
+    try {
+      final result = await _starterImportFn(ids);
+      await syncSummariesFromApi();
+      return result;
+    } finally {
+      _starterImporting = false;
+      notifyListeners();
+    }
   }
 
   /// Fetches recipe id+name list from the API and merges into [recipes].
@@ -315,7 +458,7 @@ class RecipeProvider extends ChangeNotifier {
     _syncError = null;
     notifyListeners();
     try {
-      _remoteSummaries = await ApiService.listRecipes();
+      _remoteSummaries = await _recipeListFn();
       _syncError = null;
     } catch (e) {
       _syncError = e is ApiException ? e.message : e.toString();
@@ -325,17 +468,22 @@ class RecipeProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> addRecipe(Recipe recipe) async {
+  /// Saves [recipe] locally, then syncs it. The result's `errors` say whether
+  /// the server rejected it (also kept in [recipeSyncErrors]); a whole-request
+  /// failure throws after the local save.
+  Future<RecipeSyncResult> addRecipe(Recipe recipe) async {
     final withId =
         recipe.id.isEmpty ? recipe.copyWith(id: _uuid.v4()) : recipe;
     _localRecipes.add(withId);
     await StorageService.saveRecipes(_localRecipes);
     notifyListeners();
-    await _recipeSyncFn([withId]);
+    final result = await _syncAndRecord([withId]);
     await syncSummariesFromApi();
+    return result;
   }
 
-  Future<void> updateRecipe(Recipe recipe) async {
+  /// Like [addRecipe] for an existing recipe.
+  Future<RecipeSyncResult> updateRecipe(Recipe recipe) async {
     final index = _localRecipes.indexWhere((r) => r.id == recipe.id);
     if (index != -1) {
       _localRecipes[index] = recipe;
@@ -344,12 +492,33 @@ class RecipeProvider extends ChangeNotifier {
     }
     await StorageService.saveRecipes(_localRecipes);
     notifyListeners();
-    await _recipeSyncFn([recipe]);
+    final result = await _syncAndRecord([recipe]);
     await syncSummariesFromApi();
+    return result;
+  }
+
+  /// Runs [_recipeSyncFn] and replaces the stored rejections of the sent
+  /// recipes with this response's.
+  Future<RecipeSyncResult> _syncAndRecord(List<Recipe> batch) async {
+    final result = await _recipeSyncFn(batch);
+    for (final r in batch) {
+      _recipeSyncErrors.remove(r.id);
+      // The server recomputes stored tags (e.g. is_meal_prep_capable) on
+      // sync, so the loaded detail values are stale: reload on next need.
+      _serverTagsLoadedIds.remove(r.id);
+      _serverTagsAttemptedIds.remove(r.id);
+    }
+    _recipeSyncErrors.removeWhere((_, e) => e.recipeId == null);
+    for (final e in result.errors) {
+      _recipeSyncErrors[e.recipeId ?? e.raw] = e;
+    }
+    notifyListeners();
+    return result;
   }
 
   Future<void> deleteRecipe(String id) async {
     _localRecipes.removeWhere((r) => r.id == id);
+    _recipeSyncErrors.remove(id);
     await StorageService.saveRecipes(_localRecipes);
     notifyListeners();
   }
@@ -358,18 +527,11 @@ class RecipeProvider extends ChangeNotifier {
   Recipe? getRecipeById(String id) => getById(id);
 
   Recipe? getById(String id) {
-    Recipe? r;
-    try {
-      r = _localRecipes.firstWhere((x) => x.id == id);
-    } catch (_) {
-      try {
-        final s = _remoteSummaries.firstWhere((x) => x.id == id);
-        r = Recipe.apiSummary(id: s.id, name: s.name);
-      } catch (_) {
-        r = _bundledById?[id];
-        return r;
-      }
+    final local = _localById(id);
+    if (local != null) return local;
+    for (final s in _remoteSummaries) {
+      if (s.id == id) return Recipe.apiSummary(id: s.id, name: s.name);
     }
-    return _withBundledFallback(r);
+    return null;
   }
 }

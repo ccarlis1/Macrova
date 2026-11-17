@@ -2,10 +2,22 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../models/meal_prep_batch.dart';
 import '../models/models.dart';
+import '../models/profile_pin.dart';
 import '../models/recipe.dart';
+import '../models/recipe_sync_result.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
+
+/// Plan warning for a recipe the pre-plan sync rejected.
+String recipeSyncWarning(RecipeSyncError e) {
+  final label = e.recipeLabel;
+  return label == null
+      ? 'A recipe was not synced, so the planner could not use it: ${e.raw}'
+      : 'Recipe "$label" was not synced, so the planner could not use it: '
+          '${e.message}';
+}
 
 /// Deterministic default busyness: first → 2, middle → 2–3, last → 3–4.
 int defaultMealBusyness(int mealIndex, int mealCount) {
@@ -68,7 +80,94 @@ List<WorkoutSlot> legacyTimingToWorkouts(int mealCount, String timing) {
   }
 }
 
+/// Sends a plan request ([ApiService.plan] or a test fake).
+typedef PlanRequestFn = Future<MealPlan> Function(PlanRequest request);
+
+/// `GET /api/v1/meal_prep_batches` (active only) or a test fake.
+typedef MealPrepListFn = Future<List<MealPrepBatch>> Function();
+
+/// `POST /api/v1/meal_prep_batches` or a test fake.
+typedef MealPrepCreateFn = Future<MealPrepBatch> Function({
+  required String recipeId,
+  required int totalServings,
+  required String cookDate,
+  required List<MealPrepAssignment> assignments,
+});
+
+/// `DELETE /api/v1/meal_prep_batches/{id}` or a test fake.
+typedef MealPrepCancelFn = Future<String> Function(String batchId);
+
+/// `GET /api/v1/profile/pins` or a test fake.
+typedef PinListFn = Future<List<ProfilePin>> Function();
+
+/// `PUT /api/v1/profile/pins/{day_index}/{slot_index}` or a test fake.
+typedef PinUpsertFn = Future<ProfilePin> Function(
+  int dayIndex,
+  int slotIndex,
+  String recipeId,
+);
+
+/// `DELETE /api/v1/profile/pins/{day_index}/{slot_index}` or a test fake.
+typedef PinDeleteFn = Future<ProfilePinDeleteResult> Function(
+  int dayIndex,
+  int slotIndex,
+);
+
+/// `DELETE /api/v1/profile/pins` (returns `cleared_count`) or a test fake.
+typedef PinClearFn = Future<int> Function();
+
+/// A plan slot a meal-prep batch can be assigned to (create-batch sheet).
+/// [dayIndex] / [slotIndex] are 0-based, as in batch assignments and
+/// `PlanFailure`; the plan shows the slot as day `dayIndex + 1`.
+class PlanSlotOption {
+  final int dayIndex;
+  final int slotIndex;
+
+  /// The meal planned there (`Meal.mealType · name`), or null when the slot
+  /// only carries a slot failure.
+  final String? label;
+
+  const PlanSlotOption({
+    required this.dayIndex,
+    required this.slotIndex,
+    this.label,
+  });
+
+  int get day => dayIndex + 1;
+}
+
 class MealPlanProvider extends ChangeNotifier {
+  final RecipeListSyncFn _recipeSyncFn;
+  final PlanRequestFn _planFn;
+  final MealPrepListFn _mealPrepListFn;
+  final MealPrepCreateFn _mealPrepCreateFn;
+  final MealPrepCancelFn _mealPrepCancelFn;
+  final PinListFn _pinListFn;
+  final PinUpsertFn _pinUpsertFn;
+  final PinDeleteFn _pinDeleteFn;
+  final PinClearFn _pinClearFn;
+
+  /// Pins as last fetched from the server (FE-15). The server owns them (its
+  /// profile YAML) and applies them to every `/plan`; plan requests never
+  /// carry pins. Keyed by the 0-based `(day_index, slot_index)`.
+  Map<(int, int), ProfilePin> _pins = const {};
+  bool _pinsLoading = false;
+  bool _pinsLoaded = false;
+  String? _pinsErrorCode;
+  String? _pinsErrorMessage;
+
+  /// Active meal-prep batches as last fetched from the server (FE-14). The
+  /// server owns them and applies them to every `/plan` itself; this list is
+  /// only for the tray and the create-batch sheet, never sent with a plan.
+  List<MealPrepBatch> _mealPrepBatches = const [];
+  bool _mealPrepLoading = false;
+  bool _mealPrepLoaded = false;
+  String? _mealPrepErrorCode;
+  String? _mealPrepErrorMessage;
+
+  /// Meal-prep tray collapsed (device-local convenience; expanded by default).
+  bool _mealPrepTrayCollapsed = false;
+
   MealPlan? _mealPlan;
   bool _loading = false;
   bool _syncing = false;
@@ -76,12 +175,17 @@ class MealPlanProvider extends ChangeNotifier {
   String? _errorCode;
   String? _errorMessage;
 
+  /// Request behind the current plan when it came from [generatePlan]; null after
+  /// [applyPlanResult] / [clearPlan] (e.g. agent `plan-from-text` results).
+  PlanRequest? _lastRequest;
+
   int _days = 7;
   /// Per-day canonical schedule; length always equals [_days].
   List<DaySchedule> _scheduleDays = [];
 
   final Set<String> _selectedRecipeIds = {};
-  /// Matches backend `planning_mode`; keep `deterministic` until assisted UX is gated.
+  /// Matches backend `planning_mode`. Assisted modes are only offered behind the
+  /// `LlmConfigProvider` ready gate (Planner Config, FE-11 "Find a recipe").
   String _planningMode = 'deterministic';
   /// `local` | `api` per OpenAPI / server PlanRequest.
   String _ingredientSource = 'local';
@@ -113,7 +217,27 @@ class MealPlanProvider extends ChangeNotifier {
     'dairy_free',
   };
 
-  MealPlanProvider() {
+  MealPlanProvider({
+    RecipeListSyncFn? recipeSyncFn,
+    PlanRequestFn? planFn,
+    MealPrepListFn? mealPrepListFn,
+    MealPrepCreateFn? mealPrepCreateFn,
+    MealPrepCancelFn? mealPrepCancelFn,
+    PinListFn? pinListFn,
+    PinUpsertFn? pinUpsertFn,
+    PinDeleteFn? pinDeleteFn,
+    PinClearFn? pinClearFn,
+  })  : _recipeSyncFn = recipeSyncFn ?? ApiService.syncRecipes,
+        _planFn = planFn ?? ApiService.plan,
+        _mealPrepListFn =
+            mealPrepListFn ?? (() => ApiService.listMealPrepBatches()),
+        _mealPrepCreateFn = mealPrepCreateFn ?? _apiCreateMealPrepBatch,
+        _mealPrepCancelFn = mealPrepCancelFn ??
+            ((id) => ApiService.cancelMealPrepBatch(id)),
+        _pinListFn = pinListFn ?? (() => ApiService.listPins()),
+        _pinUpsertFn = pinUpsertFn ?? ((d, s, r) => ApiService.pin(d, s, r)),
+        _pinDeleteFn = pinDeleteFn ?? ((d, s) => ApiService.unpin(d, s)),
+        _pinClearFn = pinClearFn ?? (() => ApiService.clearPins()) {
     _scheduleDays = List.generate(
       _days,
       (i) => buildDefaultDaySchedule(i + 1, 3),
@@ -126,6 +250,10 @@ class MealPlanProvider extends ChangeNotifier {
   String? get error => _error;
   String? get errorCode => _errorCode;
   String? get errorMessage => _errorMessage;
+  PlanRequest? get lastRequest => _lastRequest;
+
+  /// Whether [rerunLastRequest] can re-send the request behind the current plan.
+  bool get canRerunLastRequest => _lastRequest != null;
   int get days => _days;
   List<DaySchedule> get scheduleDays => List.unmodifiable(_scheduleDays);
   Set<String> get selectedRecipeIds => Set.unmodifiable(_selectedRecipeIds);
@@ -162,10 +290,233 @@ class MealPlanProvider extends ChangeNotifier {
   int get mealsPerDaySummary =>
       _scheduleDays.isEmpty ? 3 : _scheduleDays.first.meals.length;
 
+  static Future<MealPrepBatch> _apiCreateMealPrepBatch({
+    required String recipeId,
+    required int totalServings,
+    required String cookDate,
+    required List<MealPrepAssignment> assignments,
+  }) =>
+      ApiService.createMealPrepBatch(
+        recipeId: recipeId,
+        totalServings: totalServings,
+        cookDate: cookDate,
+        assignments: assignments,
+      );
+
+  // ---------------------------------------------------------------------------
+  // Meal-prep batches (FE-14). Server-owned; see [mealPrepBatches].
+
+  /// Active batches from the last [loadMealPrepBatches] (server order).
+  List<MealPrepBatch> get mealPrepBatches =>
+      List.unmodifiable(_mealPrepBatches);
+  bool get mealPrepLoading => _mealPrepLoading;
+
+  /// True once a [loadMealPrepBatches] succeeded.
+  bool get mealPrepLoaded => _mealPrepLoaded;
+
+  /// Server `code` / message of the last failed list or cancel call.
+  String? get mealPrepErrorCode => _mealPrepErrorCode;
+  String? get mealPrepErrorMessage => _mealPrepErrorMessage;
+  bool get mealPrepTrayCollapsed => _mealPrepTrayCollapsed;
+
+  /// Fetches the active batches (`GET /meal_prep_batches?active=true`).
+  /// A failure keeps the previous list and sets [mealPrepErrorCode].
+  Future<void> loadMealPrepBatches() async {
+    _mealPrepLoading = true;
+    notifyListeners();
+    try {
+      _mealPrepBatches = await _mealPrepListFn();
+      _mealPrepLoaded = true;
+      _mealPrepErrorCode = null;
+      _mealPrepErrorMessage = null;
+    } catch (e) {
+      _setMealPrepError(e);
+    } finally {
+      _mealPrepLoading = false;
+      notifyListeners();
+    }
+  }
+
+  void _setMealPrepError(Object e) {
+    if (e is ApiException) {
+      _mealPrepErrorCode = e.code;
+      _mealPrepErrorMessage = e.message;
+    } else {
+      _mealPrepErrorCode = null;
+      _mealPrepErrorMessage = e.toString();
+    }
+  }
+
+  /// Creates a batch on the server, refreshes [mealPrepBatches], then re-runs
+  /// the request behind the current plan (same mode) so the batch's fixed
+  /// slots show up. A server rejection (`BATCH_CONFLICT`,
+  /// `RECIPE_NOT_BATCHABLE`, `BATCH_INVALID`, `RECIPE_NOT_FOUND`) throws
+  /// [ApiException] before anything else happens. Returns whether the plan
+  /// was re-run (false when the plan didn't come from [generatePlan]).
+  Future<bool> createMealPrepBatch({
+    required String recipeId,
+    required int totalServings,
+    required String cookDate,
+    required List<MealPrepAssignment> assignments,
+  }) async {
+    await _mealPrepCreateFn(
+      recipeId: recipeId,
+      totalServings: totalServings,
+      cookDate: cookDate,
+      assignments: assignments,
+    );
+    await loadMealPrepBatches();
+    final last = _lastRequest;
+    if (last == null) return false;
+    await generatePlan(last);
+    return true;
+  }
+
+  /// Cancels a batch (`DELETE`) and refreshes [mealPrepBatches]. Throws
+  /// [ApiException] on failure. The current plan is not re-run: its batch
+  /// meals stay until the next plan.
+  Future<void> cancelMealPrepBatch(String batchId) async {
+    await _mealPrepCancelFn(batchId);
+    await loadMealPrepBatches();
+  }
+
+  void setMealPrepTrayCollapsed(bool collapsed) {
+    if (collapsed == _mealPrepTrayCollapsed) return;
+    _mealPrepTrayCollapsed = collapsed;
+    notifyListeners();
+    unawaited(StorageService.saveMealPrepTrayCollapsed(collapsed));
+  }
+
+  // ---------------------------------------------------------------------------
+  // Pins (FE-15). Server-owned; see [pins]. Pin/unpin/clear re-fetch the list
+  // but never re-run the plan: a pin applies the next time the user plans.
+
+  /// Pins from the last [loadPins], by day then slot.
+  List<ProfilePin> get pins => List.unmodifiable(_pins.values);
+  int get pinCount => _pins.length;
+  bool get pinsLoading => _pinsLoading;
+
+  /// True once a [loadPins] succeeded.
+  bool get pinsLoaded => _pinsLoaded;
+
+  /// Server `code` / message of the last failed [loadPins].
+  String? get pinsErrorCode => _pinsErrorCode;
+  String? get pinsErrorMessage => _pinsErrorMessage;
+
+  /// The pin at a 0-based plan slot, if any.
+  ProfilePin? pinAt(int dayIndex, int slotIndex) => _pins[(dayIndex, slotIndex)];
+
+  /// The pin coordinate of a planned [meal]: `(day - 1, meal.slotIndex)`,
+  /// where [day] is the 1-based `daily_plans[].day`. Falls back to the meal's
+  /// position [mealIndex] when the server sent no `slot_index` (as
+  /// [planSlotOptions] does).
+  static (int, int) pinSlotFor(int day, int mealIndex, Meal meal) =>
+      (day - 1, meal.slotIndex ?? mealIndex);
+
+  /// The pin for a planned [meal] (see [pinSlotFor]), if any.
+  ProfilePin? pinForMeal(int day, int mealIndex, Meal meal) {
+    final (d, s) = pinSlotFor(day, mealIndex, meal);
+    return pinAt(d, s);
+  }
+
+  /// Fetches the pins (`GET /profile/pins`). A failure keeps the previous
+  /// list and sets [pinsErrorCode].
+  Future<void> loadPins() async {
+    _pinsLoading = true;
+    notifyListeners();
+    try {
+      _pins = _pinMap(await _pinListFn());
+      _pinsLoaded = true;
+      _pinsErrorCode = null;
+      _pinsErrorMessage = null;
+    } catch (e) {
+      if (e is ApiException) {
+        _pinsErrorCode = e.code;
+        _pinsErrorMessage = e.message;
+      } else {
+        _pinsErrorCode = null;
+        _pinsErrorMessage = e.toString();
+      }
+    } finally {
+      _pinsLoading = false;
+      notifyListeners();
+    }
+  }
+
+  static Map<(int, int), ProfilePin> _pinMap(List<ProfilePin> pins) {
+    final sorted = [...pins]..sort((a, b) => a.dayIndex != b.dayIndex
+        ? a.dayIndex.compareTo(b.dayIndex)
+        : a.slotIndex.compareTo(b.slotIndex));
+    return {for (final p in sorted) (p.dayIndex, p.slotIndex): p};
+  }
+
+  /// Pins [recipeId] to a 0-based plan slot (`PUT`), then re-fetches [pins].
+  /// The plan is not re-run. A rejection (e.g. `RECIPE_NOT_FOUND`) throws
+  /// [ApiException] and changes nothing.
+  Future<ProfilePin> pinRecipe(
+    int dayIndex,
+    int slotIndex,
+    String recipeId,
+  ) async {
+    final pin = await _pinUpsertFn(dayIndex, slotIndex, recipeId);
+    await loadPins();
+    return pin;
+  }
+
+  /// Removes the pin at a 0-based plan slot (`DELETE`), then re-fetches
+  /// [pins]. The plan is not re-run. Throws [ApiException] on failure.
+  Future<bool> unpinSlot(int dayIndex, int slotIndex) async {
+    final result = await _pinDeleteFn(dayIndex, slotIndex);
+    await loadPins();
+    return result.deleted;
+  }
+
+  /// Removes every pin (`DELETE /profile/pins`), then re-fetches [pins].
+  /// Returns the server's `cleared_count`. Throws [ApiException] on failure.
+  Future<int> clearPins() async {
+    final n = await _pinClearFn();
+    await loadPins();
+    return n;
+  }
+
+  /// Slots of the current plan a batch can take: every planned meal (its
+  /// `slot_index`, else its position) and every slot failure, by day then slot.
+  /// Empty without a plan.
+  List<PlanSlotOption> get planSlotOptions {
+    final plan = _mealPlan;
+    if (plan == null) return const [];
+    final byKey = <(int, int), PlanSlotOption>{};
+    for (final d in plan.dailyPlans) {
+      for (var i = 0; i < d.meals.length; i++) {
+        final m = d.meals[i];
+        final slot = m.slotIndex ?? i;
+        final name = m.recipe['name'] as String? ?? '';
+        byKey[(d.day - 1, slot)] = PlanSlotOption(
+          dayIndex: d.day - 1,
+          slotIndex: slot,
+          label: name.isEmpty ? m.mealType : '${m.mealType} · $name',
+        );
+      }
+    }
+    for (final f in plan.failures) {
+      if (!f.isSlotFailure) continue;
+      byKey.putIfAbsent(
+        (f.dayIndex!, f.slotIndex!),
+        () => PlanSlotOption(dayIndex: f.dayIndex!, slotIndex: f.slotIndex!),
+      );
+    }
+    final out = byKey.values.toList()
+      ..sort((a, b) => a.dayIndex != b.dayIndex
+          ? a.dayIndex.compareTo(b.dayIndex)
+          : a.slotIndex.compareTo(b.slotIndex));
+    return out;
+  }
+
   Future<void> load() async {
     _cookedSlots
       ..clear()
       ..addAll(await StorageService.loadCookedSlots());
+    _mealPrepTrayCollapsed = await StorageService.loadMealPrepTrayCollapsed();
 
     final raw = await StorageService.loadPlannerConfig();
     if (raw == null) {
@@ -480,13 +831,29 @@ class MealPlanProvider extends ChangeNotifier {
   @visibleForTesting
   void debugSetError(Object e) => _setError(e);
 
-  Future<void> generatePlan(PlanRequest request) async {
+  /// Test-only: seed the request [rerunLastRequest] re-sends.
+  @visibleForTesting
+  void debugSetLastRequest(PlanRequest? request) => _lastRequest = request;
+
+  Future<void> generatePlan(PlanRequest request) =>
+      _generatePlan(request);
+
+  /// [syncWarnings] (from [generatePlanWithRecipeSync]) become the plan's
+  /// [MealPlan.syncWarnings], ahead of its own warnings.
+  Future<void> _generatePlan(
+    PlanRequest request, {
+    List<String> syncWarnings = const [],
+  }) async {
+    _lastRequest = request;
     _loading = true;
     _clearError();
     notifyListeners();
 
     try {
-      _mealPlan = await ApiService.plan(request);
+      final plan = await _planFn(request);
+      _mealPlan = syncWarnings.isEmpty
+          ? plan
+          : plan.withSyncWarnings(syncWarnings);
       await _clearCookedSlots();
     } catch (e) {
       _setError(e);
@@ -504,8 +871,9 @@ class MealPlanProvider extends ChangeNotifier {
     _clearError();
     notifyListeners();
 
+    final RecipeSyncResult synced;
     try {
-      await ApiService.syncRecipes(recipesToSync);
+      synced = await _recipeSyncFn(recipesToSync);
     } catch (e) {
       _setError(e);
       return;
@@ -514,10 +882,27 @@ class MealPlanProvider extends ChangeNotifier {
       notifyListeners();
     }
 
-    await generatePlan(request);
+    // Rejected recipes (BE-19) aren't stored, so the planner can't use them:
+    // say so on the plan instead of planning as if they were synced.
+    await _generatePlan(
+      request,
+      syncWarnings: [
+        for (final e in synced.errors) recipeSyncWarning(e),
+      ],
+    );
+  }
+
+  /// Re-send the request behind the current plan with another `planning_mode`
+  /// (FE-11: `assisted` runs the server's diagnosed recipe recovery). One-off:
+  /// the persisted [planningMode] is unchanged. No-op without a last request.
+  Future<void> rerunLastRequest({required String planningMode}) async {
+    final last = _lastRequest;
+    if (last == null) return;
+    await generatePlan(last.withPlanningMode(planningMode));
   }
 
   void clearPlan() {
+    _lastRequest = null;
     _mealPlan = null;
     _clearError();
     unawaited(_clearCookedSlots());
@@ -525,6 +910,7 @@ class MealPlanProvider extends ChangeNotifier {
   }
 
   void applyPlanResult(MealPlan plan) {
+    _lastRequest = null;
     _mealPlan = plan;
     _clearError();
     if (_cookedSlots.isNotEmpty) {

@@ -5,13 +5,24 @@ import '../models/recipe.dart';
 import '../providers/recipe_builder_coordinator.dart';
 import '../providers/recipe_provider.dart';
 import '../theme/tokens.dart';
+import '../widgets/advisory_card.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/recipe_card.dart';
 import '../widgets/section_header.dart';
+import '../widgets/starter_pack_sheet.dart';
 
 class RecipeLibraryScreen extends StatelessWidget {
   const RecipeLibraryScreen({super.key});
+
+  static const syncRejectionsKey = Key('recipe_library_sync_rejections');
+
+  /// Header action that opens the starter pack (FE-16).
+  static const starterPackKey = Key('recipe_library_starter_pack');
+
+  /// Empty-state affordances (FE-16).
+  static const emptyStarterPackKey = Key('recipe_library_empty_starter_pack');
+  static const emptyBuildKey = Key('recipe_library_empty_build');
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +35,8 @@ class RecipeLibraryScreen extends StatelessWidget {
       final shell = context.findAncestorStateOfType<AppShellState>();
       shell?.navigateTo(3);
     }
+
+    void openStarterPack() => StarterPackSheet.show(context);
 
     void openRecipe(Recipe recipe) {
       context.read<RecipeBuilderCoordinator>().openForEdit(recipe);
@@ -40,6 +53,31 @@ class RecipeLibraryScreen extends StatelessWidget {
             message: recipeProvider.syncError!,
             onRetry: recipeProvider.syncSummariesFromApi,
           ),
+        // Per-recipe sync rejections (BE-19). Whole-request failures keep
+        // using the banner above.
+        if (recipeProvider.recipeSyncErrors.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              MacrovaSpacing.screenGutter,
+              MacrovaSpacing.md,
+              MacrovaSpacing.screenGutter,
+              0,
+            ),
+            child: AdvisoryCard(
+              key: syncRejectionsKey,
+              variant: AdvisoryVariant.warn,
+              title: recipeProvider.recipeSyncErrors.length == 1
+                  ? 'A recipe was not saved to the server'
+                  : '${recipeProvider.recipeSyncErrors.length} recipes were '
+                      'not saved to the server',
+              description: [
+                'Saved on this device only; the planner can\'t use '
+                    '${recipeProvider.recipeSyncErrors.length == 1 ? 'it' : 'them'} '
+                    'until fixed and saved again.',
+                for (final e in recipeProvider.recipeSyncErrors) e.displayText,
+              ].join('\n'),
+            ),
+          ),
         Expanded(
           child: RefreshIndicator(
             onRefresh: recipeProvider.syncSummariesFromApi,
@@ -47,11 +85,13 @@ class RecipeLibraryScreen extends StatelessWidget {
                 ? _EmptyLibrary(
                     minScrollHeight: minScrollHeight,
                     onCreate: openCreate,
+                    onStarterPack: openStarterPack,
                   )
                 : _RecipeGrid(
                     recipes: recipes,
                     onView: openRecipe,
                     onCreate: openCreate,
+                    onStarterPack: openStarterPack,
                     isFavorite: recipeProvider.isFavorite,
                     onFavorite: recipeProvider.toggleFavorite,
                   ),
@@ -109,15 +149,17 @@ class _SyncErrorBanner extends StatelessWidget {
   }
 }
 
-/// Scrollable empty state (keeps pull-to-refresh) with a dashed add affordance
-/// that routes into the Recipe Builder via [startCreate].
+/// Scrollable empty state (keeps pull-to-refresh): start from the starter
+/// pack (FE-16) or build a recipe in the Recipe Builder via [startCreate].
 class _EmptyLibrary extends StatelessWidget {
   final double minScrollHeight;
   final VoidCallback onCreate;
+  final VoidCallback onStarterPack;
 
   const _EmptyLibrary({
     required this.minScrollHeight,
     required this.onCreate,
+    required this.onStarterPack,
   });
 
   @override
@@ -131,8 +173,8 @@ class _EmptyLibrary extends StatelessWidget {
         horizontal: MacrovaSpacing.screenGutter,
       ),
       children: [
-        SizedBox(
-          height: minScrollHeight,
+        ConstrainedBox(
+          constraints: BoxConstraints(minHeight: minScrollHeight),
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(
@@ -142,14 +184,22 @@ class _EmptyLibrary extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   EmptyState(
+                    key: RecipeLibraryScreen.emptyStarterPackKey,
+                    icon: Icons.inventory_2_outlined,
+                    label: 'Start from the starter pack',
+                    onTap: onStarterPack,
+                  ),
+                  const SizedBox(height: MacrovaSpacing.md),
+                  EmptyState(
+                    key: RecipeLibraryScreen.emptyBuildKey,
                     icon: Icons.menu_book_outlined,
-                    label: 'Create your first recipe',
+                    label: 'Build a recipe',
                     onTap: onCreate,
                   ),
                   const SizedBox(height: MacrovaSpacing.md),
                   Text(
-                    'No recipes yet. Create one, or pull to refresh if the '
-                    'server has a recipe pool.',
+                    'No recipes yet. Pick the ones you would eat from the '
+                    'starter pack, build your own, or pull to refresh.',
                     textAlign: TextAlign.center,
                     style: MacrovaTypography.caption(tokens.inkTertiary),
                   ),
@@ -170,6 +220,7 @@ class _RecipeGrid extends StatelessWidget {
   final List<Recipe> recipes;
   final void Function(Recipe recipe) onView;
   final VoidCallback onCreate;
+  final VoidCallback onStarterPack;
   final bool Function(String recipeId) isFavorite;
   final Future<void> Function(String recipeId) onFavorite;
 
@@ -177,6 +228,7 @@ class _RecipeGrid extends StatelessWidget {
     required this.recipes,
     required this.onView,
     required this.onCreate,
+    required this.onStarterPack,
     required this.isFavorite,
     required this.onFavorite,
   });
@@ -212,6 +264,12 @@ class _RecipeGrid extends StatelessWidget {
                       '${recipes.length} recipe${recipes.length == 1 ? '' : 's'}',
                   linkLabel: 'New',
                   onLink: onCreate,
+                  action: TextButton.icon(
+                    key: RecipeLibraryScreen.starterPackKey,
+                    onPressed: onStarterPack,
+                    icon: const Icon(Icons.inventory_2_outlined, size: 18),
+                    label: const Text('Starter pack'),
+                  ),
                 ),
               ),
             ),

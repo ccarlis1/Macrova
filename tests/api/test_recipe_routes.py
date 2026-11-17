@@ -151,7 +151,8 @@ def test_legacy_payload_still_works_with_defaults(monkeypatch, tmp_path):
 
     detail = client.get(f"/api/v1/recipes/{rid}").json()
     assert detail["default_servings"] == 1
-    assert detail["tag_slugs_by_type"] == {}
+    # BE-19: every saved recipe gets a tags_by_id entry with the derived time slug (0 min).
+    assert detail["tag_slugs_by_type"] == {"time": ["time-0"]}
     assert detail["is_meal_prep_capable"] is False
 
 
@@ -251,6 +252,64 @@ def test_detail_unresolved_lines_are_returned_with_resolved_false(monkeypatch, t
     assert unknown["calories_per_100g"] == 0.0
 
 
+def _write_recipes(monkeypatch, tmp_path, recipes: list) -> None:
+    _configure_paths(monkeypatch, tmp_path)
+    (tmp_path / "recipes.json").write_text(json.dumps({"recipes": recipes}), encoding="utf-8")
+
+
+def test_detail_unit_conversions_include_calculator_serving_weight(monkeypatch, tmp_path):
+    """``eggs … large`` converts via ``BASE_SERVING_WEIGHTS``; detail sends that weight."""
+    from src.data_layer.models import Ingredient
+
+    rid = "r-be21-eggs"
+    _write_recipes(
+        monkeypatch,
+        tmp_path,
+        [
+            {
+                "id": rid,
+                "name": "Eggs fixture",
+                "ingredients": [{"name": "eggs", "quantity": 4, "unit": "large"}],
+                "cooking_time_minutes": 5,
+                "instructions": ["Cook."],
+            }
+        ],
+    )
+    (line,) = TestClient(app).get(f"/api/v1/recipes/{rid}").json()["ingredients"]
+    calculator = _plan_path_calculator()
+    expected = calculator.to_grams(
+        Ingredient(name="eggs", quantity=1.0, unit="large"), _record("eggs")
+    )
+    assert expected > 0
+    assert line["resolved"] is True
+    assert line["unit_conversions"]["large"] == pytest.approx(expected)
+
+
+def test_detail_unit_conversions_cover_every_starter_recipe_line(monkeypatch, tmp_path):
+    """Every measurable starter-pack line carries its own unit's weight (read-only example)."""
+    from pathlib import Path
+
+    example = Path(__file__).resolve().parents[2] / "data" / "recipes" / "recipes.json.example"
+    recipes = json.loads(example.read_text(encoding="utf-8"))["recipes"]
+    _write_recipes(monkeypatch, tmp_path, recipes)
+    client = TestClient(app)
+
+    missing = []
+    checked = 0
+    for recipe in recipes:
+        res = client.get(f"/api/v1/recipes/{recipe['id']}")
+        assert res.status_code == 200, res.text
+        for line in res.json()["ingredients"]:
+            if line["unit"] in ("g", "to taste"):
+                continue
+            checked += 1
+            grams = line["unit_conversions"].get(line["unit"])
+            if not (grams and grams > 0):
+                missing.append((recipe["id"], line["ingredient_name"], line["unit"]))
+    assert checked > 0
+    assert missing == []
+
+
 def test_detail_unexpected_calculator_error_is_500_envelope(monkeypatch, tmp_path):
     rid = _write_be21_recipe(monkeypatch, tmp_path)
 
@@ -319,3 +378,405 @@ def test_save_accepts_seasoning_to_taste(monkeypatch, tmp_path):
     assert res.status_code == 200, res.text
     stored = json.loads((tmp_path / "recipes.json").read_text())["recipes"][0]
     assert stored["ingredients"][1] == {"name": "salt", "quantity": 0.0, "unit": "to taste"}
+
+
+# --- Sprint 2 BE-19: saves are plannable (unit conversions, rejection, sync errors, tags) ---
+
+from src.llm.tag_filter import filter_recipe_ids_by_preferences
+from src.llm.tag_repository import load_recipe_tags, upsert_recipe_tags
+from src.llm.schemas import RecipeTagsJson
+
+
+def _be19_item(rid: str, *lines: dict, **extra) -> dict:
+    return {
+        "id": rid,
+        "name": f"BE-19 {rid}",
+        "ingredients": list(lines) or [{"name": "almonds", "quantity": 30, "unit": "g"}],
+        "cooking_time_minutes": 10,
+        **extra,
+    }
+
+
+def _stored(tmp_path) -> list:
+    return json.loads((tmp_path / "recipes.json").read_text())["recipes"]
+
+
+def _tags(tmp_path) -> dict:
+    return load_recipe_tags(str(tmp_path / "recipe_tags.json"))
+
+
+def test_line_grams_per_unit_round_trips_to_detail_unit_conversions(monkeypatch, tmp_path):
+    _configure_paths(monkeypatch, tmp_path)
+    client = TestClient(app)
+    item = _be19_item(
+        "r-be19-gpu",
+        {"name": "almonds", "quantity": 1, "unit": "cup", "grams_per_unit": 143},
+        {"name": "almonds", "quantity": 30, "unit": "g"},
+    )
+    res = client.post("/api/v1/recipes/sync", json={"recipes": [item]})
+    assert res.status_code == 200, res.text
+    assert res.json() == {"synced_ids": ["r-be19-gpu"], "errors": []}
+
+    lines = _stored(tmp_path)[0]["ingredients"]
+    assert lines[0] == {"name": "almonds", "quantity": 1.0, "unit": "cup", "grams_per_unit": 143.0}
+    # Persisted only when set (additive).
+    assert "grams_per_unit" not in lines[1]
+
+    detail = client.get("/api/v1/recipes/r-be19-gpu").json()["ingredients"]
+    assert detail[0]["unit_conversions"] == {"g": 1.0, "cup": 143.0}
+    assert detail[0]["resolved"] is True
+    assert detail[1]["unit_conversions"] == {"g": 1.0}
+
+
+def test_line_grams_per_unit_must_be_positive(monkeypatch, tmp_path):
+    _configure_paths(monkeypatch, tmp_path)
+    item = _be19_item("r-be19-zero", {"name": "almonds", "quantity": 1, "unit": "cup", "grams_per_unit": 0})
+    res = TestClient(app).post("/api/v1/recipes", json=item)
+    assert res.status_code == 400
+    assert res.json()["error"]["code"] == "INVALID_REQUEST"
+
+
+def test_record_conversion_wins_and_line_not_needed(monkeypatch, tmp_path):
+    _configure_paths(monkeypatch, tmp_path)
+    item = _be19_item("r-be19-rec", {"name": "almond butter unsalted", "quantity": 2, "unit": "tbsp"})
+    res = TestClient(app).post("/api/v1/recipes", json=item)
+    assert res.status_code == 200, res.text
+
+
+@pytest.mark.parametrize("route", ["create", "put"])
+def test_single_save_rejects_unit_without_conversion(route, monkeypatch, tmp_path):
+    _configure_paths(monkeypatch, tmp_path)
+    client = TestClient(app)
+    item = _be19_item("r-be19-cup", {"name": "almonds", "quantity": 1, "unit": "cup"})
+    if route == "create":
+        res = client.post("/api/v1/recipes", json=item)
+    else:
+        res = client.put("/api/v1/recipes/r-be19-cup", json=item)
+    assert res.status_code == 400, res.text
+    err = res.json()["error"]
+    assert err["code"] == "UNIT_NOT_CONVERTIBLE"
+    assert err["details"] == {"ingredient": "almonds", "unit": "cup"}
+    assert _stored(tmp_path) == []
+    assert "r-be19-cup" not in _tags(tmp_path)
+
+
+@pytest.mark.parametrize("route", ["create", "put"])
+def test_single_save_rejects_unknown_ingredient(route, monkeypatch, tmp_path):
+    _configure_paths(monkeypatch, tmp_path)
+    client = TestClient(app)
+    item = _be19_item("r-be19-unk", {"name": "be19 not a real ingredient", "quantity": 50, "unit": "g"})
+    if route == "create":
+        res = client.post("/api/v1/recipes", json=item)
+    else:
+        res = client.put("/api/v1/recipes/r-be19-unk", json=item)
+    assert res.status_code == 400, res.text
+    err = res.json()["error"]
+    assert err["code"] == "INGREDIENT_UNRESOLVED"
+    assert err["details"] == {"ingredient": "be19 not a real ingredient", "unit": "g"}
+    assert _stored(tmp_path) == []
+
+
+def test_sync_skips_unplannable_items_and_reports_errors(monkeypatch, tmp_path):
+    _configure_paths(monkeypatch, tmp_path)
+    good = _be19_item("r-be19-good")
+    bad_unit = _be19_item("r-be19-bad-unit", {"name": "almonds", "quantity": 1, "unit": "cup"})
+    bad_name = _be19_item("r-be19-bad-name", {"name": "be19 not a real ingredient", "quantity": 5, "unit": "g"})
+    res = TestClient(app).post("/api/v1/recipes/sync", json={"recipes": [bad_unit, good, bad_name]})
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body["synced_ids"] == ["r-be19-good"]
+    assert len(body["errors"]) == 2
+    unit_msg, name_msg = body["errors"]
+    for msg, rid, ing, unit in (
+        (unit_msg, "r-be19-bad-unit", "almonds", "cup"),
+        (name_msg, "r-be19-bad-name", "be19 not a real ingredient", "g"),
+    ):
+        assert rid in msg and ing in msg and f"'{unit}'" in msg
+    assert unit_msg.startswith("r-be19-bad-unit: UNIT_NOT_CONVERTIBLE: ")
+    assert name_msg.startswith("r-be19-bad-name: INGREDIENT_UNRESOLVED: ")
+    assert [r["id"] for r in _stored(tmp_path)] == ["r-be19-good"]
+    assert set(_tags(tmp_path)) == {"r-be19-good"}
+
+
+def test_sync_untagged_recipe_gets_derived_time_tags_and_passes_pool_filter(monkeypatch, tmp_path):
+    _configure_paths(monkeypatch, tmp_path)
+    tags_path = str(tmp_path / "recipe_tags.json")
+    upsert_recipe_tags(
+        tags_path,
+        {
+            "r-curated": RecipeTagsJson(
+                cuisine="italian",
+                cost_level="cheap",
+                prep_time_bucket="quick_meal",
+                dietary_flags=["vegetarian"],
+                tag_slugs_by_type={"context": ["meal-prep"]},
+            )
+        },
+    )
+    res = TestClient(app).post("/api/v1/recipes/sync", json={"recipes": [_be19_item("r-be19-app")]})
+    assert res.status_code == 200, res.text
+
+    tags = _tags(tmp_path)
+    app_tags = tags["r-be19-app"]
+    assert app_tags.prep_time_bucket.value == "quick_meal"
+    assert app_tags.tag_slugs_by_type == {"time": ["time-2"]}
+    assert (app_tags.cuisine, app_tags.cost_level.value, app_tags.dietary_flags) == ("unknown", "standard", [])
+    # Merge mode: the unrelated curated entry survives untouched.
+    assert tags["r-curated"].cuisine == "italian"
+    assert tags["r-curated"].tag_slugs_by_type == {"context": ["meal-prep"]}
+
+    kept = filter_recipe_ids_by_preferences(tags, {"prep_time_bucket": "quick_meal"})
+    assert "r-be19-app" in kept
+    assert "r-be19-app" in filter_recipe_ids_by_preferences(tags, {"cost_level": "standard"})
+
+
+def test_tagged_new_recipe_uses_derived_bucket_not_weeknight_default(monkeypatch, tmp_path):
+    _configure_paths(monkeypatch, tmp_path)
+    item = _be19_item("r-be19-long", tag_slugs_by_type={"context": ["meal-prep"]}, cooking_time_minutes=45)
+    assert TestClient(app).post("/api/v1/recipes", json=item).status_code == 200
+    tags = _tags(tmp_path)["r-be19-long"]
+    assert tags.prep_time_bucket.value == "meal_prep"
+    assert tags.tag_slugs_by_type == {"context": ["meal-prep"], "time": ["time-4"]}
+
+
+def test_sync_cuisine_cost_and_dietary_flags_round_trip_and_persist(monkeypatch, tmp_path):
+    _configure_paths(monkeypatch, tmp_path)
+    client = TestClient(app)
+    first = _be19_item(
+        "r-be19-meta",
+        cuisine="mexican",
+        cost_level="cheap",
+        dietary_flags=["vegetarian", "gluten_free"],
+        tag_slugs_by_type={"context": ["meal-prep"]},
+    )
+    assert client.post("/api/v1/recipes/sync", json={"recipes": [first]}).status_code == 200
+    tags = _tags(tmp_path)["r-be19-meta"]
+    assert tags.cuisine == "mexican"
+    assert tags.cost_level.value == "cheap"
+    assert [f.value for f in tags.dietary_flags] == ["vegetarian", "gluten_free"]
+
+    # Omitted fields keep the prior value; a new cook time re-derives the bucket.
+    second = _be19_item("r-be19-meta", cooking_time_minutes=3)
+    assert client.put("/api/v1/recipes/r-be19-meta", json=second).status_code == 200
+    tags = _tags(tmp_path)["r-be19-meta"]
+    assert (tags.cuisine, tags.cost_level.value) == ("mexican", "cheap")
+    assert [f.value for f in tags.dietary_flags] == ["vegetarian", "gluten_free"]
+    assert tags.prep_time_bucket.value == "snack"
+    assert tags.tag_slugs_by_type == {"context": ["meal-prep"], "time": ["time-1"]}
+
+    third = _be19_item("r-be19-meta", cost_level="premium", dietary_flags=[])
+    assert client.post("/api/v1/recipes", json=third).status_code == 200
+    tags = _tags(tmp_path)["r-be19-meta"]
+    assert (tags.cuisine, tags.cost_level.value, tags.dietary_flags) == ("mexican", "premium", [])
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [("cuisine", "martian"), ("cost_level", "free"), ("dietary_flags", ["keto"])],
+)
+def test_out_of_vocabulary_tag_fields_are_invalid_request(field, value, monkeypatch, tmp_path):
+    _configure_paths(monkeypatch, tmp_path)
+    res = TestClient(app).post(
+        "/api/v1/recipes/sync", json={"recipes": [_be19_item("r-be19-oov", **{field: value})]}
+    )
+    assert res.status_code == 400
+    assert res.json()["error"]["code"] == "INVALID_REQUEST"
+    assert _stored(tmp_path) == []
+
+
+def test_line_grams_per_unit_survives_recipe_db_save(monkeypatch, tmp_path):
+    """Deleting another recipe rewrites the store via RecipeDB.save; line weights stay."""
+    _configure_paths(monkeypatch, tmp_path)
+    client = TestClient(app)
+    keep = _be19_item("r-be19-keep", {"name": "almonds", "quantity": 1, "unit": "cup", "grams_per_unit": 143})
+    gone = _be19_item("r-be19-gone")
+    assert client.post("/api/v1/recipes/sync", json={"recipes": [keep, gone]}).json()["errors"] == []
+    assert client.delete("/api/v1/recipes/r-be19-gone").status_code == 200
+    (row,) = _stored(tmp_path)
+    assert row["ingredients"][0]["grams_per_unit"] == 143.0
+
+
+# --- BE-19 follow-up: sent dietary_flags pass the tagger's ingredient-consistency gate ---
+
+
+def _vegan_honey_item(rid: str) -> dict:
+    return _be19_item(
+        rid,
+        {"name": "almonds", "quantity": 30, "unit": "g"},
+        {"name": "honey", "quantity": 1, "unit": "tbsp"},
+        dietary_flags=["vegetarian", "vegan"],
+    )
+
+
+@pytest.mark.parametrize("route", ["create", "put"])
+def test_single_save_rejects_dietary_flag_contradicted_by_ingredient(route, monkeypatch, tmp_path):
+    _configure_paths(monkeypatch, tmp_path)
+    client = TestClient(app)
+    item = _vegan_honey_item("r-be19-vegan")
+    if route == "create":
+        res = client.post("/api/v1/recipes", json=item)
+    else:
+        res = client.put("/api/v1/recipes/r-be19-vegan", json=item)
+    assert res.status_code == 400, res.text
+    err = res.json()["error"]
+    assert err["code"] == "INVALID_REQUEST"
+    assert "'vegan'" in err["message"] and "'honey'" in err["message"]
+    # vegetarian is consistent with honey and is not named.
+    assert "vegetarian" not in err["message"]
+    assert _stored(tmp_path) == []
+    assert "r-be19-vegan" not in _tags(tmp_path)
+
+
+def test_sync_skips_item_whose_dietary_flag_is_contradicted(monkeypatch, tmp_path):
+    _configure_paths(monkeypatch, tmp_path)
+    good = _be19_item("r-be19-flag-ok", dietary_flags=["vegan", "gluten_free"])
+    bad = _vegan_honey_item("r-be19-flag-bad")
+    res = TestClient(app).post("/api/v1/recipes/sync", json={"recipes": [bad, good]})
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body["synced_ids"] == ["r-be19-flag-ok"]
+    (msg,) = body["errors"]
+    assert msg.startswith("r-be19-flag-bad: INVALID_REQUEST: ")
+    assert "'vegan'" in msg and "'honey'" in msg
+    assert [r["id"] for r in _stored(tmp_path)] == ["r-be19-flag-ok"]
+    tags = _tags(tmp_path)
+    assert set(tags) == {"r-be19-flag-ok"}
+    assert [f.value for f in tags["r-be19-flag-ok"].dietary_flags] == ["vegan", "gluten_free"]
+
+
+# --- BE-19 follow-up: client tag types replace stored ones; tag_metadata follows ---
+
+
+def test_client_tag_types_replace_stored_and_prune_tag_metadata(monkeypatch, tmp_path):
+    from src.llm.recipe_tagger import _quarantined_metadata
+    from src.llm.tag_repository import _raw_recipe_tag_slug_set, _recipe_tag_slug_set
+
+    _configure_paths(monkeypatch, tmp_path)
+    tags_path = str(tmp_path / "recipe_tags.json")
+    # Tagger-style prior entry: LLM-proposed slugs carry per-recipe tag_metadata.
+    upsert_recipe_tags(
+        tags_path,
+        {
+            "r-be19-llm": RecipeTagsJson(
+                cuisine="italian",
+                cost_level="cheap",
+                prep_time_bucket="quick_meal",
+                tag_slugs_by_type={
+                    "context": ["meal-prep"],
+                    "nutrition": ["high-fiber"],
+                    "time": ["time-2"],
+                },
+                tag_metadata=_quarantined_metadata(["meal-prep", "high-fiber"], tags_path),
+            )
+        },
+    )
+    item = _be19_item("r-be19-llm", tag_slugs_by_type={"context": ["meal-prep"]})
+    assert TestClient(app).post("/api/v1/recipes/sync", json={"recipes": [item]}).status_code == 200
+
+    entry = _tags(tmp_path)["r-be19-llm"]
+    # Sent types replace the stored types as a whole: the nutrition type is gone.
+    assert entry.tag_slugs_by_type == {"context": ["meal-prep"], "time": ["time-2"]}
+    # Metadata of the removed slug is pruned; the surviving slug stays proposed.
+    assert set(entry.tag_metadata or {}) == {"meal-prep"}
+    assert entry.tag_metadata["meal-prep"].eligibility == "proposed"
+    assert entry.tag_metadata["meal-prep"].source == "llm"
+    assert "high-fiber" not in _recipe_tag_slug_set(entry)
+
+    raw = json.loads((tmp_path / "recipe_tags.json").read_text())["tags_by_id"]["r-be19-llm"]
+    assert "high-fiber" not in _raw_recipe_tag_slug_set(raw)
+    assert entry.cuisine == "italian"
+
+
+# --- BE-19 follow-up: a saved line weight survives into the planning pool ---
+
+
+def _plan_path_calculator():
+    """Calculator the plan endpoint builds (local provider, names resolved up front)."""
+    from src.api import server
+    from src.data_layer.nutrition_db import NutritionDB
+    from src.nutrition.calculator import NutritionCalculator
+    from src.providers.local_provider import LocalIngredientProvider
+
+    return NutritionCalculator(LocalIngredientProvider(NutritionDB(server.ingredients_path)))
+
+
+def test_synced_line_weight_recipe_enters_planning_pool(monkeypatch, tmp_path):
+    from src.data_layer.recipe_db import RecipeDB
+    from src.planning.converters import convert_recipes, extract_ingredient_names
+
+    _configure_paths(monkeypatch, tmp_path)
+    item = _be19_item(
+        "r-be19-pool", {"name": "almonds", "quantity": 1, "unit": "cup", "grams_per_unit": 143}
+    )
+    res = TestClient(app).post("/api/v1/recipes/sync", json={"recipes": [item]})
+    assert res.json() == {"synced_ids": ["r-be19-pool"], "errors": []}
+
+    recipes = RecipeDB(
+        str(tmp_path / "recipes.json"), tag_repo_path=str(tmp_path / "recipe_tags.json")
+    ).get_all_recipes()
+    assert [r.id for r in recipes] == ["r-be19-pool"]
+    assert recipes[0].ingredients[0].grams_per_unit == 143.0
+
+    calculator = _plan_path_calculator()
+    calculator.provider.resolve_all(extract_ingredient_names(recipes))
+    log: list = []
+    pool = convert_recipes(recipes, calculator, unresolved_log=log)
+    assert log == []
+    assert [r.id for r in pool] == ["r-be19-pool"]
+    assert abs(pool[0].nutrition.calories - 579.0 * 1.43) < 1e-6
+
+
+def test_line_without_any_conversion_is_dropped_with_nutrition_warning():
+    """Inverse: neither record nor line converts ``cup`` (save rejects it, so build directly)."""
+    from src.api.server import _merge_nutrition_warnings
+    from src.data_layer.models import Ingredient, Recipe
+    from src.planning.converters import convert_recipes
+
+    recipe = Recipe(
+        id="r-be19-nogpu",
+        name="No conversion",
+        ingredients=[Ingredient(name="almonds", quantity=1.0, unit="cup")],
+        cooking_time_minutes=10,
+        instructions=[],
+    )
+    log: list = []
+    pool = convert_recipes([recipe], _plan_path_calculator(), unresolved_log=log)
+    assert pool == []
+    assert [row["recipe_id"] for row in log] == ["r-be19-nogpu"]
+    assert any("almonds" in n and "cup" in n for n in log[0]["unresolved_ingredients"])
+
+    out: dict = {}
+    _merge_nutrition_warnings(out, log)
+    (warning,) = out["warnings"]["nutrition"]
+    assert warning.startswith("Recipe 'r-be19-nogpu' removed from the pool")
+
+
+def test_detail_returns_cuisine_cost_level_and_dietary_flags_after_sync(monkeypatch, tmp_path):
+    """FE-12 backend: detail echoes the tag-store fields sync accepts, so Flutter can pre-select them."""
+    _configure_paths(monkeypatch, tmp_path)
+    client = TestClient(app)
+    item = _be19_item(
+        "r-fe12-detail",
+        cuisine="mexican",
+        cost_level="cheap",
+        dietary_flags=["vegetarian", "gluten_free"],
+    )
+    assert client.post("/api/v1/recipes/sync", json={"recipes": [item]}).status_code == 200
+    body = client.get("/api/v1/recipes/r-fe12-detail").json()
+    assert body["cuisine"] == "mexican"
+    assert body["cost_level"] == "cheap"
+    assert body["dietary_flags"] == ["vegetarian", "gluten_free"]
+
+    # An untagged app save gets the derived placeholder entry, which detail reports as such.
+    assert client.post("/api/v1/recipes/sync", json={"recipes": [_be19_item("r-fe12-plain")]}).status_code == 200
+    plain = client.get("/api/v1/recipes/r-fe12-plain").json()
+    assert (plain["cuisine"], plain["cost_level"], plain["dietary_flags"]) == ("unknown", "standard", [])
+
+
+def test_detail_tag_fields_are_null_without_a_tag_entry(monkeypatch, tmp_path):
+    rid = _write_be21_recipe(monkeypatch, tmp_path)
+    body = TestClient(app).get(f"/api/v1/recipes/{rid}").json()
+    assert body["cuisine"] is None
+    assert body["cost_level"] is None
+    assert body["dietary_flags"] is None
+    assert body["tag_slugs_by_type"] == {}

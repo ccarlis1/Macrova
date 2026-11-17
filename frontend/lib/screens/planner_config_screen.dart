@@ -13,6 +13,7 @@ import '../widgets/advisory_card.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/macro_display.dart';
 import '../widgets/macrova_chip.dart';
+import '../widgets/planner/pinned_meals_section.dart';
 import '../widgets/planner/tag_pool_filter_section.dart';
 import '../widgets/section_header.dart';
 import '../widgets/segmented_control.dart';
@@ -39,6 +40,23 @@ class PlannerConfigScreen extends StatelessWidget {
         if (!context.mounted) return;
         context.read<MealPlanProvider>().setPlanningMode('deterministic');
       });
+    }
+
+    // Cuisine / cost warnings count stored values from each recipe's detail.
+    // Load them for the selected pool only (one call per recipe, once per
+    // session); the whole library is never fetched.
+    if (TagPoolFilterSection.needsTagCheck(planProvider) &&
+        planProvider.selectedRecipeIds.isNotEmpty) {
+      final unchecked = [
+        for (final id in planProvider.selectedRecipeIds)
+          if (!recipeProvider.hasServerTags(id)) id,
+      ];
+      if (unchecked.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!context.mounted) return;
+          context.read<RecipeProvider>().loadServerTags(unchecked);
+        });
+      }
     }
 
     return SingleChildScrollView(
@@ -165,6 +183,10 @@ class PlannerConfigScreen extends StatelessWidget {
               }),
               const SizedBox(height: MacrovaSpacing.xlAlt),
 
+              // Server-side pins (FE-15): count + Clear pins.
+              const PinnedMealsSection(),
+              const SizedBox(height: MacrovaSpacing.xlAlt),
+
               // Recipe Pool
               const SectionHeader(title: 'Recipe Pool'),
               if (recipes.isEmpty)
@@ -220,7 +242,18 @@ class PlannerConfigScreen extends StatelessWidget {
               const SizedBox(height: MacrovaSpacing.xlAlt),
 
               // Recipe pool filters (pool-level PlanRequest tag fields)
-              TagPoolFilterSection(planProvider: planProvider),
+              TagPoolFilterSection(
+                planProvider: planProvider,
+                poolRecipes: planProvider.selectedRecipeIds.isEmpty
+                    ? recipes
+                    : [
+                        for (final r in recipes)
+                          if (planProvider.selectedRecipeIds.contains(r.id)) r,
+                      ],
+                checkedRecipeIds: recipeProvider.serverTagsLoadedIds,
+                poolIsSelection: planProvider.selectedRecipeIds.isNotEmpty,
+                checkingTags: recipeProvider.serverTagsLoading,
+              ),
               const SizedBox(height: MacrovaSpacing.xlAlt),
 
               // Nutrition Targets
@@ -355,6 +388,7 @@ class PlannerConfigScreen extends StatelessWidget {
       dietaryFlags: planProvider.dietaryFlags.isEmpty
           ? null
           : List<String>.from(planProvider.dietaryFlags),
+      demographic: profile.planDemographic,
     );
 
     final shell = context.findAncestorStateOfType<AppShellState>();

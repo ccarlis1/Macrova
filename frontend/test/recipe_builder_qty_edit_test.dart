@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:macrova/features/agent/llm_config_provider.dart';
 import 'package:macrova/models/recipe.dart';
+import 'package:macrova/models/recipe_sync_result.dart';
 import 'package:macrova/providers/ingredient_provider.dart';
 import 'package:macrova/providers/profile_provider.dart';
 import 'package:macrova/providers/recipe_builder_coordinator.dart';
@@ -20,7 +21,7 @@ void main() {
     (tester) async {
       final profile = ProfileProvider();
       final coord = RecipeBuilderCoordinator();
-      final recipes = RecipeProvider(recipeSyncFn: (_) async => []);
+      final recipes = RecipeProvider(recipeSyncFn: (_) async => const RecipeSyncResult());
       await recipes.load();
 
       const recipe = Recipe(

@@ -1,0 +1,6 @@
+{
+  "error": {
+    "code": "RECIPE_NOT_BATCHABLE",
+    "message": "Recipe 'fe14-plain' is not meal-prep capable."
+  }
+}

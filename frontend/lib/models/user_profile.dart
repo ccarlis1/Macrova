@@ -327,6 +327,8 @@ class UserProfile {
   bool get calorieDeficitMode =>
       maxDailyCalories != null || legacyDeficitModePending;
 
+  /// One of [supportedDemographics], or `''` for "Not set". [fromJson] and
+  /// [fromRepoYamlMap] normalize anything else (e.g. a saved `teen_male`) to `''`.
   final String demographicGroup;
   final List<String> allergies;
   final MicronutrientGoals micronutrientGoals;
@@ -356,6 +358,28 @@ class UserProfile {
     this.llmApiKey = '',
     this.llmProvider = 'openai_compatible',
   });
+
+  /// Demographics the server has daily UL reference data for: exactly the
+  /// `PlanRequest.demographic` / `PlanFromTextRequest.demographic` literal (BE-17).
+  /// Any other value is a 400 there, so it is never stored or sent.
+  static const List<String> supportedDemographics = [
+    'adult_male',
+    'adult_female',
+    'pregnancy',
+    'lactation',
+  ];
+
+  /// [raw] trimmed when it is in [supportedDemographics], otherwise `''` (Not set).
+  static String normalizeDemographic(String? raw) {
+    final v = raw?.trim() ?? '';
+    return supportedDemographics.contains(v) ? v : '';
+  }
+
+  /// The demographic to send on plan requests, or null when not set.
+  String? get planDemographic {
+    final v = normalizeDemographic(demographicGroup);
+    return v.isEmpty ? null : v;
+  }
 
   UserProfile copyWith({
     double? calories,
@@ -478,7 +502,8 @@ class UserProfile {
       fatPct: (json['fat_pct'] as num?)?.toDouble() ?? 30,
       maxDailyCalories: maxDaily,
       legacyDeficitModePending: legacyBool && maxDaily == null,
-      demographicGroup: json['demographic_group'] as String? ?? '',
+      demographicGroup:
+          normalizeDemographic(json['demographic_group'] as String?),
       allergies: List<String>.from(json['allergies'] ?? const []),
       micronutrientGoals: json['micronutrient_goals'] != null
           ? MicronutrientGoals.fromJson(
@@ -562,7 +587,7 @@ class UserProfile {
       );
     }
 
-    final demographic = data['demographic']?.toString() ?? '';
+    final demographic = normalizeDemographic(data['demographic']?.toString());
 
     final proteinPct =
         calories > 0 ? (proteinG * 4 / calories * 100).clamp(0.0, 100.0) : 30.0;

@@ -18,18 +18,33 @@ class TagRegistry:
         return meta.slug
 
 
-def time_bucket(minutes: int) -> str:
-    """Return canonical time-* slug for a cooking duration."""
+def time_bucket_slug(minutes: int) -> str:
+    """Raw ``time-*`` slug for a cooking duration (the one mapping; not resolved)."""
     if minutes < 0:
         raise ValueError("minutes must be >= 0")
     if minutes == 0:
-        slug = "time-0"
-    elif minutes <= 5:
-        slug = "time-1"
-    elif minutes <= 15:
-        slug = "time-2"
-    elif minutes <= 30:
-        slug = "time-3"
-    else:
-        slug = "time-4"
-    return TagRegistry.resolve(slug)
+        return "time-0"
+    if minutes <= 5:
+        return "time-1"
+    if minutes <= 15:
+        return "time-2"
+    if minutes <= 30:
+        return "time-3"
+    return "time-4"
+
+
+def time_bucket(minutes: int) -> str:
+    """Return canonical time-* slug for a cooking duration."""
+    return TagRegistry.resolve(time_bucket_slug(minutes))
+
+
+def deterministic_prep_time_bucket(cooking_time_minutes: int) -> str:
+    """Effort bucket derived from the known cook time (mirrors planner busyness caps)."""
+    m = int(cooking_time_minutes)
+    if m <= 5:
+        return "snack"
+    if m <= 15:
+        return "quick_meal"
+    if m <= 30:
+        return "weeknight_meal"
+    return "meal_prep"

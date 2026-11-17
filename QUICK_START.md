@@ -10,14 +10,16 @@
 
 ### Basic Command (Markdown output)
 ```bash
-python3 plan_meals.py
+python3 plan_meals.py --days 3
 ```
 
 This will:
 1. Load your user profile (nutrition goals, schedule, preferences)
 2. Load all recipes and ingredients
-3. Generate a daily meal plan (breakfast, lunch, dinner)
+3. Generate a 3-day meal plan (breakfast, lunch, dinner)
 4. Display the plan in Markdown format
+
+`--days` is 1–7 (default 1). The example profile plans 1, 3 and 7 days on the bundled recipes. Micronutrient goals are met over the whole plan, so a 1-day plan must meet every daily goal in that one day; if a short plan fails on your own goals or recipes, plan more days, or lower or remove goals in your profile.
 
 ### Save Output to File
 ```bash
@@ -62,12 +64,25 @@ Edit `config/user_profile.yaml` to adjust:
 
 ### Example Schedule
 ```yaml
-schedule:
-  "07:00": 2  # Breakfast: quick meal
-  "12:00": 3  # Lunch: weeknight meal
-  "18:00": 3  # Dinner: weeknight meal
-  "19:00": 1  # Optional: workout time
+schedule_days:
+  - day_index: 1
+    meals:
+      - { index: 1, busyness_level: 2, tags: ["breakfast"], preferred_time: "07:00" }
+      - { index: 2, busyness_level: 3, tags: ["lunch"], preferred_time: "12:00" }
+      - { index: 3, busyness_level: 3, tags: ["dinner"], preferred_time: "18:00" }
+    workouts:
+      - { after_meal_index: 3, type: PM }   # optional
 ```
+
+## 👤 Create Your Profile
+
+`config/user_profile.yaml` is personal and not shipped (`.gitignore` lists it). Copy the shipped default once:
+
+```bash
+cp config/user_profile.yaml.example config/user_profile.yaml
+```
+
+Without it, `plan_meals.py` stops and prints this copy hint.
 
 ## 📁 Use Your Own Data Folder
 
@@ -100,7 +115,7 @@ This means:
 
 ## 🎯 Next Steps
 
-1. **Test with your data**: Run `python3 plan_meals.py` and review the output
+1. **Test with your data**: Run `python3 plan_meals.py --days 3` and review the output
 2. **Customize your profile**: Edit `config/user_profile.yaml` to match your needs
 3. **Add more recipes**: Populate `data/recipes/recipes.json` with more options
 4. **Refine ingredients**: Ensure `data/ingredients/custom_ingredients.json` has nutrition data for all recipe ingredients

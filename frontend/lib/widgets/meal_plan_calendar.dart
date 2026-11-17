@@ -13,11 +13,15 @@ class MealPlanCalendar extends StatefulWidget {
   final bool Function(int day, int mealIndex)? isCooked;
   final void Function(int day, int mealIndex, Meal meal)? onMealTap;
 
+  /// Whether a server pin exists for the meal's slot (FE-15 pin badge).
+  final bool Function(int day, int mealIndex, Meal meal)? hasPin;
+
   const MealPlanCalendar({
     super.key,
     required this.dailyPlans,
     this.isCooked,
     this.onMealTap,
+    this.hasPin,
   });
 
   @override
@@ -121,6 +125,7 @@ class _MealPlanCalendarState extends State<MealPlanCalendar> {
             day: selected,
             tokens: tokens,
             isCooked: widget.isCooked,
+            hasPin: widget.hasPin,
             onMealTap: widget.onMealTap,
           ),
         ],
@@ -196,12 +201,14 @@ class _SelectedDayDetail extends StatelessWidget {
   final MacrovaTokens tokens;
   final bool Function(int day, int mealIndex)? isCooked;
   final void Function(int day, int mealIndex, Meal meal)? onMealTap;
+  final bool Function(int day, int mealIndex, Meal meal)? hasPin;
 
   const _SelectedDayDetail({
     required this.day,
     required this.tokens,
     this.isCooked,
     this.onMealTap,
+    this.hasPin,
   });
 
   @override
@@ -240,6 +247,7 @@ class _SelectedDayDetail extends StatelessWidget {
                 day: day.day,
                 mealIndex: i,
                 cooked: isCooked?.call(day.day, i) ?? false,
+                hasPin: hasPin?.call(day.day, i, day.meals[i]) ?? false,
                 onTap: onMealTap == null
                     ? null
                     : () => onMealTap!(day.day, i, day.meals[i]),
@@ -255,6 +263,7 @@ class _SelectedDayDetail extends StatelessWidget {
     required int day,
     required int mealIndex,
     required bool cooked,
+    bool hasPin = false,
     VoidCallback? onTap,
   }) {
     final recipeName = meal.recipe['name'] as String? ?? 'Unknown Recipe';
@@ -269,6 +278,9 @@ class _SelectedDayDetail extends StatelessWidget {
       slotState: isMissing ? MealSlotState.warn : MealSlotState.ok,
       warningText: isMissing ? 'Recipe unavailable' : null,
       isCooked: cooked,
+      source: meal.source,
+      servings: meal.servings,
+      hasPin: hasPin,
       onTap: onTap,
     );
   }

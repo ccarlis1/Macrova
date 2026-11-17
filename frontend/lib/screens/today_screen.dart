@@ -8,6 +8,7 @@ import '../models/user_profile.dart';
 import '../providers/meal_plan_provider.dart';
 import '../providers/profile_provider.dart';
 import '../providers/recipe_provider.dart';
+import 'meal_plan_view_screen.dart' show syncWarningsCard;
 import '../theme/tokens.dart';
 import '../widgets/advisory_card.dart';
 import '../widgets/app_shell.dart';
@@ -18,6 +19,7 @@ import '../widgets/meal_detail_sheet.dart';
 import '../widgets/recipe_card.dart';
 import '../widgets/section_header.dart';
 import '../widgets/stat_card.dart';
+import '../widgets/starter_pack_sheet.dart';
 import '../widgets/sticky_cta.dart';
 
 /// Home dashboard: Day 1 plan vs targets, composed from existing providers only.
@@ -26,6 +28,10 @@ class TodayScreen extends StatelessWidget {
 
   static const int _navPlanner = 5;
   static const int _navAgent = 7;
+
+  /// Empty-state link to the starter pack, shown while the library is empty
+  /// (FE-16).
+  static const starterPackKey = Key('today_starter_pack');
 
   void _go(BuildContext context, int index) {
     context.findAncestorStateOfType<AppShellState>()?.navigateTo(index);
@@ -94,10 +100,16 @@ class TodayScreen extends StatelessWidget {
         recipes: recipes.recipes,
         onOpenPlanner: () => _go(context, _navPlanner),
         onOpenAgent: () => _go(context, _navAgent),
+        onOpenStarterPack: () => StarterPackSheet.show(context),
       );
     }
 
     final day1 = _day1(mealPlan);
+    // Today shows the plan's first day; its slot failures render inline there.
+    final todayIndex = (day1?.day ?? 1) - 1;
+    final todayMeals = day1?.meals ?? const <Meal>[];
+    final hasTodaySlots = todayMeals.isNotEmpty ||
+        FailureViewModel.failingSlotsOnDay(mealPlan, todayIndex).isNotEmpty;
     final isIncomplete = mealPlan.planStatus != 'success';
 
     return Column(
@@ -133,7 +145,15 @@ class TodayScreen extends StatelessWidget {
                     ],
 
                     if (isIncomplete) ...[
-                      FailureViewModel.fromMealPlan(mealPlan).toPanel(),
+                      FailureViewModel.fromMealPlan(
+                        mealPlan,
+                        shownInline: (f) => f.dayIndex == todayIndex,
+                      ).toHeroPanel(context),
+                      // Pre-plan sync rejections may be why the plan failed.
+                      if (mealPlan.syncWarnings.isNotEmpty) ...[
+                        const SizedBox(height: MacrovaSpacing.md),
+                        syncWarningsCard(mealPlan),
+                      ],
                       const SizedBox(height: MacrovaSpacing.sectionTop),
                     ] else if (mealPlan.warnings.isNotEmpty) ...[
                       const SectionHeader(title: 'Advisories'),
@@ -169,10 +189,14 @@ class TodayScreen extends StatelessWidget {
                         recipes,
                       ),
                       const SizedBox(height: MacrovaSpacing.sectionTop),
+                    ],
+                    if (hasTodaySlots) ...[
                       _buildTodaysPlan(
                         context,
                         tokens,
-                        day1,
+                        mealPlan,
+                        todayIndex,
+                        todayMeals,
                         planProvider,
                       ),
                       const SizedBox(height: MacrovaSpacing.sectionTop),
@@ -396,6 +420,9 @@ class TodayScreen extends StatelessWidget {
             carbsG: meal.nutrition.carbsG,
             fatG: meal.nutrition.fatG,
             timeLabel: time,
+            source: meal.source,
+            servings: meal.servings,
+            hasPin: planProvider.pinForMeal(1, 0, meal) != null,
             slotState: recipeName.startsWith('Missing recipe')
                 ? MealSlotState.warn
                 : MealSlotState.ok,
@@ -421,56 +448,63 @@ class TodayScreen extends StatelessWidget {
   Widget _buildTodaysPlan(
     BuildContext context,
     MacrovaTokens tokens,
-    MealPlanDay day1,
+    MealPlan mealPlan,
+    int dayIndex,
+    List<Meal> meals,
     MealPlanProvider planProvider,
   ) {
+    final day = dayIndex + 1;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionHeader(
-          title: 'Day 1',
-          subtitle: '${day1.meals.length} meal${day1.meals.length == 1 ? '' : 's'}',
+          title: 'Day $day',
+          subtitle: '${meals.length} meal${meals.length == 1 ? '' : 's'}',
           linkLabel: 'Edit',
           onLink: () => _go(context, _navPlanner),
         ),
-        for (var i = 0; i < day1.meals.length; i++) ...[
-          Builder(
-            builder: (context) {
-              final meal = day1.meals[i];
-              final recipeName =
-                  meal.recipe['name'] as String? ?? 'Unknown Recipe';
-              final isMissing = recipeName.startsWith('Missing recipe');
-              final mealIndex = i;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: MacrovaSpacing.sm),
-                child: MealCard(
-                  mealType: meal.mealType,
-                  recipeName: recipeName,
-                  calories: meal.nutrition.calories,
-                  proteinG: meal.nutrition.proteinG,
-                  carbsG: meal.nutrition.carbsG,
-                  fatG: meal.nutrition.fatG,
-                  timeLabel: _preferredTimeForMeal(planProvider, i),
-                  slotState:
-                      isMissing ? MealSlotState.warn : MealSlotState.ok,
-                  warningText: isMissing ? 'Recipe unavailable' : null,
-                  isCooked: planProvider.isCooked(1, mealIndex),
-                  onTap: () {
-                    MealDetailSheet.show(
-                      context: context,
-                      meal: meal,
-                      day: 1,
-                      mealIndex: mealIndex,
-                      isCooked: planProvider.isCooked(1, mealIndex),
-                      onToggleCooked: () =>
-                          planProvider.toggleCooked(1, mealIndex),
-                    );
-                  },
-                ),
-              );
-            },
+        ...FailureViewModel.slotRowsForDay(
+          plan: mealPlan,
+          dayIndex: dayIndex,
+          meals: meals,
+          wrap: (row) => Padding(
+            padding: const EdgeInsets.only(bottom: MacrovaSpacing.sm),
+            child: row,
           ),
-        ],
+          mealBuilder: (i) {
+            final meal = meals[i];
+            final recipeName =
+                meal.recipe['name'] as String? ?? 'Unknown Recipe';
+            final isMissing = recipeName.startsWith('Missing recipe');
+            final mealIndex = i;
+            return MealCard(
+              mealType: meal.mealType,
+              recipeName: recipeName,
+              calories: meal.nutrition.calories,
+              proteinG: meal.nutrition.proteinG,
+              carbsG: meal.nutrition.carbsG,
+              fatG: meal.nutrition.fatG,
+              timeLabel: _preferredTimeForMeal(planProvider, i),
+              source: meal.source,
+              servings: meal.servings,
+              hasPin: planProvider.pinForMeal(day, mealIndex, meal) != null,
+              slotState: isMissing ? MealSlotState.warn : MealSlotState.ok,
+              warningText: isMissing ? 'Recipe unavailable' : null,
+              isCooked: planProvider.isCooked(day, mealIndex),
+              onTap: () {
+                MealDetailSheet.show(
+                  context: context,
+                  meal: meal,
+                  day: day,
+                  mealIndex: mealIndex,
+                  isCooked: planProvider.isCooked(day, mealIndex),
+                  onToggleCooked: () =>
+                      planProvider.toggleCooked(day, mealIndex),
+                );
+              },
+            );
+          },
+        ),
       ],
     );
   }
@@ -519,6 +553,7 @@ class _EmptyToday extends StatelessWidget {
   final List<Recipe> recipes;
   final VoidCallback onOpenPlanner;
   final VoidCallback onOpenAgent;
+  final VoidCallback onOpenStarterPack;
 
   const _EmptyToday({
     required this.tokens,
@@ -529,6 +564,7 @@ class _EmptyToday extends StatelessWidget {
     required this.recipes,
     required this.onOpenPlanner,
     required this.onOpenAgent,
+    required this.onOpenStarterPack,
   });
 
   @override
@@ -567,6 +603,16 @@ class _EmptyToday extends StatelessWidget {
                           description: error!,
                         ),
                       const SizedBox(height: MacrovaSpacing.sectionTop),
+                    ],
+                    if (recipes.isEmpty) ...[
+                      EmptyState(
+                        key: TodayScreen.starterPackKey,
+                        icon: Icons.inventory_2_outlined,
+                        label: 'Your library is empty: start from the '
+                            'starter pack',
+                        onTap: onOpenStarterPack,
+                      ),
+                      const SizedBox(height: MacrovaSpacing.md),
                     ],
                     EmptyState(
                       icon: Icons.calendar_today_outlined,

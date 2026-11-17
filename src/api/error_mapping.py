@@ -52,6 +52,14 @@ PROFILE_PIN_INVALID = "PROFILE_PIN_INVALID"
 #: ``details.ingredient`` names it. Only seasonings in data/reference/to_taste_allowed.json
 #: may be ``to taste``.
 INGREDIENT_QUANTITY_REQUIRED = "INGREDIENT_QUANTITY_REQUIRED"
+#: A saved recipe line's unit has no gram conversion: not a mass unit, not on the
+#: ingredient record, and no line ``grams_per_unit`` (Sprint 2 BE-19). HTTP 400,
+#: ``details: {ingredient, unit}``.
+UNIT_NOT_CONVERTIBLE = "UNIT_NOT_CONVERTIBLE"
+#: A saved recipe line names an ingredient the local ingredient table doesn't resolve
+#: (Sprint 2 BE-19; same code the recipe validator uses internally). HTTP 400,
+#: ``details: {ingredient, unit}``.
+INGREDIENT_UNRESOLVED = "INGREDIENT_UNRESOLVED"
 FM_TAG_EMPTY = "FM-TAG-EMPTY"
 FM_BATCH_CONFLICT = "FM-BATCH-CONFLICT"
 FM_MACRO_INFEASIBLE = "FM-MACRO-INFEASIBLE"
@@ -179,6 +187,11 @@ def map_exception_to_api_error(exc: Exception) -> Tuple[int, Dict[str, Any]]:
             if exc.details:
                 payload[API_ERROR]["details"] = exc.details
             return 422, payload
+        if exc.code in {UNIT_NOT_CONVERTIBLE, INGREDIENT_UNRESOLVED}:
+            payload = _payload(exc.code, str(exc))
+            if exc.details:
+                payload[API_ERROR]["details"] = exc.details
+            return 400, payload
         return 400, _payload(exc.code, str(exc))
 
     # Profile pin validation errors currently surface as ValueError prefixed with

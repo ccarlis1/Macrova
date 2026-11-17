@@ -3,9 +3,15 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../models/ingredient_search.dart';
+import '../models/meal_prep_batch.dart';
+import '../models/micronutrient_defaults.dart';
 import '../models/models.dart';
 import '../models/nutrition_summary.dart';
+import '../models/profile_pin.dart';
 import '../models/recipe.dart';
+import '../models/recipe_sync_result.dart';
+import '../models/starter_recipe.dart';
+import '../models/tag.dart';
 
 /// Thrown when the API returns a non-success status with a parseable body.
 class ApiException implements Exception {
@@ -104,14 +110,22 @@ class ApiService {
       const {'Content-Type': 'application/json'};
 
   /// POST /api/v1/recipes/sync
-  static Future<List<String>> syncRecipes(List<Recipe> recipes) async {
-    final res = await http.post(
-      Uri.parse('$baseUrl/api/v1/recipes/sync'),
-      headers: _jsonHeaders,
-      body: jsonEncode({
-        'recipes': recipes.map((r) => r.toSyncPayload()).toList(),
-      }),
-    );
+  ///
+  /// HTTP 200 can still reject items: each one is left out of
+  /// [RecipeSyncResult.syncedIds] and reported in [RecipeSyncResult.errors]
+  /// (BE-19). A whole-request failure throws [ApiException]. [client] is for
+  /// tests.
+  static Future<RecipeSyncResult> syncRecipes(
+    List<Recipe> recipes, {
+    http.Client? client,
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/v1/recipes/sync');
+    final body = jsonEncode({
+      'recipes': recipes.map((r) => r.toSyncPayload()).toList(),
+    });
+    final res = client == null
+        ? await http.post(uri, headers: _jsonHeaders, body: body)
+        : await client.post(uri, headers: _jsonHeaders, body: body);
 
     if (res.statusCode == 200) {
       final decoded = jsonDecode(res.body);
@@ -122,16 +136,18 @@ class ApiService {
           message: 'Sync response was not a JSON object',
         );
       }
-      final body = Map<String, dynamic>.from(decoded);
-      final raw = body['synced_ids'];
-      if (raw is! List) {
-        throw const ApiException(
+      try {
+        return RecipeSyncResult.fromJson(
+          Map<String, dynamic>.from(decoded),
+          sent: recipes,
+        );
+      } on FormatException catch (e) {
+        throw ApiException(
           statusCode: 200,
           code: 'INVALID_RESPONSE',
-          message: 'Missing synced_ids in sync response',
+          message: e.message,
         );
       }
-      return raw.map((e) => e.toString()).toList();
     }
 
     throw ApiException.fromResponse(res);
@@ -207,6 +223,279 @@ class ApiService {
     }
 
     throw ApiException.fromResponse(res);
+  }
+
+  /// GET /api/v1/tags (optionally `?type=context|time|nutrition|constraint`).
+  ///
+  /// Returns every registry tag; callers offer only [TagMeta.isOfferable] ones.
+  /// [client] is for tests.
+  static Future<List<TagMeta>> listTags({
+    String? type,
+    http.Client? client,
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/v1/tags').replace(
+      queryParameters: type == null ? null : {'type': type},
+    );
+    final res = client == null ? await http.get(uri) : await client.get(uri);
+
+    if (res.statusCode == 200) {
+      final decoded = jsonDecode(res.body);
+      if (decoded is! Map) {
+        throw const ApiException(
+          statusCode: 200,
+          code: 'INVALID_RESPONSE',
+          message: 'Tag list response was not a JSON object',
+        );
+      }
+      try {
+        return TagMeta.listFromResponse(Map<String, dynamic>.from(decoded));
+      } on FormatException catch (e) {
+        throw ApiException(
+          statusCode: 200,
+          code: 'INVALID_RESPONSE',
+          message: e.message,
+        );
+      }
+    }
+
+    throw ApiException.fromResponse(res);
+  }
+
+  /// GET /api/v1/meal_prep_batches (`?active=false` lists every batch).
+  /// [client] is for tests.
+  static Future<List<MealPrepBatch>> listMealPrepBatches({
+    bool active = true,
+    http.Client? client,
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/v1/meal_prep_batches').replace(
+      queryParameters: {'active': '$active'},
+    );
+    final res = client == null ? await http.get(uri) : await client.get(uri);
+    if (res.statusCode == 200) {
+      return _parseOk(
+        res,
+        'Meal-prep list response',
+        MealPrepBatch.listFromResponse,
+      );
+    }
+    throw ApiException.fromResponse(res);
+  }
+
+  /// POST /api/v1/meal_prep_batches. [assignments] are 0-based
+  /// `(day_index, slot_index)` plan slots. Structured errors throw
+  /// [ApiException] with the server code: `RECIPE_NOT_FOUND` (404),
+  /// `RECIPE_NOT_BATCHABLE` (422), `BATCH_CONFLICT` (409, a slot is taken by
+  /// another active batch), `BATCH_INVALID` (400). [client] is for tests.
+  static Future<MealPrepBatch> createMealPrepBatch({
+    required String recipeId,
+    required int totalServings,
+    required String cookDate,
+    required List<MealPrepAssignment> assignments,
+    http.Client? client,
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/v1/meal_prep_batches');
+    final body = jsonEncode({
+      'recipe_id': recipeId,
+      'total_servings': totalServings,
+      'cook_date': cookDate,
+      'assignments': [for (final a in assignments) a.toRequestJson()],
+    });
+    final res = client == null
+        ? await http.post(uri, headers: _jsonHeaders, body: body)
+        : await client.post(uri, headers: _jsonHeaders, body: body);
+    if (res.statusCode == 200) {
+      return _parseOk(res, 'Meal-prep batch response', MealPrepBatch.fromJson);
+    }
+    throw ApiException.fromResponse(res);
+  }
+
+  /// DELETE /api/v1/meal_prep_batches/{id} (cancel). Returns the cancelled id;
+  /// an unknown id throws [ApiException] `NOT_FOUND`. [client] is for tests.
+  static Future<String> cancelMealPrepBatch(
+    String batchId, {
+    http.Client? client,
+  }) async {
+    final uri = Uri.parse(
+      '$baseUrl/api/v1/meal_prep_batches/${Uri.encodeComponent(batchId)}',
+    );
+    final res =
+        client == null ? await http.delete(uri) : await client.delete(uri);
+    if (res.statusCode == 200) {
+      return _parseOk(res, 'Meal-prep cancel response', (json) {
+        final id = json['cancelled_id'];
+        if (id is! String) {
+          throw const FormatException('cancel response has no cancelled_id');
+        }
+        return id;
+      });
+    }
+    throw ApiException.fromResponse(res);
+  }
+
+  /// GET /api/v1/profile/pins. Pins live in the server's profile YAML; an
+  /// absent file lists no pins. [client] is for tests.
+  static Future<List<ProfilePin>> listPins({http.Client? client}) async {
+    final uri = Uri.parse('$baseUrl/api/v1/profile/pins');
+    final res = client == null ? await http.get(uri) : await client.get(uri);
+    if (res.statusCode == 200) {
+      return _parseOk(res, 'Pin list response', ProfilePin.listFromResponse);
+    }
+    throw ApiException.fromResponse(res);
+  }
+
+  /// PUT /api/v1/profile/pins/{day_index}/{slot_index} with `{recipe_id}`.
+  /// Indexes are the plan's 0-based slot coordinate. Upsert: re-pinning a slot
+  /// replaces its recipe. An unknown recipe throws [ApiException]
+  /// `RECIPE_NOT_FOUND` (404). [client] is for tests.
+  static Future<ProfilePin> pin(
+    int dayIndex,
+    int slotIndex,
+    String recipeId, {
+    http.Client? client,
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/v1/profile/pins/$dayIndex/$slotIndex');
+    final body = jsonEncode({'recipe_id': recipeId});
+    final res = client == null
+        ? await http.put(uri, headers: _jsonHeaders, body: body)
+        : await client.put(uri, headers: _jsonHeaders, body: body);
+    if (res.statusCode == 200) {
+      return _parseOk(res, 'Pin response', (json) {
+        final pin = json['pin'];
+        if (pin is! Map) throw const FormatException('pin response has no pin');
+        return ProfilePin.fromJson(Map<String, dynamic>.from(pin));
+      });
+    }
+    throw ApiException.fromResponse(res);
+  }
+
+  /// DELETE /api/v1/profile/pins/{day_index}/{slot_index}. Unpinning an
+  /// empty slot is not an error (`deleted: false`). [client] is for tests.
+  static Future<ProfilePinDeleteResult> unpin(
+    int dayIndex,
+    int slotIndex, {
+    http.Client? client,
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/v1/profile/pins/$dayIndex/$slotIndex');
+    final res =
+        client == null ? await http.delete(uri) : await client.delete(uri);
+    if (res.statusCode == 200) {
+      return _parseOk(res, 'Unpin response', ProfilePinDeleteResult.fromJson);
+    }
+    throw ApiException.fromResponse(res);
+  }
+
+  /// DELETE /api/v1/profile/pins. Returns `cleared_count`. [client] is for
+  /// tests.
+  static Future<int> clearPins({http.Client? client}) async {
+    final uri = Uri.parse('$baseUrl/api/v1/profile/pins');
+    final res =
+        client == null ? await http.delete(uri) : await client.delete(uri);
+    if (res.statusCode == 200) {
+      return _parseOk(res, 'Clear pins response', (json) {
+        final n = json['cleared_count'];
+        if (n is! num) {
+          throw const FormatException('clear response has no cleared_count');
+        }
+        return n.toInt();
+      });
+    }
+    throw ApiException.fromResponse(res);
+  }
+
+  /// GET /api/v1/starter_recipes: the optional starter pack (BE-22) a user
+  /// picks from. [client] is for tests.
+  static Future<List<StarterRecipe>> listStarterRecipes({
+    http.Client? client,
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/v1/starter_recipes');
+    final res = client == null ? await http.get(uri) : await client.get(uri);
+    if (res.statusCode == 200) {
+      return _parseOk(
+        res,
+        'Starter recipe list response',
+        StarterRecipe.listFromResponse,
+      );
+    }
+    throw ApiException.fromResponse(res);
+  }
+
+  /// POST /api/v1/starter_recipes/import with `{recipe_ids}`. Copies the
+  /// chosen starter recipes and their tags into the user's pool. Partial
+  /// success is HTTP 200: ids already in the pool or not in the pack come back
+  /// in [StarterImportResult.skipped]. [client] is for tests.
+  static Future<StarterImportResult> importStarterRecipes(
+    List<String> ids, {
+    http.Client? client,
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/v1/starter_recipes/import');
+    final body = jsonEncode({'recipe_ids': ids});
+    final res = client == null
+        ? await http.post(uri, headers: _jsonHeaders, body: body)
+        : await client.post(uri, headers: _jsonHeaders, body: body);
+    if (res.statusCode == 200) {
+      return _parseOk(
+        res,
+        'Starter import response',
+        StarterImportResult.fromJson,
+      );
+    }
+    throw ApiException.fromResponse(res);
+  }
+
+  /// GET /api/v1/micronutrient_defaults?demographic=... (BE-20): the new-user
+  /// default goals for one of `UserProfile.supportedDemographics`. Read-only;
+  /// it changes nothing on the server. A missing or unknown demographic is a
+  /// 400 `INVALID_REQUEST` [ApiException]. [client] is for tests.
+  static Future<MicronutrientDefaults> fetchMicronutrientDefaults(
+    String demographic, {
+    http.Client? client,
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/v1/micronutrient_defaults').replace(
+      queryParameters: {'demographic': demographic},
+    );
+    final res = client == null ? await http.get(uri) : await client.get(uri);
+    if (res.statusCode == 200) {
+      return _parseOk(
+        res,
+        'Micronutrient defaults response',
+        MicronutrientDefaults.fromJson,
+      );
+    }
+    throw ApiException.fromResponse(res);
+  }
+
+  /// Decodes a 200 JSON object with [parse]; a bad shape is `INVALID_RESPONSE`.
+  static T _parseOk<T>(
+    http.Response res,
+    String what,
+    T Function(Map<String, dynamic> json) parse,
+  ) {
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(res.body);
+    } on FormatException {
+      throw ApiException(
+        statusCode: 200,
+        code: 'INVALID_RESPONSE',
+        message: '$what was not JSON',
+      );
+    }
+    if (decoded is! Map) {
+      throw ApiException(
+        statusCode: 200,
+        code: 'INVALID_RESPONSE',
+        message: '$what was not a JSON object',
+      );
+    }
+    try {
+      return parse(Map<String, dynamic>.from(decoded));
+    } on FormatException catch (e) {
+      throw ApiException(
+        statusCode: 200,
+        code: 'INVALID_RESPONSE',
+        message: e.message,
+      );
+    }
   }
 
   /// GET /api/v1/ingredients/search

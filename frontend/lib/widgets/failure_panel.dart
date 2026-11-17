@@ -6,20 +6,27 @@ class FailureFixRow {
   final String label;
   final String description;
   final VoidCallback? onTap;
+  /// Stable key for the rendered row (tests / web automation).
+  final Key? key;
 
   const FailureFixRow({
     required this.label,
     required this.description,
     this.onTap,
+    this.key,
   });
 }
 
-/// Planner failure hero panel.
+/// Planner failure panel.
 ///
-/// Map OpenAPI `PlanFailure` when wiring: `code` → [terminationCode],
-/// `message` → [cause], `fix_hint` → [fixHint]. [hardestConstraint],
-/// [constraintProgress], [trace], and [fixes] are UI-only — derive from
-/// `details` or planner debug output; do not invent values.
+/// Map OpenAPI `PlanFailure` via `FailureViewModel`: `code` → [terminationCode],
+/// `explanation` (else `message`) → [cause], `fix` (else `fix_hint`) →
+/// [fixHint]. [fixes] carries further plan-wide failures and recipe-help
+/// actions. [hardestConstraint], [constraintProgress] and [trace] are UI-only —
+/// derive from `details` or planner debug output; do not invent values.
+///
+/// [FailurePanel.slot] is the compact inline form shown on one failing meal
+/// slot (code + headline + fix).
 class FailurePanel extends StatefulWidget {
   final String terminationCode;
   final String cause;
@@ -28,6 +35,8 @@ class FailurePanel extends StatefulWidget {
   final List<FailureFixRow> fixes;
   final String? trace;
   final String? fixHint;
+  /// Compact inline row for one failing slot instead of the hero layout.
+  final bool inline;
 
   const FailurePanel({
     super.key,
@@ -38,7 +47,18 @@ class FailurePanel extends StatefulWidget {
     this.fixes = const [],
     this.trace,
     this.fixHint,
-  });
+  }) : inline = false;
+
+  const FailurePanel.slot({
+    super.key,
+    required this.terminationCode,
+    required this.cause,
+    this.fixHint,
+  })  : inline = true,
+        hardestConstraint = null,
+        constraintProgress = null,
+        fixes = const [],
+        trace = null;
 
   @override
   State<FailurePanel> createState() => _FailurePanelState();
@@ -50,6 +70,8 @@ class _FailurePanelState extends State<FailurePanel> {
   @override
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<MacrovaTokens>() ?? MacrovaTokens.light;
+
+    if (widget.inline) return _buildInline(tokens);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -151,6 +173,48 @@ class _FailurePanelState extends State<FailurePanel> {
       ],
     );
   }
+
+  Widget _buildInline(MacrovaTokens tokens) {
+    return Container(
+      padding: const EdgeInsets.all(MacrovaSpacing.md),
+      decoration: BoxDecoration(
+        color: tokens.accentSoft,
+        borderRadius: MacrovaRadius.borderSm,
+        border: Border.all(color: tokens.accentTint),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.error_outline, size: 16, color: tokens.accentDeep),
+          const SizedBox(width: MacrovaSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.cause,
+                  style: MacrovaTypography.bodyMedium(tokens.inkPrimary)
+                      .copyWith(fontWeight: FontWeight.w600),
+                ),
+                if (widget.fixHint != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    widget.fixHint!,
+                    style: MacrovaTypography.caption(tokens.inkSecondary),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: MacrovaSpacing.sm),
+          Text(
+            widget.terminationCode,
+            style: MacrovaTypography.mono(tokens.accentDeep),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _HardestConstraintCard extends StatelessWidget {
@@ -215,6 +279,7 @@ class _FixRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      key: fix.key,
       margin: const EdgeInsets.only(bottom: MacrovaSpacing.sm),
       elevation: 0,
       shape: RoundedRectangleBorder(

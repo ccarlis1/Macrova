@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:macrova/features/agent/llm_config_provider.dart';
 import 'package:macrova/models/models.dart';
 import 'package:macrova/models/recipe.dart';
+import 'package:macrova/models/recipe_sync_result.dart';
 import 'package:macrova/providers/meal_plan_provider.dart';
 import 'package:macrova/providers/profile_provider.dart';
 import 'package:macrova/providers/recipe_provider.dart';
@@ -205,7 +206,8 @@ void main() {
 
         expect(find.text('No meal plan yet. Generate one from the Planner.'),
             findsOneWidget);
-        expect(find.byType(EmptyState), findsOneWidget);
+        // The library is empty too, so the starter-pack link shows (FE-16).
+        expect(find.byType(EmptyState), findsNWidgets(2));
         expect(find.text('Open Planner to generate a plan'), findsOneWidget);
         expect(find.text('Plan with words'), findsOneWidget);
         expect(find.text('Set up Agent'), findsOneWidget);
@@ -257,7 +259,7 @@ void main() {
         addTearDown(tester.view.resetDevicePixelRatio);
 
         final profile = ProfileProvider();
-        final recipes = RecipeProvider(recipeSyncFn: (_) async => []);
+        final recipes = RecipeProvider(recipeSyncFn: (_) async => const RecipeSyncResult());
         await recipes.addRecipe(
           const Recipe(
             id: 'lib-1',
@@ -367,7 +369,7 @@ void main() {
         addTearDown(tester.view.resetDevicePixelRatio);
 
         final profile = ProfileProvider();
-        final recipes = RecipeProvider(recipeSyncFn: (_) async => []);
+        final recipes = RecipeProvider(recipeSyncFn: (_) async => const RecipeSyncResult());
         await recipes.addRecipe(
           const Recipe(
             id: 'lib-shared',

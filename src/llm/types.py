@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List
 
 from src.data_layer.models import Recipe
 
@@ -15,9 +14,3 @@ class ValidatedRecipeForPersistence:
     """
 
     recipe: Recipe
-
-
-def from_validated_recipes(wrapped: List[ValidatedRecipeForPersistence]) -> List[Recipe]:
-    """Adapter for legacy/internal code that expects raw `Recipe` objects."""
-    return [w.recipe for w in wrapped]
-

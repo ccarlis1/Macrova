@@ -20,7 +20,7 @@ WHY MAPPING IS SEPARATE FROM RETRIEVAL:
 from dataclasses import dataclass
 from typing import Dict, Any
 
-from src.data_layer.models import NutritionProfile, MicronutrientProfile
+from src.data_layer.models import MicronutrientProfile
 
 
 # ============================================================================
@@ -294,21 +294,6 @@ class MappedNutrition:
     carbs_g: float
     micronutrients: MicronutrientProfile
     
-    def to_nutrition_profile(self) -> NutritionProfile:
-        """Convert to NutritionProfile for use in recipes/meals.
-        
-        Returns:
-            NutritionProfile with macros and micronutrients
-        """
-        return NutritionProfile(
-            calories=self.calories,
-            protein_g=self.protein_g,
-            fat_g=self.fat_g,
-            carbs_g=self.carbs_g,
-            micronutrients=self.micronutrients
-        )
-
-
 class NutrientMapper:
     """Maps raw USDA nutrition data to internal schema.
     
@@ -327,9 +312,6 @@ class NutrientMapper:
         
         # result.calories, result.protein_g, etc.
         # result.micronutrients.vitamin_a_ug, etc.
-        
-        # Convert to NutritionProfile
-        profile = result.to_nutrition_profile()
     """
     
     def __init__(self):

@@ -10,7 +10,7 @@ Reference: MEALPLAN_SPECIFICATION_v1.md Section 4.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Protocol, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Protocol, Set, Tuple
 
 from src.data_layer.models import UpperLimits
 
@@ -256,57 +256,3 @@ def check_hc8_cross_day_non_workout_reuse(
     if prev_tracker is None:
         return True
     return recipe_or_variant.id not in prev_tracker.non_workout_recipe_ids
-
-
-# --- Combined check ---
-
-HC_IDENTIFIERS = ("HC-1", "HC-2", "HC-3", "HC-4", "HC-5", "HC-6", "HC-8")
-
-
-def check_all(
-    recipe_or_variant: RecipeLike,
-    slot: MealSlot,
-    slot_index: int,
-    day_index: int,
-    state: ConstraintStateView,
-    user_profile: PlanningUserProfile,
-    resolved_ul: Optional[UpperLimits],
-    is_workout_slot: bool,
-) -> Union[bool, List[str]]:
-    """Evaluate all hard constraints for this assignment. Spec Section 4.
-
-    Returns True if all pass, or a list of violated HC identifiers (e.g. ["HC-1", "HC-3"]).
-    No scoring. No feasibility reasoning.
-    """
-    violated: List[str] = []
-    if not check_hc1_excluded_ingredients(
-        recipe_or_variant, slot, day_index, state, user_profile, resolved_ul
-    ):
-        violated.append("HC-1")
-    if not check_hc2_no_same_day_reuse(
-        recipe_or_variant, slot, day_index, state, user_profile, resolved_ul
-    ):
-        violated.append("HC-2")
-    if not check_hc3_cooking_time_bound(
-        recipe_or_variant, slot, day_index, state, user_profile, resolved_ul
-    ):
-        violated.append("HC-3")
-    if not check_hc4_daily_ul(
-        recipe_or_variant, slot, day_index, state, user_profile, resolved_ul
-    ):
-        violated.append("HC-4")
-    if not check_hc5_max_daily_calories(
-        recipe_or_variant, slot, day_index, state, user_profile, resolved_ul
-    ):
-        violated.append("HC-5")
-    if not check_hc6_pinned_assignment(
-        recipe_or_variant, slot, day_index, state, user_profile, resolved_ul, slot_index
-    ):
-        violated.append("HC-6")
-    if not check_hc8_cross_day_non_workout_reuse(
-        recipe_or_variant, slot, day_index, state, user_profile, resolved_ul, is_workout_slot
-    ):
-        violated.append("HC-8")
-    if not violated:
-        return True
-    return violated

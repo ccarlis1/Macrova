@@ -238,11 +238,3 @@ class IngredientValidator:
         
         # Special units remain as-is
         return (quantity, unit)
-
-    def get_supported_units(self) -> List[str]:
-        """Get list of supported units.
-        
-        Returns:
-            List of supported unit strings
-        """
-        return self.SUPPORTED_UNITS.copy()

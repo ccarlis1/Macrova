@@ -28,7 +28,6 @@ from src.planning.phase2_constraints import (
     check_hc5_max_daily_calories,
     check_hc6_pinned_assignment,
     check_hc8_cross_day_non_workout_reuse,
-    check_all,
 )
 
 
@@ -488,37 +487,3 @@ class TestIntegrationMultipleHCs:
         assert check_hc8_cross_day_non_workout_reuse(
             recipe_r1, slot, 1, state, profile, None, is_workout_slot=False
         ) is False
-
-
-# --- check_all ---
-
-
-class TestCheckAll:
-    """Combined evaluation returns True or list of violated HC identifiers."""
-
-    def test_all_pass_returns_true(self):
-        recipe = _make_recipe("r1", ingredients=[])
-        slot = _make_slot()
-        state = _make_state({0: DailyTracker()})
-        profile = _make_profile()
-        result = check_all(
-            recipe, slot, 0, 0, state, profile, None, is_workout_slot=False
-        )
-        assert result is True
-
-    def test_multiple_violations_return_list(self):
-        recipe = _make_recipe(
-            "r1",
-            ingredients=[Ingredient("peanuts", 10.0, "g", False)],
-            cooking_min=60,
-        )
-        slot = _make_slot(busyness=2)
-        state = _make_state({0: DailyTracker(used_recipe_ids={"r1"})})
-        profile = _make_profile(excluded=["peanuts"])
-        result = check_all(
-            recipe, slot, 0, 0, state, profile, None, is_workout_slot=False
-        )
-        assert isinstance(result, list)
-        assert "HC-1" in result
-        assert "HC-2" in result
-        assert "HC-3" in result

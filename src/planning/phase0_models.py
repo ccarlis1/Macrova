@@ -55,12 +55,6 @@ def validate_schedule_structure(
             )
 
 
-def total_decision_points(schedule: List[List[MealSlot]], D: int) -> int:
-    """Total number of decision points (slots) across D days. Spec Section 2.4."""
-    validate_schedule_structure(schedule, D)
-    return sum(len(schedule[d]) for d in range(D))
-
-
 def validate_planning_horizon(D: int) -> None:
     """Validate D is in [1, 7]. Spec Section 2.4."""
     if not isinstance(D, int) or D < PLANNING_DAYS_MIN or D > PLANNING_DAYS_MAX:

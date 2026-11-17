@@ -16,7 +16,6 @@ from src.planning.phase0_models import (
     WeeklyTracker,
     validate_schedule_structure,
     validate_planning_horizon,
-    total_decision_points,
     MAX_SLOTS_PER_DAY,
     MIN_SLOTS_PER_DAY,
     PLANNING_DAYS_MIN,
@@ -296,15 +295,6 @@ class TestPlanningHorizon:
     def test_D_above_seven_rejected(self):
         with pytest.raises(ValueError, match="1.*7"):
             validate_planning_horizon(8)
-
-    def test_total_decision_points(self):
-        schedule = [
-            [MealSlot("08:00", 2, "b"), MealSlot("13:00", 3, "l")],
-            [MealSlot("08:00", 2, "b"), MealSlot("13:00", 3, "l"), MealSlot("19:00", 4, "d")],
-        ]
-        n = total_decision_points(schedule, 2)
-        assert n == 5  # 2 slots + 3 slots
-
 
 # --- PlanningUserProfile and PlanningRecipe ---
 

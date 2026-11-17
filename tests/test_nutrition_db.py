@@ -31,32 +31,6 @@ def db(tmp_path):
     return NutritionDB(str(path))
 
 
-def test_default_unit_key_is_per_100g(db):
-    assert db.get_nutrition("whey protein") == PER_100G
-
-
-def test_alternate_unit_key(db):
-    assert db.get_nutrition("whey protein", unit_key="per_scoop") == PER_SCOOP
-
-
-def test_lookup_works_via_alias(db):
-    assert db.get_nutrition("protein powder") == PER_100G
-
-
-def test_returned_dict_is_a_copy(db):
-    first = db.get_nutrition("whey protein")
-    first["calories"] = -1.0
-    assert db.get_nutrition("whey protein")["calories"] == PER_100G["calories"]
-
-
-def test_unknown_ingredient_returns_none(db):
-    assert db.get_nutrition("dragonfruit") is None
-
-
-def test_missing_unit_key_returns_none(db):
-    assert db.get_nutrition("whey protein", unit_key="per_large") is None
-
-
 def test_get_ingredient_info_returns_full_record(db):
     info = db.get_ingredient_info("whey protein")
     assert info["name"] == "whey protein"

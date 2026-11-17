@@ -329,7 +329,7 @@ class TestIngredientValidator:
 
     def test_supported_units_documented(self, validator):
         """Test that supported units are accessible."""
-        supported = validator.get_supported_units()
+        supported = validator.SUPPORTED_UNITS
         
         assert "g" in supported
         assert "oz" in supported

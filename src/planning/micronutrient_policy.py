@@ -36,16 +36,6 @@ def cumulative_minimum_total(daily_rdi: float, days_completed: int, tau: float) 
     return tau * daily_rdi * days_completed
 
 
-def weekly_deficit_to_minimum(
-    consumed: float,
-    daily_rdi: float,
-    D: int,
-    tau: float,
-) -> float:
-    """Signed shortfall vs τ-weekly minimum (positive ⇒ need more to reach floor)."""
-    return weekly_minimum_total(daily_rdi, D, tau) - consumed
-
-
 def is_below_weekly_minimum(
     consumed: float,
     daily_rdi: float,

@@ -24,14 +24,6 @@ class IngredientDB:
 
         self._ingredients = data.get("ingredients", [])
 
-    def get_all_ingredients(self) -> List[Dict[str, Any]]:
-        """Get all ingredients in the database.
-
-        Returns:
-            List of all ingredient dictionaries
-        """
-        return self._ingredients.copy()
-
     def get_ingredient_by_name(self, name: str) -> Dict[str, Any]:
         """Get an ingredient by its name (case-insensitive).
 

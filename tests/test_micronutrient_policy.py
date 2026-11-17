@@ -8,7 +8,6 @@ from src.planning.micronutrient_policy import (
     is_below_weekly_minimum,
     sodium_weekly_advisory_max_mg,
     validate_micronutrient_weekly_min_fraction,
-    weekly_deficit_to_minimum,
     weekly_minimum_total,
 )
 
@@ -34,11 +33,6 @@ def test_boundary_is_not_below_at_exact_minimum():
     assert is_below_weekly_minimum(
         target - 2 * MICRONUTRIENT_EPSILON, 10.0, 3, 1.0
     )
-
-
-def test_weekly_deficit_to_minimum_sign():
-    assert weekly_deficit_to_minimum(700.0, 100.0, 7, 1.0) == 0.0
-    assert weekly_deficit_to_minimum(650.0, 100.0, 7, 1.0) == 50.0
 
 
 def test_sodium_advisory_not_scaled_by_tau():

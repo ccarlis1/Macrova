@@ -382,15 +382,6 @@ def _raw_registry_metadata(path: str) -> Dict[str, Dict[str, Any]]:
     return out
 
 
-def _assert_eligibility(eligibility: Optional[str]) -> Optional[str]:
-    if eligibility is None:
-        return None
-    normalized = str(eligibility).strip().lower()
-    if normalized not in _VALID_ELIGIBILITY:
-        raise TagRepositoryError("TAG_INVALID", "Invalid tag eligibility.")
-    return normalized
-
-
 def _assert_semantic_class(semantic_class: Optional[str]) -> Optional[str]:
     if semantic_class is None:
         return None

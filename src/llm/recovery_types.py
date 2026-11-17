@@ -73,25 +73,6 @@ class UnrecoverableReason:
 
 
 @dataclass
-class AttemptRecord:
-    attempt: int
-    llm_called: bool
-    drafts_received: int
-    drafts_after_dedupe: int
-    accepted: int
-    rejected: List[Dict[str, str]] = field(default_factory=list)  # [{code, message}]
-    candidate_ids: List[str] = field(default_factory=list)
-    planner_code_after: Optional[str] = None
-    signal_before: Optional[Dict[str, Any]] = None
-    signal_after: Optional[Dict[str, Any]] = None
-    improved: Optional[bool] = None
-    status: str = ""  # "success" | "fail" | "abort" | "error"
-
-    def to_dict(self) -> Dict[str, Any]:
-        return asdict(self)
-
-
-@dataclass
 class RecoveryOutcome:
     """Serializable summary attached to ``MealPlanResult.report['llm_recovery']``."""
 

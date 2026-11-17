@@ -66,12 +66,6 @@ def _minutes(hhmm: str) -> int:
     return h * 60 + m
 
 
-def _fmt_minutes(total: int) -> str:
-    total = max(0, min(total, 23 * 60 + 59))
-    h, m = divmod(total, 60)
-    return f"{h:02d}:{m:02d}"
-
-
 def _infer_workout_type(hhmm: str) -> Literal["AM", "PM", "general"]:
     try:
         mins = _minutes(hhmm)

@@ -45,18 +45,6 @@ from src.ingestion.ingredient_cache import (
     CacheEntry,
 )
 
-from src.ingestion.ingredient_errors import (
-    IngredientPipelineError,
-    IngredientErrorCode,
-    IngredientNotFoundError,
-    AmbiguousIngredientError,
-    UnitNotSupportedError,
-    MissingNutritionDataError,
-    APIFailureError,
-    ValidationFailureError,
-    validation_error_from_result,
-)
-
 __all__ = [
     # Ingredient validation
     "IngredientValidator",
@@ -89,14 +77,4 @@ __all__ = [
     "IngredientCache",
     "CachedIngredientLookup",
     "CacheEntry",
-    # Error types
-    "IngredientPipelineError",
-    "IngredientErrorCode",
-    "IngredientNotFoundError",
-    "AmbiguousIngredientError",
-    "UnitNotSupportedError",
-    "MissingNutritionDataError",
-    "APIFailureError",
-    "ValidationFailureError",
-    "validation_error_from_result",
 ]

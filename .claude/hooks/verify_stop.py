@@ -1,6 +1,6 @@
 """Stop gate -- the turn does not end on a red suite.
 
-CLAUDE.md §7 defines "done" as a list of commands that pass. This hook runs
+"Done" means a list of commands that pass. This hook runs
 them, so the definition holds mechanically instead of aspirationally. Which
 gates run is decided by what is actually dirty in the working tree, and the
 whole backend set costs about three seconds.
@@ -54,11 +54,11 @@ def _run_backend_gates(dirty: list[str]) -> list[str]:
         rc, out = common.run([python, "-m", "pytest", "tests/", "-q"], timeout=300)
         if rc != 0:
             problems.append(
-                "`python -m pytest tests/ -q` FAILED (CLAUDE.md §7: the full suite must pass, "
-                "no deselection, no -k):\n\n" + _failures(out)
+                "`python -m pytest tests/ -q` FAILED (the full suite must pass before you are "
+                "done -- no deselection, no -k):\n\n" + _failures(out)
             )
         elif planning_dirty:
-            # Law 3: hash order must not reach plan output. One alternate seed,
+            # AGENTS.md invariant "Deterministic planner": hash order must not reach plan output. One alternate seed,
             # fixed for reproducibility.
             rc, out = common.run(
                 [python, "-m", "pytest", "tests/", "-q"],
@@ -69,7 +69,8 @@ def _run_backend_gates(dirty: list[str]) -> list[str]:
                 problems.append(
                     f"The suite passes normally but FAILS under PYTHONHASHSEED={ALT_HASH_SEED}.\n\n"
                     "That is nondeterminism: something in src/planning/ depends on dict/set "
-                    "iteration order (CLAUDE.md law 3, trap 6). Sort before iterating.\n\n"
+                    "iteration order (AGENTS.md invariant \"Deterministic planner\"). Sort "
+                    "before iterating.\n\n"
                     + _failures(out)
                 )
 
@@ -78,7 +79,7 @@ def _run_backend_gates(dirty: list[str]) -> list[str]:
         if rc != 0:
             problems.append(
                 "`python scripts/export_openapi.py --check` FAILED -- CI fails on this.\n"
-                "Run `python scripts/export_openapi.py` and commit openapi/openapi.json.\n\n"
+                "Run `python3 scripts/run_export_openapi.py` and commit openapi/openapi.json.\n\n"
                 + _tail(out, 400)
             )
 
@@ -189,7 +190,7 @@ def main() -> None:
         f"Verification failed ({blocks}/{MAX_BLOCKS}) -- do not finish yet.\n\n"
         f"{report}\n\n"
         "Fix these, then stop again. If a failing expectation is a deliberate product change, "
-        "CLAUDE.md §8 says that is the user's decision: stop and show them the before/after."
+        "that is the user's decision: stop and show them the before/after."
     )
 
 

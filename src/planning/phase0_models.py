@@ -1,6 +1,6 @@
 """Phase 0: Spec-compliant inputs and state structures for the meal plan algorithm.
 
-Reference: MEALPLAN_SPECIFICATION_v1.md Section 2 (Inputs) and Section 3 (State Representation).
+Reference: docs/planner/mealplan-specification-v3.md Section 2 (Inputs) and Section 3 (State Representation).
 No search, constraint, or scoring logic — data structures and validation only.
 """
 

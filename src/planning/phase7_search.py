@@ -3,7 +3,7 @@
 Orchestrates decision order, pinned handling, candidate generation (Phase 6),
 scoring (Phase 4), ordering (Phase 5), daily/weekly validation, and backtracking.
 No Primary Carb Downscaling. No reimplementation of constraints, feasibility, or scoring.
-Reference: MEALPLAN_SPECIFICATION_v1.md.
+Reference: docs/planner/mealplan-specification-v3.md.
 """
 
 from __future__ import annotations

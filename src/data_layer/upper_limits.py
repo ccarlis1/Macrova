@@ -4,7 +4,7 @@ Loads daily UL values from reference data by demographic.
 Validates daily micronutrient intake against ULs.
 Reference source: IOM DRI / EFSA guidelines.
 
-Spec: MEALPLAN_SPECIFICATION_v1.md Section 2.3 — UL table loaded from
+Spec: docs/planner/mealplan-specification-v3.md Section 2.3 — UL table loaded from
 data/reference/ul_by_demographic.json, merged with user overrides.
 """
 

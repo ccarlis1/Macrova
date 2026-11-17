@@ -1,5 +1,7 @@
 # Nutrition Agent - Architecture Design
 
+> Agent-facing architecture lives in [docs/architecture/map/](map/README.md) (checked against source). This page is the human-oriented overview.
+
 ## System Overview
 
 The Nutrition Agent is a modular system that generates personalized meal recommendations based on nutrition goals, schedule constraints, and user preferences. 

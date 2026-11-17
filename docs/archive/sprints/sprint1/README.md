@@ -1,6 +1,6 @@
 # Sprint 1 — Task Index
 
-Per-task stubs for the Sprint 1 plan. See the parent spec at [`../../archive/sprint-notes/sprint-1.md`](../../archive/sprint-notes/sprint-1.md).
+Per-task stubs for the Sprint 1 plan. See the parent spec at [`../../archive/sprint-notes/sprint-1.md`](../../sprint-notes/sprint-1.md).
 
 ## Stub format
 
@@ -16,7 +16,7 @@ Each task file contains:
 
 ### Status vocabulary
 
-`implemented` and `done` both mean finished (Sprint 1 used `implemented`). `superseded`, `merged`, `deferred` and `parked` are the Sprint 2 close-out states applied by [Sprint 2 DOC-1](../sprint2/DOC-1-sprint1-closeout.md); each such stub names where the work went or why it stopped, per the dispositions in [the Sprint 2 README](../sprint2/README.md).
+`implemented` and `done` both mean finished (Sprint 1 used `implemented`). `superseded`, `merged`, `deferred` and `parked` are the Sprint 2 close-out states applied by [Sprint 2 DOC-1](../../../sprints/sprint2/DOC-1-sprint1-closeout.md); each such stub names where the work went or why it stopped, per the dispositions in [the Sprint 2 README](../../../sprints/sprint2/README.md).
 
 ## Critical path (Week 1)
 

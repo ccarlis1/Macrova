@@ -71,4 +71,3 @@ All commands run from the repo root, except Flutter.
 - CI runs neither the benchmark nor Flutter. Flutter is checked only by the Stop hook, and only when `flutter` is on PATH. `flutter test` can rewrite `frontend/pubspec.lock` (restore it).
 - The committed results embed a pydantic docs URL (errors.pydantic.dev/2.13) in MB-108's `detail`. A different pydantic version gives a non-timing diff in `results.json` that `evaluation/harness/diff_results.py` does not flag, because it compares verdicts only.
 - `evaluation/benchmark/library.py` and `evaluation/benchmark/build.py` read the gitignored .cache/ingredients folder, so a fresh clone cannot rebuild the library (KeyError). Running, comparing and diffing work from committed files.
-- Hook messages cite "CLAUDE.md law/trap/§" numbers that no longer exist. AGENTS.md is the rulebook.

@@ -2,7 +2,7 @@
 
 **Posture:** adversarial reviewer for a technical software/AI competition. The goal was to invalidate the central claims, not to fix them. No solutions are proposed here.
 
-**Snapshot reviewed:** branch `140-dollar-sprint`, commit `ee58fcc`, working tree as described in `evaluation/initial_state.md`. All experiments were run on 2026-09-17 with `.venv` Python 3.12.13. Nothing in `src/`, `data/`, or `config/` was modified. Two read-only USDA API calls were made to verify nutrient IDs.
+**Snapshot reviewed:** branch `140-dollar-sprint`, commit `ee58fcc`, working tree as described in `evaluation/reports/archive/initial_state.md`. All experiments were run on 2026-09-17 with `.venv` Python 3.12.13. Nothing in `src/`, `data/`, or `config/` was modified. Two read-only USDA API calls were made to verify nutrient IDs.
 
 **Method:** read every planner phase, the LLM pipeline, the ingestion/provider layer, the CLI and API entry points, the spec and rules docs, and the test layout. Then ran the planner on the committed example data, on the local data with the USDA cache, on synthetic pools, and brute-forced feasibility of the real pool to compare against what the search reports.
 
@@ -165,7 +165,7 @@ The pool contains 14 `llm_*` recipes for three dishes (five "Oatmeal with Fruits
 Planner tests build `PlanningRecipe` objects with hand-set nutrition. `tests/conftest.py` copies the example data files when absent, and those files produce all-zero nutrition (A1), so any API or CLI test that ran the example data to a real success would fail; none does. `tests/test_nutrition_calculator.py::test_calculate_recipe_missing_ingredient` asserts the silent-skip behaviour as correct. No test checks that a resolved USDA description resembles the requested ingredient, that Foundation foods have energy, or that vitamin D units are right.
 
 **F2. The baseline misdiagnosed the default failure.**
-`evaluation/initial_state.md` treats the default FM-4 as a known infeasibility to be preserved. It is a data-coverage failure (A1). Any sprint metric built on "reduce FM-4" will measure the wrong thing.
+`evaluation/reports/archive/initial_state.md` treats the default FM-4 as a known infeasibility to be preserved. It is a data-coverage failure (A1). Any sprint metric built on "reduce FM-4" will measure the wrong thing.
 
 **F3. Dead and parallel code inflate confidence.**
 `src/scoring/recipe_scorer.py` (767 lines, its own weight scheme, allergen substring logic, a "micronutrient" score that is really macro diversity) is not called by any production path but has a test file. `NutritionScaler` (strict) and `NutritionCalculator` (lenient) implement contradictory unit semantics. Two tie-break specifications exist: the spec's five-rule cascade and `phase5_ordering.ordering_key`'s three-key tuple plus seeded RNG.

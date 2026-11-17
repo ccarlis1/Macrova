@@ -1,10 +1,10 @@
-"""PostToolUse gate for planner determinism (CLAUDE.md law 3, trap 6).
+"""PostToolUse gate for planner determinism (AGENTS.md invariant "Deterministic planner").
 
-Law 3: same profile + recipe pool + seed must produce the same plan. This hook
+The invariant: same profile + recipe pool + seed must produce the same plan. This hook
 reports two classes of risk in ``src/planning/``:
 
 * **input** -- unseeded randomness, wall clock, UUIDs, filesystem ordering.
-  ``random.Random(seed)`` stays legal: CLAUDE.md asks for the seed to be
+  ``random.Random(seed)`` stays legal: AGENTS.md asks for the seed to be
   threaded through, not for randomness to be banned.
 * **order** -- unsorted iteration over dicts and sets.
 
@@ -201,16 +201,17 @@ def _write_baseline() -> int:
 HEADLINE = {
     INPUT: (
         "NONDETERMINISM in the planner -- output would depend on something other than input:",
-        "CLAUDE.md law 3: 'Same profile + recipe pool + seed -> same plan. No wall-clock, no "
-        "unseeded randomness, no unsorted dict/set iteration in src/planning/.'\n"
+        "AGENTS.md invariant \"Deterministic planner\": same profile + recipe pool + seed -> "
+        "same plan. No wall-clock, no unseeded randomness, no unsorted dict/set iteration in "
+        "src/planning/.\n"
         "Thread the existing seed through instead (random.Random(seed) is fine). Timing that "
         "only feeds stats is the one tolerated use -- if that is what this is, say so in your "
         "summary rather than letting it reach a branch.",
     ),
     ORDER: (
         "NEW unsorted iteration in the planner:",
-        "CLAUDE.md trap 6: 'sort before iterating over dict/set contents. sorted() is cheap; "
-        "debugging nondeterminism is not.'\n"
+        "AGENTS.md invariant \"Deterministic planner\": sort before iterating over dict/set "
+        "contents. sorted() is cheap; debugging nondeterminism is not.\n"
         "Wrap the iterable in sorted(). If the order provably cannot affect output, state that "
         "in your summary rather than adding it to the baseline.",
     ),

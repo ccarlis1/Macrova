@@ -52,15 +52,15 @@ Area `tooling` · prefixes: `evaluation/`, `scripts/`, `.claude/hooks/`, `tests/
   - functions: ask, block, deny, dirty_paths, edited_paths, git_show, hash_paths, ok, pre_tool_decision, project_dir, project_python, read_event, read_state, repo_relative, run, session_context, state_dir, stop_block, tool_input, under, write_state
   - imports: —
   - imported by: .claude/hooks/check_contract.py, .claude/hooks/check_determinism.py, .claude/hooks/check_llm_lane.py, .claude/hooks/guard_bash.py, .claude/hooks/guard_paths.py, .claude/hooks/session_health.py, .claude/hooks/verify_stop.py
-- **`.claude/hooks/check_contract.py`** — PostToolUse gate for API/DTO contract changes (CLAUDE.md law 2, trap 2).
+- **`.claude/hooks/check_contract.py`** — PostToolUse gate for API/DTO contract changes (AGENTS.md invariant "Additive API contract").
   - functions: main
   - imports: .claude/hooks/_common.py
   - imported by: —
-- **`.claude/hooks/check_determinism.py`** — PostToolUse gate for planner determinism (CLAUDE.md law 3, trap 6).
+- **`.claude/hooks/check_determinism.py`** — PostToolUse gate for planner determinism (AGENTS.md invariant "Deterministic planner").
   - functions: main
   - imports: .claude/hooks/_common.py
   - imported by: —
-- **`.claude/hooks/check_llm_lane.py`** — PostToolUse gate keeping the LLM in its lane (CLAUDE.md law 4, trap 7).
+- **`.claude/hooks/check_llm_lane.py`** — PostToolUse gate keeping the LLM in its lane (AGENTS.md invariant "LLM is an assistant, never the authority").
   - functions: main
   - imports: .claude/hooks/_common.py
   - imported by: —
@@ -186,7 +186,6 @@ Area `tooling` · prefixes: `evaluation/`, `scripts/`, `.claude/hooks/`, `tests/
 - `evaluation/benchmark/scenarios_index.md`
 - `evaluation/data_track/README.md`
 - `evaluation/data_track/results/decision_gate.md`
-- `evaluation/initial_state.md`
 - `evaluation/llm_overhaul/CURRENT_ARCHITECTURE.md`
 - `evaluation/llm_overhaul/EVALUATION_PLAN.md`
 - `evaluation/llm_overhaul/EVALUATION_RESULTS.md`
@@ -196,6 +195,7 @@ Area `tooling` · prefixes: `evaluation/`, `scripts/`, `.claude/hooks/`, `tests/
 - `evaluation/llm_overhaul/LLM_LAYER_DIAGNOSTIC.md`
 - `evaluation/llm_overhaul/LLM_OVERHAUL_PLAN.md`
 - `evaluation/reports/architecture_tribunal.md`
+- `evaluation/reports/archive/initial_state.md`
 - `evaluation/reports/benchmark_failure_analysis.md`
 - `evaluation/reports/or_formulation_review.md`
 - `evaluation/reports/reconciliation.md`

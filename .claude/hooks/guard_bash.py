@@ -3,14 +3,14 @@
 Covers the failure modes that reach the working tree through Bash rather than
 through an editor:
 
-* destructive operations and ``git add`` against the user's gitignored data
-  (CLAUDE.md §2 table, trap 4);
-* running a repo command from the wrong directory (trap 12) -- default data
+* destructive operations and ``git add`` against the user's data and the
+  committed recipe/tag stores (AGENTS.md invariant "User data paths");
+* running a repo command from the wrong directory -- default data
   paths are relative and ``pytest.ini`` sets ``pythonpath = .``;
-* adding a dependency, which §8 makes the user's decision;
-* backing up ``config/user_profile.yaml`` before pytest, because
-  ``tests/conftest.py`` rewrites it from the example when the YAML has no
-  usable schedule.
+* adding a dependency, which is the user's decision;
+* backing up ``config/user_profile.yaml`` before pytest, as a safety net in
+  case a test writes to it (``tests/conftest.py`` fails the session if one does,
+  but cannot restore the file).
 
 Filtered pytest runs are only advised against, never blocked: iterating with
 ``-k`` is legitimate, and ``verify_stop.py`` enforces the unfiltered suite
@@ -26,7 +26,7 @@ from pathlib import Path
 
 import _common as common
 
-#: Gitignored, user-owned data. Matching a ``.example`` sibling is never a hit.
+#: User-owned data and committed stores. Matching a ``.example`` sibling is never a hit.
 PROTECTED_RE = re.compile(
     r"(?P<path>"
     r"config/(?:user_profile|nutrition_goals|model_config)\.yaml"
@@ -73,8 +73,8 @@ def _check_data_writes(command: str) -> None:
             common.deny(
                 "BLOCKED: `git clean` would delete the user's gitignored data files "
                 "(recipes.json, custom_ingredients.json, user_profile.yaml).\n\n"
-                "CLAUDE.md trap 4: 'never delete or truncate them either -- they are the "
-                "user's data.'"
+                "Never delete or truncate them -- they are the user's data "
+                "(AGENTS.md invariant \"User data paths\")."
             )
 
         if not hits:
@@ -83,17 +83,17 @@ def _check_data_writes(command: str) -> None:
         if re.search(r"git\s+add(?![\w-])", segment):
             common.deny(
                 f"BLOCKED: `git add` of {', '.join(sorted(set(hits)))}.\n\n"
-                "These files are gitignored on purpose. CLAUDE.md trap 4: 'never `git add` "
-                "the gitignored real data files' -- committing them publishes the user's "
-                "personal data. Schema changes go in the .example file instead."
+                "Never `git add` the user's real data files by hand -- committing them "
+                "publishes the user's personal data (AGENTS.md invariant \"User data paths\"). "
+                "Schema changes go in the .example file instead."
             )
 
         for pattern, label in DESTRUCTIVE:
             if pattern.search(segment):
                 common.deny(
                     f"BLOCKED: {label} targeting {', '.join(sorted(set(hits)))}.\n\n"
-                    "CLAUDE.md §8 makes deleting or overwriting anything under data/ or "
-                    "config/ that isn't a .example file the user's decision. If they asked "
+                    "Deleting or overwriting anything under data/ or config/ that isn't a "
+                    ".example file is the user's decision. If they asked "
                     "for it, have them confirm."
                 )
 
@@ -126,8 +126,8 @@ def _check_cwd(command: str, cwd: str | None) -> None:
             if pattern.search(segment) and not _is_checkout_root(landing, root):
                 common.deny(
                     f"BLOCKED: running {label} from {landing}, not the repo root.\n\n"
-                    "CLAUDE.md trap 12 (The Wrong-CWD Failure): 'run everything from the "
-                    "repo root; never fix this by hardcoding absolute paths.'\n\n"
+                    "Repo commands resolve paths from the repo root: run everything from the "
+                    "repo root; never fix this by hardcoding absolute paths.\n\n"
                     f"Rerun as:  cd {root} && <your command>"
                 )
 
@@ -138,24 +138,24 @@ def _check_dependency_installs(command: str) -> None:
     ):
         common.ask(
             "This installs a Python package outside requirements.txt.\n\n"
-            "CLAUDE.md §8 lists 'adding a dependency to requirements.txt or pubspec.yaml' as "
-            "a decision to stop and ask about. (Repairing the venv with "
+            "Adding a dependency to requirements.txt or pubspec.yaml is a decision to stop "
+            "and ask the user about. (Repairing the venv with "
             "`pip install -r requirements.txt` is always fine and is not blocked.)"
         )
     if re.search(r"(?:flutter|dart)\s+pub\s+add(?![\w-])", command):
         common.ask(
             "This adds a Flutter/Dart dependency.\n\n"
-            "CLAUDE.md §8: adding a dependency to pubspec.yaml is the user's decision. Note "
-            "the repo deliberately avoids Riverpod, Mockito and GetIt (trap 10)."
+            "Adding a dependency to pubspec.yaml is the user's decision. Note "
+            "the repo deliberately avoids Riverpod, Mockito and GetIt."
         )
 
 
 def _backup_profile(command: str) -> str | None:
     """Snapshot the real profile before pytest; return an advisory line if taken.
 
-    ``tests/conftest.py`` copies ``user_profile.yaml.example`` over the real file
-    whenever the YAML fails to parse or carries no usable schedule. That is a
-    data-loss path inside the suite itself, and only a snapshot can undo it.
+    ``tests/conftest.py`` never reads or writes the real file: it points tests at a
+    per-test ``NUTRITION_USER_PROFILE_PATH`` and fails the session if the real file
+    was created, changed or deleted. It cannot restore it, so a snapshot can.
     """
     if not re.search(r"(?<![\w./-])pytest(?![\w-])", command):
         return None
@@ -173,7 +173,7 @@ def _backup_profile(command: str) -> str | None:
         return None
     return (
         f"[hook] backed up config/user_profile.yaml -> {target.relative_to(common.project_dir())} "
-        "(tests/conftest.py can overwrite it from the .example)"
+        "(tests/conftest.py fails the session if a test changes it, but cannot restore it)"
     )
 
 
@@ -183,8 +183,9 @@ def _pytest_filter_advice(command: str) -> str | None:
     if not re.search(r"(?<![\w-])(-k(?![\w-])|--deselect|--lf|--ff|--last-failed)", command):
         return None
     return (
-        "[hook] filtered pytest run: fine while iterating, but CLAUDE.md §5 wants the full "
-        "suite (`python -m pytest tests/ -q`, ~2s for 1040 tests) before you call anything done."
+        "[hook] filtered pytest run: fine while iterating, but run the full "
+        "suite (`python3 scripts/run_pytest.py`, ~12s for the full suite) before you call "
+        "anything done."
     )
 
 

@@ -32,13 +32,15 @@ def _copy_if_missing(dest: Path, example: Path) -> None:
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_config():
-    """Ensure gitignored default data files exist for API/CLI tests.
+    """Ensure local data files that some tests open exist (copied from ``*.example``).
 
     ``config/user_profile.yaml`` is the owner's personal, untracked profile (Sprint 2
     W7): tests never read, create or overwrite it. They use
     ``config/user_profile.yaml.example`` or a ``tmp_path`` fixture instead.
     """
-    # Gitignored data files required by src.api.server and src.cli defaults.
+    # custom_ingredients.json: gitignored, legacy; some tests pass it explicitly (not a
+    # CLI/server default -- that is data/reference/ingredient_nutrition.json).
+    # recipes.json: committed CLI/server default; restored only if a checkout lacks it.
     _copy_if_missing(
         _REPO_ROOT / "data" / "ingredients" / "custom_ingredients.json",
         _REPO_ROOT / "data" / "ingredients" / "custom_ingredients.json.example",

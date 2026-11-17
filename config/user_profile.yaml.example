@@ -6,12 +6,12 @@
 #   python3 -m src.cli --profile config/user_profile.yaml --days 3 --output json
 #
 # Sample data (ingredient names in recipes must exist in your ingredients file):
-#   config/recipes.example.json   — example recipes
-#   config/ingredients.example.json — example ingredients (use with --ingredients)
+#   data/recipes/recipes.json.example          — example recipes
+#   data/reference/ingredient_nutrition.json   — bundled ingredients (the --ingredients default)
 # To try with samples:
 #   python3 -m src.cli --profile config/user_profile.yaml \
-#     --recipes config/recipes.example.json \
-#     --ingredients config/ingredients.example.json
+#     --recipes data/recipes/recipes.json.example \
+#     --ingredients data/reference/ingredient_nutrition.json
 
 nutrition_goals:
   # Daily calorie target (kcal)

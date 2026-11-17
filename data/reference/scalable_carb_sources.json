@@ -1,5 +1,5 @@
 {
-  "source": "docs/planner/mealplan-specification.md Section 6.7",
+  "source": "docs/planner/mealplan-specification-v3.md Section 6.7",
   "note": "Ingredient/source identifiers for scalable rice and potato variants. Used when enable_primary_carb_downscaling is true.",
   "rice_variants": [
     "white_rice",

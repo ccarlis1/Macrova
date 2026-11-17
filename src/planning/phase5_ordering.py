@@ -4,7 +4,7 @@ Orders already-scored candidates when composite scores are equal.
 No scoring, no constraints, no feasibility, no state mutation.
 Tie-break cascade for equal score:
 1) higher preferred-tag match count, 2) lower recipe.id lexicographic, 3) seeded RNG.
-Reference: MEALPLAN_SPECIFICATION_v1.md Section 7.1.
+Reference: docs/planner/mealplan-specification-v3.md Section 7.1.
 """
 
 from __future__ import annotations

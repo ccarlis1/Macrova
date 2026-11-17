@@ -229,8 +229,9 @@ def schedule_days_to_meal_only_legacy_dict(
 ) -> Tuple[Dict[str, int], List[str]]:
     """Pick a single legacy meal dict for ``UserProfile.schedule`` (day 1 template).
 
-    If later days differ from day 1, emit one warning; the planner still uses one
-    template until full per-day integration.
+    If later days differ from day 1, emit one warning. Only this legacy dict is
+    day-1-only: the planner reads per-day ``schedule_days`` via
+    ``src/planning/converters.py::convert_profile``.
     """
     if not schedule_days:
         raise ValueError("schedule_days is empty.")

@@ -1,6 +1,6 @@
 """Phase 1: Initial state S₀, pinned pre-validation, adjusted daily targets, per-meal targets.
 
-Reference: MEALPLAN_SPECIFICATION_v1.md Section 3.4, 3.5, 3.6.
+Reference: docs/planner/mealplan-specification-v3.md Section 3.4, 3.5, 3.6.
 No search, backtracking, candidate selection, scoring, or full constraint engine.
 """
 

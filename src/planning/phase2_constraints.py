@@ -4,7 +4,7 @@ This module is the single authoritative place that answers:
 "Does this assignment violate any hard constraint?"
 
 No search, feasibility logic, scoring, or state mutation.
-Reference: MEALPLAN_SPECIFICATION_v1.md Section 4.
+Reference: docs/planner/mealplan-specification-v3.md Section 4.
 """
 
 from __future__ import annotations

@@ -1,4 +1,4 @@
-"""PostToolUse gate for API/DTO contract changes (CLAUDE.md law 2, trap 2).
+"""PostToolUse gate for API/DTO contract changes (AGENTS.md invariant "Additive API contract").
 
 Two checks, in severity order:
 
@@ -110,10 +110,10 @@ def main() -> None:
             common.block(
                 "BREAKING API CONTRACT CHANGE -- this is not additive:\n\n"
                 f"{listed}\n\n"
-                "CLAUDE.md law 2: 'API request/response fields, persisted JSON shapes, and "
-                "Flutter DTOs only gain optional fields. Never rename, remove, or change the "
-                "type of an existing field.'\n\n"
-                "§8 makes this the user's call. Stop, and present the additive alternative "
+                "AGENTS.md invariant \"Additive API contract\": API request/response fields, "
+                "persisted JSON shapes, and Flutter DTOs only gain optional fields. Never rename, "
+                "remove, or change the type of an existing field.\n\n"
+                "A breaking change is the user's call. Stop, and present the additive alternative "
                 "(a new optional field, a new endpoint, or /api/v2) alongside it."
             )
 
@@ -123,8 +123,8 @@ def main() -> None:
     if rc != 0:
         common.block(
             f"OpenAPI snapshot drift -- CI fails on this ('{out.strip().splitlines()[-1][:200]}').\n\n"
-            "Run `python scripts/export_openapi.py` and commit openapi/openapi.json "
-            "(CLAUDE.md trap 2)."
+            "Run `python3 scripts/run_export_openapi.py` and commit openapi/openapi.json "
+            "(AGENTS.md invariant \"Additive API contract\")."
         )
 
     common.ok()

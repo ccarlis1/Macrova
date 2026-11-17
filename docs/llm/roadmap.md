@@ -168,7 +168,7 @@ flowchart TD
 
 **NOTE FOR THIS PHASE (frontend alignment):**
 
-- A separate branch will be building a full frontend in parallel (see Step 1 of `docs/roadmap/next-steps.md`).
+- A separate branch will be building a full frontend in parallel (see Step 1 of the retired `next-steps.md`; current roadmap: [EXECUTION_ROADMAP.md](../EXECUTION_ROADMAP.md)).
 - The integration points defined above for features (1)–(5) are **service-level contracts**, not UI-coupled endpoints:
   - All LLM features should be exposed via stable Python APIs and/or FastAPI routes under `src/api/server.py`.
   - The CLI and any new frontend should both consume these contracts, so UI changes do not alter planner behavior.
@@ -377,7 +377,7 @@ Implement an outer retry coordinator that wraps existing planner calls.
 
 ## Phase 10 — Delivery Sequence and Guardrails
 
-- Implement in roadmap order already defined in `[docs/roadmap/next-steps.md](../roadmap/next-steps.md)`: recipe generation -> ingredient matching -> feedback loop -> NL config -> tagging.
+- Implement in roadmap order already defined in the retired `next-steps.md` (current roadmap: [EXECUTION_ROADMAP.md](../EXECUTION_ROADMAP.md)): recipe generation -> ingredient matching -> feedback loop -> NL config -> tagging.
 - Non-negotiable safeguards from docs:
   - never trust LLM nutrition values
   - always validate via USDA

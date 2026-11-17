@@ -1,7 +1,7 @@
 # Reconciliation: architecture tribunal vs. OR formulation review
 
 **Date:** 2026-09-17
-**Inputs:** `evaluation/reports/architecture_tribunal.md`, `evaluation/reports/or_formulation_review.md`, `evaluation/initial_state.md`
+**Inputs:** `evaluation/reports/architecture_tribunal.md`, `evaluation/reports/or_formulation_review.md`, `evaluation/reports/archive/initial_state.md`
 **Method:** read both reports in full, then re-read source at every point where the two disagree or where only one report made a load-bearing claim. Verifications are marked **[verified]** with the file and line. No code was changed.
 
 ---
@@ -16,7 +16,7 @@ The combined statement neither report makes alone:
 
 > Macrova is an unvalidated constraint-satisfaction model running over unvalidated nutrition vectors. Because the numbers are wrong, **every observation either report made about search behaviour is confounded** — including the tribunal's headline claim that the search fails on a feasible 3-day instance. That instance was feasible *with respect to the wrong numbers*. The two defect classes must be measured on separate tracks or neither can be measured at all.
 
-This has a direct consequence for the sprint: `evaluation/initial_state.md` designates the default `TC-2` / `FM-4` outcome as a known infeasibility to be **preserved** as a regression guard. Both reports independently conclude it is a data-coverage artifact, not infeasibility. Preserving it freezes the defect and makes any "reduce FM-4" metric measure the wrong quantity. The baseline's guard should be re-anchored before sprint metrics are set.
+This has a direct consequence for the sprint: `evaluation/reports/archive/initial_state.md` designates the default `TC-2` / `FM-4` outcome as a known infeasibility to be **preserved** as a regression guard. Both reports independently conclude it is a data-coverage artifact, not infeasibility. Preserving it freezes the defect and makes any "reduce FM-4" metric measure the wrong quantity. The baseline's guard should be re-anchored before sprint metrics are set.
 
 ---
 

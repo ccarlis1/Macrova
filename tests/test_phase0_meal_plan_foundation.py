@@ -1,6 +1,6 @@
 """Phase 0 unit tests: inputs, reference data, and state structures.
 
-Spec: MEALPLAN_SPECIFICATION_v1.md Sections 2 and 3.
+Spec: docs/planner/mealplan-specification-v3.md Sections 2 and 3.
 Roadmap: Phase 0 — Foundation.
 """
 

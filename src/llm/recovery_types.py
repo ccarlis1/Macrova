@@ -64,7 +64,7 @@ class GapSpec:
 
 @dataclass
 class UnrecoverableReason:
-    code: str  # e.g. "IMPOSSIBLE_TARGETS", "EMPTY_POOL_AFTER_FILTER", "REQUIRED_TAG_UNHELD", "PIN_OR_BATCH_CONFLICT", "SEARCH_BUDGET"
+    code: str  # e.g. "IMPOSSIBLE_TARGETS", "EMPTY_POOL", "REQUIRED_TAG_UNHELD", "PIN_OR_BATCH_CONFLICT", "SEARCH_BUDGET"
     message: str
     details: Dict[str, Any] = field(default_factory=dict)
 

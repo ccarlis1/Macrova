@@ -5,7 +5,7 @@ cumulative micronutrient *floor* instead of inlining ``daily_rdi * D`` or
 ``tau * daily_rdi * D``. Upper-limit (UL) validation must not depend on this
 module — τ applies only to RDI minimum paths.
 
-See MEALPLAN_SPECIFICATION_v1 (micronutrient_weekly_min_fraction τ).
+See docs/planner/mealplan-specification-v3.md (micronutrient_weekly_min_fraction τ).
 """
 
 from __future__ import annotations

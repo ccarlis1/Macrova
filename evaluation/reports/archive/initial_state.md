@@ -1,5 +1,7 @@
 # Macrova pre-sprint baseline
 
+> Archived: superseded by evaluation/reports/reconciliation.md.
+
 **Date/time of baseline:** 2026-09-17 14:54:05 EDT through 2026-09-17 14:58:14 EDT (−0400)
 
 This is a snapshot of the repository as it exists immediately before the 48-hour AI-assisted validation sprint. Feature implementation status is taken from `docs/sprints/sprint1/` (not re-audited). No implementation, refactors, or fixes were made.

@@ -13,5 +13,6 @@ Contents here include sprint plans, per-ticket stubs, MVP implementation checkli
 - [Implementation plan](implementation-plan.md) — MVP checklist (largely shipped)
 - [Design understanding](design-understanding.md) — derived summary of nutrition knowledge (may rot)
 - [Sprint notes](sprint-notes/) — Sprint 1 plan (archived)
-- Per-task stubs: [`../sprints/`](../sprints/) (e.g. [`../sprints/sprint1/`](../sprints/sprint1/))
+- [Sprint 1 task stubs](sprints/sprint1/) — closed sprint (see `../sprints/sprint2/DOC-1-sprint1-closeout.md`); current stubs live in [`../sprints/`](../sprints/)
+- [Agent docs](agents/) — retired agent guides: benchmarks and evaluation log
 - [TinyFish Usecase](tinyfish-usecase.md) - Prior usecase for implmenting TinyFish. May revisit

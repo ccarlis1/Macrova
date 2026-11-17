@@ -16,7 +16,7 @@ Then edit `config/user_profile.yaml` with your nutrition goals, schedule, and pr
 
 Make sure you have:
 - `data/recipes/recipes.json` - Your recipe database
-- `data/ingredients/custom_ingredients.json` - Your ingredient nutrition database
+- `data/reference/ingredient_nutrition.json` - The bundled ingredient nutrition database (committed)
 
 ### 3. Run the Meal Planner
 
@@ -57,7 +57,7 @@ python3 plan_meals.py \
 |--------|-------------|---------|
 | `--profile` | Path to user profile YAML file | `config/user_profile.yaml` |
 | `--recipes` | Path to recipes JSON file | `data/recipes/recipes.json` |
-| `--ingredients` | Path to ingredients JSON file | `data/ingredients/custom_ingredients.json` |
+| `--ingredients` | Path to ingredients JSON file | `data/reference/ingredient_nutrition.json` |
 | `--ingredient-source` | `local` = bundled JSON DB; `api` = USDA API (requires `USDA_API_KEY`) | `local` |
 | `--output` | Output format: `markdown`, `json`, or `both` | `markdown` |
 | `--days` | Planning horizon, 1–7 days | `1` |
@@ -65,7 +65,7 @@ python3 plan_meals.py \
 
 ## Ingredient source
 
-- **`local`** (default): Uses the bundled ingredient nutrition database (e.g. `data/ingredients/custom_ingredients.json`). No API key or network required.
+- **`local`** (default): Uses the bundled ingredient nutrition database (`data/reference/ingredient_nutrition.json`). No API key or network required.
 - **`api`**: Fetches ingredient nutrition from the USDA FoodData Central API. Requires a free API key and network access. Use when you want up-to-date USDA data or ingredients not in your local DB.
 
 ### API mode setup

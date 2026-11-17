@@ -2,7 +2,7 @@
 
 This module answers: "If we tentatively place this recipe, is it still feasible
 to complete the plan?" No search, no scoring, no state mutation.
-Reference: MEALPLAN_SPECIFICATION_v1.md Section 5.
+Reference: docs/planner/mealplan-specification-v3.md Section 5.
 """
 
 from __future__ import annotations

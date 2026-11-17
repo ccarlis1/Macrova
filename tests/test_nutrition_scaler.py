@@ -1,8 +1,4 @@
-"""Tests for Step 2.5: Quantity & Unit Scaling.
-
-Tests scaling of normalized nutrition data to reflect user-specified quantities.
-Scaling is deterministic - no heuristics, density assumptions, or silent fallbacks.
-"""
+"""Tests for the named serving weights used to convert count units to grams."""
 
 from src.ingestion.nutrition_scaler import (
     BASE_SERVING_WEIGHTS,

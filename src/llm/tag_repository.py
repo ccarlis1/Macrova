@@ -53,15 +53,6 @@ _SEED_TAGS: Dict[str, Dict[str, str]] = {
 
 _VALID_TAG_TYPES = {"context", "time", "nutrition", "constraint"}
 _VALID_SOURCES = {"user", "llm", "system"}
-_VALID_ELIGIBILITY = {"proposed", "approved", "rejected"}
-_VALID_SEMANTIC_CLASSES = {
-    "capability",
-    "meal_role",
-    "exclusion",
-    "nutrition_claim",
-    "identity_hint",
-    "effort_system",
-}
 # Default DM-6 semantic class per legacy tag_type when not stored on disk.
 _DEFAULT_SEMANTIC_CLASS_BY_TAG_TYPE: Dict[str, str] = {
     "context": "capability",

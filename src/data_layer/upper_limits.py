@@ -120,15 +120,6 @@ class UpperLimitsLoader:
         
         return UpperLimits(**kwargs)
 
-    def get_available_demographics(self) -> list:
-        """Get list of available demographics in reference data.
-        
-        Returns:
-            List of demographic keys
-        """
-        data = self._load_data()
-        return list(data.get("demographics", {}).keys())
-
 
 def resolve_upper_limits(
     loader: UpperLimitsLoader,

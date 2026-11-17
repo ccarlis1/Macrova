@@ -109,9 +109,6 @@ class IngredientValidator:
         "tbsp": ("ml", 14.79),   # 1 tbsp = 14.79ml
     }
 
-    # Units that remain as-is (no conversion)
-    SPECIAL_UNITS = ["g", "ml", "large", "scoop", "serving", "to taste"]
-
     def __init__(self):
         """Initialize validator with ingredient normalizer."""
         self._normalizer = IngredientNormalizer()
@@ -249,16 +246,3 @@ class IngredientValidator:
             List of supported unit strings
         """
         return self.SUPPORTED_UNITS.copy()
-
-    def validate_batch(
-        self, inputs: List[IngredientInput]
-    ) -> List[ValidationResult]:
-        """Validate multiple ingredients.
-        
-        Args:
-            inputs: List of IngredientInput objects
-            
-        Returns:
-            List of ValidationResult objects (same order as inputs)
-        """
-        return [self.validate(inp) for inp in inputs]

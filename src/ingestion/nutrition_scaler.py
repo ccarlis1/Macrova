@@ -390,19 +390,3 @@ class NutritionScaler:
             scale_factor=0.0,
             actual_grams=0.0
         )
-    
-    def get_supported_mass_units(self) -> list:
-        """Get list of directly supported mass units.
-        
-        Returns:
-            List of unit strings that can be converted without context
-        """
-        return list(UNIT_TO_GRAMS.keys())
-    
-    def get_supported_count_units(self) -> list:
-        """Get list of count-based units (require ingredient context).
-        
-        Returns:
-            List of count unit strings
-        """
-        return list(BASE_SERVING_WEIGHTS.keys())

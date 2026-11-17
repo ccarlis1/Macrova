@@ -92,3 +92,5 @@ evaluation/data_track/results/*.json
 
 # Personal Claude Code settings
 .claude/settings.local.json
+# Claude Code hook state (written by .claude/hooks/_common.py)
+.claude/.hook-state/

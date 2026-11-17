@@ -33,7 +33,7 @@ When information conflicts, prefer sources in this order:
 
 1. **Current source code** (`src/`, `frontend/lib/`)
 2. **Current scripts and tests** (`scripts/`, `tests/`, `Makefile`, `pytest.ini`)
-3. **`.cursor/architecture.json`** (machine-readable map of entities, features, APIs, UI, and known unknowns)
+3. **`docs/architecture/map/`** (architecture map: hand-written area docs + generated facts checked by `scripts/gen_architecture_map.py --check`)
 4. **Current docs** (`docs/`, `README.md`, `USAGE.md`, `QUICK_START.md`)
 5. **Existing agent instructions** (this file)
 6. **Historical notes / sprint docs / code comments** (`docs/sprints/`, `docs/archive/sprint-notes/`, older prose)
@@ -290,7 +290,7 @@ There is a thin root `CLAUDE.md` that points to this file; do not duplicate rule
 
 ## Cursor / Agent Rules
 
-- `.cursor/architecture.json` is the machine-readable architecture map (entities, features, APIs, UI components, and an `unknowns` list). Inspect it before broad backend/frontend/planner/API changes, but treat it as **below source code** in the hierarchy — parts of its `unknowns`/`missing` notes are now stale (see **Known Partial or Mock Areas**).
+- `docs/architecture/map/README.md` is the architecture map: per-area docs (intent, invariants, status) plus generated facts (files, routes, entities, dependency graph). Start there before broad backend/frontend/planner/API changes.
 - `.cursor/rules/` holds operational rules derived from this file: `global.mdc` (always-on), `testing.mdc`, `planner.mdc`, `backend.mdc`, `frontend.mdc`, `docs-maintenance.mdc`.
 - **Specialized agents:** [docs/agents/](docs/agents/) describes the subagent workflow (task router, specialists, benchmarks). Short definitions live in `.claude/agents/`. For multi-domain or unfamiliar tasks, classify with the **task-router** before implementing (see [docs/agents/task-router.md](docs/agents/task-router.md)).
 
@@ -301,7 +301,7 @@ There is a thin root `CLAUDE.md` that points to this file; do not duplicate rule
 Before editing:
 
 1. Search for existing conventions and read the relevant files.
-2. Consult `.cursor/architecture.json` and the deeper doc(s) for the system you are touching.
+2. Consult `docs/architecture/map/` (the area doc for the system you are touching).
 3. Identify the narrowest change that solves the problem.
 
 After editing:
@@ -323,14 +323,14 @@ Verify current status against source before treating any of these as production-
 - **Frontend pool tag filters** — Wired end-to-end: Planner Config + Agent `planFromText` send pool-level fields (`cuisine` / `cost_level` / `prep_time_bucket` / `dietary_flags`) via `MealPlanProvider`. Slot-level `required_tag_slugs` / `preferred_tag_slugs` editors and tag-registry fetch (FE-5 / FE-8) remain out of scope.
 - **Structured planner failures (FE)** — Today and Meal Plan View branch on `plan_status` and surface `report.failures[]` via `FailureViewModel` / `FailurePanel` (see `docs/frontend/failure-handling.md`). Do not parse `termination_code` for UX.
 - **Local mark-cooked + favorites** — Device-only via `StorageService` (`cooked_slots`, `favorite_recipe_ids`) on `MealPlanProvider` / `RecipeProvider`. Not synced; favorites are not planner tags. Favorites-as-tag write path deferred until `backend-contract-auditor` confirms a contract.
-- **`MealPrepReference` / meal-prep batching** — marked `partial` in architecture.json. NOTE: meal-prep is further along in source than the architecture.json `unknowns` claim — `src/data_layer/meal_prep.py` and `src/api/meal_prep_routes.py` now exist and the router is wired into `server.py`. Trust the source; treat the architecture.json "missing meal-prep" notes as stale and verify behavior directly.
+- **Meal-prep batching** — implemented: `src/data_layer/meal_prep.py`, `src/api/meal_prep_routes.py` (wired into `server.py`). See `docs/architecture/map/data.md`.
 
 ---
 
 ## When to Read Deeper Docs
 
 - **Planner / search / failure modes:** `docs/planner/mealplan-specification.md`, `docs/planner/parity-debugging.md`, `docs/planner/planner-rules.md`, `src/planning/phaseN_*.py`, `src/planning/planner.py`.
-- **Overall architecture / data flow:** `docs/architecture/overview.md`, `docs/architecture/technical-design.md`, `docs/planner/planner-rules.md`, and `.cursor/architecture.json`.
+- **Overall architecture / data flow:** `docs/architecture/map/README.md` and the area docs it links.
 - **Tagging:** `docs/tagging/tag-semantics-contract.md`, `src/llm/tag_repository.py`, `src/llm/tag_filtering_service.py`.
 - **LLM features / roadmap:** `docs/llm/roadmap.md`, `src/llm/pipeline.py`.
 - **API contracts:** `src/api/server.py`, `openapi/openapi.json`, `tests/api/`.
@@ -338,7 +338,7 @@ Verify current status against source before treating any of these as production-
 - **PlanResponse contract / fixtures:** `docs/contracts/plan-response.md`, `docs/testing/plan-fixtures.md`.
 - **Per-feature history (use cautiously, lowest priority):** `docs/sprints/`, `docs/archive/sprint-notes/`.
 
-Always inspect the relevant `architecture.json` entries and the deeper doc before broad changes; reconcile any conflict in favor of current source and report it.
+Always read the relevant area doc in `docs/architecture/map/` before broad changes; reconcile any conflict in favor of current source and fix the map in the same change.
 
 ---
 

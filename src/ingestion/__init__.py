@@ -27,10 +27,6 @@ from src.ingestion.nutrient_mapper import (
 )
 
 from src.ingestion.nutrition_scaler import (
-    NutritionScaler,
-    ScaledNutrition,
-    UnsupportedUnitError,
-    UNIT_TO_GRAMS,
     BASE_SERVING_WEIGHTS,
 )
 
@@ -60,10 +56,6 @@ __all__ = [
     "MappedNutrition",
     "USDA_NUTRIENT_MAP",
     # Nutrition scaling
-    "NutritionScaler",
-    "ScaledNutrition",
-    "UnsupportedUnitError",
-    "UNIT_TO_GRAMS",
     "BASE_SERVING_WEIGHTS",
     # Ingredient caching
     "IngredientCache",

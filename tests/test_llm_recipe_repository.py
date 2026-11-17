@@ -19,7 +19,7 @@ from src.data_layer.models import Ingredient, Recipe
 from src.llm.types import ValidatedRecipeForPersistence
 
 
-def _recipe(*, recipe_id_suffix: str, name: str, ingredients, instructions):
+def _recipe(*, name: str, ingredients, instructions):
     # cooking_time_minutes must be present for RecipeDB parsing.
     return Recipe(
         id="",
@@ -45,7 +45,6 @@ def test_append_validated_recipes_creates_file_and_dedupes(tmp_path):
     recipes_path = str(tmp_path / "recipes.json")
 
     r1 = _recipe(
-        recipe_id_suffix="1",
         name="R1",
         ingredients=[_ing(name="chicken breast", quantity=200.0, unit="g")],
         instructions=["Cook"],
@@ -79,13 +78,11 @@ def test_append_validated_recipes_fingerprint_ignores_ingredient_order(tmp_path)
     ing_b = _ing(name="rice", quantity=300.0, unit="g")
 
     r1 = _recipe(
-        recipe_id_suffix="1",
         name="Order 1",
         ingredients=[ing_a, ing_b],
         instructions=["Cook"],
     )
     r2 = _recipe(
-        recipe_id_suffix="2",
         name="Order 2",
         ingredients=[ing_b, ing_a],  # reversed
         instructions=["Cook"],
@@ -114,13 +111,11 @@ def test_append_validated_recipes_instructions_affect_deduplication(tmp_path):
     ing_b = _ing(name="rice", quantity=300.0, unit="g")
 
     r1 = _recipe(
-        recipe_id_suffix="1",
         name="Order 1",
         ingredients=[ing_a, ing_b],
         instructions=["Cook A"],
     )
     r2 = _recipe(
-        recipe_id_suffix="2",
         name="Order 2",
         ingredients=[ing_a, ing_b],
         instructions=["Cook B"],
@@ -147,13 +142,11 @@ def test_append_validated_recipes_instruction_normalization_dedupes(tmp_path):
     ing_b = _ing(name="rice", quantity=300.0, unit="g")
 
     r1 = _recipe(
-        recipe_id_suffix="1",
         name="R1",
         ingredients=[ing_a, ing_b],
         instructions=["Cook it."],
     )
     r2 = _recipe(
-        recipe_id_suffix="2",
         name="R2",
         ingredients=[ing_a, ing_b],
         # Same instruction text but different whitespace/case.
@@ -177,7 +170,6 @@ def test_append_validated_recipes_instruction_normalization_dedupes(tmp_path):
 def test_append_validated_recipes_rejects_raw_recipe(tmp_path):
     recipes_path = str(tmp_path / "recipes.json")
     r1 = _recipe(
-        recipe_id_suffix="1",
         name="R1",
         ingredients=[_ing(name="chicken breast", quantity=200.0, unit="g")],
         instructions=["Cook"],

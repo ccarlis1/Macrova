@@ -20,7 +20,7 @@ Connect Flutter screens to real backend contracts safely.
 - `docs/usage/flutter-setup.md`
 - Defer to **backend-contract-auditor** for actual API shapes
 
-Details: [docs/agents/subagent-guide.md](../../docs/agents/subagent-guide.md#flutter-wiring-agent)
+Read first: [docs/architecture/map/frontend.md](../../docs/architecture/map/frontend.md) (provider graph, invariants, partial areas).
 
 ## Output
 

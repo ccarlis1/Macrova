@@ -1,0 +1,7 @@
+---
+description: API area — read the API map doc before editing
+globs: src/api/**,openapi/**
+alwaysApply: false
+---
+
+Read @docs/architecture/map/api.md before editing. API changes follow the api-contract procedure in .claude/skills/api-contract/SKILL.md.

@@ -117,13 +117,11 @@ class RecipeProvider extends ChangeNotifier {
 
   /// `GET /api/v1/tags`, fetched once per session ([loadTagRegistry]).
   List<TagMeta>? _tagRegistry;
-  bool _tagRegistryLoading = false;
   String? _tagRegistryError;
   Future<void>? _tagRegistryInFlight;
 
   List<Recipe> _localRecipes = [];
   List<RecipeSummary> _remoteSummaries = [];
-  bool _loaded = false;
   bool _syncLoading = false;
   String? _syncError;
 
@@ -163,7 +161,6 @@ class RecipeProvider extends ChangeNotifier {
   /// Registry tags, or null until [loadTagRegistry] succeeds.
   List<TagMeta>? get tagRegistry =>
       _tagRegistry == null ? null : List.unmodifiable(_tagRegistry!);
-  bool get tagRegistryLoading => _tagRegistryLoading;
   String? get tagRegistryError => _tagRegistryError;
 
   /// Offerable `context` tags with `semantic_class == meal_role`, registry order.
@@ -183,7 +180,6 @@ class RecipeProvider extends ChangeNotifier {
   }
 
   Future<void> _fetchTagRegistry() async {
-    _tagRegistryLoading = true;
     _tagRegistryError = null;
     notifyListeners();
     try {
@@ -191,12 +187,10 @@ class RecipeProvider extends ChangeNotifier {
     } catch (e) {
       _tagRegistryError = e is ApiException ? e.message : e.toString();
     } finally {
-      _tagRegistryLoading = false;
       notifyListeners();
     }
   }
 
-  bool get loaded => _loaded;
   bool get syncLoading => _syncLoading;
   String? get syncError => _syncError;
 
@@ -210,9 +204,6 @@ class RecipeProvider extends ChangeNotifier {
   Set<String> get remoteRecipeIds =>
       Set.unmodifiable(_remoteSummaries.map((s) => s.id));
 
-  /// Device-local favorites; not sent to `/tags` or treated as planner constraints.
-  Set<String> get favoriteRecipeIds => Set.unmodifiable(_favoriteRecipeIds);
-
   bool isFavorite(String recipeId) => _favoriteRecipeIds.contains(recipeId);
 
   Future<void> load() async {
@@ -220,7 +211,6 @@ class RecipeProvider extends ChangeNotifier {
     _favoriteRecipeIds
       ..clear()
       ..addAll(await StorageService.loadFavoriteRecipeIds());
-    _loaded = true;
     notifyListeners();
   }
 

@@ -1,5 +1,7 @@
 # Technical Design Document
 
+> Agent-facing architecture lives in [docs/architecture/map/](map/README.md) (checked against source). This page is the human-oriented overview.
+
 ## Data Models
 
 ### Ingredient Model
@@ -284,25 +286,12 @@ preferences:
 **Input**: `Recipe`, `UserProfile`, `DailyMealPlan` (partial)  
 **Output**: Score (0-100)
 
-**Scoring Rules**:
-1. **Nutrition Match** (40 points):
-   - Calories within target range: +20 points
-   - Protein within target range: +10 points
-   - Fat within target range: +10 points
-
-2. **Schedule Match** (30 points):
-   - Cooking time matches busyness level: +30 points
-   - Cooking time slightly over: +15 points
-   - Cooking time way over: 0 points
-
-3. **Preference Match** (20 points):
-   - Contains liked foods: +2 points each (max 10)
-   - Avoids disliked foods: +10 points if none present
-   - Avoids allergens: +10 points if none present
-
-4. **Balance** (10 points):
-   - Complements other meals in day: +10 points
-   - Avoids nutrient overlap: +5 points
+**Scoring Rules** (current implementation: `src/planning/phase4_scoring.py`, spec §8):
+the composite score in [0, 100] is a weighted sum of nutrition match (40/110),
+micronutrient match (30/110), satiety match (15/110), balance (15/110) and schedule
+match (10/110), plus a bonus for matching the slot's preferred tags and meal type and
+minus a variety penalty. There is no liked-foods bonus; disliked foods and allergens are
+hard exclusions (HC-1), not score terms.
 
 ### Upper Limits Validation
 **Input**: `MicronutrientProfile` (daily totals), `UpperLimits` (resolved limits)  
@@ -402,11 +391,9 @@ When D > 1, top-level `weekly_totals` is included.
 ## Testing Strategy
 
 ### Unit Tests (MVP):
-- `test_ingredient_parser.py`: Test parsing various ingredient formats
 - `test_nutrition_calculator.py`: Test nutrition calculations
-- `test_recipe_scorer.py`: Test scoring rules
-- `test_meal_planner.py`: Test meal planning logic
-- `test_output_formatter.py`: Test JSON and Markdown output
+- `test_phase7_search.py`: Test meal planning search logic
+- `test_formatters.py`: Test JSON and Markdown output
 
 ### Test Fixtures:
 - Sample recipes (5-10 recipes)

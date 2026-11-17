@@ -1,6 +1,6 @@
 """Phase 1 unit tests: initial state, pinned pre-validation, adjusted daily targets, per-meal targets.
 
-Spec: MEALPLAN_SPECIFICATION_v1.md Section 3.4, 3.5, 3.6.
+Spec: docs/planner/mealplan-specification-v3.md Section 3.4, 3.5, 3.6.
 Roadmap: Phase 1 — State initialization and per-meal target computation.
 """
 

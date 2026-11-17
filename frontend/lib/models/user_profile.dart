@@ -1,5 +1,3 @@
-import 'package:yaml/yaml.dart';
-
 /// Daily RDI-style targets; field names match `config/user_profile.yaml` `micronutrient_goals`
 /// and Python `MicronutrientProfile` (snake_case in JSON).
 class MicronutrientGoals {
@@ -435,18 +433,6 @@ class UserProfile {
     );
   }
 
-  /// Calculate macro grams from calorie total and percentage ratios.
-  /// Protein & carbs = 4 kcal/g, fat = 9 kcal/g.
-  UserProfile calculateMacrosFromRatios() {
-    final fatMid = (calories * fatPct / 100) / 9;
-    return copyWith(
-      proteinG: (calories * proteinPct / 100) / 4,
-      carbsG: (calories * carbsPct / 100) / 4,
-      fatGMin: fatMid,
-      fatGMax: fatMid,
-    );
-  }
-
   Map<String, dynamic> toJson() => {
         'calories': calories,
         'protein_g': proteinG,
@@ -515,18 +501,6 @@ class UserProfile {
       ingredientApiKey: json['ingredient_api_key'] as String? ?? '',
       llmApiKey: json['llm_api_key'] as String? ?? '',
       llmProvider: json['llm_provider'] as String? ?? 'openai_compatible',
-    );
-  }
-
-  /// Same shape as [config/user_profile.yaml] / Python [UserProfileLoader].
-  factory UserProfile.fromRepoYaml(String yamlText) {
-    final root = loadYaml(yamlText);
-    final json = _yamlNodeToJson(root);
-    if (json is! Map) {
-      throw const FormatException('User profile YAML root must be a map');
-    }
-    return UserProfile.fromRepoYamlMap(
-      Map<String, dynamic>.from(json),
     );
   }
 
@@ -616,18 +590,4 @@ class UserProfile {
       llmProvider: 'openai_compatible',
     );
   }
-}
-
-dynamic _yamlNodeToJson(dynamic node) {
-  if (node == null) return null;
-  if (node is YamlMap) {
-    return {
-      for (final e in node.entries)
-        e.key.toString(): _yamlNodeToJson(e.value),
-    };
-  }
-  if (node is YamlList) {
-    return node.map(_yamlNodeToJson).toList();
-  }
-  return node;
 }

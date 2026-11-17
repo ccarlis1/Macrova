@@ -15,7 +15,7 @@ from src.data_layer.recipe_db import RecipeDB
 from src.data_layer import user_data
 from src.data_layer.user_profile import load_profile_pins
 from src.llm.client import LLMClient
-from src.llm.planner_assistant import build_feedback_context, suggest_targeted_recipe_drafts
+from src.llm.planner_assistant import suggest_targeted_recipe_drafts
 from src.llm.recipe_validator import validate_recipe_drafts
 from src.llm.repository import append_validated_recipes, compute_recipe_fingerprint
 from src.llm.usda_contract import assert_usda_capable_provider
@@ -32,7 +32,7 @@ from src.planning.planner import plan_meals
 from src.providers.api_provider import APIIngredientProvider
 from src.providers.ingredient_provider import IngredientDataProvider
 from src.llm.schemas import RecipeDraft
-from src.llm.recovery_types import AttemptRecord, GapSpec, RecoveryOutcome, RecoveryState, UnrecoverableReason
+from src.llm.recovery_types import GapSpec, RecoveryOutcome, RecoveryState, UnrecoverableReason
 from src.llm.recovery_diagnosis import diagnose, feasibility_signal, improved
 from src.llm.repository import generate_deterministic_recipe_id
 from src.llm.recipe_generator import RecipeGenerationError

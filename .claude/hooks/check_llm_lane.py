@@ -1,6 +1,6 @@
-"""PostToolUse gate keeping the LLM in its lane (CLAUDE.md law 4, trap 7).
+"""PostToolUse gate keeping the LLM in its lane (AGENTS.md invariant "LLM is an assistant, never the authority").
 
-Law 4: nutrition numbers come only from computation -- the local ingredient DB
+The invariant: nutrition numbers come only from computation -- the local ingredient DB
 or USDA -- never from LLM output. The enforcement point is the structured-output
 schema: if an LLM-facing pydantic model grows a ``calories`` field, the model is
 being asked to invent nutrition, and guardrail AI-4 is gone.
@@ -45,6 +45,7 @@ FIELD_ALLOWLIST = {"nutrition_source", "nutrient_source", "tag_type", "nutrition
 #: Models whose nutrition-shaped fields are legitimately not LLM nutrition output.
 CLASS_ALLOWLIST = {
     "PlannerTargets": "user targets parsed from natural language, not LLM-asserted nutrition",
+    "PlannerConstraints": "user limits and goals parsed from natural language, not LLM-asserted nutrition",
 }
 
 
@@ -108,9 +109,9 @@ def main() -> None:
     common.block(
         "LLM LANE VIOLATION -- a nutrition field on an LLM-facing schema:\n\n"
         + "\n".join(findings)
-        + "\n\nCLAUDE.md law 4: 'Nutrition numbers come only from computation (local ingredient "
-        "DB or USDA), never from LLM output. LLM JSON schemas deliberately exclude nutrition "
-        "fields -- keep it that way.'\n\n"
+        + "\n\nAGENTS.md invariant \"LLM is an assistant, never the authority\": nutrition numbers "
+        "come only from computation (local ingredient DB or USDA), never from LLM output. LLM "
+        "JSON schemas deliberately exclude nutrition fields -- keep it that way.\n\n"
         "Compute the value after validation from USDA/local data (guardrail AI-4) instead.\n"
         f"Already exempt: {exempt}. If this field is genuinely the same kind of exception, add "
         "it to CLASS_ALLOWLIST in this hook with the reason -- don't widen the tokens."

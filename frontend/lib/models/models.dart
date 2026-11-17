@@ -410,32 +410,6 @@ class NutritionProfile {
   }
 }
 
-class RecipeIngredient {
-  final String name;
-  final String unit;
-  final String display;
-  final double quantity;
-  final bool isToTaste;
-
-  const RecipeIngredient({
-    required this.name,
-    required this.unit,
-    required this.display,
-    required this.quantity,
-    required this.isToTaste,
-  });
-
-  factory RecipeIngredient.fromJson(Map<String, dynamic> json) {
-    return RecipeIngredient(
-      name: json['name'] as String,
-      unit: json['unit'] as String? ?? '',
-      display: json['display'] as String? ?? '',
-      quantity: (json['quantity'] as num).toDouble(),
-      isToTaste: json['is_to_taste'] as bool? ?? false,
-    );
-  }
-}
-
 /// One entry from `PlanResponse.report.failures[]` (OpenAPI `PlanFailure`).
 class PlanFailure {
   final String code;
@@ -614,22 +588,6 @@ class Meal {
     this.servings,
   });
 
-  factory Meal.fromJson(Map<String, dynamic> json) {
-    return Meal(
-      mealType: json['meal_type'] as String,
-      recipe: Map<String, dynamic>.from(json['recipe'] as Map),
-      nutrition:
-          NutritionProfile.fromJson(json['nutrition'] as Map<String, dynamic>),
-      busynessLevel: json['busyness_level'] as int,
-      mealTypeMatch: json['meal_type_match'] as bool?,
-      recipeId: json['recipe_id'] as String?,
-      slotIndex: (json['slot_index'] as num?)?.toInt(),
-      source: json['source'] as String?,
-      batchId: json['batch_id'] as String?,
-      servings: (json['servings'] as num?)?.toDouble(),
-    );
-  }
-
   /// One meal object from `POST /api/v1/plan` [`daily_plans[].meals`].
   factory Meal.fromPlanApiV1(Map<String, dynamic> m) {
     final recipeId = m['recipe_id']?.toString();
@@ -706,16 +664,6 @@ class NutritionGoals {
     required this.carbsG,
   });
 
-  factory NutritionGoals.fromJson(Map<String, dynamic> json) {
-    return NutritionGoals(
-      calories: json['calories'] as int,
-      proteinG: (json['protein_g'] as num).toDouble(),
-      fatGMin: (json['fat_g_min'] as num).toDouble(),
-      fatGMax: (json['fat_g_max'] as num).toDouble(),
-      carbsG: (json['carbs_g'] as num).toDouble(),
-    );
-  }
-
   /// Shaped like [format_result_json] `goals` on `/api/v1/plan`.
   factory NutritionGoals.fromPlanApi(Map<String, dynamic> g) {
     return NutritionGoals(
@@ -745,13 +693,10 @@ class MealPlanDay {
 
 class MealPlan {
   final bool success;
-  final bool meetsGoals;
-  final String date;
   /// Per-day schedule from the API (order preserved).
   final List<MealPlanDay> dailyPlans;
   final NutritionProfile totalNutrition;
   final NutritionGoals goals;
-  final Map<String, double> targetAdherence;
   final List<String> warnings;
   /// Plan horizon from API `days` (used to scale daily profile targets for multi-day totals).
   final int days;
@@ -770,10 +715,6 @@ class MealPlan {
   /// it failed), where the server's [warnings] are not shown.
   final List<String> syncWarnings;
 
-  /// This plan with [warnings] replaced (e.g. client-side sync advisories
-  /// prepended to the server's).
-  MealPlan withWarnings(List<String> warnings) => _copy(warnings: warnings);
-
   /// This plan with [sync] as [syncWarnings], prepended to [warnings].
   MealPlan withSyncWarnings(List<String> sync) => _copy(
         warnings: [...sync, ...warnings],
@@ -786,12 +727,9 @@ class MealPlan {
   }) =>
       MealPlan(
         success: success,
-        meetsGoals: meetsGoals,
-        date: date,
         dailyPlans: dailyPlans,
         totalNutrition: totalNutrition,
         goals: goals,
-        targetAdherence: targetAdherence,
         warnings: List.unmodifiable(warnings),
         days: days,
         planStatus: planStatus,
@@ -808,12 +746,9 @@ class MealPlan {
 
   const MealPlan({
     required this.success,
-    required this.meetsGoals,
-    required this.date,
     required this.dailyPlans,
     required this.totalNutrition,
     required this.goals,
-    required this.targetAdherence,
     required this.warnings,
     this.days = 1,
     this.planStatus = 'success',
@@ -823,47 +758,6 @@ class MealPlan {
     this.terminationCode,
     this.syncWarnings = const [],
   });
-
-  factory MealPlan.fromJson(Map<String, dynamic> json) {
-    final adherenceRaw =
-        Map<String, dynamic>.from(json['target_adherence'] as Map);
-    final meals = (json['meals'] as List<dynamic>)
-        .map((e) => Meal.fromJson(Map<String, dynamic>.from(e as Map)))
-        .toList();
-    final totalNutrition = NutritionProfile.fromJson(
-      Map<String, dynamic>.from(json['total_nutrition'] as Map),
-    );
-    final success = json['success'] as bool;
-    final failuresRaw = json['failures'] as List<dynamic>? ?? const [];
-    final failures = [
-      for (final f in failuresRaw)
-        if (f is Map)
-          PlanFailure.fromJson(Map<String, dynamic>.from(f)),
-    ];
-    final planStatus = json['plan_status'] as String? ??
-        (success ? 'success' : 'failed');
-    return MealPlan(
-      success: success,
-      meetsGoals: json['meets_goals'] as bool,
-      date: json['date'] as String? ?? '',
-      dailyPlans: [
-        MealPlanDay(day: 1, meals: meals, dayTotals: totalNutrition),
-      ],
-      totalNutrition: totalNutrition,
-      goals: NutritionGoals.fromJson(
-        Map<String, dynamic>.from(json['goals'] as Map),
-      ),
-      targetAdherence: adherenceRaw.map(
-        (key, value) => MapEntry(key, (value as num).toDouble()),
-      ),
-      warnings: List<String>.from(json['warnings'] ?? const []),
-      days: (json['days'] as num?)?.toInt() ?? 1,
-      planStatus: planStatus,
-      planStatusMessage: json['plan_status_message'] as String?,
-      failures: failures,
-      terminationCode: json['termination_code'] as String?,
-    );
-  }
 
   static Map<String, double> _microMapFromJson(dynamic raw) {
     if (raw is! Map) return const {};
@@ -985,24 +879,6 @@ class MealPlan {
     );
   }
 
-  static Map<String, double> _adherence(
-    NutritionProfile actual,
-    NutritionGoals goals,
-  ) {
-    double pct(double a, double t) {
-      if (t <= 0) return 100;
-      return (100 * a / t).clamp(0, 200).toDouble();
-    }
-
-    final fatMid = (goals.fatGMin + goals.fatGMax) / 2;
-    return {
-      'calories': pct(actual.calories, goals.calories.toDouble()),
-      'protein': pct(actual.proteinG, goals.proteinG),
-      'carbs': pct(actual.carbsG, goals.carbsG),
-      'fat': pct(actual.fatG, fatMid),
-    };
-  }
-
   /// `/api/v1/plan` JSON from [format_result_json] (`daily_plans`, `goals`, …).
   factory MealPlan.fromPlanApiV1Response(Map<String, dynamic> json) {
     final success = json['success'] as bool? ?? false;
@@ -1116,12 +992,9 @@ class MealPlan {
 
     return MealPlan(
       success: success,
-      meetsGoals: success,
-      date: '',
       dailyPlans: schedule,
       totalNutrition: totalNutrition,
       goals: goals,
-      targetAdherence: _adherence(totalNutrition, goals),
       warnings: warnings,
       days: days,
       planStatus: planStatus,

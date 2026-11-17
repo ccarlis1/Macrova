@@ -1,21 +1,22 @@
 ---
 name: sprint-task
-description: Execute a sprint task stub (DM-*/BE-*/AI-*/FE-* in docs/sprint1/ or later sprint folders) end-to-end with contract enforcement. Use whenever the user names a task ID, says "do the next sprint task", or asks to implement anything tracked in a sprint doc. Enforces pre-implementation analysis, extend-don't-fork, acceptance-criteria proof, and stub bookkeeping.
+description: Execute a sprint task stub (DM-*/BE-*/AI-*/FE-*/DATA-*/DOC-* in docs/sprints/<sprint>/) end-to-end with contract enforcement. Use whenever the user names a task ID, says "do the next sprint task", or asks to implement anything tracked in a sprint doc. Enforces pre-implementation analysis, extend-don't-fork, acceptance-criteria proof, and stub bookkeeping.
 ---
 
 # Sprint Task Executor
 
 Sprint stubs in this repo are written as **agent-safe execution contracts**. This skill is the
-process for honoring one. The stub is the authority on scope; CLAUDE.md §3 (ownership map) is
-the authority on where code goes; code itself is the authority on signatures.
+process for honoring one. The stub is the authority on scope; the architecture map
+(`docs/architecture/map/`, one owning module per concern) is the authority on where code goes; code itself is the authority on signatures.
 
 ## Phase 0 — Select and gate
 
-1. Locate the stub: `docs/sprint1/<ID>-*.md` (adjust folder for later sprints). If the user
-   said "next task", pick the first `Status: todo` whose **Depends on** tasks are all `done`
-   (dependency graph is in `docs/sprint1/README.md`).
-2. Read, in order: the stub in full → the sections of `docs/SPRINT_1.md` it references
-   (especially §2 entities, §3.5 precedence) → the stubs of its dependencies (what they
+1. Locate the stub: `docs/sprints/<sprint>/<ID>-*.md` (the current sprint is the newest folder;
+   closed sprints are under `docs/archive/sprints/`). If the user said "next task", pick the
+   first `Status: todo` whose **Depends on** tasks are all `done` (dependency graph is in that
+   sprint's `README.md`).
+2. Read, in order: the stub in full → the sprint `README.md` sections it references → the area
+   doc in `docs/architecture/map/` for the code it touches → the stubs of its dependencies (what they
    actually built may differ slightly from what this stub assumes).
 3. Gate: if any dependency is not `done`, stop and tell the user which one blocks you. Do not
    partially implement around a missing dependency.
@@ -30,7 +31,7 @@ Stubs contain three binding sections. Treat them exactly as follows:
   types are extended in place, never replaced or wrapped in a parallel type.
 - **🧠 PRE-IMPLEMENTATION ANALYSIS** — execute each numbered step literally and record what
   you found (actual function signatures, actual field names, actual file paths). Where the
-  stub or SPRINT_1.md says `REQUIRES_VERIFICATION`, the spec author explicitly did not check
+  stub or sprint README says `REQUIRES_VERIFICATION`, the spec author explicitly did not check
   the code — verifying it is your job, and your findings override the spec's guess.
 - **Out of scope** — binding. If you notice adjacent improvements, list them in your final
   summary; do not implement them.
@@ -45,7 +46,7 @@ redefined.
 
 ## Phase 2 — Implement
 
-- Extend the owning modules from CLAUDE.md §3. Grep for existing helpers before writing new
+- Extend the owning modules named in the architecture map (`docs/architecture/map/`). Grep for existing helpers before writing new
   ones — the most common failure on this codebase is duplicating logic that already exists
   under a different name.
 - All contract-crossing models: pydantic v2, `ConfigDict(extra="forbid")`, described fields.
@@ -60,8 +61,9 @@ redefined.
 
 1. Run the full backend suite and contract check (from repo root, venv active):
    ```bash
-   python -m pytest tests/ -q
-   python scripts/export_openapi.py --check   # regen without --check if you changed src/api/
+   python3 scripts/run_pytest.py
+   python3 scripts/run_export_openapi.py --check   # regen without --check if you changed src/api/
+   python3 scripts/gen_architecture_map.py --check # regen without --check after code changes
    ```
    For FE-* tasks: `cd frontend && flutter analyze && flutter test`.
 2. Execute the stub's **✅ POST-IMPLEMENTATION VALIDATION** checklist item by item. Each item

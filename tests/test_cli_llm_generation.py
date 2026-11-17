@@ -248,7 +248,7 @@ def test_cli_llm_generate_validated_deterministic_ids(monkeypatch):
                 from io import StringIO
 
                 buf = StringIO()
-                monkeypatch_stdout = mp.setattr(sys, "stdout", buf, raising=False)
+                mp.setattr(sys, "stdout", buf, raising=False)
                 cli.main()
                 ids.append(json.loads(buf.getvalue().strip())["persisted_ids"][0])
 

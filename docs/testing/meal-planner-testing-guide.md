@@ -2,7 +2,7 @@
 
 This guide explains how to test the spec-aligned meal planner (phases 0–7) for **functionality**, **output correctness**, and **run time**.
 
-**Reference:** `docs/planner/mealplan-specification.md`, `src/planning/phase7_search.py` (`run_meal_plan_search`).
+**Reference:** `docs/planner/mealplan-specification-v3.md`, `src/planning/phase7_search.py` (`run_meal_plan_search`).
 
 ---
 
@@ -78,7 +78,7 @@ Covers: identical meals (Variant A), multiple perfect daily combinations / deter
 - **Total attempts**: `stats.total_attempts`
 - **Time per attempt**: `stats.time_per_attempt()`
 - **Per-day run times**: `stats.day_runtimes` (day_index → seconds)
-- **Backtrack depth**: `stats.max_depth`, `stats.average_backtrack_depth`
+- **Backtrack depth**: `stats.max_depth`
 
 **Example (from your tests):**
 
@@ -144,61 +144,7 @@ For **failure** (`result.success is False`, `result` is `MealPlanResult`):
 
 ## 5. Run a quick benchmark (script)
 
-To get a single measured run (time + output) without writing Python by hand, you can use the script below. Save it as `scripts/benchmark_meal_plan_search.py` (or run the snippet in a test or notebook).
-
-**Prerequisites:** Same as tests: construct `PlanningUserProfile` and a list of `PlanningRecipe`; optionally `UpperLimits` for `resolved_ul`.
-
-**Minimal benchmark pattern:**
-
-```python
-import time
-from src.planning.phase0_models import MealSlot, PlanningUserProfile, PlanningRecipe
-from src.planning.phase7_search import run_meal_plan_search, SearchStats
-from src.data_layer.models import NutritionProfile, MicronutrientProfile
-
-def make_slot(busyness=2):
-    return MealSlot("12:00", busyness, "lunch")
-
-def make_schedule(ndays=7, slots_per_day=2):
-    return [[make_slot() for _ in range(slots_per_day)] for _ in range(ndays)]
-
-def make_recipe(rid, calories=1000.0, protein=50.0, fat=32.0, carbs=125.0, cooking_min=10):
-    return PlanningRecipe(
-        id=rid, name=rid, ingredients=[], cooking_time_minutes=cooking_min,
-        nutrition=NutritionProfile(calories, protein, fat, carbs, micronutrients=MicronutrientProfile()),
-        primary_carb_contribution=None,
-    )
-
-def main():
-    D = 7
-    slots_per_day = 2
-    schedule = make_schedule(ndays=D, slots_per_day=slots_per_day)
-    profile = PlanningUserProfile(
-        daily_calories=2000, daily_protein_g=100.0, daily_fat_g=(50.0, 80.0), daily_carbs_g=250.0,
-        schedule=schedule,
-    )
-    pool = [make_recipe(f"r{i}", 1000.0, 50.0, 32.0, 125.0) for i in range(D * slots_per_day)]
-
-    stats = SearchStats(enabled=True)
-    t0 = time.perf_counter()
-    result = run_meal_plan_search(profile, pool, D, resolved_ul=None, stats=stats)
-    t1 = time.perf_counter()
-
-    print(f"Success: {result.success}")
-    print(f"Wall time: {t1 - t0:.3f}s")
-    print(f"Stats total_runtime: {stats.total_runtime():.3f}s")
-    print(f"Attempts: {stats.total_attempts}")
-    print(f"Time per attempt: {stats.time_per_attempt():.6f}s")
-    if result.success and result.plan is not None:
-        print(f"Assignments: {len(result.plan)}")
-        if result.weekly_tracker:
-            print(f"Days completed: {result.weekly_tracker.days_completed}")
-    else:
-        print(f"Failure mode: {result.failure_mode}")
-
-if __name__ == "__main__":
-    main()
-```
+To get a single measured run (time + output) without writing Python by hand, use [`scripts/benchmark_meal_plan_search.py`](../../scripts/benchmark_meal_plan_search.py) (builds a synthetic `PlanningUserProfile` and recipe pool, runs `run_meal_plan_search` with `SearchStats(enabled=True)`, and prints timing, attempts and the result).
 
 Run it:
 

@@ -43,21 +43,6 @@ _LLM_TAG_SCHEMA = {
 }
 
 
-class RecipeTaggingError(Exception):
-    """Deterministic error raised when recipe tagging fails."""
-
-    def __init__(
-        self,
-        *,
-        error_code: str,
-        message: str,
-        details: Dict[str, Any] | None = None,
-    ) -> None:
-        super().__init__(message)
-        self.error_code = error_code
-        self.details = details or {}
-
-
 def _recipe_for_prompt(recipe: Recipe) -> Dict[str, Any]:
     # Keep prompting deterministic and compact; we don't include recipe `id`
     # because it would bias the model toward echoing it.

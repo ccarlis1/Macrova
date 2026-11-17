@@ -26,7 +26,6 @@ venv/
 env/
 ENV/
 .venv
-.venv311/
 
 # IDE
 .vscode/
@@ -45,32 +44,20 @@ htmlcov/
 .env
 .env.local
 
-# MCP / local tool secrets (copy from .mcp.json.example)
+# MCP / local tool secrets
 .mcp.json
 
 # Config files (keep examples, ignore actual config)
 config/user_profile.yaml
-config/nutrition_goals.yaml
-config/model_config.yaml
-
-# Data files (keep examples, ignore actual data)
-docs/wireframes/
 
 # Ingredients
-data/ingredients/usda_ingredients.json
 data/ingredients/custom_ingredients.json
 
 # Cached Ingredients
 .cache/
 
-# Recipes — recipes.json is committed (§4.4 / Q2: coverage over real pool).
-data/recipes/recipe_embeddings.pkl
-
 # Default user data folder (MACROVA_DATA_DIR; scripts/setup_user_data.py)
 /user_data/
-
-# Nutrition
-data/nutrition/nutrition_db.json
 
 # Logs
 *.log
@@ -84,8 +71,6 @@ Thumbs.db
 *.tmp
 *.bak
 
-.mcp.json
-
 # Local planner debug exports (see scripts/export_planner_debug_artifacts.py)
 debug_artifacts/
 # §4.4 data track: regenerable outputs (see evaluation/data_track/README.md)
@@ -94,3 +79,5 @@ evaluation/data_track/results/*.json
 
 # Personal Claude Code settings
 .claude/settings.local.json
+# Claude Code hook state (written by .claude/hooks/_common.py)
+.claude/.hook-state/

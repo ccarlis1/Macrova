@@ -74,7 +74,7 @@ The planner recommends meals over a **planning horizon of 1–7 days** from your
 - **Planner engine:** Phase 0–7 pipeline under `src/planning/`, with hard constraints, forward-check constraints, multi-day feasibility checks, and backtracking search (`plan_meals` / `run_meal_plan_search`).
 - **Output:** Structured daily and (when D > 1) weekly view with per-meal, per-day, and cross-day nutrition, adherence to goals, and warnings/failure modes.
 
-For a deeper architectural overview, see **[docs/planner/mealplan-specification.md](docs/planner/mealplan-specification.md)** and **[docs/architecture/overview.md](docs/architecture/overview.md)**. Full doc index: [docs/README.md](docs/README.md).
+For a deeper architectural overview, see **[docs/planner/mealplan-specification-v3.md](docs/planner/mealplan-specification-v3.md)** and **[docs/architecture/overview.md](docs/architecture/overview.md)**. Full doc index: [docs/README.md](docs/README.md).
 
 **Interfaces:** CLI (`plan_meals.py` / `python3 -m src.cli`) and an optional **REST API** (FastAPI server in `src/api/server.py`) for programmatic use.
 

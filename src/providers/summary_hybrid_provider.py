@@ -12,7 +12,7 @@ from src.providers.local_provider import LocalIngredientProvider
 
 
 class SummaryHybridIngredientProvider(IngredientDataProvider):
-    """Try [custom_ingredients.json] first; on miss, resolve via [CachedIngredientLookup].
+    """Try the local NutritionDB (data/reference/ingredient_nutrition.json) first; on miss, resolve via [CachedIngredientLookup].
 
     Used by ``POST /api/v1/nutrition/summary`` so free-text recipe lines are not silently
     dropped when absent from the local hub (see ``NutritionCalculator.calculate_recipe_nutrition``).

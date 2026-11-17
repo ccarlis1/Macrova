@@ -53,15 +53,6 @@ _SEED_TAGS: Dict[str, Dict[str, str]] = {
 
 _VALID_TAG_TYPES = {"context", "time", "nutrition", "constraint"}
 _VALID_SOURCES = {"user", "llm", "system"}
-_VALID_ELIGIBILITY = {"proposed", "approved", "rejected"}
-_VALID_SEMANTIC_CLASSES = {
-    "capability",
-    "meal_role",
-    "exclusion",
-    "nutrition_claim",
-    "identity_hint",
-    "effort_system",
-}
 # Default DM-6 semantic class per legacy tag_type when not stored on disk.
 _DEFAULT_SEMANTIC_CLASS_BY_TAG_TYPE: Dict[str, str] = {
     "context": "capability",
@@ -380,24 +371,6 @@ def _raw_registry_metadata(path: str) -> Dict[str, Dict[str, Any]]:
         if normalized:
             out[normalized] = dict(meta)
     return out
-
-
-def _assert_eligibility(eligibility: Optional[str]) -> Optional[str]:
-    if eligibility is None:
-        return None
-    normalized = str(eligibility).strip().lower()
-    if normalized not in _VALID_ELIGIBILITY:
-        raise TagRepositoryError("TAG_INVALID", "Invalid tag eligibility.")
-    return normalized
-
-
-def _assert_semantic_class(semantic_class: Optional[str]) -> Optional[str]:
-    if semantic_class is None:
-        return None
-    normalized = str(semantic_class).strip().lower()
-    if normalized not in _VALID_SEMANTIC_CLASSES:
-        raise TagRepositoryError("TAG_INVALID", "Invalid semantic class.")
-    return normalized
 
 
 def _default_semantic_class_for_tag_type(tag_type: str) -> str:

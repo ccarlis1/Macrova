@@ -410,14 +410,6 @@ class Recipe {
     );
   }
 
-  /// Root object `{"recipes": [ ... ]}` as in `data/recipes/recipes.json`.
-  static List<Recipe> fromServerRecipesJsonRoot(Map<String, dynamic> root) {
-    final arr = root['recipes'] as List<dynamic>? ?? const [];
-    return arr
-        .map((e) => Recipe.fromServerRecipeMap(e as Map<String, dynamic>))
-        .toList();
-  }
-
   Map<String, dynamic> toJson() => {
         'id': id,
         'name': name,

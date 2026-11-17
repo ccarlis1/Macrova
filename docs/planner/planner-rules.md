@@ -1,6 +1,6 @@
 # Planner Rules
 
-Normative product rules and hard constraints for the meal planner. Referenced by [mealplan-specification.md](mealplan-specification.md). **Normative** for planner behavior where the spec points here.
+Normative product rules and hard constraints for the meal planner. Referenced by [mealplan-specification-v3.md](mealplan-specification-v3.md). **Normative** for planner behavior where the spec points here.
 
 ---
 

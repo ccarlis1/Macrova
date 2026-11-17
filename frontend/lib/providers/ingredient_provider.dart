@@ -19,14 +19,11 @@ const _bundledCachedIngredientsAsset = 'assets/dev/cached_ingredients.json';
 
 class IngredientProvider extends ChangeNotifier {
   List<Ingredient> _ingredients = [];
-  bool _loaded = false;
 
   List<Ingredient> get ingredients => List.unmodifiable(_ingredients);
-  bool get loaded => _loaded;
 
   Future<void> load() async {
     _ingredients = await StorageService.loadIngredients();
-    _loaded = true;
     notifyListeners();
   }
 

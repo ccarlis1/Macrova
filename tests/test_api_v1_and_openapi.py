@@ -158,7 +158,7 @@ def test_filter_recipes_by_ids_preserves_order_and_subset():
     assert _filter_recipes_by_ids([r1, r2], None) == [r1, r2]
 
 
-def test_openapi_includes_v1_contract_paths():
+def test_openapi_includes_v1_core_paths():
     schema = app.openapi()
     paths = schema["paths"]
     required = [

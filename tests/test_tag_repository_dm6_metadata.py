@@ -2,12 +2,8 @@ from __future__ import annotations
 
 import json
 
-import pytest
-
 from src.llm.schemas import TagMetaJson
 from src.llm.tag_repository import (
-    TagRepositoryError,
-    _assert_semantic_class,
     create,
     enrich_tag_meta,
     is_planner_hard_eligible,
@@ -101,11 +97,6 @@ def test_create_user_tag_persists_dm6_defaults(tmp_path):
     assert created.semantic_class == "capability"
     assert created.hard_filter_allowed is True
     assert is_planner_hard_eligible(created) is True
-
-
-def test_assert_semantic_class_rejects_unknown_values():
-    with pytest.raises(TagRepositoryError, match="Invalid semantic class"):
-        _assert_semantic_class("not-a-class")
 
 
 def test_load_hard_eligible_recipe_tag_slugs_excludes_proposed_llm_tags(tmp_path):

@@ -148,28 +148,6 @@ def match_ingredient_queries(
     return parsed
 
 
-def _extract_provider_resolution(
-    *,
-    provider: IngredientDataProvider,
-    normalized_name: str,
-) -> Optional[Dict[str, Any]]:
-    """Resolve a candidate normalized name to a provider dict (or None).
-
-    Some providers require resolve_all() before get_ingredient_info().
-    This helper calls resolve_all([name]) deterministically per candidate.
-    """
-
-    try:
-        provider.resolve_all([normalized_name])
-    except Exception:
-        return None
-
-    try:
-        return provider.get_ingredient_info(normalized_name)
-    except Exception:
-        return None
-
-
 def validate_matches(
     matches: List[IngredientMatchResult],
     provider: IngredientDataProvider,

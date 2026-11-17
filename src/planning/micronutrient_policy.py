@@ -5,7 +5,7 @@ cumulative micronutrient *floor* instead of inlining ``daily_rdi * D`` or
 ``tau * daily_rdi * D``. Upper-limit (UL) validation must not depend on this
 module — τ applies only to RDI minimum paths.
 
-See MEALPLAN_SPECIFICATION_v1 (micronutrient_weekly_min_fraction τ).
+See docs/planner/mealplan-specification-v3.md (micronutrient_weekly_min_fraction τ).
 """
 
 from __future__ import annotations
@@ -34,16 +34,6 @@ def weekly_minimum_total(daily_rdi: float, D: int, tau: float) -> float:
 def cumulative_minimum_total(daily_rdi: float, days_completed: int, tau: float) -> float:
     """Cumulative floor after k completed days: τ × daily_rdi × k (carryover)."""
     return tau * daily_rdi * days_completed
-
-
-def weekly_deficit_to_minimum(
-    consumed: float,
-    daily_rdi: float,
-    D: int,
-    tau: float,
-) -> float:
-    """Signed shortfall vs τ-weekly minimum (positive ⇒ need more to reach floor)."""
-    return weekly_minimum_total(daily_rdi, D, tau) - consumed
 
 
 def is_below_weekly_minimum(

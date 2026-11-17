@@ -194,14 +194,6 @@ class USDAClient:
     
     BASE_URL = "https://api.nal.usda.gov/fdc/v1"
     
-    # Priority order for data type selection (lower index = higher priority)
-    DATA_TYPE_PRIORITY = [
-        DataType.SR_LEGACY,
-        DataType.FOUNDATION, 
-        DataType.SURVEY,
-        DataType.BRANDED
-    ]
-    
     def __init__(self, api_key: str):
         """Initialize USDA client with API key.
         

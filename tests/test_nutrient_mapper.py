@@ -11,7 +11,7 @@ from src.ingestion.nutrient_mapper import (
     MappedNutrition,
     USDA_NUTRIENT_MAP,
 )
-from src.data_layer.models import NutritionProfile, MicronutrientProfile
+from src.data_layer.models import MicronutrientProfile
 
 
 class TestUSDANutrientMap:
@@ -453,29 +453,6 @@ class TestNutrientMapper:
 
     # === Output Structure Tests ===
 
-    def test_output_creates_nutrition_profile(self, mapper):
-        """Test that output can create a NutritionProfile."""
-        raw_payload = {
-            "fdcId": 171705,
-            "foodNutrients": [
-                {"nutrient": {"id": 1008}, "amount": 165},
-                {"nutrient": {"id": 1003}, "amount": 31.0},
-                {"nutrient": {"id": 1004}, "amount": 3.6},
-                {"nutrient": {"id": 1005}, "amount": 0.0},
-                {"nutrient": {"id": 1087}, "amount": 5.0},
-            ]
-        }
-        
-        result = mapper.map_nutrients(raw_payload)
-        
-        # Can create NutritionProfile from result
-        profile = result.to_nutrition_profile()
-        
-        assert isinstance(profile, NutritionProfile)
-        assert profile.calories == 165
-        assert profile.protein_g == 31.0
-        assert profile.micronutrients.calcium_mg == 5.0
-
     def test_output_is_deterministic(self, mapper):
         """Test that mapping is deterministic (same input → same output)."""
         raw_payload = {
@@ -543,26 +520,3 @@ class TestMappedNutrition:
         assert result.fat_g == 5
         assert result.carbs_g == 20
         assert result.micronutrients == micro
-
-    def test_to_nutrition_profile_conversion(self):
-        """Test conversion to NutritionProfile."""
-        from src.ingestion.nutrient_mapper import MappedNutrition
-        
-        micro = MicronutrientProfile(calcium_mg=50.0, iron_mg=2.0)
-        mapped = MappedNutrition(
-            calories=200,
-            protein_g=20,
-            fat_g=10,
-            carbs_g=15,
-            micronutrients=micro
-        )
-        
-        profile = mapped.to_nutrition_profile()
-        
-        assert isinstance(profile, NutritionProfile)
-        assert profile.calories == 200
-        assert profile.protein_g == 20
-        assert profile.fat_g == 10
-        assert profile.carbs_g == 15
-        assert profile.micronutrients.calcium_mg == 50.0
-        assert profile.micronutrients.iron_mg == 2.0

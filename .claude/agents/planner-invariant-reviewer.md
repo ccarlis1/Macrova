@@ -17,9 +17,9 @@ Verify planner changes preserve deterministic behavior and structured failure re
 
 - `src/planning/` (especially `planner.py`, phase modules)
 - `src/llm/tag_filtering_service.py`
-- `docs/planner/*`, `docs/tagging/tag-semantics-contract.md`
+- `docs/planner/mealplan-specification-v3.md`, `docs/tagging/tag-semantics-contract.md`
 
-Details: [docs/agents/subagent-guide.md](../../docs/agents/subagent-guide.md#planner-invariant-reviewer)
+Read first: [docs/architecture/map/planning.md](../../docs/architecture/map/planning.md) (invariants with where each is enforced, known gaps).
 
 ## Output
 

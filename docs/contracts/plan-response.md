@@ -33,7 +33,9 @@ OpenAPI / `server.py` `PlanFailure`:
 
 - `code`: `FM-1`…`FM-5`, `FM-TAG-EMPTY`, `FM-BATCH-CONFLICT`, `FM-MACRO-INFEASIBLE`
 - `message` (required)
-- Optional: `day_index`, `slot_index`, `slot_id`, `date`, `details`, `fix_hint`
+- Optional: `day_index`, `slot_index`, `slot_id`, `date`, `details`, `fix_hint`, `explanation`, `fix`, `cause` (the last three are plain-language text from `src/api/failure_explanations.py`)
+
+`report.failure_cause` (optional, `PlanFailureCause`): `cause`, `recipe_could_help`, `recipe_gap` — whether a new recipe could fix the failure and what it must satisfy (`failure_cause_block` in `src/api/failure_explanations.py`).
 
 **HTTP:** Planner `FM-*` results are returned as **HTTP 200** with the failure in `report.failures[]` (usual path). Non-2xx structured errors use `map_exception_to_api_error` — do not assume every `FM-*` is an HTTP error.
 
@@ -79,7 +81,7 @@ All four come from `src/data_layer/upper_limits.py`, the same default the MCP se
 
 ## Recipe sync: `default_servings`
 
-`POST /api/v1/recipes/sync` items include `default_servings` (see `RecipeDetailResponse` / sync models in `server.py`). Flutter `Recipe.toSyncPayload()` sends `default_servings` from local `servings`.
+`POST /api/v1/recipes/sync` items include `default_servings` (see `RecipeDetailResponse` in `server.py` and the sync models in `src/api/recipe_sync.py`). Flutter `Recipe.toSyncPayload()` sends `default_servings` from local `servings`.
 
 ## Recipe saves are plannable (sync, create, update)
 

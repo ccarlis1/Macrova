@@ -4,7 +4,7 @@ Loads daily UL values from reference data by demographic.
 Validates daily micronutrient intake against ULs.
 Reference source: IOM DRI / EFSA guidelines.
 
-Spec: MEALPLAN_SPECIFICATION_v1.md Section 2.3 — UL table loaded from
+Spec: docs/planner/mealplan-specification-v3.md Section 2.3 — UL table loaded from
 data/reference/ul_by_demographic.json, merged with user overrides.
 """
 
@@ -119,15 +119,6 @@ class UpperLimitsLoader:
                 kwargs[field_name] = None
         
         return UpperLimits(**kwargs)
-
-    def get_available_demographics(self) -> list:
-        """Get list of available demographics in reference data.
-        
-        Returns:
-            List of demographic keys
-        """
-        data = self._load_data()
-        return list(data.get("demographics", {}).keys())
 
 
 def resolve_upper_limits(

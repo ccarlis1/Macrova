@@ -1,6 +1,6 @@
 """Stop gate -- the turn does not end on a red suite.
 
-CLAUDE.md §7 defines "done" as a list of commands that pass. This hook runs
+"Done" means a list of commands that pass. This hook runs
 them, so the definition holds mechanically instead of aspirationally. Which
 gates run is decided by what is actually dirty in the working tree, and the
 whole backend set costs about three seconds.
@@ -54,11 +54,11 @@ def _run_backend_gates(dirty: list[str]) -> list[str]:
         rc, out = common.run([python, "-m", "pytest", "tests/", "-q"], timeout=300)
         if rc != 0:
             problems.append(
-                "`python -m pytest tests/ -q` FAILED (CLAUDE.md §7: the full suite must pass, "
-                "no deselection, no -k):\n\n" + _failures(out)
+                "`python -m pytest tests/ -q` FAILED (the full suite must pass before you are "
+                "done -- no deselection, no -k):\n\n" + _failures(out)
             )
         elif planning_dirty:
-            # Law 3: hash order must not reach plan output. One alternate seed,
+            # AGENTS.md invariant "Deterministic planner": hash order must not reach plan output. One alternate seed,
             # fixed for reproducibility.
             rc, out = common.run(
                 [python, "-m", "pytest", "tests/", "-q"],
@@ -69,7 +69,8 @@ def _run_backend_gates(dirty: list[str]) -> list[str]:
                 problems.append(
                     f"The suite passes normally but FAILS under PYTHONHASHSEED={ALT_HASH_SEED}.\n\n"
                     "That is nondeterminism: something in src/planning/ depends on dict/set "
-                    "iteration order (CLAUDE.md law 3, trap 6). Sort before iterating.\n\n"
+                    "iteration order (AGENTS.md invariant \"Deterministic planner\"). Sort "
+                    "before iterating.\n\n"
                     + _failures(out)
                 )
 
@@ -78,7 +79,7 @@ def _run_backend_gates(dirty: list[str]) -> list[str]:
         if rc != 0:
             problems.append(
                 "`python scripts/export_openapi.py --check` FAILED -- CI fails on this.\n"
-                "Run `python scripts/export_openapi.py` and commit openapi/openapi.json.\n\n"
+                "Run `python3 scripts/run_export_openapi.py` and commit openapi/openapi.json.\n\n"
                 + _tail(out, 400)
             )
 
@@ -106,6 +107,49 @@ def _run_flutter_gates(dirty: list[str]) -> list[str]:
     return problems
 
 
+#: Dirty paths under these make the architecture-map gate run.
+MAP_INPUTS = ("src", "frontend/lib", "scripts", "evaluation", ".claude/hooks", "docs/architecture/map")
+MAP_SCRIPT = "scripts/gen_architecture_map.py"
+
+
+def _map_dirty(dirty: list[str]) -> bool:
+    return any(common.under(path, *MAP_INPUTS) for path in dirty)
+
+
+def _run_map_gate(dirty: list[str]) -> list[str]:
+    """Generated architecture map is fresh and hand-written map docs reference real code.
+
+    Stdlib-only script (~0.5s), so it runs with whichever interpreter the hook uses.
+    """
+    if not _map_dirty(dirty) or not (common.project_dir() / MAP_SCRIPT).is_file():
+        return []
+    rc, out = common.run([common.project_python(), MAP_SCRIPT, "--check"], timeout=60)
+    if rc == 0:
+        return []
+    return [
+        f"`python3 {MAP_SCRIPT} --check` FAILED -- CI fails on this.\n"
+        f"If generated files are stale, run `python3 {MAP_SCRIPT}` and commit "
+        "docs/architecture/map/generated/. Broken hand-doc references must be fixed in "
+        "docs/architecture/map/*.md (or the code they point at).\n\n" + _tail(out, 1800)
+    ]
+
+
+def _map_stale_intent(dirty: list[str]) -> str:
+    """Advisory only: hand-written map docs that uncommitted changes may have outdated."""
+    if not _map_dirty(dirty) or not (common.project_dir() / MAP_SCRIPT).is_file():
+        return ""
+    rc, out = common.run(
+        [common.project_python(), MAP_SCRIPT, "--stale-intent", "--base", "HEAD"], timeout=30
+    )
+    flagged = [line for line in out.splitlines() if line.startswith("[stale-intent]")]
+    if rc != 0 or not flagged:
+        return ""
+    return (
+        "[hook] architecture map: these hand-written docs may need a review "
+        "(advisory, not blocking):\n" + "\n".join(flagged)
+    )
+
+
 def main() -> None:
     event = common.read_event()
     session = str(event.get("session_id") or "unknown")
@@ -114,7 +158,9 @@ def main() -> None:
     dirty = [
         path
         for path in common.dirty_paths()
-        if common.under(path, "src", "tests", "frontend", "scripts", "openapi")
+        if common.under(
+            path, "src", "tests", "frontend", "scripts", "openapi", *MAP_INPUTS
+        )
     ]
     if not dirty:
         common.ok()
@@ -124,11 +170,11 @@ def main() -> None:
     if state.get("passed_key") == key:
         common.ok()
 
-    problems = _run_backend_gates(dirty) + _run_flutter_gates(dirty)
+    problems = _run_backend_gates(dirty) + _run_flutter_gates(dirty) + _run_map_gate(dirty)
 
     if not problems:
         common.write_state(state_name, {"passed_key": key, "blocks": 0})
-        common.ok()
+        common.ok(_map_stale_intent(dirty))
 
     blocks = int(state.get("blocks") or 0) + 1
     common.write_state(state_name, {"passed_key": None, "blocks": blocks})
@@ -144,7 +190,7 @@ def main() -> None:
         f"Verification failed ({blocks}/{MAX_BLOCKS}) -- do not finish yet.\n\n"
         f"{report}\n\n"
         "Fix these, then stop again. If a failing expectation is a deliberate product change, "
-        "CLAUDE.md §8 says that is the user's decision: stop and show them the before/after."
+        "that is the user's decision: stop and show them the before/after."
     )
 
 

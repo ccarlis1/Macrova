@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-17  
 **Scope:** Is the deterministic meal planner correctly formulated as a constraint-driven planning problem?  
-**Sources reviewed:** `docs/planner/mealplan-specification-v3.md`, `docs/planner/planner-rules.md`, `docs/planner/reasoning-logic.md`, `src/planning/*`, `src/api/server.py` (plan route), `src/data_layer/meal_prep.py`, `src/data_layer/user_profile.py`, `src/nutrition/calculator.py`, reference data under `data/reference/`, the example and local profile/recipe/ingredient files, and `evaluation/initial_state.md`.  
+**Sources reviewed:** `docs/planner/mealplan-specification-v3.md`, `docs/planner/planner-rules.md`, `docs/planner/reasoning-logic.md`, `src/planning/*`, `src/api/server.py` (plan route), `src/data_layer/meal_prep.py`, `src/data_layer/user_profile.py`, `src/nutrition/calculator.py`, reference data under `data/reference/`, the example and local profile/recipe/ingredient files, and `evaluation/reports/archive/initial_state.md`.  
 **Method:** Read the specification and code side by side, then ran read-only diagnostics against the example data, the local data, and small synthetic instances to confirm each claim. No code was changed. No code changes are proposed here.
 
 Every criticism below carries one or more of these labels:

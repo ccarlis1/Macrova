@@ -1,0 +1,7 @@
+---
+description: LLM and tagging area — read the LLM map doc before editing
+globs: src/llm/**,src/config/**
+alwaysApply: false
+---
+
+Read @docs/architecture/map/llm.md before editing.

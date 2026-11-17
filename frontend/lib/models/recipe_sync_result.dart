@@ -103,8 +103,6 @@ class RecipeSyncResult {
     this.errors = const [],
   });
 
-  bool get hasErrors => errors.isNotEmpty;
-
   /// Parses the response body; `errors` is optional (older servers omit it).
   /// Throws [FormatException] when `synced_ids` is missing.
   factory RecipeSyncResult.fromJson(

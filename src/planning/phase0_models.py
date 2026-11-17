@@ -1,6 +1,6 @@
 """Phase 0: Spec-compliant inputs and state structures for the meal plan algorithm.
 
-Reference: MEALPLAN_SPECIFICATION_v1.md Section 2 (Inputs) and Section 3 (State Representation).
+Reference: docs/planner/mealplan-specification-v3.md Section 2 (Inputs) and Section 3 (State Representation).
 No search, constraint, or scoring logic — data structures and validation only.
 """
 
@@ -53,12 +53,6 @@ def validate_schedule_structure(
             raise ValueError(
                 f"Day {day_index + 1} has {n} slots; maximum is {MAX_SLOTS_PER_DAY}"
             )
-
-
-def total_decision_points(schedule: List[List[MealSlot]], D: int) -> int:
-    """Total number of decision points (slots) across D days. Spec Section 2.4."""
-    validate_schedule_structure(schedule, D)
-    return sum(len(schedule[d]) for d in range(D))
 
 
 def validate_planning_horizon(D: int) -> None:

@@ -27,8 +27,6 @@ from src.planning.phase3_feasibility import (
     check_fc2_daily_macros,
     check_fc3_incremental_ul,
     check_fc4_cross_day_rdi,
-    check_fc5_candidate_set,
-    check_fc1_fc2_fc3,
     check_structural_feasibility,
     floor_bounds_to_slot_mda,
     micro_floor_bounds_from_slot_mda,
@@ -361,64 +359,6 @@ class TestFC4Precomputation:
         )
         assert check_fc4_cross_day_rdi(1, state, profile_relaxed, D, mda) is True
         assert check_fc4_cross_day_rdi(1, state, profile_strict, D, mda) is False
-
-
-# --- FC-5: Candidate set and future slots ---
-
-
-class TestFC5CandidateSet:
-    """FC-5: Empty candidate set; future slot with zero/one eligible."""
-
-    def test_empty_candidate_set_rejected(self):
-        assert check_fc5_candidate_set(
-            candidate_recipe_ids=set(),
-            tentative_recipe_id="r1",
-            used_recipe_ids_today=set(),
-            future_slot_eligible_recipe_ids=[{"r2"}],
-        ) is False
-
-    def test_future_slot_zero_eligible_rejected(self):
-        assert check_fc5_candidate_set(
-            candidate_recipe_ids={"r1"},
-            tentative_recipe_id="r1",
-            used_recipe_ids_today=set(),
-            future_slot_eligible_recipe_ids=[{"r1"}],  # only r1 eligible; after using r1, none
-        ) is False
-
-    def test_future_slot_one_eligible_accepted(self):
-        assert check_fc5_candidate_set(
-            candidate_recipe_ids={"r1", "r2"},
-            tentative_recipe_id="r1",
-            used_recipe_ids_today=set(),
-            future_slot_eligible_recipe_ids=[{"r1", "r2"}],
-        ) is True
-
-
-# --- Combined FC-1/FC-2/FC-3 ---
-
-
-class TestCheckFC1FC2FC3:
-    """Combined per-candidate feasibility."""
-
-    def test_all_pass(self):
-        profile = _make_profile(daily_calories=2000, max_daily_calories=2500)
-        tracker = DailyTracker(
-            calories_consumed=500.0,
-            protein_consumed=30.0,
-            fat_consumed=20.0,
-            carbs_consumed=50.0,
-            slots_assigned=0,
-            slots_total=2,
-        )
-        state = _make_state(daily_trackers={0: tracker}, schedule=[[_make_slot(), _make_slot()]])
-        recipe = _make_recipe("r1", calories=400.0, protein=30.0, fat=20.0, carbs=60.0)
-        # After r1: 900 cal, 60 pro, 40 fat, 110 carbs. Need from 1 slot: cal in [900,1300], pro [30,50], fat [10,40], carbs [80,100]
-        macro = precompute_macro_bounds([
-            _make_recipe("r2", calories=1000.0, protein=40.0, fat=25.0, carbs=90.0),
-        ])
-        assert check_fc1_fc2_fc3(
-            recipe, _make_slot(), 0, 0, state, profile, None, macro
-        ) is True
 
 
 # --- Tight micro floor bounds (C4) ---

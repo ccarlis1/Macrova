@@ -4,7 +4,7 @@ Computes a composite score in [0, 100] from five weighted components.
 No constraints, no feasibility checks, no state mutation. Pure and deterministic.
 Tie-break order is implemented in Phase 5 ordering:
 1) higher preferred-tag match count, 2) lower recipe.id, 3) seeded RNG.
-Reference: MEALPLAN_SPECIFICATION_v1.md Section 8.
+Reference: docs/planner/mealplan-specification-v3.md Section 8.
 """
 
 from __future__ import annotations

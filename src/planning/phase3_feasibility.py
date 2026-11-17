@@ -2,7 +2,7 @@
 
 This module answers: "If we tentatively place this recipe, is it still feasible
 to complete the plan?" No search, no scoring, no state mutation.
-Reference: MEALPLAN_SPECIFICATION_v1.md Section 5.
+Reference: docs/planner/mealplan-specification-v3.md Section 5.
 """
 
 from __future__ import annotations
@@ -588,53 +588,4 @@ def candidate_passes_micro_floor(
             < floor - 1e-9
         ):
             return False
-    return True
-
-
-# --- FC-5: Candidate set and future-slot feasibility ---
-
-
-def check_fc5_candidate_set(
-    candidate_recipe_ids: Set[str],
-    tentative_recipe_id: str,
-    used_recipe_ids_today: Set[str],
-    future_slot_eligible_recipe_ids: List[Set[str]],
-) -> bool:
-    """FC-5: Candidate set non-empty; each future slot has at least one eligible recipe. Spec Section 5."""
-    if not candidate_recipe_ids:
-        return False
-    used_after = used_recipe_ids_today | {tentative_recipe_id}
-    for eligible in future_slot_eligible_recipe_ids:
-        remaining = eligible - used_after
-        if not remaining:
-            return False
-    return True
-
-
-# --- Combined FC-1/FC-2/FC-3 (per-candidate) ---
-
-
-def check_fc1_fc2_fc3(
-    recipe_or_variant: RecipeLike,
-    slot: MealSlot,
-    day_index: int,
-    slot_index: int,
-    state: FeasibilityStateView,
-    user_profile: PlanningUserProfile,
-    resolved_ul: Optional[UpperLimits],
-    macro_bounds: MacroBoundsPrecomputation,
-) -> bool:
-    """Run FC-1, FC-2, FC-3. Returns True only if all pass."""
-    if not check_fc1_daily_calories(
-        recipe_or_variant, slot, day_index, slot_index, state, user_profile, resolved_ul, macro_bounds
-    ):
-        return False
-    if not check_fc2_daily_macros(
-        recipe_or_variant, slot, day_index, slot_index, state, user_profile, resolved_ul, macro_bounds
-    ):
-        return False
-    if not check_fc3_incremental_ul(
-        recipe_or_variant, slot, day_index, state, user_profile, resolved_ul
-    ):
-        return False
     return True

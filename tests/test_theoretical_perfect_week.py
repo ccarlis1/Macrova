@@ -11,7 +11,7 @@ Variants:
   C — Cross-day micronutrient assembly (weekly coupling, carryover)
   D — Large pool, sparse perfect cover (search profile metrics)
 
-Reference: MEALPLAN_SPECIFICATION_v1.md; MEAL_PLANNER_TESTING_GUIDE.md.
+Reference: docs/planner/mealplan-specification-v3.md; docs/testing/meal-planner-testing-guide.md.
 """
 
 from __future__ import annotations

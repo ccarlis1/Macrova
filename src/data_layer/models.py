@@ -153,47 +153,6 @@ class UpperLimits:
 
 
 @dataclass
-class WeeklyNutritionTargets:
-    """Represents weekly RDI targets for micronutrients.
-    
-    Values are WEEKLY totals (daily RDI × 7).
-    A value of 0.0 means no target is set for that nutrient.
-    Field names match MicronutrientProfile for easy comparison.
-    """
-
-    # Vitamins
-    vitamin_a_ug: float = 0.0
-    vitamin_c_mg: float = 0.0
-    vitamin_d_iu: float = 0.0
-    vitamin_e_mg: float = 0.0
-    vitamin_k_ug: float = 0.0
-    b1_thiamine_mg: float = 0.0
-    b2_riboflavin_mg: float = 0.0
-    b3_niacin_mg: float = 0.0
-    b5_pantothenic_acid_mg: float = 0.0
-    b6_pyridoxine_mg: float = 0.0
-    b12_cobalamin_ug: float = 0.0
-    folate_ug: float = 0.0
-
-    # Minerals
-    calcium_mg: float = 0.0
-    copper_mg: float = 0.0
-    iron_mg: float = 0.0
-    magnesium_mg: float = 0.0
-    manganese_mg: float = 0.0
-    phosphorus_mg: float = 0.0
-    potassium_mg: float = 0.0
-    selenium_ug: float = 0.0
-    sodium_mg: float = 0.0
-    zinc_mg: float = 0.0
-
-    # Other
-    fiber_g: float = 0.0
-    omega_3_g: float = 0.0
-    omega_6_g: float = 0.0
-
-
-@dataclass
 class NutritionProfile:
     """Represents nutrition information (macros, calories, and optional micronutrients)."""
 
@@ -203,17 +162,6 @@ class NutritionProfile:
     carbs_g: float
     # Optional micronutrients - None for backward compatibility
     micronutrients: Optional[MicronutrientProfile] = None
-
-
-@dataclass
-class NutritionGoals:
-    """Represents daily nutrition goals."""
-
-    calories: int
-    protein_g: float
-    fat_g_min: float
-    fat_g_max: float
-    carbs_g: float
 
 
 @dataclass
@@ -242,28 +190,6 @@ class Recipe:
             if tag.get("slug") == "meal-prep" and tag.get("type") == "context":
                 return True
         return False
-
-
-@dataclass
-class Meal:
-    """Represents a meal (recipe + context)."""
-
-    recipe: Recipe
-    nutrition: NutritionProfile  # Calculated nutrition for this meal
-    meal_type: str  # "breakfast", "lunch", "dinner", "snack"
-    scheduled_time: Optional[str] = None  # When to eat (optional)
-    busyness_level: int = 3  # 1-4 scale (1=snack, 2=15min, 3=30min, 4=30+min)
-
-
-@dataclass
-class DailyMealPlan:
-    """Represents a full day of meals."""
-
-    date: str  # ISO date format
-    meals: List[Meal]  # List of meals for the day
-    total_nutrition: NutritionProfile  # Aggregated nutrition
-    goals: NutritionGoals  # Target nutrition for the day
-    meets_goals: bool  # Whether goals are met
 
 
 @dataclass
@@ -320,65 +246,3 @@ class ProfilePin:
     day_index: int
     slot_index: int
     recipe_id: str
-
-
-@dataclass
-class DailyNutritionTracker:
-    """Tracks nutrition consumed for a single day.
-    
-    Used to accumulate nutrition as meals are added throughout the day.
-    Supports both macro and micronutrient tracking.
-    """
-
-    date: str  # ISO date format (e.g., "2024-01-15")
-
-    # Macros (accumulated totals)
-    calories: float = 0.0
-    protein_g: float = 0.0
-    fat_g: float = 0.0
-    carbs_g: float = 0.0
-
-    # Micronutrients (accumulated totals)
-    micronutrients: MicronutrientProfile = field(
-        default_factory=MicronutrientProfile
-    )
-
-    # Recipe/meal IDs consumed this day
-    meal_ids: List[str] = field(default_factory=list)
-
-
-@dataclass
-class WeeklyNutritionTracker:
-    """Tracks weekly nutrition totals and carryover needs.
-    
-    Per REASONING_LOGIC.md:
-    - Running totals of all nutrients consumed so far this week
-    - Days remaining in week
-    - Nutrients that need to be carried forward from previous days
-    
-    Weekly tracking allows daily flexibility while ensuring weekly RDIs are met.
-    """
-
-    week_start_date: str  # ISO date format (Monday of the week)
-
-    # Progress tracking
-    days_completed: int = 0  # 0-7
-
-    # Accumulated macro totals
-    total_calories: float = 0.0
-    total_protein_g: float = 0.0
-    total_fat_g: float = 0.0
-    total_carbs_g: float = 0.0
-
-    # Accumulated micronutrient totals
-    total_micronutrients: MicronutrientProfile = field(
-        default_factory=MicronutrientProfile
-    )
-
-    # Daily tracker history
-    daily_trackers: List[DailyNutritionTracker] = field(default_factory=list)
-
-    # Carryover tracking: nutrient name -> deficit amount to make up
-    # Per KNOWLEDGE.md: If Vitamin E is 96% today, need 104%+ tomorrow
-    carryover_needs: Dict[str, float] = field(default_factory=dict)
-

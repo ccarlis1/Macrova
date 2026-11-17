@@ -2,7 +2,7 @@
 
 Generates C(d, s) by filtering the recipe pool with hard constraints and
 forward feasibility. Step 8 adds scaled variants when enable_primary_carb_downscaling.
-Reference: MEALPLAN_SPECIFICATION_v1.md Section 6.3, 6.7.
+Reference: docs/planner/mealplan-specification-v3.md Section 6.3, 6.7.
 """
 
 from __future__ import annotations
@@ -82,7 +82,7 @@ def _rejected_solely_calorie_fc1(
 ) -> bool:
     """True if FC-1 would reject this recipe solely due to calorie overflow (c_used > max_daily_calories)."""
     # TODO: tighten "solely calorie excess" detection to align more precisely with
-    # MEALPLAN_SPECIFICATION_v1.md Section 6.7.2 by ensuring the recipe has already
+    # docs/planner/mealplan-specification-v3.md Section 6.7.2 by ensuring the recipe has already
     # passed HC-1, HC-2, HC-3, and HC-8 before being classified as calorie-only rejected.
     if profile.max_daily_calories is None:
         return False

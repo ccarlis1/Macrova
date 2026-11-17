@@ -1,11 +1,12 @@
 """PreToolUse guard for file-writing tools.
 
-Enforces the parts of CLAUDE.md that no test can catch, because they are about
+Enforces the parts of AGENTS.md that no test can catch, because they are about
 files that must *not* change:
 
-* §2 data-file rules and §8 "stop and ask" -- the user's real, gitignored
-  profile/recipe/ingredient data is never rewritten by an agent (trap 4).
-* §3 ownership map and trap 1 (The Parallel Pipeline) -- creating a second
+* the user's real profile/ingredient data and the committed recipe and tag
+  stores are never rewritten by hand -- changing them is the user's call
+  (AGENTS.md invariants "User data paths" and "One tag source").
+* one owner per concern -- creating a second
   owner for an existing concern is refused outright for known fork paths, and
   escalated to the user for any other new module under ``src/``.
 
@@ -19,32 +20,35 @@ import re
 
 import _common as common
 
-#: Gitignored, user-owned files. Value is why the file is off-limits.
+#: User-owned or store-owned files. Value is why the file is off-limits.
 PROTECTED: dict[str, str] = {
     "config/user_profile.yaml": (
-        "the user's real profile -- CLAUDE.md §2: 'This is the user's real profile. "
-        "Edits show up in git status; don't casually rewrite it.'"
+        "the user's real profile -- don't casually rewrite it (AGENTS.md invariant "
+        "\"User data paths\")"
     ),
-    "config/nutrition_goals.yaml": "gitignored user config",
-    "config/model_config.yaml": "gitignored user config",
-    "data/recipes/recipes.json": "the user's real recipe pool (gitignored)",
+    "config/nutrition_goals.yaml": "user config",
+    "config/model_config.yaml": "user config",
+    "data/recipes/recipes.json": (
+        "the committed recipe pool -- write it through src/data_layer/recipe_db.py / "
+        "the sync API, not by hand"
+    ),
     "data/recipes/recipe_tags.json": (
         "the runtime tag store owned by src/llm/tag_repository.py -- write it through "
         "the repository, not by hand"
     ),
     "data/ingredients/custom_ingredients.json": "the user's real ingredient data (gitignored)",
-    "data/ingredients/usda_ingredients.json": "gitignored cached USDA data",
-    "data/nutrition/nutrition_db.json": "gitignored nutrition data",
+    "data/ingredients/usda_ingredients.json": "cached USDA data",
+    "data/nutrition/nutrition_db.json": "nutrition data",
     "data/llm/feedback_cache.json": "the LLM feedback cache, written by src/llm/feedback_cache.py",
     ".env": "real API keys",
 }
 
-#: Paths that would fork a pipeline that already has exactly one owner (§3).
+#: Paths that would fork a pipeline that already has exactly one owner.
 FORK_PATTERNS: list[tuple[str, str]] = [
     (
         r"^data/tags/",
         "Tag persistence is owned by data/recipes/recipe_tags.json via "
-        "src/llm/tag_repository.py. CLAUDE.md §3: 'No second tag store, ever.'",
+        "src/llm/tag_repository.py. AGENTS.md invariant \"One tag source\": no second tag store.",
     ),
     (
         r"(^|/)tag_service\.py$",
@@ -57,13 +61,13 @@ FORK_PATTERNS: list[tuple[str, str]] = [
     ),
     (
         r"(^|/)[A-Za-z0-9_]+_v2\.py$",
-        "CLAUDE.md law 1: extend, never fork. A '_v2' module is the Parallel Pipeline "
-        "trap by definition -- evolve the existing owner additively instead.",
+        "Extend, never fork: a '_v2' module is a parallel pipeline by definition -- "
+        "evolve the existing owner additively instead.",
     ),
     (
         r"^src/planning/plan_.*\.py$",
         "The planner entry point is src/planning/planner.py::plan_meals -> "
-        "phase7_search.run_meal_plan_search. CLAUDE.md §3: 'No shadow plan() helpers.'",
+        "phase7_search.run_meal_plan_search. No shadow plan() helpers.",
     ),
     (
         r"^src/llm/tag_filter_.+\.py$",
@@ -71,7 +75,7 @@ FORK_PATTERNS: list[tuple[str, str]] = [
     ),
 ]
 
-#: Filename keyword -> the §3 owner most likely to already cover the concern.
+#: Filename keyword -> the owner most likely to already cover the concern.
 OWNERSHIP_HINTS: list[tuple[tuple[str, ...], str]] = [
     (
         ("tag",),
@@ -126,8 +130,8 @@ def _protected_reason(rel: str, why: str) -> str:
     lines = [
         f"BLOCKED: {rel} is {why}.",
         "",
-        "CLAUDE.md §8 lists 'deleting/overwriting anything under data/ or config/ that "
-        "isn't a .example file' as the user's decision, not yours.",
+        "Deleting or overwriting anything under data/ or config/ that isn't a .example "
+        "file is the user's decision, not yours.",
     ]
     if example.is_file():
         lines.append(f"If you need to change the shipped shape, edit {rel}.example instead.")
@@ -140,7 +144,7 @@ def _ownership_hint(rel: str) -> str:
     for keywords, owner in OWNERSHIP_HINTS:
         if any(keyword in stem for keyword in keywords):
             return f"The concern in '{stem}' looks like it is already owned by {owner}."
-    return "Check the §3 ownership table in CLAUDE.md for the module that already owns this concern."
+    return "Check docs/architecture/map/ for the module that already owns this concern."
 
 
 def main() -> None:
@@ -161,7 +165,7 @@ def main() -> None:
                 common.deny(
                     f"BLOCKED: creating {rel} forks a pipeline that already has one owner.\n\n"
                     f"{explanation}\n\n"
-                    "CLAUDE.md law 1: 'One canonical path -- extend, never fork.'"
+                    "One canonical path per concern -- extend, never fork."
                 )
 
         # Only Write creates files; Edit on a missing file fails on its own.
@@ -169,8 +173,8 @@ def main() -> None:
             common.ask(
                 f"New module: {rel}\n\n"
                 f"{_ownership_hint(rel)}\n\n"
-                "CLAUDE.md trap 1 (The Parallel Pipeline) is the repo's most common failure: "
-                "'before creating any file, grep for the owning module in §3'. Approve only if "
+                "A parallel pipeline is the repo's most common failure: before creating any "
+                "file, grep for the module that already owns the concern. Approve only if "
                 "no existing module can be extended to cover this."
             )
 

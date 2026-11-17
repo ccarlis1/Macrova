@@ -10,11 +10,8 @@ from src.data_layer.models import (
     Recipe,
     NutritionProfile,
     UserProfile,
-    NutritionGoals,
 )
 from src.data_layer.recipe_db import RecipeDB
-from src.data_layer.ingredient_db import IngredientDB
-from src.data_layer.nutrition_db import NutritionDB
 from src.data_layer.macro_targets import MacroTargetsError
 from src.data_layer.user_profile import UserProfileLoader, persist_profile_schedule_days
 from src.models.schedule import DaySchedule
@@ -292,119 +289,6 @@ class TestRecipeDB:
             tags=[{"slug": "high-fiber", "type": "nutrition"}],
         )
         assert recipe.is_meal_prep_capable is False
-
-
-class TestIngredientDB:
-    """Tests for IngredientDB."""
-
-    def test_load_ingredients_from_json(self):
-        """Test loading ingredients from JSON file."""
-        ingredient_data = {
-            "ingredients": [
-                {
-                    "name": "cream of rice",
-                    "per_100g": {
-                        "calories": 370,
-                        "protein_g": 7.5,
-                        "fat_g": 0.5,
-                        "carbs_g": 82.0,
-                    },
-                    "aliases": ["cream of rice", "rice cereal"],
-                }
-            ]
-        }
-        with NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-            json.dump(ingredient_data, f)
-            temp_path = f.name
-
-        try:
-            db = IngredientDB(temp_path)
-            ingredients = db.get_all_ingredients()
-            assert len(ingredients) == 1
-            assert ingredients[0]["name"] == "cream of rice"
-            assert "per_100g" in ingredients[0]
-            assert "aliases" in ingredients[0]
-        finally:
-            Path(temp_path).unlink()
-
-
-class TestNutritionDB:
-    """Tests for NutritionDB."""
-
-    def test_load_nutrition_from_json(self):
-        """Test loading nutrition data from JSON file."""
-        nutrition_data = {
-            "ingredients": [
-                {
-                    "name": "cream of rice",
-                    "per_100g": {
-                        "calories": 370,
-                        "protein_g": 7.5,
-                        "fat_g": 0.5,
-                        "carbs_g": 82.0,
-                    },
-                    "aliases": ["cream of rice", "rice cereal"],
-                },
-                {
-                    "name": "whey protein powder",
-                    "per_scoop": {
-                        "calories": 120,
-                        "protein_g": 24.0,
-                        "fat_g": 1.0,
-                        "carbs_g": 3.0,
-                    },
-                    "scoop_size_g": 30,
-                    "aliases": ["protein powder", "whey"],
-                },
-            ]
-        }
-        with NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-            json.dump(nutrition_data, f)
-            temp_path = f.name
-
-        try:
-            db = NutritionDB(temp_path)
-            nutrition = db.get_nutrition("cream of rice", "per_100g")
-            assert nutrition is not None
-            assert nutrition["calories"] == 370
-            assert nutrition["protein_g"] == 7.5
-
-            # Test with alias
-            nutrition2 = db.get_nutrition("rice cereal", "per_100g")
-            assert nutrition2 is not None
-            assert nutrition2["calories"] == 370
-        finally:
-            Path(temp_path).unlink()
-
-    def test_get_nutrition_by_alias(self):
-        """Test getting nutrition data using ingredient alias."""
-        nutrition_data = {
-            "ingredients": [
-                {
-                    "name": "eggs",
-                    "per_large": {
-                        "calories": 72,
-                        "protein_g": 6.3,
-                        "fat_g": 4.8,
-                        "carbs_g": 0.4,
-                    },
-                    "large_size_g": 50,
-                    "aliases": ["egg", "eggs", "large egg"],
-                }
-            ]
-        }
-        with NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-            json.dump(nutrition_data, f)
-            temp_path = f.name
-
-        try:
-            db = NutritionDB(temp_path)
-            # Should find by alias
-            nutrition = db.get_nutrition("egg", "per_large")
-            assert nutrition is not None
-            assert nutrition["calories"] == 72
-        finally:
-            Path(temp_path).unlink()
 
 
 class TestUserProfileLoader:

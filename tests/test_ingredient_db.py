@@ -31,19 +31,6 @@ def db_path(tmp_path):
     return str(path)
 
 
-def test_loads_all_ingredients(db_path):
-    db = IngredientDB(db_path)
-    names = [i["name"] for i in db.get_all_ingredients()]
-    assert names == ["Oats", "banana"]
-
-
-def test_get_all_returns_a_copy_not_internal_state(db_path):
-    db = IngredientDB(db_path)
-    listing = db.get_all_ingredients()
-    listing.clear()
-    assert len(db.get_all_ingredients()) == 2
-
-
 def test_lookup_by_name_is_case_insensitive(db_path):
     db = IngredientDB(db_path)
     assert db.get_ingredient_by_name("OATS")["name"] == "Oats"
@@ -64,4 +51,4 @@ def test_empty_ingredients_key_yields_empty_db(tmp_path):
     path = tmp_path / "empty.json"
     path.write_text(json.dumps({}), encoding="utf-8")
     db = IngredientDB(str(path))
-    assert db.get_all_ingredients() == []
+    assert db.get_ingredient_by_name("Oats") is None

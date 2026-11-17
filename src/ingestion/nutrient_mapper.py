@@ -18,9 +18,9 @@ WHY MAPPING IS SEPARATE FROM RETRIEVAL:
 """
 
 from dataclasses import dataclass
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
-from src.data_layer.models import NutritionProfile, MicronutrientProfile
+from src.data_layer.models import MicronutrientProfile
 
 
 # ============================================================================
@@ -294,21 +294,6 @@ class MappedNutrition:
     carbs_g: float
     micronutrients: MicronutrientProfile
     
-    def to_nutrition_profile(self) -> NutritionProfile:
-        """Convert to NutritionProfile for use in recipes/meals.
-        
-        Returns:
-            NutritionProfile with macros and micronutrients
-        """
-        return NutritionProfile(
-            calories=self.calories,
-            protein_g=self.protein_g,
-            fat_g=self.fat_g,
-            carbs_g=self.carbs_g,
-            micronutrients=self.micronutrients
-        )
-
-
 class NutrientMapper:
     """Maps raw USDA nutrition data to internal schema.
     
@@ -327,18 +312,10 @@ class NutrientMapper:
         
         # result.calories, result.protein_g, etc.
         # result.micronutrients.vitamin_a_ug, etc.
-        
-        # Convert to NutritionProfile
-        profile = result.to_nutrition_profile()
     """
     
     def __init__(self):
         """Initialize mapper with default configuration."""
-        # Pre-compute field → category lookup for micronutrients
-        self._micro_fields = {
-            v["field"] for v in USDA_NUTRIENT_MAP.values() 
-            if v["category"] == "micro"
-        }
     
     def map_nutrients(self, raw_payload: Dict[str, Any]) -> MappedNutrition:
         """Map raw USDA payload to internal nutrition structure.
@@ -431,25 +408,3 @@ class NutrientMapper:
             fallback_micros[field_name] = amount
         else:  # micro
             micros[field_name] = amount
-    
-    def get_tracked_nutrient_ids(self) -> set:
-        """Get set of USDA nutrient IDs that are tracked.
-        
-        Useful for debugging and documentation.
-        
-        Returns:
-            Set of USDA nutrient IDs in the mapping table
-        """
-        return set(USDA_NUTRIENT_MAP.keys())
-    
-    def get_field_for_nutrient_id(self, nutrient_id: int) -> Optional[str]:
-        """Get internal field name for a USDA nutrient ID.
-        
-        Args:
-            nutrient_id: USDA FoodData Central nutrient ID
-            
-        Returns:
-            Internal field name or None if not tracked
-        """
-        mapping = USDA_NUTRIENT_MAP.get(nutrient_id)
-        return mapping["field"] if mapping else None

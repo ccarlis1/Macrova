@@ -16,31 +16,32 @@ The most common false alarm in this repo is a broken venv, not broken code. If p
 failures across many files):
 
 ```bash
-source .venv/bin/activate
-python --version                        # CI is 3.11; a mismatched local version is suspect
-pip install -r requirements.txt -q      # this alone has fixed 49 collection errors before
-python -m pytest tests/ -q              # rerun before touching any source file
+.venv/bin/python --version              # .python-version is 3.12, CI is 3.11; anything else is suspect
+python3 scripts/run_pytest.py           # installs/validates requirements.txt, then runs the suite
 ```
 
-Also verify: you are in the repo root (relative default paths depend on it), and the
-gitignored data files exist (`tests/conftest.py` copies `.example` files automatically, but
-the CLI/server outside pytest do not — copy manually if missing):
+If `.venv/pyvenv.cfg` points at the wrong interpreter, recreate it rather than patching it:
 
 ```bash
-cp -n data/recipes/recipes.json.example data/recipes/recipes.json
-cp -n data/ingredients/custom_ingredients.json.example data/ingredients/custom_ingredients.json
+rm -rf .venv
+python3 -m venv .venv
+.venv/bin/python -m pip install --upgrade pip
+.venv/bin/python -m pip install -r requirements.txt
 ```
+
+Also verify you are in the repo root (relative default paths depend on it).
 
 Only if failures survive a clean environment are they real.
 
 ## Step 1 — Static baseline (the CI gate, locally)
 
 ```bash
-python -m pytest tests/ -q                 # full suite, ~950 tests, <10 s — never filter
-python scripts/export_openapi.py --check   # drift here fails CI
+python3 scripts/run_pytest.py                 # full suite, ~1,370 tests, ~12 s — never filter
+python3 scripts/run_export_openapi.py --check # drift here fails CI
+python3 scripts/gen_architecture_map.py --check # map drift or broken map references fail CI
 ```
 
-If you changed `src/api/`: regenerate (`python scripts/export_openapi.py`) and commit
+If you changed `src/api/`: regenerate (`python3 scripts/run_export_openapi.py`) and commit
 `openapi/openapi.json`; then `--check` must pass.
 
 If you changed `frontend/`: `cd frontend && flutter analyze && flutter test` (not in CI —
@@ -77,7 +78,7 @@ JSON to stderr on plan requests).
 
 ## Step 3 — Parity debugging (CLI vs Flutter disagree)
 
-Full procedure lives in `docs/DEBUG_PLANNER_PARITY.md`; the short version:
+Full procedure lives in `docs/planner/parity-debugging.md`; the short version:
 
 ```bash
 python3 scripts/export_planner_debug_artifacts.py \
@@ -113,7 +114,7 @@ always an input difference, not a planner bug:
 | FM-4 | Weekly micronutrient floor unmet (τ × daily_RDI × D) | Which nutrient, in `report`; is τ intentionally 1.0? ULs are daily and unaffected by τ |
 | FM-5 | Attempt limit exhausted | `stats` attempts; usually over-constrained, not a bug |
 
-Rules that trip people (normative in `docs/SYSTEM_RULES.md`): ULs are enforced **per day,
+Rules that trip people (normative in `docs/planner/mealplan-specification-v3.md`; summarized in `docs/architecture/map/planning.md`): ULs are enforced **per day,
 never averaged**; τ relaxes only the weekly RDI floor, never ULs; the sodium advisory compares
 against the un-relaxed goal. A "wrong-looking" FM-4 vs success difference between two runs is
 usually `ingredient_source` mismatch (local vs USDA nutrition values), not planner logic.

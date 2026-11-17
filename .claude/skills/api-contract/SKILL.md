@@ -38,9 +38,9 @@ the checklist that keeps them in lockstep.
 4. **Tests.** In `tests/test_api_*.py` using the FastAPI TestClient (no network, no real
    keys): happy path, at least one mapped error asserting the exact `code` and status, and —
    for changed endpoints — a test that the **old request shape still works** (fields omitted).
-5. **Snapshot.** `python scripts/export_openapi.py` (no `--check`), commit the regenerated
-   `openapi/openapi.json`, then confirm `python scripts/export_openapi.py --check` and the full
-   `python -m pytest tests/ -q` pass. Forgetting this file is the #1 way to fail CI here.
+5. **Snapshot.** `python3 scripts/run_export_openapi.py` (no `--check`), commit the regenerated
+   `openapi/openapi.json`, then confirm `python3 scripts/run_export_openapi.py --check` and the full
+   `python3 scripts/run_pytest.py` pass. Forgetting this file is the #1 way to fail CI here.
 
 ## Flutter lockstep
 

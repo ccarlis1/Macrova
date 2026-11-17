@@ -97,7 +97,7 @@ Explicitly cut from this slice: all meal prep (DM-3, BE-2, BE-5, FE-3, FE-7), al
 zero frontend work — which is how you actually consume plans today anyway (PRD P4).
 
 **Exact steps.**
-1. Update `docs/sprint1/README.md`: mark the 9 tasks as the active slice; move everything else
+1. Update `docs/archive/sprints/sprint1/README.md`: mark the 9 tasks as the active slice; move everything else
    under a "Parked until the slice ships + is used" heading.
 2. Execute one task per session with the sprint-task skill, in the order above.
 3. After BE-7, run the verify-stack skill end-to-end, including generating a real plan from
@@ -114,7 +114,7 @@ zero frontend work — which is how you actually consume plans today anyway (PRD
 
 **Brief for the weaker model (paste per session, one task ID at a time):**
 > Read CLAUDE.md in full. Then invoke the sprint-task skill for task **<ID>** in
-> `docs/sprint1/`. Scope amendment on file: BE-8 is implemented for pins + required/preferred
+> `docs/archive/sprints/sprint1/`. Scope amendment on file: BE-8 is implemented for pins + required/preferred
 > tag slugs only; meal-prep batch locks are out of scope — leave a documented seam and note
 > the deviation in the stub. Do not touch any FE-*, AI-*, DM-3, BE-2, or BE-5 files. When the
 > task is done, run the full test suite and the OpenAPI check, update the stub's status and
@@ -131,7 +131,7 @@ momentum problem structurally: a standing 30-minute Sunday session is easier to 
 "work on the app sometime."
 
 **Exact steps.**
-1. Repurpose `docs/SPRINT_DISCUSSION.md` (currently empty, already designated as the idea log)
+1. Repurpose SPRINT_DISCUSSION.md (since removed; was empty, already designated as the idea log)
    as the **friction log**: date, what you tried, what fought you, one-line severity.
 2. Every Sunday: generate the week (`python3 plan_meals.py --days 7`), adjust profile/tags
    until the plan is one you'll actually eat, shop from it, and log every friction point —
@@ -151,7 +151,7 @@ momentum problem structurally: a standing 30-minute Sunday session is easier to 
 > `config/user_profile.yaml`. Present the plan as a readable week table with per-day macro
 > totals and any warnings/failure codes explained in plain language. Ask me what I'd change;
 > apply profile edits I approve (schedule, tags, exclusions — never invent nutrition values)
-> and regenerate until I accept. Then append a dated entry to `docs/SPRINT_DISCUSSION.md`
+> and regenerate until I accept. Then append a dated entry to SPRINT_DISCUSSION.md (since removed)
 > recording: settings used, plan accepted or not, and every friction point I mentioned,
 > verbatim where possible. Do not implement fixes for the friction — log only.
 

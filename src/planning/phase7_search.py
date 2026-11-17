@@ -3,7 +3,7 @@
 Orchestrates decision order, pinned handling, candidate generation (Phase 6),
 scoring (Phase 4), ordering (Phase 5), daily/weekly validation, and backtracking.
 No Primary Carb Downscaling. No reimplementation of constraints, feasibility, or scoring.
-Reference: MEALPLAN_SPECIFICATION_v1.md.
+Reference: docs/planner/mealplan-specification-v3.md.
 """
 
 from __future__ import annotations
@@ -61,7 +61,6 @@ from src.planning.failure_attribution import (
     Attribution,
     DAILY_TOLERANCE,
     diagnose_exhausted_search,
-    daily_tracker_to_micro_profile as _daily_tracker_to_micro_profile,
     daily_validation as _daily_validation,
     weekly_tracker_from_best_micro,
 )
@@ -207,41 +206,10 @@ class SearchStats:
     def max_depth(self) -> int:
         return max(self._backtrack_depths, default=0)
 
-    @property
-    def average_backtrack_depth(self) -> float:
-        if not self._backtrack_depths:
-            return 0.0
-        return sum(self._backtrack_depths) / len(self._backtrack_depths)
-
     def time_per_attempt(self) -> float:
         if self.total_attempts <= 0:
             return 0.0
         return self.total_runtime() / self.total_attempts
-
-
-# --- Result types ---
-
-
-@dataclass
-class PlanSuccess:
-    """TC-1: Full plan found."""
-    assignments: List[Assignment]
-    daily_trackers: Dict[int, DailyTracker]
-    weekly_tracker: WeeklyTracker
-    sodium_advisory: Optional[str] = None
-
-
-@dataclass
-class PlanFailure:
-    """TC-2 or TC-3: Failure report. Spec Section 11."""
-    failure_mode: str  # FM-1 .. FM-5
-    day_index: Optional[int] = None
-    slot_index: Optional[int] = None
-    constraint_detail: Optional[str] = None
-    best_partial_assignments: List[Assignment] = field(default_factory=list)
-    best_partial_daily_trackers: Dict[int, DailyTracker] = field(default_factory=dict)
-    attempt_count: int = 0
-    sodium_advisory: Optional[str] = None
 
 
 def _is_pinned(profile: PlanningUserProfile, day_index: int, slot_index: int) -> bool:
@@ -251,21 +219,6 @@ def _is_pinned(profile: PlanningUserProfile, day_index: int, slot_index: int) ->
 
 def _get_pinned_recipe_id(profile: PlanningUserProfile, day_index: int, slot_index: int) -> Optional[str]:
     return profile.pinned_assignments.get((day_index + 1, slot_index))
-
-
-def _recipe_to_nutrition_profile(recipe: PlanningRecipe) -> NutritionProfile:
-    micro = getattr(recipe.nutrition, "micronutrients", None)
-    micro_dict = micronutrient_profile_to_dict(micro)
-    valid = list(MicronutrientProfile.__dataclass_fields__.keys())
-    kwargs = {k: micro_dict.get(k, 0.0) for k in valid}
-    micro_profile = MicronutrientProfile(**kwargs) if micro_dict else None
-    return NutritionProfile(
-        recipe.nutrition.calories,
-        recipe.nutrition.protein_g,
-        recipe.nutrition.fat_g,
-        recipe.nutrition.carbs_g,
-        micronutrients=micro_profile,
-    )
 
 
 def _subtract_nutrition(a: NutritionProfile, b: NutritionProfile) -> NutritionProfile:

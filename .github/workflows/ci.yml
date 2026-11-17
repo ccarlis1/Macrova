@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -30,3 +32,10 @@ jobs:
         env:
           USDA_API_KEY: ci-test-usda-key
         run: python scripts/export_openapi.py --check
+
+      - name: Architecture map (no drift, hand-doc references resolve)
+        run: python scripts/gen_architecture_map.py --check
+
+      - name: Architecture map hand-doc freshness (advisory)
+        if: github.event_name == 'pull_request'
+        run: python scripts/gen_architecture_map.py --stale-intent --base origin/${{ github.base_ref }}

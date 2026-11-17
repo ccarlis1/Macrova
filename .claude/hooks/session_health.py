@@ -1,12 +1,12 @@
 """SessionStart environment report.
 
-Kills two CLAUDE.md traps before they cost a debugging cycle:
+Catches two environment problems before they cost a debugging cycle:
 
-* trap 3 (Blaming Code for a Broken Venv) -- if imports are broken, say so up
+* a broken venv -- if imports are broken, say so up
   front with the one-line repair, so a wall of collection errors is never read
   as a code failure;
-* trap 12 (The Wrong-CWD Failure) -- confirm the gitignored data files the CLI
-  and server need actually exist.
+* missing local data files -- confirm the profile, recipe pool and legacy
+  ingredient file exist (repo commands resolve these from the repo root).
 
 Never blocks. Worst case it prints nothing useful.
 """
@@ -19,7 +19,11 @@ import _common as common
 
 RUNTIME_IMPORTS = ("fastapi", "pydantic", "httpx", "yaml", "requests", "pytest")
 
-#: Gitignored files the CLI and server open by default (tests self-heal via conftest).
+#: Local data files with a shipped ``.example``. ``config/user_profile.yaml`` is the
+#: untracked CLI ``--profile`` default; ``recipes.json`` is committed (CLI/server
+#: default recipe pool); ``custom_ingredients.json`` is gitignored and legacy -- the
+#: CLI/server ingredient default is ``data/reference/ingredient_nutrition.json``.
+#: tests/conftest.py restores the two data/ files if absent, never the profile.
 RUNTIME_DATA = (
     ("config/user_profile.yaml", "config/user_profile.yaml.example"),
     ("data/recipes/recipes.json", "data/recipes/recipes.json.example"),
@@ -56,7 +60,7 @@ def _imports_line(python: str) -> str:
         return f"- imports: could not check ({out.strip()[:120]})"
     if missing:
         return (
-            f"- imports: MISSING {missing} -- this is CLAUDE.md trap 3. Mass pytest collection "
+            f"- imports: MISSING {missing} -- the venv is broken. Mass pytest collection "
             "errors are the venv, not the code. Repair first: "
             "`pip install -r requirements.txt`, then rerun before touching any source file."
         )
@@ -72,7 +76,7 @@ def _data_lines(root: Path) -> list[str]:
     if not missing:
         return []
     lines = [
-        "- data: gitignored runtime files are absent (pytest self-heals via tests/conftest.py, "
+        "- data: local data files are absent (tests/conftest.py restores the data/ ones, "
         "the CLI and server do NOT):"
     ]
     lines += [f"    cp -n {example} {rel}" for rel, example in missing]
@@ -90,7 +94,8 @@ def _git_lines(root: Path) -> list[str]:
     ]
     if dirty_data:
         lines.append(
-            "- user data with uncommitted changes (do not `git add` these; CLAUDE.md trap 4): "
+            "- user data with uncommitted changes (do not `git add` these by hand; "
+            "AGENTS.md invariant \"User data paths\"): "
             + ", ".join(sorted(dirty_data)[:6])
         )
     return lines
@@ -103,7 +108,7 @@ def _openapi_line(python: str, root: Path) -> str | None:
     if rc != 0:
         return (
             "- openapi: snapshot ALREADY drifts from the code before you changed anything -- "
-            "CI is red on main. Run `python scripts/export_openapi.py` and commit it."
+            "CI is red on main. Run `python3 scripts/run_export_openapi.py` and commit it."
         )
     return None
 

@@ -1,0 +1,7 @@
+---
+description: Tests, scripts, benchmark, hooks, CI — read the tooling map doc
+globs: tests/**,scripts/**,evaluation/**,.claude/hooks/**,.github/**,Makefile
+alwaysApply: false
+---
+
+Read @docs/architecture/map/tooling.md before editing. Benchmark changes follow .claude/skills/benchmark-audit/SKILL.md.

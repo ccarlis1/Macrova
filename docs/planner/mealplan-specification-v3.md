@@ -4,11 +4,11 @@
 
 **Specification Signature:** v3
 
-**Scope:** Steps 3 and 4 of [next-steps.md](../roadmap/next-steps.md) — micronutrient-aware scoring, daily tracking, validation, pinned meal slots, and multi-day backtracking (up to 7 days).
+**Scope:** Steps 3 and 4 of next-steps.md (retired; current roadmap: [EXECUTION_ROADMAP.md](../EXECUTION_ROADMAP.md)) — micronutrient-aware scoring, daily tracking, validation, pinned meal slots, and multi-day backtracking (up to 7 days).
 
   
 
-**Authoritative References:** [planner-rules.md](planner-rules.md), [reasoning-logic.md](reasoning-logic.md), [nutrition-knowledge.md](../product/nutrition-knowledge.md), [next-steps.md](../roadmap/next-steps.md).
+**Authoritative References:** [planner-rules.md](planner-rules.md), [reasoning-logic.md](reasoning-logic.md), [nutrition-knowledge.md](../product/nutrition-knowledge.md), next-steps.md (retired; current roadmap: [EXECUTION_ROADMAP.md](../EXECUTION_ROADMAP.md)).
 
   
 

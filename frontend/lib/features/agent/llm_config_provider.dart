@@ -32,13 +32,11 @@ class LlmConfigProvider extends ChangeNotifier {
   bool _llmReady = false;
   bool _validating = false;
   String? _lastValidationError;
-  DateTime? _validatedAt;
   int? _validatedFingerprint;
 
   bool get llmReady => _llmReady;
   bool get validating => _validating;
   String? get lastValidationError => _lastValidationError;
-  DateTime? get validatedAt => _validatedAt;
 
   int _fingerprint(UserProfile p) => Object.hash(
         p.llmProvider.trim().toLowerCase(),
@@ -57,18 +55,14 @@ class LlmConfigProvider extends ChangeNotifier {
   Future<void> loadFromProfile() async {
     final prefs = await SharedPreferences.getInstance();
     final fp = prefs.getInt(_kFpKey);
-    final atMs = prefs.getInt(_kAtKey);
     final p = _profile.profile;
     final cur = _fingerprint(p);
     if (fp != null && fp == cur && validateCredentialsLocally(p)) {
       _validatedFingerprint = fp;
-      _validatedAt =
-          atMs != null ? DateTime.fromMillisecondsSinceEpoch(atMs) : null;
       await _syncReadyWithServer();
     } else {
       _llmReady = false;
       _validatedFingerprint = null;
-      _validatedAt = null;
       _lastValidationError = null;
     }
     notifyListeners();
@@ -85,7 +79,6 @@ class LlmConfigProvider extends ChangeNotifier {
             'not sent to the API.';
         await _clearPrefs();
         _validatedFingerprint = null;
-        _validatedAt = null;
       } else {
         _lastValidationError = null;
       }
@@ -96,13 +89,11 @@ class LlmConfigProvider extends ChangeNotifier {
           'Is the server running at ${ApiService.baseUrl}?';
       await _clearPrefs();
       _validatedFingerprint = null;
-      _validatedAt = null;
     } catch (e) {
       _llmReady = false;
       _lastValidationError = 'Could not reach the API: $e';
       await _clearPrefs();
       _validatedFingerprint = null;
-      _validatedAt = null;
     }
   }
 
@@ -113,7 +104,6 @@ class LlmConfigProvider extends ChangeNotifier {
     if (_validatedFingerprint != null && cur != _validatedFingerprint) {
       _llmReady = false;
       _validatedFingerprint = null;
-      _validatedAt = null;
       notifyListeners();
     }
   }
@@ -136,7 +126,6 @@ class LlmConfigProvider extends ChangeNotifier {
       if (!enabled) {
         _llmReady = false;
         _validatedFingerprint = null;
-        _validatedAt = null;
         _lastValidationError =
             'Server reports LLM is off. Add LLM_API_KEY to the same .env / process that runs '
             '`uvicorn` (see repo .env). The Profile field documents your key for your own '
@@ -148,18 +137,12 @@ class LlmConfigProvider extends ChangeNotifier {
       final fp = _fingerprint(p);
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt(_kFpKey, fp);
-      await prefs.setInt(
-        _kAtKey,
-        DateTime.now().millisecondsSinceEpoch,
-      );
       _llmReady = true;
       _validatedFingerprint = fp;
-      _validatedAt = DateTime.now();
       _lastValidationError = null;
     } on ApiException catch (e) {
       _llmReady = false;
       _validatedFingerprint = null;
-      _validatedAt = null;
       _lastValidationError =
           'Could not verify LLM with the server (${e.message}). '
           'Check API_BASE_URL / dart-define and that the API is running.';
@@ -167,7 +150,6 @@ class LlmConfigProvider extends ChangeNotifier {
     } catch (e) {
       _llmReady = false;
       _validatedFingerprint = null;
-      _validatedAt = null;
       _lastValidationError = 'Could not reach the API: $e';
       await _clearPrefs();
     } finally {
@@ -179,13 +161,11 @@ class LlmConfigProvider extends ChangeNotifier {
   Future<void> _clearPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_kFpKey);
-    await prefs.remove(_kAtKey);
   }
 
   void onCredentialsChanged() {
     _llmReady = false;
     _validatedFingerprint = null;
-    _validatedAt = null;
     notifyListeners();
   }
 
@@ -193,12 +173,10 @@ class LlmConfigProvider extends ChangeNotifier {
   void revokeReady(String message) {
     _llmReady = false;
     _validatedFingerprint = null;
-    _validatedAt = null;
     _lastValidationError = message;
     unawaited(_clearPrefs());
     notifyListeners();
   }
 
   static const _kFpKey = 'llm_gate_fingerprint';
-  static const _kAtKey = 'llm_gate_validated_at_ms';
 }

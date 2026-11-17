@@ -79,12 +79,12 @@ void main() {
         await provider.load();
         provider.toggleCooked(1, 0);
         provider.toggleCooked(2, 1);
-        expect(provider.cookedSlots, isNotEmpty);
+        expect(provider.isCooked(2, 1), isTrue);
 
         provider.applyPlanResult(_samplePlan());
 
         expect(provider.isCooked(1, 0), isFalse);
-        expect(provider.cookedSlots, isEmpty);
+        expect(provider.isCooked(2, 1), isFalse);
         expect(await StorageService.loadCookedSlots(), isEmpty);
       },
     );
@@ -96,13 +96,13 @@ void main() {
         await provider.load();
         provider.applyPlanResult(_samplePlan());
         provider.toggleCooked(1, 0);
-        expect(provider.cookedSlots, isNotEmpty);
+        expect(provider.isCooked(1, 0), isTrue);
 
         provider.clearPlan();
         await Future<void>.delayed(Duration.zero);
 
         expect(provider.mealPlan, isNull);
-        expect(provider.cookedSlots, isEmpty);
+        expect(provider.isCooked(1, 0), isFalse);
         expect(await StorageService.loadCookedSlots(), isEmpty);
       },
     );

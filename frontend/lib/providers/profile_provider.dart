@@ -18,7 +18,6 @@ class ProfileProvider extends ChangeNotifier {
   final MicronutrientDefaultsFn _defaultsFn;
 
   UserProfile _profile = const UserProfile();
-  bool _loaded = false;
 
   /// Server defaults by demographic, as last fetched. Never written into
   /// [profile]: the Profile screen fills its fields from them, and only a save
@@ -28,19 +27,12 @@ class ProfileProvider extends ChangeNotifier {
   final Map<String, String> _defaultsErrors = {};
 
   UserProfile get profile => _profile;
-  bool get loaded => _loaded;
 
   Future<void> load() async {
     final saved = await StorageService.loadProfile();
     if (saved != null) {
       _profile = saved;
     }
-    _loaded = true;
-    notifyListeners();
-  }
-
-  void updateProfile(UserProfile profile) {
-    _profile = profile;
     notifyListeners();
   }
 

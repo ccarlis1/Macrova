@@ -161,7 +161,6 @@ class MealPlanProvider extends ChangeNotifier {
   /// only for the tray and the create-batch sheet, never sent with a plan.
   List<MealPrepBatch> _mealPrepBatches = const [];
   bool _mealPrepLoading = false;
-  bool _mealPrepLoaded = false;
   String? _mealPrepErrorCode;
   String? _mealPrepErrorMessage;
 
@@ -265,9 +264,6 @@ class MealPlanProvider extends ChangeNotifier {
   String? get prepTimeBucket => _prepTimeBucket;
   List<String> get dietaryFlags => List.unmodifiable(_dietaryFlags);
 
-  /// Device-local cooked slot keys; not sent to the planner or API.
-  Set<String> get cookedSlots => Set.unmodifiable(_cookedSlots);
-
   /// Slot key: 1-based [day], 0-based [mealIndex] within that day's meals.
   static String cookedSlotKey(int day, int mealIndex) => '$day:$mealIndex';
 
@@ -285,10 +281,6 @@ class MealPlanProvider extends ChangeNotifier {
   }
 
   bool get hasActivePoolFilters => activePoolFilterCount > 0;
-
-  /// First day meal count (for compact summary strings).
-  int get mealsPerDaySummary =>
-      _scheduleDays.isEmpty ? 3 : _scheduleDays.first.meals.length;
 
   static Future<MealPrepBatch> _apiCreateMealPrepBatch({
     required String recipeId,
@@ -311,9 +303,6 @@ class MealPlanProvider extends ChangeNotifier {
       List.unmodifiable(_mealPrepBatches);
   bool get mealPrepLoading => _mealPrepLoading;
 
-  /// True once a [loadMealPrepBatches] succeeded.
-  bool get mealPrepLoaded => _mealPrepLoaded;
-
   /// Server `code` / message of the last failed list or cancel call.
   String? get mealPrepErrorCode => _mealPrepErrorCode;
   String? get mealPrepErrorMessage => _mealPrepErrorMessage;
@@ -326,7 +315,6 @@ class MealPlanProvider extends ChangeNotifier {
     notifyListeners();
     try {
       _mealPrepBatches = await _mealPrepListFn();
-      _mealPrepLoaded = true;
       _mealPrepErrorCode = null;
       _mealPrepErrorMessage = null;
     } catch (e) {

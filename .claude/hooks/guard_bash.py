@@ -39,7 +39,7 @@ PROTECTED_RE = re.compile(
 
 #: Commands whose relative default paths only resolve from the repo root.
 REPO_ROOTED = (
-    (re.compile(r"(?<![\w./-])pytest(?![\w-])"), "pytest (pytest.ini sets pythonpath = .)"),
+    (re.compile(r"(?<![\w./-])pytest(?![\w-]|\.\w)"), "pytest (pytest.ini sets pythonpath = .)"),
     (re.compile(r"plan_meals\.py"), "the CLI planner (default data paths are relative)"),
     (re.compile(r"scripts/\w+\.py"), "a repo script (it resolves paths from the repo root)"),
     (re.compile(r"uvicorn\s+src\.api\.server"), "the API server"),

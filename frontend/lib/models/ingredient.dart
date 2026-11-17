@@ -99,23 +99,6 @@ class Ingredient {
     );
   }
 
-  /// Scale nutrition values by quantity in grams.
-  double caloriesForGrams(double grams) => caloriesPer100g * grams / 100;
-  double proteinForGrams(double grams) => proteinPer100g * grams / 100;
-  double carbsForGrams(double grams) => carbsPer100g * grams / 100;
-  double fatForGrams(double grams) => fatPer100g * grams / 100;
-
-  /// Convert a quantity in the given unit to grams using [unitConversions].
-  ///
-  /// Throws [UnknownUnitException] when [unit] has no gram weight (see
-  /// [gramsForUnit]); the quantity is never treated as grams.
-  double toGrams(double quantity, String unit) => gramsForUnit(
-        quantity: quantity,
-        unit: unit,
-        unitConversions: unitConversions,
-        ingredientName: name,
-      );
-
   Map<String, dynamic> toJson() => {
         'id': id,
         'name': name,

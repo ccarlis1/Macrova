@@ -61,7 +61,4 @@ class MicronutrientDefaults {
       weeklyMinFraction: tau.toDouble(),
     );
   }
-
-  /// [goals] as the profile model (keys it doesn't know are ignored).
-  MicronutrientGoals toGoals() => MicronutrientGoals.fromJson(goals);
 }

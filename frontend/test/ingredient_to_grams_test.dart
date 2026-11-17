@@ -2,14 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:macrova/models/ingredient.dart';
 import 'package:macrova/models/recipe.dart';
 
-const _almonds = Ingredient(
-  id: 'a',
-  name: 'almonds',
-  caloriesPer100g: 600,
-  proteinPer100g: 20,
-  unitConversions: {'tbsp': 9},
-);
-
 RecipeIngredientEntry _line(String unit, {double quantity = 2}) =>
     RecipeIngredientEntry(
       ingredientId: 'a',
@@ -22,42 +14,6 @@ RecipeIngredientEntry _line(String unit, {double quantity = 2}) =>
     );
 
 void main() {
-  group('Ingredient.toGrams (FE-13)', () {
-    test('Given g, Then the quantity is grams', () {
-      expect(_almonds.toGrams(50, 'g'), 50);
-    });
-
-    test('Given a unit with a conversion, Then it is scaled', () {
-      expect(_almonds.toGrams(2, 'tbsp'), 18);
-    });
-
-    test('Given oz, Then the mass conversion is used', () {
-      expect(_almonds.toGrams(2, 'oz'), closeTo(56.7, 1e-9));
-    });
-
-    test('Given to taste, Then it weighs nothing', () {
-      expect(_almonds.toGrams(1, 'to taste'), 0);
-    });
-
-    test(
-        'Given a unit with no conversion, Then UnknownUnitException is thrown '
-        '(not the quantity as grams)', () {
-      expect(
-        () => _almonds.toGrams(2, 'cup'),
-        throwsA(
-          isA<UnknownUnitException>()
-              .having((e) => e.unit, 'unit', 'cup')
-              .having((e) => e.ingredientName, 'ingredientName', 'almonds'),
-        ),
-      );
-    });
-
-    test('Given a zero conversion, Then the unit is unknown', () {
-      const ing = Ingredient(id: 'x', name: 'x', unitConversions: {'cup': 0});
-      expect(() => ing.toGrams(1, 'cup'), throwsA(isA<UnknownUnitException>()));
-    });
-  });
-
   group('RecipeIngredientEntry strict grams (FE-13)', () {
     test('Given a unit with no conversion, Then nutrition getters throw', () {
       final line = _line('cup');

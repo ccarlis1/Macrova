@@ -563,10 +563,4 @@ class ApiService {
 
     throw ApiException.fromResponse(res);
   }
-
-  /// Prefer [plan]; kept for call sites not yet migrated.
-  static Future<MealPlan> generatePlan(PlanRequest profile) => plan(profile);
-
-  /// Prefer [listRecipes]; kept for call sites not yet migrated.
-  static Future<List<RecipeSummary>> getRecipes() => listRecipes();
 }

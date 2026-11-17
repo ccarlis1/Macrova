@@ -34,12 +34,6 @@ void main() {
       expect(d.goals.containsKey('vitamin_d_iu'), isFalse);
       expect(d.leftOut, ['vitamin_d_iu', 'omega_3_g', 'omega_6_g']);
       expect(d.weeklyMinFraction, 1.0);
-
-      final goals = d.toGoals();
-      expect(goals.vitaminCMg, 90.0);
-      expect(goals.omega3G, 0);
-      expect(goals.vitaminDIu, 0);
-      expect(goals.toPlanMicronutrientGoals(), d.goals);
     });
 
     test('Given the captured pregnancy default, Then vitamin E is left out too',

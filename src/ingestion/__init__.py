@@ -34,11 +34,6 @@ from src.ingestion.nutrition_scaler import (
     BASE_SERVING_WEIGHTS,
 )
 
-from src.ingestion.nutrition_profile_builder import (
-    NutritionProfileBuilder,
-    build_nutrition_profile,
-)
-
 from src.ingestion.ingredient_cache import (
     IngredientCache,
     CachedIngredientLookup,
@@ -70,9 +65,6 @@ __all__ = [
     "UnsupportedUnitError",
     "UNIT_TO_GRAMS",
     "BASE_SERVING_WEIGHTS",
-    # NutritionProfile construction
-    "NutritionProfileBuilder",
-    "build_nutrition_profile",
     # Ingredient caching
     "IngredientCache",
     "CachedIngredientLookup",

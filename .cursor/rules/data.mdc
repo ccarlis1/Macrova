@@ -1,0 +1,7 @@
+---
+description: Data area — read the data map doc before editing
+globs: src/data_layer/**,src/nutrition/**,src/ingestion/**,src/providers/**,data/**
+alwaysApply: false
+---
+
+Read @docs/architecture/map/data.md before editing.

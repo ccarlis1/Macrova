@@ -15,9 +15,8 @@ Classify the task before editing. **Do not edit files unless explicitly asked to
 
 ## What to read
 
-- [AGENTS.md](../../AGENTS.md) — canonical rules and source-of-truth hierarchy
-- [docs/agents/task-router.md](../../docs/agents/task-router.md) — routing table (domains → specialists, docs, validation)
-- [docs/agents/subagent-guide.md](../../docs/agents/subagent-guide.md) — specialist details
+- [AGENTS.md](../../AGENTS.md) — invariants and what must pass
+- [docs/architecture/map/README.md](../../docs/architecture/map/README.md) — areas, the "Area → checks and reviewers" routing table, and change recipes
 
 ## Output
 
@@ -29,5 +28,5 @@ Classify the task before editing. **Do not edit files unless explicitly asked to
 
 ## Avoid
 
-- Duplicating the routing table — link to `docs/agents/task-router.md`
+- Duplicating the routing table — link to the map README
 - Making code changes during classification

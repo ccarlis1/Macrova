@@ -19,7 +19,7 @@ system interpreter.
    `--base $(git merge-base HEAD main)`, or other merged PRs' changes will show up as yours.
    Run on the **final commit** of the change, from a clean tree. If the working tree already
    has modified results files, stop and ask. Don't overwrite someone's uncommitted run.
-2. **Run the harness** (about 40 s total):
+2. **Run the harness** (about 10 s total):
    ```bash
    .venv/bin/python evaluation/harness/run_benchmark.py
    .venv/bin/python evaluation/harness/compare.py

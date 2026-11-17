@@ -1,0 +1,7 @@
+---
+description: CLI, MCP server, schedule models, formatters — read the interfaces map doc
+globs: src/cli.py,plan_meals.py,src/mcp_server/**,src/models/**,src/output/**
+alwaysApply: false
+---
+
+Read @docs/architecture/map/interfaces.md before editing.

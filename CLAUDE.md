@@ -1,10 +1,8 @@
 # Claude / AI agent instructions
 
-Canonical agent instructions for this repository live in **[AGENTS.md](AGENTS.md)**.
+Canonical agent instructions live in AGENTS.md (imported below, so it is always loaded). Don't duplicate its rules here.
 
-Read AGENTS.md before making changes. It covers commands, environment rules, source-of-truth hierarchy, planner/LLM/tagging invariants, and deeper-doc pointers.
-
-Documentation index: [docs/README.md](docs/README.md).
+@AGENTS.md
 
 ## Orchestrator mode (Fable lead, Opus subagents)
 

@@ -2,7 +2,13 @@
 """Run pytest in a project-local virtual environment.
 
 This script ensures `.venv` exists and has project dependencies installed,
-then runs pytest via `python -m pytest` inside that environment.
+then runs pytest via `python -m pytest` inside that environment. It is the
+canonical backend test command (`make test` delegates here).
+
+When changing it, keep these properties: safe to run from the repo root; uses
+the intended `.venv`; fails clearly when dependencies are missing; never
+silently falls back to another interpreter; verifies the project requirements,
+not just that pytest is importable.
 """
 
 from __future__ import annotations

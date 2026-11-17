@@ -21,12 +21,12 @@ Prevent invented backend/API contracts. Read source and tests; report actual sha
 - `openapi/openapi.json`
 - `tests/api/`
 
-Details: [docs/agents/subagent-guide.md](../../docs/agents/subagent-guide.md#backend-contract-auditor)
+Read first: [docs/architecture/map/api.md](../../docs/architecture/map/api.md) and [generated/routes.md](../../docs/architecture/map/generated/routes.md).
 
 ## Output
 
 - Summary of actual request/response shapes for affected endpoints
-- Error codes and failure modes from `error_mapping.py`
+- Error envelope codes (`error_mapping.py`) and plan failure codes (the `PlanFailure.code` Literal in `server.py`)
 - Gaps vs. assumed contracts
 - Recommended contract-test additions
 

@@ -17,9 +17,10 @@ Identify relevant tests, add focused coverage when needed, run canonical test co
 
 - `tests/` — relevant suite for the changed area
 - `scripts/run_pytest.py`, `pytest.ini`
-- `frontend/test/` for Flutter changes
+- `frontend/test/` for Flutter changes (`cd frontend && flutter test`)
+- Planner changes also need the benchmark: `.claude/skills/benchmark-audit/SKILL.md`
 
-Details: [docs/agents/subagent-guide.md](../../docs/agents/subagent-guide.md#test-coverage-agent)
+Read first: [docs/architecture/map/tooling.md](../../docs/architecture/map/tooling.md) (test layout, benchmark, what each check proves).
 
 ## Output
 
